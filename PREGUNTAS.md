@@ -1,6 +1,8 @@
-# Las 33 preguntas
+# El cuestionario
 
-Mismo cuestionario para hombres y mujeres. **17 abiertas (A)** y **16 de opción múltiple (OM)** — varias OM incluyen un campo abierto opcional ("explica si quieres"), que siempre suma señal.
+**33 preguntas base** (17 abiertas, 16 de opción múltiple) + el **Módulo Profundo** (P34–P41): intimidad sexual y nivel de conciencia. El módulo se responde al final, con su propio encuadre de privacidad, porque ahí viven los matches que las 33 solas no pueden garantizar.
+
+Mismo cuestionario para hombres y mujeres. Varias OM incluyen un campo abierto opcional ("explica si quieres"), que siempre suma señal.
 
 Convenciones:
 - 🚫 = alimenta un **filtro duro** (eliminatorio, ver MODELO.md)
@@ -197,6 +199,62 @@ Alcohol (nada / social / frecuente) · Tabaco o vape (no / ocasional / sí) · E
 
 **33. (A) Escríbele una carta corta a tu futura pareja: qué le prometes, y qué le pides.**
 *Extrae:* el cierre perfecto para el matching bidireccional: promesas de A contra peticiones de B, y viceversa, en lenguaje natural. Además, si hay match ≥95%, esta carta es lo primero que la otra persona podrá leer de ti.
+
+---
+
+## Módulo Profundo (P34–P41)
+
+Se presenta después de la P33, con esta pantalla de entrada:
+
+> *"Lo que sigue son 8 preguntas más íntimas: sexualidad y vida interior. Son incómodas a propósito — porque los matches que fallan, fallan casi siempre en lo que nadie preguntó a tiempo. Nadie las lee más que el algoritmo. Puedes responderlas ahora o volver después, pero tu perfil no entra al matching sin ellas: preferimos un match menos a un match falso."*
+
+### Intimidad sexual (P34–P38)
+
+La P25 mide cuánto importa lo físico y qué tan fácil te es hablarlo. Este bloque va a donde la P25 no llega. La incompatibilidad sexual no aparece en la primera cita: aparece en el año dos, y para entonces ya duele. Preguntamos antes.
+
+**34. (OM) En una relación estable y buena, ¿cuál sería tu frecuencia ideal de intimidad sexual?**
+- Varias veces por semana
+- Una o dos veces por semana
+- Algunas veces al mes
+- La frecuencia me importa poco si hay conexión
+
+Y: ¿qué tan negociable es esto para ti? (Muy negociable / Algo / Poco negociable)
+
+*Extrae:* el desajuste de deseo es de los predictores más duros de insatisfacción conyugal. Similitud con tolerancia según negociabilidad declarada.
+
+**35. (OM) Entre lo clásico y lo explorador, ¿dónde estás tú — y dónde necesitas que esté tu pareja?**
+Tú: escala 1–5 (1 = lo tradicional me llena · 5 = explorar es parte esencial de mi sexualidad).
+Tu pareja: Prefiero que sea como yo / Me gustaría que me abriera mundo / Necesito que respete mis límites sin presionarme.
+
+*Extrae:* apertura sexual en doble dirección. Un 2 que quiere que le abran mundo cruza con un 4 paciente; un 2 que necesita respeto a sus límites, no.
+
+**36. (A) ¿Qué te hace sentir profundamente deseado/a — y qué te apaga por completo?**
+*Extrae:* el mapa de encendido/apagado, cruzado contra la forma natural de dar del otro (P23, P26, P35). Es la pregunta que convierte "hay química" en algo computable.
+
+**37. (A) En tus relaciones pasadas, cuando uno quería y el otro no — ¿cómo lo manejaste tú? ¿Con palabras, con distancia, con reclamo, con paciencia?**
+*Extrae:* conducta real ante el desajuste de deseo, que existirá en CUALQUIER pareja. Se evalúa con la misma rúbrica de responsabilidad que la P20: no importa el episodio, importa cómo lo navegas.
+
+**38. (A) ¿Qué es innegociable para ti en lo sexual — como necesidad y como límite? Di la verdad completa: esta respuesta decide matches.**
+*Extrae:* 🚫 filtro duro semántico. Una necesidad declarada de A contra un límite declarado de B mata el par, sin importar el resto. Es la pregunta más incómoda del sistema y la más barata: cuesta un minuto aquí o cuesta dos años después.
+
+### Nivel de conciencia y vida interior (P39–P41)
+
+La P4 mide religión como filtro social. Esto mide otra cosa: cómo trabajas tu interior y cuánto necesitas que tu pareja lo haga.
+
+**39. (A) ¿Qué prácticas sostienen tu vida interior — meditación, oración, terapia, escribir, naturaleza, nada — y qué papel esperas que jueguen en tu vida en pareja?**
+*Extrae:* prácticas reales vs. etiquetas. "Espiritual" no dice nada; "medito 20 minutos cada mañana y necesito ese espacio respetado" dice todo. Similitud semántica + cruce de expectativas.
+
+**40. (OM) Sobre tu propio crecimiento: ¿dónde estás?**
+- Estoy en paz con quien soy; no busco reinventarme
+- Trabajo en mí cuando la vida lo exige
+- El crecimiento constante (terapia, lectura, práctica) es central en mi vida
+
+Y: ¿necesitas que tu pareja crezca contigo, o basta con que te acompañe?
+
+*Extrae:* desnivel de conciencia — la fuente silenciosa de "ya no hablamos el mismo idioma" a los cinco años. Un escalón de diferencia cruza si la segunda respuesta es "basta con que acompañe"; dos escalones con "necesito que crezca conmigo", no.
+
+**41. (A) Cuéntame la última vez que cambiaste de opinión sobre algo importante de ti mismo/a. ¿Qué te lo mostró?**
+*Extrae:* conciencia demostrada, no declarada — la prueba de que la P40 no es pose. Alimenta la rúbrica de autoconocimiento junto con la 16, 22 y 32.
 
 ---
 

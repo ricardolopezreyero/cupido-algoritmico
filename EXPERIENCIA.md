@@ -118,6 +118,32 @@ Formato: **riesgo detectado en la simulación** (brazo A → brazo B) y **la ayu
 - **P32 por qué sigues soltero/a** (65% → 36%, pobres 67% → 17% — **la más difícil de todo el cuestionario**): triple ayuda. ¿Por qué?: *"Es la pregunta que más dice de ti en todo el cuestionario. No te castiga por la respuesta: te premia por la honestidad."* Arrancador: *"Prohibido responder 'no he encontrado a la persona correcta' — eso es la pregunta, no la respuesta. ¿Qué has elegido, evitado, priorizado o temido TÚ?"* Y el ejemplo real colapsado muestra una respuesta vulnerable e imperfecta, para bajar el estándar de 'respuesta perfecta' que congela.
 - **P33 carta a tu futura pareja** (53% → 29%): estructura mínima: *"Dos párrafos bastan: 'Te prometo…' y 'Te pido…'. Escríbela a UNA persona, no a un público."* Aviso importante: *"Esta carta es lo primero que tu match leerá de ti."* — la simulación no lo mide, pero es el mejor incentivo natural de calidad de todo el sistema. Al enviarla: pantalla de cierre con resumen editable de las 33.
 
+### Módulo Profundo (P34–P41) — máxima incomodidad, máximo cuidado
+
+> Se responde después de la P33, con pantalla de entrada propia (ver `PREGUNTAS.md`). Reglas de la simulación aplicadas al extremo: aquí el pudor es el atoro dominante, así que cada pantalla abre con el encuadre de privacidad, no lo esconde en un colapsable.
+
+- **P34 frecuencia / P35 apertura** (OM): tono clínico y neutro, cero ilustraciones juguetonas. ¿Por qué?: *"El desajuste de deseo es de las primeras causas reales de ruptura. Preguntarlo hoy es más barato que descubrirlo en el año dos."*
+- **P36 qué te enciende / qué te apaga**: arrancador: *"No pienses en técnica: piensa en la última vez que te sentiste verdaderamente deseado/a. ¿Qué lo provocó? ¿Y qué gesto, frase o actitud te ha sacado por completo del momento?"*
+- **P37 cuando uno quería y el otro no**: permiso: *"Todas las parejas del mundo viven esto. No te descalifica haberlo manejado mal: descalifica no saber cómo lo manejas."*
+- **P38 innegociables**: la advertencia va en la pantalla, en grande: *"Esta respuesta decide matches. Un límite callado hoy es una ruptura programada. Nadie humano la lee."* Botón "lo pienso después" disponible, pero el perfil no entra al matching sin ella.
+- **P39–P41 conciencia**: el riesgo es la respuesta-postal ("soy muy espiritual"). Anti-aparador en P39: *"No nos digas qué crees: dinos qué HACES, y cada cuánto."*
+
+---
+
+## Primera impresión multimedia
+
+El algoritmo es ciego a los medios — esa es la tesis del producto. Pero cuando hay match ≥95%, la primera impresión sí importa, y debe ser tuya, no una foto elegida por miedo. Cada perfil incluye:
+
+| Medio | Spec | Guía en pantalla |
+|---|---|---|
+| **Fotos (3–5)** | Al menos 1 de rostro claro y 1 de cuerpo completo; sin filtros pesados | *"Fotos de tu vida real, no de tu mejor ángulo de 2019. Tu match ya te eligió por quién eres: las fotos solo confirman que existes."* |
+| **Audio (30–90 s)** | Leer tu carta (P33) en tu propia voz — guion ya resuelto, cero pánico de "¿qué digo?" | *"Tu voz diciendo tu carta. Es lo segundo que tu match conocerá de ti, después de leerla."* |
+| **Video (30–60 s)** | Prompt guiado: "Muéstranos tu domingo perfecto" o "¿Qué verá tu pareja un martes normal contigo?" | Grabación vertical, sin edición requerida; se puede regrabar las veces que sea |
+
+**Orden de revelación al hacer match** (diseñado para que lo físico llegue al final, ya con contexto): 1) % y top-3 dimensiones → 2) carta escrita → 3) audio con su voz → 4) video → 5) fotos. Cada paso se abre cuando el receptor lo decide: la primera impresión se construye en el orden inverso al de Tinder.
+
+Los medios se suben al final del cuestionario (o después — el perfil puede entrar al matching sin ellos, pero se avisa: *"Si hay match, esto es lo que la otra persona verá. No lo dejes al azar"*). Reemplazables cuando quieras, como todo lo demás.
+
 ---
 
 ## Guardado y edición (spec)

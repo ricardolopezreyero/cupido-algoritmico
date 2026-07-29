@@ -25,6 +25,7 @@ Antes de calcular nada, un par (A, B) debe pasar **todos**:
 | Geografía (P2) | distancia real vs. disposición a moverse de al menos uno |
 | Hábitos vetados (P27) | un "no acepto" contra un hábito declarado del otro |
 | Política (P13) | solo si alguien marcó innegociable |
+| Innegociables sexuales (P38) | una necesidad declarada de A contra un límite declarado de B (cruce semántico, revisado con umbral conservador) |
 
 Esto elimina ~80–95% de los pares posibles con costo computacional casi nulo. **Un dealbreaker no es un 0 en una dimensión: es la inexistencia del par.**
 
@@ -34,13 +35,17 @@ Para los pares sobrevivientes se calculan 7 sub-scores (0–1), cada uno con su 
 
 | Dimensión | Peso | Preguntas | Lógica |
 |---|---|---|---|
-| Visión de vida | 20% | 6, 7, 8, 9 | Similitud semántica de escenarios y definiciones de éxito |
-| Valores en acción | 18% | 10, 11, 12, 13 | Similitud semántica de valores demostrados + match exacto en manejo de dinero |
-| Conflicto y reparación | 17% | 19, 20, 21, 22 | **Compatibilidad de estilos**, no similitud: matriz de combinaciones (acumulador+acumulador penaliza aunque sean "iguales"); cruce necesidades⟷oferta de reparación (21) |
-| Afecto e intimidad | 15% | 23, 24, 25, 26 | **Cruzada**: lo que A necesita recibir vs. lo que B da naturalmente, promediado en ambas direcciones; cercanía (24) por similitud estricta |
-| Vida cotidiana | 14% | 27, 28, 29, 30 | Similitud de hábitos y ritmos; brecha orden-vs-tolerancia (28); domingos comparados semánticamente |
-| Personalidad y humor | 11% | 14, 15, 17, 18 | Similitud con tolerancia ±1 en escalas; humor (17) por similitud semántica pura |
-| Cartas y necesidades | 5% | 31, 33 | Promesas de A contra peticiones de B, y viceversa |
+| Visión de vida | 17% | 6, 7, 8, 9 | Similitud semántica de escenarios y definiciones de éxito |
+| Valores en acción | 15% | 10, 11, 12, 13 | Similitud semántica de valores demostrados + match exacto en manejo de dinero |
+| Conflicto y reparación | 15% | 19, 20, 21, 22 | **Compatibilidad de estilos**, no similitud: matriz de combinaciones (acumulador+acumulador penaliza aunque sean "iguales"); cruce necesidades⟷oferta de reparación (21) |
+| Afecto | 12% | 23, 24, 25, 26 | **Cruzada**: lo que A necesita recibir vs. lo que B da naturalmente, promediado en ambas direcciones; cercanía (24) por similitud estricta |
+| **Intimidad sexual** | 12% | 34–38 | Frecuencia por cercanía ponderada por negociabilidad (34); apertura en doble dirección (35); mapa deseo⟷oferta cruzado (36); rúbrica de manejo del desajuste (37); innegociables como filtro (38) |
+| Vida cotidiana | 12% | 27, 28, 29, 30 | Similitud de hábitos y ritmos; brecha orden-vs-tolerancia (28); domingos comparados semánticamente |
+| Personalidad y humor | 9% | 14, 15, 17, 18 | Similitud con tolerancia ±1 en escalas; humor (17) por similitud semántica pura |
+| **Conciencia y vida interior** | 5% | 39, 40, 41 | Similitud de prácticas reales (39); desnivel de crecimiento cruzado con la expectativa del otro (40); P41 alimenta la rúbrica Q, no el score del par |
+| Cartas y necesidades | 3% | 31, 33 | Promesas de A contra peticiones de B, y viceversa |
+
+> La dimensión sexual pesa 12% — igual que la vida cotidiana — y además tiene veto propio vía P38. No es un tema lateral: es de las primeras causas reales de ruptura, y la única que las apps actuales fingen medir con fotos.
 
 Dos mecánicas distintas conviven aquí a propósito:
 
@@ -66,7 +71,7 @@ donde Q ∈ [0.85, 1.0] se deriva de las rúbricas. Dos perfiles idénticos con 
 ### Paso 4 · Umbral y notificación
 
 - **Match = S_final ≥ 0.95.** Doble ciego: se notifica a ambos a la vez, o a ninguno. Nunca existe el estado "él ya vio tu perfil".
-- La notificación incluye el % global, las 3 dimensiones más fuertes del par, y la carta (P33) del otro.
+- La notificación incluye el % global, las 3 dimensiones más fuertes del par, y la **primera impresión** del otro en orden de revelación: carta (P33) → audio → video → fotos (ver `EXPERIENCIA.md`). El algoritmo nunca ve los medios; los medios solo existen para el momento del match.
 - Si alguien tiene varios matches ≥95% simultáneos, se notifica **solo el mejor** y los demás quedan en cola: el producto es escasez con significado, no otra bandeja de opciones.
 
 ## Por qué 95% funciona (y qué lo rompería)

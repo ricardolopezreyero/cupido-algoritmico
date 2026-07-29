@@ -43,8 +43,11 @@ Tres decisiones de diseño importantes:
 
 ## Estructura del repo
 
-- [`PREGUNTAS.md`](PREGUNTAS.md) — Las 33 preguntas con el razonamiento de cada una.
+- [`MANIFIESTO.md`](MANIFIESTO.md) — Por qué existe esto, en una página.
+- [`PREGUNTAS.md`](PREGUNTAS.md) — Las 33 preguntas base + el Módulo Profundo (P34–P41: intimidad sexual y nivel de conciencia), con el razonamiento de cada una.
 - [`MODELO.md`](MODELO.md) — Cómo se calcula el % de compatibilidad y por qué el umbral es 95%.
+- [`EXPERIENCIA.md`](EXPERIENCIA.md) — La experiencia de respuesta (una pregunta por pantalla, ayudas, autoguardado, edición) y la primera impresión multimedia (fotos, audio, video — que el algoritmo nunca ve y solo se revelan al hacer match).
+- [`montecarlo.py`](montecarlo.py) — Simulación de 1,000 participantes que informó el diseño de la experiencia.
 
 ## El contrato con el usuario
 
