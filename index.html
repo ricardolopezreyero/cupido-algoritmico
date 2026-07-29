@@ -8,66 +8,94 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
 <style>
   :root{
-    --bg:#0f0e11; --panel:#17161b; --ink:#efece6; --muted:#9b96a3;
-    --accent:#e8637c; --accent2:#f0a35e; --line:#2a2830; --max:760px;
+    --bg:#ffffff; --soft:#faf7f4; --ink:#211d24; --muted:#75707c;
+    --accent:#d6455f; --accent-dark:#b23349; --line:#eae5df; --max:780px;
   }
   *{box-sizing:border-box}
   body{margin:0;background:var(--bg);color:var(--ink);
-    font-family:Georgia,'Times New Roman',serif;line-height:1.65;font-size:17px}
-  header{padding:56px 20px 30px;text-align:center;
-    background:radial-gradient(ellipse at top,#241d26 0%,var(--bg) 70%)}
-  .logo{font-size:44px}
-  h1.site{font-size:30px;margin:10px 0 6px;letter-spacing:.5px}
-  .tag{color:var(--muted);font-style:italic;margin:0 auto;max-width:520px}
-  .badge{display:inline-block;margin-top:18px;padding:6px 14px;border:1px solid var(--accent);
-    border-radius:999px;color:var(--accent);font-size:14px;
-    font-family:system-ui,-apple-system,sans-serif}
-  nav{position:sticky;top:0;background:rgba(15,14,17,.95);backdrop-filter:blur(8px);
-    border-bottom:1px solid var(--line);display:flex;overflow-x:auto;
-    justify-content:flex-start;padding:0 8px;z-index:9;
-    font-family:system-ui,-apple-system,sans-serif}
-  nav button{background:none;border:none;color:var(--muted);padding:14px 14px;
-    font-size:14px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent}
-  nav button.active{color:var(--ink);border-bottom-color:var(--accent)}
-  main{max-width:var(--max);margin:0 auto;padding:28px 20px 80px}
-  #content h1{font-size:26px;border-bottom:1px solid var(--line);padding-bottom:10px}
-  #content h2{font-size:21px;margin-top:38px;color:var(--accent2)}
-  #content h3{font-size:18px;margin-top:30px}
-  #content a{color:var(--accent)}
-  #content blockquote{margin:20px 0;padding:12px 18px;border-left:3px solid var(--accent);
-    background:var(--panel);color:var(--muted);font-style:italic;border-radius:0 8px 8px 0}
-  #content code{background:var(--panel);padding:2px 6px;border-radius:4px;font-size:14px}
-  #content pre{background:var(--panel);padding:16px;border-radius:10px;overflow-x:auto;
-    font-size:13px;line-height:1.5}
-  #content pre code{background:none;padding:0}
-  #content table{border-collapse:collapse;width:100%;margin:18px 0;font-size:14.5px;
+    font-family:Georgia,'Times New Roman',serif;line-height:1.7;font-size:17px}
+
+  /* ---- barra de menú ---- */
+  .topbar{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.96);
+    backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  .topbar-in{max-width:1080px;margin:0 auto;display:flex;align-items:center;
+    gap:6px;padding:10px 16px;font-family:system-ui,-apple-system,sans-serif}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:16px;
+    color:var(--ink);text-decoration:none;margin-right:auto;white-space:nowrap}
+  .brand span{font-size:20px}
+  .menu{display:flex;gap:2px;overflow-x:auto}
+  .menu button{background:none;border:none;color:var(--muted);padding:9px 12px;
+    font-size:14.5px;cursor:pointer;border-radius:8px;white-space:nowrap}
+  .menu button:hover{background:var(--soft);color:var(--ink)}
+  .menu button.active{color:var(--accent-dark);background:#faeef0;font-weight:600}
+  .cta{background:var(--accent);color:#fff !important;font-weight:600;
+    padding:9px 16px !important;border-radius:999px;text-decoration:none;
+    font-size:14.5px;white-space:nowrap}
+  .cta:hover{background:var(--accent-dark)}
+
+  /* ---- hero ---- */
+  header.hero{text-align:center;padding:64px 20px 46px;
+    background:linear-gradient(180deg,var(--soft) 0%,#fff 100%)}
+  .logo{font-size:46px}
+  h1.site{font-size:34px;margin:12px 0 8px;letter-spacing:.3px}
+  .tag{color:var(--muted);font-style:italic;margin:0 auto;max-width:540px;font-size:18px}
+  .badge{display:inline-block;margin-top:20px;padding:7px 16px;border:1.5px solid var(--accent);
+    border-radius:999px;color:var(--accent-dark);font-size:14px;
+    font-family:system-ui,-apple-system,sans-serif;font-weight:600}
+  .hero-demo{display:inline-block;margin:26px 6px 0;background:var(--accent);color:#fff;
+    padding:13px 28px;border-radius:999px;text-decoration:none;font-weight:700;
+    font-family:system-ui,sans-serif;font-size:16px;box-shadow:0 6px 18px rgba(214,69,95,.28)}
+  .hero-demo:hover{background:var(--accent-dark)}
+
+  main{max-width:var(--max);margin:0 auto;padding:34px 20px 90px}
+  #content h1{font-size:27px;border-bottom:1px solid var(--line);padding-bottom:10px}
+  #content h2{font-size:22px;margin-top:40px;color:var(--accent-dark)}
+  #content h3{font-size:18.5px;margin-top:30px}
+  #content a{color:var(--accent-dark)}
+  #content blockquote{margin:22px 0;padding:14px 20px;border-left:3px solid var(--accent);
+    background:var(--soft);color:#5d5864;font-style:italic;border-radius:0 10px 10px 0}
+  #content code{background:var(--soft);border:1px solid var(--line);padding:2px 6px;
+    border-radius:5px;font-size:14px}
+  #content pre{background:#faf9f7;border:1px solid var(--line);padding:16px;
+    border-radius:10px;overflow-x:auto;font-size:13px;line-height:1.5}
+  #content pre code{background:none;border:none;padding:0}
+  #content table{border-collapse:collapse;width:100%;margin:20px 0;font-size:14.5px;
     font-family:system-ui,-apple-system,sans-serif;display:block;overflow-x:auto}
-  #content th,#content td{border:1px solid var(--line);padding:9px 11px;text-align:left;
+  #content th,#content td{border:1px solid var(--line);padding:10px 12px;text-align:left;
     vertical-align:top}
-  #content th{background:var(--panel);color:var(--accent2)}
-  #content hr{border:none;border-top:1px solid var(--line);margin:34px 0}
-  #content strong{color:#fff}
+  #content th{background:var(--soft);color:var(--accent-dark)}
+  #content hr{border:none;border-top:1px solid var(--line);margin:36px 0}
   .loading{color:var(--muted);text-align:center;padding:60px 0;font-style:italic}
-  footer{text-align:center;color:var(--muted);font-size:13px;padding:30px 20px 50px;
+  footer{text-align:center;color:var(--muted);font-size:13.5px;padding:30px 20px 50px;
     border-top:1px solid var(--line);font-family:system-ui,sans-serif}
-  footer a{color:var(--accent)}
+  footer a{color:var(--accent-dark)}
+  @media(max-width:640px){
+    .brand b{display:none}
+    h1.site{font-size:28px}
+  }
 </style>
 </head>
 <body>
-<header>
+
+<div class="topbar"><div class="topbar-in">
+  <a class="brand" href="#"><span>💘</span><b>Cupido Algorítmico</b></a>
+  <div class="menu" id="menu">
+    <button data-doc="MANIFIESTO.md" class="active">Manifiesto</button>
+    <button data-doc="README.md">La idea</button>
+    <button data-doc="PREGUNTAS.md">Las preguntas</button>
+    <button data-doc="MODELO.md">El modelo</button>
+    <button data-doc="EXPERIENCIA.md">La experiencia</button>
+  </div>
+  <a class="cta" href="demo.html">Probar el demo</a>
+</div></div>
+
+<header class="hero">
   <div class="logo">💘</div>
   <h1 class="site">Cupido Algorítmico</h1>
-  <p class="tag">No es una app de citas. Es un sistema de detección de parejas.</p>
-  <span class="badge">Solo te avisamos arriba del 95%</span>
+  <p class="tag">No es una app de citas. Es un sistema de detección de parejas.</p><br>
+  <span class="badge">Solo te avisamos arriba del 95%</span><br>
+  <a class="hero-demo" href="demo.html">Responder el cuestionario (demo) →</a>
 </header>
-
-<nav id="nav">
-  <button data-doc="MANIFIESTO.md" class="active">Manifiesto</button>
-  <button data-doc="README.md">La idea</button>
-  <button data-doc="PREGUNTAS.md">Las preguntas</button>
-  <button data-doc="MODELO.md">El modelo</button>
-  <button data-doc="EXPERIENCIA.md">La experiencia</button>
-</nav>
 
 <main><div id="content" class="loading">Cargando…</div></main>
 
@@ -88,16 +116,16 @@
       }
       content.className='';
       content.innerHTML = marked.parse(cache[doc]);
-      window.scrollTo({top:0});
     }catch(e){
       content.textContent = 'No se pudo cargar el documento.';
     }
   }
-  document.querySelectorAll('nav button').forEach(b=>{
+  document.querySelectorAll('#menu button').forEach(b=>{
     b.addEventListener('click',()=>{
-      document.querySelectorAll('nav button').forEach(x=>x.classList.remove('active'));
+      document.querySelectorAll('#menu button').forEach(x=>x.classList.remove('active'));
       b.classList.add('active');
       load(b.dataset.doc);
+      document.querySelector('main').scrollIntoView({behavior:'smooth'});
     });
   });
   load('MANIFIESTO.md');
