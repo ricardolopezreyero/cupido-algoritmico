@@ -1,0 +1,472 @@
+{
+ "base": {
+  "1": {
+   "atoro_pct": 11.1,
+   "abandono_pct": 0.9,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 28.0,
+   "vieron": 1000
+  },
+  "2": {
+   "atoro_pct": 16.6,
+   "abandono_pct": 0.71,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 27.0,
+   "vieron": 991
+  },
+  "3": {
+   "atoro_pct": 22.8,
+   "abandono_pct": 1.12,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 25.0,
+   "vieron": 984
+  },
+  "4": {
+   "atoro_pct": 22.3,
+   "abandono_pct": 1.13,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 32.0,
+   "vieron": 973
+  },
+  "5": {
+   "atoro_pct": 22.9,
+   "abandono_pct": 1.87,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 29.0,
+   "vieron": 962
+  },
+  "6": {
+   "atoro_pct": 39.6,
+   "abandono_pct": 3.07,
+   "pobre_pct": 26.7,
+   "t_mediano_s": 189.0,
+   "vieron": 944
+  },
+  "7": {
+   "atoro_pct": 35.4,
+   "abandono_pct": 3.17,
+   "pobre_pct": 31.4,
+   "t_mediano_s": 167.0,
+   "vieron": 915
+  },
+  "8": {
+   "atoro_pct": 30.8,
+   "abandono_pct": 1.69,
+   "pobre_pct": 28.7,
+   "t_mediano_s": 166.0,
+   "vieron": 886
+  },
+  "9": {
+   "atoro_pct": 44.7,
+   "abandono_pct": 3.67,
+   "pobre_pct": 33.6,
+   "t_mediano_s": 201.0,
+   "vieron": 871
+  },
+  "10": {
+   "atoro_pct": 39.2,
+   "abandono_pct": 3.81,
+   "pobre_pct": 36.6,
+   "t_mediano_s": 204.0,
+   "vieron": 839
+  },
+  "11": {
+   "atoro_pct": 51.1,
+   "abandono_pct": 3.84,
+   "pobre_pct": 39.0,
+   "t_mediano_s": 199.0,
+   "vieron": 807
+  },
+  "12": {
+   "atoro_pct": 18.8,
+   "abandono_pct": 2.96,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 28.0,
+   "vieron": 776
+  },
+  "13": {
+   "atoro_pct": 19.0,
+   "abandono_pct": 2.66,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 26.0,
+   "vieron": 753
+  },
+  "14": {
+   "atoro_pct": 12.8,
+   "abandono_pct": 1.09,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 27.0,
+   "vieron": 733
+  },
+  "15": {
+   "atoro_pct": 11.9,
+   "abandono_pct": 1.1,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 25.0,
+   "vieron": 725
+  },
+  "16": {
+   "atoro_pct": 42.5,
+   "abandono_pct": 5.16,
+   "pobre_pct": 46.3,
+   "t_mediano_s": 177.0,
+   "vieron": 717
+  },
+  "17": {
+   "atoro_pct": 33.4,
+   "abandono_pct": 4.85,
+   "pobre_pct": 40.3,
+   "t_mediano_s": 174.0,
+   "vieron": 680
+  },
+  "18": {
+   "atoro_pct": 10.0,
+   "abandono_pct": 1.55,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 24.0,
+   "vieron": 647
+  },
+  "19": {
+   "atoro_pct": 26.1,
+   "abandono_pct": 23.08,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 30.0,
+   "vieron": 637
+  },
+  "20": {
+   "atoro_pct": 51.8,
+   "abandono_pct": 23.47,
+   "pobre_pct": 54.3,
+   "t_mediano_s": 189.0,
+   "vieron": 490
+  },
+  "21": {
+   "atoro_pct": 38.7,
+   "abandono_pct": 19.2,
+   "pobre_pct": 53.3,
+   "t_mediano_s": 179.0,
+   "vieron": 375
+  },
+  "22": {
+   "atoro_pct": 44.2,
+   "abandono_pct": 22.44,
+   "pobre_pct": 54.8,
+   "t_mediano_s": 177.0,
+   "vieron": 303
+  },
+  "23": {
+   "atoro_pct": 21.3,
+   "abandono_pct": 18.72,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 60.0,
+   "vieron": 235
+  },
+  "24": {
+   "atoro_pct": 23.0,
+   "abandono_pct": 20.42,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 28.0,
+   "vieron": 191
+  },
+  "25": {
+   "atoro_pct": 48.0,
+   "abandono_pct": 18.42,
+   "pobre_pct": 61.2,
+   "t_mediano_s": 159.0,
+   "vieron": 152
+  },
+  "26": {
+   "atoro_pct": 31.5,
+   "abandono_pct": 16.94,
+   "pobre_pct": 50.0,
+   "t_mediano_s": 179.0,
+   "vieron": 124
+  },
+  "27": {
+   "atoro_pct": 16.5,
+   "abandono_pct": 10.68,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 51.0,
+   "vieron": 103
+  },
+  "28": {
+   "atoro_pct": 12.0,
+   "abandono_pct": 6.52,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 36.0,
+   "vieron": 92
+  },
+  "29": {
+   "atoro_pct": 23.3,
+   "abandono_pct": 20.93,
+   "pobre_pct": 45.3,
+   "t_mediano_s": 164.0,
+   "vieron": 86
+  },
+  "30": {
+   "atoro_pct": 17.6,
+   "abandono_pct": 11.76,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 28.0,
+   "vieron": 68
+  },
+  "31": {
+   "atoro_pct": 33.3,
+   "abandono_pct": 8.33,
+   "pobre_pct": 46.7,
+   "t_mediano_s": 188.0,
+   "vieron": 60
+  },
+  "32": {
+   "atoro_pct": 65.5,
+   "abandono_pct": 14.55,
+   "pobre_pct": 67.3,
+   "t_mediano_s": 165.0,
+   "vieron": 55
+  },
+  "33": {
+   "atoro_pct": 53.2,
+   "abandono_pct": 14.89,
+   "pobre_pct": 61.7,
+   "t_mediano_s": 224.0,
+   "vieron": 47
+  }
+ },
+ "disenado": {
+  "1": {
+   "atoro_pct": 8.9,
+   "abandono_pct": 0.29,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 24.0,
+   "vieron": 1052
+  },
+  "2": {
+   "atoro_pct": 11.1,
+   "abandono_pct": 0.09,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 24.0,
+   "vieron": 1064
+  },
+  "3": {
+   "atoro_pct": 16.1,
+   "abandono_pct": 0.09,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 23.0,
+   "vieron": 1084
+  },
+  "4": {
+   "atoro_pct": 15.4,
+   "abandono_pct": 0.0,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 28.0,
+   "vieron": 1074
+  },
+  "5": {
+   "atoro_pct": 14.6,
+   "abandono_pct": 0.09,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 25.0,
+   "vieron": 1087
+  },
+  "6": {
+   "atoro_pct": 20.3,
+   "abandono_pct": 0.45,
+   "pobre_pct": 12.9,
+   "t_mediano_s": 161.0,
+   "vieron": 1106
+  },
+  "7": {
+   "atoro_pct": 21.5,
+   "abandono_pct": 0.18,
+   "pobre_pct": 14.0,
+   "t_mediano_s": 142.0,
+   "vieron": 1111
+  },
+  "8": {
+   "atoro_pct": 19.7,
+   "abandono_pct": 0.27,
+   "pobre_pct": 13.5,
+   "t_mediano_s": 142.0,
+   "vieron": 1097
+  },
+  "9": {
+   "atoro_pct": 23.2,
+   "abandono_pct": 0.18,
+   "pobre_pct": 13.4,
+   "t_mediano_s": 154.0,
+   "vieron": 1118
+  },
+  "10": {
+   "atoro_pct": 20.7,
+   "abandono_pct": 0.27,
+   "pobre_pct": 16.7,
+   "t_mediano_s": 168.0,
+   "vieron": 1095
+  },
+  "11": {
+   "atoro_pct": 29.2,
+   "abandono_pct": 0.35,
+   "pobre_pct": 15.2,
+   "t_mediano_s": 164.0,
+   "vieron": 1147
+  },
+  "12": {
+   "atoro_pct": 12.3,
+   "abandono_pct": 0.1,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 24.0,
+   "vieron": 1044
+  },
+  "13": {
+   "atoro_pct": 12.2,
+   "abandono_pct": 0.29,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 23.0,
+   "vieron": 1048
+  },
+  "14": {
+   "atoro_pct": 7.9,
+   "abandono_pct": 0.1,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 24.0,
+   "vieron": 1019
+  },
+  "15": {
+   "atoro_pct": 8.2,
+   "abandono_pct": 0.2,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 23.0,
+   "vieron": 1006
+  },
+  "16": {
+   "atoro_pct": 26.5,
+   "abandono_pct": 0.36,
+   "pobre_pct": 15.5,
+   "t_mediano_s": 145.0,
+   "vieron": 1122
+  },
+  "17": {
+   "atoro_pct": 19.3,
+   "abandono_pct": 0.37,
+   "pobre_pct": 14.9,
+   "t_mediano_s": 152.0,
+   "vieron": 1081
+  },
+  "18": {
+   "atoro_pct": 8.9,
+   "abandono_pct": 0.1,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 23.0,
+   "vieron": 1014
+  },
+  "19": {
+   "atoro_pct": 19.1,
+   "abandono_pct": 0.37,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 24.0,
+   "vieron": 1076
+  },
+  "20": {
+   "atoro_pct": 27.6,
+   "abandono_pct": 0.35,
+   "pobre_pct": 16.7,
+   "t_mediano_s": 161.0,
+   "vieron": 1147
+  },
+  "21": {
+   "atoro_pct": 24.4,
+   "abandono_pct": 0.46,
+   "pobre_pct": 17.7,
+   "t_mediano_s": 148.0,
+   "vieron": 1093
+  },
+  "22": {
+   "atoro_pct": 28.9,
+   "abandono_pct": 0.27,
+   "pobre_pct": 19.6,
+   "t_mediano_s": 147.0,
+   "vieron": 1119
+  },
+  "23": {
+   "atoro_pct": 14.1,
+   "abandono_pct": 0.1,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 35.0,
+   "vieron": 1031
+  },
+  "24": {
+   "atoro_pct": 12.0,
+   "abandono_pct": 0.2,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 23.0,
+   "vieron": 1001
+  },
+  "25": {
+   "atoro_pct": 28.6,
+   "abandono_pct": 0.18,
+   "pobre_pct": 19.9,
+   "t_mediano_s": 140.0,
+   "vieron": 1103
+  },
+  "26": {
+   "atoro_pct": 20.6,
+   "abandono_pct": 0.19,
+   "pobre_pct": 18.4,
+   "t_mediano_s": 150.0,
+   "vieron": 1052
+  },
+  "27": {
+   "atoro_pct": 13.2,
+   "abandono_pct": 0.3,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 33.0,
+   "vieron": 1013
+  },
+  "28": {
+   "atoro_pct": 12.5,
+   "abandono_pct": 0.2,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 26.0,
+   "vieron": 1012
+  },
+  "29": {
+   "atoro_pct": 13.0,
+   "abandono_pct": 0.1,
+   "pobre_pct": 14.6,
+   "t_mediano_s": 139.0,
+   "vieron": 1004
+  },
+  "30": {
+   "atoro_pct": 14.0,
+   "abandono_pct": 0.2,
+   "pobre_pct": 0.0,
+   "t_mediano_s": 24.0,
+   "vieron": 1009
+  },
+  "31": {
+   "atoro_pct": 27.4,
+   "abandono_pct": 0.46,
+   "pobre_pct": 16.5,
+   "t_mediano_s": 152.0,
+   "vieron": 1084
+  },
+  "32": {
+   "atoro_pct": 35.6,
+   "abandono_pct": 0.54,
+   "pobre_pct": 16.5,
+   "t_mediano_s": 154.0,
+   "vieron": 1110
+  },
+  "33": {
+   "atoro_pct": 29.4,
+   "abandono_pct": 0.54,
+   "pobre_pct": 21.1,
+   "t_mediano_s": 172.0,
+   "vieron": 925
+  }
+ },
+ "completaron": {
+  "base": 40,
+  "disenado": 912
+ }
+}
