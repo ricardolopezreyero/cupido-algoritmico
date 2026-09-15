@@ -281,7 +281,15 @@ async function azar() {
 }
 
 armarCola();
-inicio();
+// ?p=22 abre directo esa pregunta (desde el panel: "cuéntale más en la 22")
+const saltar = Number(q.get('p'));
+if (token && saltar >= 1 && saltar <= 41) {
+  api(`/api/cuestionario/${token}`).then((previo) => {
+    R = previo.respuestas || {}; nombre = previo.nombre || '';
+    idx = cola.findIndex((c) => c.t === 'q' && c.q.n === saltar);
+    pintar();
+  }).catch(() => inicio());
+} else inicio();
 </script>
 </body>
 </html>

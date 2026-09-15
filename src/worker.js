@@ -82,6 +82,17 @@ async function api(req, env, ctx, url) {
     const r = await decidir(env, P.id, String(b.otra || ''), b.decision);
     return json({ ok: true, ...r, vista: await vistaPersona(env, P) });
   }
+  if (ruta === '/api/yo/estado' && metodo === 'POST') {
+    // la persona pausa o reactiva su perfil ("estoy conociendo a alguien")
+    const b = await leerJson(req);
+    const P = b.token ? await personaPorToken(env, b.token) : await persona(env, b.persona);
+    if (!P) return error('No existe', 404);
+    if (!['activa', 'pausada'].includes(b.estado)) return error('Estado inválido');
+    await env.DB.prepare(`UPDATE personas SET estado = ? WHERE id = ?`).bind(b.estado, P.id).run();
+    await anotar(env, 'persona', b.estado === 'pausada' ? 'Una persona pausó su perfil' : 'Una persona reactivó su perfil', P.nombre);
+    await recalcularTodo(env, { avisar: true, motivo: 'estado' });
+    return json({ ok: true, vista: await vistaPersona(env, await persona(env, P.id)) });
+  }
   if (ruta === '/api/avisos/leer' && metodo === 'POST') {
     const b = await leerJson(req);
     const P = b.token ? await personaPorToken(env, b.token) : await persona(env, b.persona);

@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Panel de personas · Cupido Algorítmico</title>
-<meta name="description" content="Tus coincidencias arriba del 90 %, la puerta que solo se abre si los dos dicen que sí, y lo que el algoritmo sabe de ti.">
+<title>Mi tablero · Cupido Algorítmico</title>
+<meta name="description" content="Tu tablero: coincidencias arriba del 90 %, aceptaciones, avisos, tu perfil y tu privacidad.">
 <meta name="author" content="Ricardo López Reyero">
 <meta name="rev" content="181218">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -13,221 +13,389 @@
 <link rel="stylesheet" href="/css/cupido.css">
 </head>
 <body data-author="RLR">
-<!-- Cupido Algorítmico · Panel de personas · RLR · Ricardo López Reyero -->
-<header class="barra"><div class="envoltura barra-in">
-  <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
-  <span class="pildora-demo">DEMO</span>
-  <nav class="menu"><a href="/persona" class="activo">Personas</a><a href="/articulos">Artículos</a><a href="/admin">Admin</a></nav>
-</div></header>
+<!-- Cupido Algorítmico · Tablero de la persona · RLR · Ricardo López Reyero -->
 
-<main id="app" class="envoltura persona-main"><p class="vacio" style="padding:40px 0;text-align:center">Cargando…</p></main>
+<!-- Selector (sin sesión) -->
+<div id="raiz-selector" hidden>
+  <header class="barra"><div class="envoltura barra-in">
+    <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
+    <span class="pildora-demo">DEMO</span>
+    <nav class="menu"><a href="/persona" class="activo">Personas</a><a href="/articulos">Artículos</a><a href="/admin">Admin</a></nav>
+  </div></header>
+  <main id="selector" class="envoltura persona-main"></main>
+</div>
+
+<!-- Tablero (con sesión) -->
+<div id="raiz-tablero" hidden>
+  <div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Mi tablero</b></a><button id="abrir-menu" aria-label="Abrir menú">☰</button></div>
+  <div class="admin">
+    <aside class="lateral" id="lateral">
+      <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
+      <div class="quien-lat" id="quien-lat"></div>
+      <nav id="nav"></nav>
+      <button class="salir" id="salir"><span>⏻</span>Cerrar sesión</button>
+      <div class="pie-lat" id="pie-lat"></div>
+    </aside>
+    <main class="contenido" id="contenido"><p class="vacio">Cargando tu tablero…</p></main>
+  </div>
+  <div class="cajon-velo" id="velo"></div>
+</div>
 
 <script type="module">
-// RLR · panel de la persona
+// RLR · tablero de la persona
 import { $, $$, esc, api, avisar, avatar, anillo, animarAnillos, hace, pronto } from '/js/ui.js';
-const _RLR = 'Ricardo López Reyero', _rev = 181218;
-const app = $('#app');
+import { PREGUNTAS, BLOQUES, etiqueta, PARTE } from '/js/preguntas.js';
+const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
+
+/* ── sesión sin contraseña: se recuerda en este dispositivo ─────────────── */
+const SESION = 'cupido.sesion';
+const leerSesion = () => { try { return JSON.parse(localStorage.getItem(SESION) || 'null'); } catch { return null; } };
+const guardarSesion = (s) => { try { localStorage.setItem(SESION, JSON.stringify(s)); } catch {} };
+const borrarSesion = () => { try { localStorage.removeItem(SESION); } catch {} };
+
 const q = new URLSearchParams(location.search);
-const id = q.get('id'), token = q.get('t');
-const PRON = { mujer: ['ella', 'a'], hombre: ['él', 'o'], nobinaria: ['esa persona', 'e'] };
+let id = q.get('id'), token = q.get('t');
+if (id || token) guardarSesion(token ? { t: token } : { id });
+else { const s = leerSesion(); if (s?.t) token = s.t; else if (s?.id) id = s.id; }
+const PRON = { mujer: ['ella', 'la'], hombre: ['él', 'lo'], nobinaria: ['esa persona', 'le'] };
+const CIUDADES = { cdmx: 'Ciudad de México', monterrey: 'Monterrey', guadalajara: 'Guadalajara', puebla: 'Puebla', queretaro: 'Querétaro', torreon: 'Torreón', saltillo: 'Saltillo', merida: 'Mérida', leon: 'León', tijuana: 'Tijuana', chihuahua: 'Chihuahua', cancun: 'Cancún', sanluis: 'San Luis Potosí', aguascalientes: 'Aguascalientes', morelia: 'Morelia', hermosillo: 'Hermosillo', oaxaca: 'Oaxaca', veracruz: 'Veracruz', otra: 'Otra ciudad' };
 
-if (!id && !token) selector(); else panel();
+if (!id && !token) selector(); else tablero();
 
-/* ── Selector: entra como cualquiera de las 20 personas del demo ─────────── */
+/* ═══ SELECTOR ═══════════════════════════════════════════════════════════ */
 async function selector() {
+  $('#raiz-selector').hidden = false;
+  document.title = 'Entrar · Cupido Algorítmico';
   const pool = await api('/api/pool');
-  const guardado = (() => { try { return localStorage.getItem('cupido.segmento'); } catch { return null; } })();
-  let seg = guardado || 'mujer';
+  let seg = (() => { try { return localStorage.getItem('cupido.segmento') || 'mujer'; } catch { return 'mujer'; } })();
+  const hayCuest = pool.some((p) => p.origen === 'cuestionario');
+  $('#selector').innerHTML = `
+    <section class="selector-hero">
+      <p class="eyebrow">Entrar al tablero</p>
+      <h1>Entra como cualquiera de las 20 personas</h1>
+      <p class="lead">Son ficticias, pero respondieron las 41 preguntas completas. Elige a alguien y entra a su tablero: sus coincidencias, sus aceptaciones y todo lo que el algoritmo sabe de esa persona.</p>
+      <div class="segmento" role="tablist"><button data-s="mujer">Mujeres</button><button data-s="hombre">Hombres</button>${hayCuest ? '<button data-s="cuestionario">Del cuestionario</button>' : ''}</div>
+    </section>
+    <section id="rejilla" class="rejilla-personas"></section>
+    <p class="nota-privada">🔑 <span>Sin contraseñas: en la versión real cada persona entra con su enlace privado y, desde otro dispositivo, con un enlace mágico a su correo.</span></p>`;
   const pintar = () => {
     const lista = pool.filter((p) => (seg === 'cuestionario' ? p.origen === 'cuestionario' : p.origen === 'demo' && p.genero === seg));
     $('#rejilla').innerHTML = lista.map((p) => `
-      <a class="ficha" href="/persona?id=${esc(p.id)}">
-        ${avatar(p.nombre, p.color)}
-        <div><b>${esc(p.nombre)}</b><span class="meta">${p.edad ? esc(p.edad) + ' · ' : ''}${esc(ciudad(p.ciudad))}${p.completo ? '' : ' · sin terminar'}</span>
-        ${p.bio ? `<p>${esc(p.bio)}</p>` : ''}</div>
-        ${p.avisos ? `<span class="badge">${p.avisos} ${p.avisos === 1 ? 'aviso' : 'avisos'}</span>` : ''}
-      </a>`).join('') || '<p class="vacio">Aún nadie ha llenado el cuestionario conectado. <a href="/cuestionario">Sé el primero</a>.</p>';
+      <a class="ficha" href="/persona?id=${esc(p.id)}">${avatar(p.nombre, p.color)}
+        <div><b>${esc(p.nombre)}</b><span class="meta">${p.edad ? esc(p.edad) + ' · ' : ''}${esc(CIUDADES[p.ciudad] || '')}${p.completo ? '' : ' · sin terminar'}</span>${p.bio ? `<p>${esc(p.bio)}</p>` : ''}</div>
+        ${p.avisos ? `<span class="badge">${p.avisos} ${p.avisos === 1 ? 'aviso' : 'avisos'}</span>` : ''}</a>`).join('') || '<p class="vacio">Aún nadie ha llenado el cuestionario conectado.</p>';
     $$('.segmento button').forEach((b) => b.classList.toggle('on', b.dataset.s === seg));
   };
-  const hayCuest = pool.some((p) => p.origen === 'cuestionario');
-  app.innerHTML = `
-    <section class="selector-hero">
-      <p class="eyebrow">Panel de personas</p>
-      <h1>Entra como cualquiera de las 20 personas</h1>
-      <p class="lead">Son ficticias, pero respondieron las 41 preguntas completas. Elige a alguien y mira lo que el algoritmo encontró para esa persona.</p>
-      <div class="segmento" role="tablist">
-        <button data-s="mujer">Mujeres</button><button data-s="hombre">Hombres</button>${hayCuest ? '<button data-s="cuestionario">Del cuestionario</button>' : ''}
-      </div>
-    </section>
-    <section id="rejilla" class="rejilla-personas"></section>
-    <p class="nota-privada">🔑 <span>En la versión real no hay contraseñas: cada persona entra con su propio enlace privado (y, si cambia de dispositivo, con un enlace mágico a su correo).</span></p>`;
   $$('.segmento button').forEach((b) => b.onclick = () => { seg = b.dataset.s; try { localStorage.setItem('cupido.segmento', seg); } catch {} pintar(); });
   pintar();
 }
 
-const CIUDADES = { cdmx: 'Ciudad de México', monterrey: 'Monterrey', guadalajara: 'Guadalajara', puebla: 'Puebla', queretaro: 'Querétaro', torreon: 'Torreón', saltillo: 'Saltillo', merida: 'Mérida', leon: 'León', tijuana: 'Tijuana', chihuahua: 'Chihuahua', cancun: 'Cancún', sanluis: 'San Luis Potosí', aguascalientes: 'Aguascalientes', morelia: 'Morelia', hermosillo: 'Hermosillo', oaxaca: 'Oaxaca', veracruz: 'Veracruz', otra: 'Otra ciudad' };
-const ciudad = (c) => CIUDADES[c] || c || '';
+/* ═══ TABLERO ════════════════════════════════════════════════════════════ */
+let V = null, seccion = 'inicio';
+const cont = $('#contenido');
 
-/* ── Panel de la persona ─────────────────────────────────────────────────── */
-let vista = null;
-async function panel() {
-  try { vista = await api(token ? `/api/yo/${encodeURIComponent(token)}` : `/api/persona/${encodeURIComponent(id)}`); }
-  catch (e) { app.innerHTML = `<div class="tarjeta silencio"><div class="grande">🔍</div><h3>No encontramos este panel</h3><p>${esc(e.message)}</p><a class="boton" href="/persona">Ver personas del demo</a></div>`; return; }
-  pintarPanel();
+async function tablero() {
+  $('#raiz-tablero').hidden = false;
+  try { V = await api(token ? `/api/yo/${encodeURIComponent(token)}` : `/api/persona/${encodeURIComponent(id)}`); }
+  catch { borrarSesion(); location.replace('/persona'); return; }
+  document.title = `${V.persona.nombreCorto} · Mi tablero`;
+  ir(location.hash.slice(1) || 'inicio');
+}
+window.addEventListener('hashchange', () => V && ir(location.hash.slice(1)));
+
+/* ── derivados: aceptaciones, logros y camino ────────────────────────────── */
+function derivados() {
+  const c = V.coincidencias, P = V.persona, r = V.misRespuestas || {};
+  const esperanMi = c.filter((x) => x.puerta.estado !== 'abierta' && !x.puerta.miDecision);
+  const miSi = c.filter((x) => x.puerta.estado !== 'abierta' && x.puerta.miDecision === 'si');
+  const abiertas = c.filter((x) => x.puerta.estado === 'abierta');
+  const miNo = c.filter((x) => x.puerta.estado !== 'abierta' && x.puerta.miDecision === 'no');
+  const logros = [
+    { m: '📝', t: 'Cuestionario completo', d: 'Las 41 preguntas', ok: P.avance.listo },
+    { m: '🔐', t: 'Módulo profundo', d: 'Intimidad y vida interior', ok: !!(r.deseo && r.sx_esperar && (r.practicas || []).length) },
+    { m: '✉️', t: 'Carta escrita', d: 'Lo primero que leerá tu match', ok: String(r.carta || '').length > 80 },
+    { m: '🔎', t: 'Te conoce bien', d: 'Claridad de 80 % o más', ok: V.claridad.pct >= 80 },
+    { m: '💘', t: 'Primera coincidencia', d: `Alguien cruzó el ${V.umbral} %`, ok: c.length > 0 },
+    { m: '🌟', t: 'Arriba del 95 %', d: 'Una coincidencia excepcional', ok: c.some((x) => x.pct >= 95) },
+    { m: '🤍', t: 'Dijiste que sí', d: 'Te animaste a conocer', ok: miSi.length + abiertas.length > 0 },
+    { m: '🔓', t: 'Puerta abierta', d: 'Los dos dijeron que sí', ok: abiertas.length > 0 },
+  ];
+  const pasos = [
+    { i: '📝', t: 'Responder', d: 'tus 41 preguntas', ok: P.avance.listo },
+    { i: '⚙️', t: 'Entrar al matching', d: P.estado === 'pausada' ? 'perfil en pausa' : 'el motor te cruza', ok: P.completo && P.estado === 'activa' },
+    { i: '💘', t: 'Coincidencia', d: `alguien arriba del ${V.umbral} %`, ok: c.length > 0 },
+    { i: '🤍', t: 'Tu sí', d: 'decides conocer', ok: miSi.length + abiertas.length > 0 },
+    { i: '🔓', t: 'Puerta abierta', d: 'se conocen', ok: abiertas.length > 0 },
+  ];
+  return { esperanMi, miSi, abiertas, miNo, logros, pasos, nuevos: V.avisos.filter((a) => !a.leido).length };
 }
 
-function pintarPanel() {
-  const v = vista, P = v.persona;
-  document.title = `${P.nombreCorto} · Cupido Algorítmico`;
-  const nuevos = v.avisos.filter((a) => !a.leido).length;
-  const mensajeEstado = !P.completo ? 'Tu perfil aún no entra al matching: faltan respuestas.' : P.estado === 'pausada' ? 'Tu perfil está en pausa: no apareces para nadie.' : 'Tu perfil está completo y dentro del matching.';
-  app.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
-      <a class="volver" style="margin:0" href="/persona">← Cambiar de persona</a>
-      <button class="boton boton-claro boton-chico campana" id="btn-avisos">🔔 Avisos${nuevos ? `<span class="n">${nuevos}</span>` : ''}</button>
-    </div>
-    <section class="tarjeta">
-      <div class="saludo">${avatar(P.nombre, P.color, 'xl')}
-        <div><h1>Hola, ${esc(P.nombreCorto)}.</h1><div class="meta">${P.edad ? esc(P.edad) + ' · ' : ''}${esc(P.ciudad || '')}</div>
-        <div style="margin-top:6px"><span class="chip ${P.completo && P.estado === 'activa' ? 'ok' : 'ambar'}">${esc(mensajeEstado)}</span></div></div>
-      </div>
-      <div class="estado-pool">
-        <div><b>${v.pool.delOtroLado}</b><span>personas del otro lado</span></div>
-        <div><b>${v.pool.compatibles}</b><span>pasan los filtros de los dos</span></div>
-        <div><b>${v.coincidencias.length}</b><span>arriba del ${v.umbral} %</span></div>
-      </div>
-      <div id="avisos" class="avisos-lista" hidden></div>
-    </section>
+/* ── menú lateral en el orden del camino ─────────────────────────────────── */
+const MENU = [
+  { sep: 'Mi búsqueda' },
+  { s: 'inicio', i: '🏠', t: 'Inicio' },
+  { s: 'coincidencias', i: '💘', t: 'Mis coincidencias', n: () => V.coincidencias.length },
+  { s: 'aceptaciones', i: '🤝', t: 'Aceptaciones', n: (d) => d.esperanMi.length, alerta: true },
+  { s: 'avisos', i: '🔔', t: 'Avisos', n: (d) => d.nuevos, alerta: true },
+  { sep: 'Mi perfil' },
+  { s: 'pesos', i: '🧭', t: 'Lo que más pesa' },
+  { s: 'respuestas', i: '📋', t: 'Mis respuestas' },
+  { s: 'claridad', i: '🔎', t: 'Qué tan bien me conoce' },
+  { s: 'filtros', i: '🚧', t: 'Lo que me deja fuera', n: () => V.dejanFuera.length },
+  { sep: 'Cuenta' },
+  { s: 'privacidad', i: '🔒', t: 'Privacidad y pausa' },
+];
+function pintarLateral() {
+  const d = derivados(), P = V.persona;
+  $('#quien-lat').innerHTML = `${avatar(P.nombre, P.color)}<div><b>${esc(P.nombre)}</b><span>${P.edad ? esc(P.edad) + ' · ' : ''}${esc(P.ciudad || '')}</span></div>`;
+  $('#nav').innerHTML = MENU.map((m) => {
+    if (m.sep) return `<div class="sep">${m.sep}</div>`;
+    const n = m.n ? m.n(d) : 0;
+    return `<a href="#${m.s}" data-s="${m.s}" class="${m.s === seccion ? 'on' : ''}"><span class="ico">${m.i}</span>${m.t}${n ? `<span class="cuenta-nav ${m.alerta ? '' : 'gris'}">${n}</span>` : ''}</a>`;
+  }).join('');
+  $('#pie-lat').innerHTML = P.pool === 'demo' && !token ? 'Demo con datos ficticios.<br><a href="/admin">Ver el panel admin →</a>' : 'Tu enlace es tu llave: sin contraseña.';
+}
+$('#abrir-menu').onclick = () => { $('#lateral').classList.add('on'); $('#velo').classList.add('on'); };
+const cerrarMenu = () => { $('#lateral').classList.remove('on'); $('#velo').classList.remove('on'); };
+$('#velo').onclick = cerrarMenu;
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarMenu(); });
+$('#salir').onclick = () => {
+  borrarSesion();
+  avisar('Sesión cerrada en este dispositivo');
+  setTimeout(() => location.replace(token ? '/' : '/persona'), 500);
+};
 
-    <div class="seccion-t"><h2>Tus coincidencias</h2><span class="chip gris">Solo de ${v.umbral} % hacia arriba</span></div>
-    <p class="seccion-sub">Nadie ve tu perfil. Cuando alguien cruza el ${v.umbral} % te avisamos a ti y a esa persona al mismo tiempo — pero la puerta no se abre hasta que los dos digan que sí.</p>
-    <div id="coincidencias">${v.coincidencias.length ? v.coincidencias.map(tarjetaCoincidencia).join('') : silencio(v)}</div>
+function ir(s) {
+  seccion = SECCIONES[s] ? s : 'inicio';
+  cerrarMenu();
+  pintarLateral();
+  cont.innerHTML = `<div class="seccion-admin">${SECCIONES[seccion]()}</div>`;
+  window.scrollTo(0, 0);
+  pronto(() => { $$('.relleno[data-w]').forEach((b) => b.style.width = b.dataset.w + '%'); animarAnillos(cont); });
+  $$('[data-decision]').forEach((b) => b.onclick = () => decidir(b.dataset.clave, b.dataset.decision, b));
+  (DESPUES[seccion] || (() => {}))();
+}
+const cabeza = (t, sub, acc = '') => `<div class="cabeza-admin"><div><h1>${t}</h1><p>${sub}</p></div><div class="acciones">${acc}</div></div>`;
 
-    <div class="seccion-t"><h2>Mientras tanto</h2></div>
-    <p class="seccion-sub">Lo que el algoritmo sabe de ti — para que entiendas cómo te busca.</p>
-    <section class="tarjeta">
-      <h3 style="margin:0 0 4px;font-size:20px">Lo que más pesa en tu lado del cálculo</h3>
-      <p class="seccion-sub" style="margin-bottom:8px">No te preguntamos qué te importa: lo deducimos de lo que haces. Lo morado subió por tus propias respuestas.</p>
-      <div class="barras">${v.pesos.map((w) => `
+/* ═══ SECCIONES (en el orden del menú) ══════════════════════════════════ */
+const SECCIONES = {
+  inicio() {
+    const d = derivados(), P = V.persona, c = V.coincidencias;
+    const ganados = d.logros.filter((l) => l.ok).length;
+    const actual = d.pasos.findIndex((p) => !p.ok);
+    const siguiente = d.logros.find((l) => !l.ok);
+    const mejor = c[0];
+    const estado = !P.completo ? ['ambar', 'Tu perfil aún no entra al matching'] : P.estado === 'pausada' ? ['ambar', 'Tu perfil está en pausa'] : ['ok', 'En el matching'];
+    return cabeza(`Hola, ${esc(P.nombreCorto)}.`, `<span class="chip ${estado[0]}">${estado[1]}</span> &nbsp;Tu búsqueda, en una sola pantalla.`,
+      d.esperanMi.length ? `<a class="boton" href="#aceptaciones">Responder ${d.esperanMi.length} ${d.esperanMi.length === 1 ? 'coincidencia' : 'coincidencias'}</a>` : `<a class="boton boton-claro" href="#coincidencias">Ver coincidencias</a>`) + `
+      <div class="banda">
+        <div class="rosa"><b>${c.length}</b><span>coincidencias<br>arriba del ${V.umbral} %</span></div>
+        <div><b>${d.esperanMi.length}</b><span>esperan<br>tu respuesta</span></div>
+        <div><b>${d.miSi.length}</b><span>con tu sí,<br>esperando</span></div>
+        <div><b>${d.abiertas.length}</b><span>puertas<br>abiertas</span></div>
+        <div><b>${V.pool.compatibles}</b><span>pasan los filtros<br>de los dos</span></div>
+        <div><b>${V.claridad.pct}<small style="font-size:18px"> %</small></b><span>qué tan bien<br>te conoce</span></div>
+      </div>
+      <section class="tarjeta"><h2>Tu camino</h2><p class="sub">Cinco pasos. Los primeros dependen de ti; el último, de los dos.</p>
+        <div class="camino">${d.pasos.map((p, i) => `<div class="paso-c ${p.ok ? 'hecho' : i === actual ? 'actual' : ''}"><div class="bola">${p.ok ? '✓' : p.i}</div><div><b>${p.t}</b><span>${p.d}</span></div></div>`).join('')}</div>
+      </section>
+      <div class="rejilla-2" style="margin-top:16px">
+        <section class="tarjeta"><h2>Tu mejor coincidencia</h2>
+          ${mejor ? `<div class="nivel">${anillo(mejor.pct)}<div><h3>${mejor.puerta.estado === 'abierta' ? esc(mejor.revelado.nombre) : `Alguien al ${mejor.pct} %`}</h3>
+            <p>${esc(mejor.fuertes[0]?.txt || '')}</p><p style="margin-top:8px"><a class="enlace" href="#coincidencias">Ver el detalle →</a></p></div></div>`
+            : `<div class="nivel"><div class="anillo" style="display:flex;align-items:center;justify-content:center;font-size:36px">🌙</div><div><h3>Todavía en silencio</h3><p>${V.masCerca ? `Lo más cerca que alguien ha estado de ti: <b>${V.masCerca} %</b>.` : 'Aún no hay a quién comparar.'} Te avisamos en cuanto alguien cruce el ${V.umbral} %.</p></div></div>`}
+        </section>
+        <section class="tarjeta" style="margin-top:0"><h2>Tu avance</h2>
+          <div class="nivel">${anillo(Math.round(100 * ganados / d.logros.length), 'logros')}<div><h3>${ganados} de ${d.logros.length} logros</h3><p>${siguiente ? `Siguiente: <b>${esc(siguiente.t)}</b> — ${esc(siguiente.d.toLowerCase())}.` : 'Completaste todo el recorrido.'}</p></div></div>
+        </section>
+      </div>
+      <section class="tarjeta" style="margin-top:16px"><h2>Logros</h2><p class="sub">No son puntos para competir: son las señales de que tu búsqueda va en serio.</p>
+        <div class="logros">${d.logros.map((l) => `<div class="logro ${l.ok ? '' : 'bloqueado'}"><div class="medalla">${l.ok ? l.m : '🔒'}</div><b>${l.t}</b><span>${l.d}</span></div>`).join('')}</div>
+      </section>
+      <section class="tarjeta" style="margin-top:16px"><h2>Últimos avisos</h2>
+        <div class="avisos-lista">${V.avisos.slice(0, 3).map(filaAviso).join('') || '<p class="vacio">Sin avisos todavía.</p>'}</div>
+        ${V.avisos.length > 3 ? '<p style="margin:10px 0 0"><a class="enlace" href="#avisos">Ver todos →</a></p>' : ''}
+      </section>`;
+  },
+
+  coincidencias() {
+    return cabeza('Mis coincidencias', `Solo de ${V.umbral} % hacia arriba, ordenadas. Nadie ve tu perfil y la identidad de la otra persona está protegida hasta que los dos digan que sí.`) +
+      (V.coincidencias.length ? V.coincidencias.map(tarjetaCoincidencia).join('') : silencio());
+  },
+
+  aceptaciones() {
+    const d = derivados();
+    const fila = (c, acciones) => `<div class="fila-acept"><span class="pct">${c.pct} %</span>
+      <div class="que"><b>${c.puerta.estado === 'abierta' ? esc(c.revelado.nombreCompleto) : 'Identidad protegida'}</b><span>${esc(c.fuertes.map((f) => f.dim).join(' · '))}</span></div>
+      <div class="acciones">${acciones}</div></div>`;
+    const grupo = (titulo, chip, lista, vacio, acc) => `<section class="tarjeta grupo-acept"><h3>${titulo} <span class="chip ${chip}">${lista.length}</span></h3>
+      ${lista.length ? lista.map((c) => fila(c, acc(c))).join('') : `<p class="vacio" style="margin:0">${vacio}</p>`}</section>`;
+    return cabeza('Aceptaciones', 'Aquí decides. Tu respuesta nunca se le muestra a la otra persona: la puerta solo se abre con dos síes, y un no jamás se entera.') +
+      grupo('⏳ Esperan tu respuesta', 'ambar', d.esperanMi, 'No tienes coincidencias pendientes de responder.', (c) =>
+        `<button class="boton boton-chico" data-clave="${esc(c.clave)}" data-decision="si">Sí, quiero conocer</button><button class="boton boton-fantasma boton-chico" data-clave="${esc(c.clave)}" data-decision="no">Ahora no</button>`) +
+      grupo('🤍 Dijiste que sí · esperando', 'gris', d.miSi, 'Aún no has dicho que sí a nadie.', (c) =>
+        `<span class="chip gris">Tu sí está guardado</span><button class="enlace" data-clave="${esc(c.clave)}" data-decision="no">Cambiar de opinión</button>`) +
+      grupo('🔓 Puertas abiertas', 'ok', d.abiertas, 'Cuando haya dos síes, la puerta aparecerá aquí.', () =>
+        `<a class="boton boton-claro boton-chico" href="#coincidencias">Leer su carta</a>`) +
+      grupo('🌙 Preferiste no abrir', 'gris', d.miNo, 'Nada por aquí.', (c) =>
+        `<button class="boton boton-claro boton-chico" data-clave="${esc(c.clave)}" data-decision="si">Reconsiderar</button>`);
+  },
+
+  avisos() {
+    return cabeza('Avisos', 'Cada coincidencia nueva y cada puerta abierta. Te avisamos a ti y a la otra persona al mismo tiempo.') +
+      `<section class="tarjeta"><div class="avisos-lista" style="margin:0">${V.avisos.map(filaAviso).join('') || '<p class="vacio">Sin avisos todavía.</p>'}</div></section>`;
+  },
+
+  pesos() {
+    return cabeza('Lo que más pesa en tu cálculo', 'No te preguntamos qué te importa: lo deducimos de lo que haces y de lo que declaraste negociable. Lo morado subió por tus propias respuestas.') + `
+      <section class="tarjeta"><div class="barras">${V.pesos.map((w) => `
         <div class="barra-fila"><span>${esc(w.dim)}</span><div class="pista"><div class="relleno ${w.por ? 'sube' : ''}" data-w="${Math.min(100, w.pct * 4)}"></div></div><b>${w.pct} %</b>
         ${w.por ? `<span class="por">↑ ${esc(w.por)}</span>` : ''}</div>`).join('')}</div>
-    </section>
-    <section class="tarjeta">
-      <h3 style="margin:0 0 4px;font-size:20px">Qué tan bien te conoce el algoritmo</h3>
-      <div class="barra-fila" style="grid-template-columns:1fr 50px;margin-top:10px"><div class="pista"><div class="relleno" data-w="${v.claridad.pct}"></div></div><b>${v.claridad.pct} %</b></div>
-      <p style="margin:10px 0 0;color:var(--tinta-2);font-size:15px">${v.claridad.flojas.length
-        ? `Tus coincidencias serían más certeras si le cuentas más en las preguntas ${[...new Set(v.claridad.flojas.flatMap((f) => f.preguntas))].sort((a, b) => a - b).join(', ')}. No se trata de escribir bonito: se trata de escribir verdad, con ejemplos.`
-        : 'Te describiste con claridad y con ejemplos reales. Eso hace que tus coincidencias sean de verdad tuyas.'}</p>
-      ${token ? `<a class="boton boton-claro boton-chico" style="margin-top:12px" href="/cuestionario?t=${encodeURIComponent(token)}">Editar mis respuestas</a>` : ''}
-    </section>
-    <section class="tarjeta">
-      <h3 style="margin:0 0 4px;font-size:20px">Lo que te está dejando fuera</h3>
-      ${v.dejanFuera.length ? `<ul class="razones" style="padding:0">${v.dejanFuera.map((d) => `<li><span class="i ojo">!</span><span>${textoDejaFuera(d)}</span></li>`).join('')}</ul>
-        <p class="seccion-sub" style="margin:12px 0 0">Solo te lo decimos de filtros que tú podrías reconsiderar. Nunca te sugeriremos negociar hijos, fe, exclusividad ni tus límites íntimos.</p>`
-      : `<p style="margin:6px 0 0;color:var(--tinta-2)">Tus filtros no están dejando fuera a nadie con quien tendrías una compatibilidad alta. 👌</p>`}
-    </section>
-    ${token ? `<section class="tarjeta"><h3 style="margin:0 0 4px;font-size:20px">Tu enlace privado</h3><p class="seccion-sub" style="margin:0">Es tu llave: guárdalo. No hay contraseña.</p>
-      <div class="enlace-privado"><input id="mi-enlace" readonly value="${esc(location.origin + '/persona?t=' + token)}"><button class="boton boton-chico" id="copiar">Copiar</button></div></section>` : ''}
-    <p class="nota-privada">🔒 <span>Tus respuestas íntimas solo las lee el algoritmo. Si algún día hay puerta abierta, lo primero que la otra persona conoce de ti es tu carta — no tu foto.</span></p>`;
+        <p class="seccion-sub" style="margin:16px 0 0">Conflicto y reparación y valores nunca bajan de su peso base: son lo que más predice que una pareja dure, aunque no lo parezca.</p></section>`;
+  },
 
-  pronto(() => { $$('.relleno[data-w]').forEach((b) => b.style.width = b.dataset.w + '%'); animarAnillos(app); });
-  $('#btn-avisos').onclick = abrirAvisos;
-  $$('[data-decision]').forEach((b) => b.onclick = () => decidir(b.dataset.otra, b.dataset.decision, b));
-  const c = $('#copiar'); if (c) c.onclick = async () => { try { await navigator.clipboard.writeText($('#mi-enlace').value); avisar('Enlace copiado'); } catch { $('#mi-enlace').select(); } };
+  respuestas() {
+    const r = V.misRespuestas || {};
+    const lleno = (v) => v != null && v !== '' && !(Array.isArray(v) && !v.length);
+    const bloques = Object.entries(BLOQUES).map(([n, nombre]) => {
+      const preguntas = PREGUNTAS.filter((p) => p.b === Number(n));
+      const partes = preguntas.flatMap((p) => p.parts.flatMap((pt) => pt.k === 'grid' ? pt.rows.map(([rid]) => rid) : (pt.si && r[pt.si.id] !== pt.si.v ? [] : [pt.id])));
+      const hechas = partes.filter((k) => lleno(r[k])).length;
+      const pct = Math.round(100 * hechas / Math.max(1, partes.length));
+      return `<details class="tarjeta bloque-resp" style="padding:0 18px">
+        <summary><span class="n">${n}</span>${esc(nombre)}<div class="mini"><div class="pista"><div class="relleno" style="width:${pct}%;background:${pct === 100 ? 'var(--ok)' : 'var(--rosa)'}"></div></div><b>${pct}%</b></div></summary>
+        ${preguntas.map((p) => {
+          const vals = p.parts.flatMap((pt) => pt.k === 'grid' ? pt.rows.map(([rid, rl]) => ({ id: rid, l: rl })) : [pt]).filter((pt) => lleno(r[pt.id]));
+          return `<div class="preg"><b>${p.n}. ${esc(p.t)}</b>${vals.length ? vals.map((pt) => {
+            const v = r[pt.id], k = PARTE[pt.id]?.k;
+            const txt = k === 'range' ? `${v[0]} a ${v[1]} años` : k === 'text' ? esc(v) : esc(etiqueta(pt.id, v));
+            return `<div>${pt.l ? `<span style="color:var(--gris)">${esc(pt.l)}:</span> ` : ''}${txt}</div>`;
+          }).join('') : '<div class="vacio">Sin responder</div>'}
+          ${token ? `<a class="enlace" style="font-size:13px" href="/cuestionario?t=${encodeURIComponent(token)}&p=${p.n}">Editar</a>` : ''}</div>`;
+        }).join('')}
+      </details>`;
+    }).join('');
+    return cabeza('Mis respuestas', `Las 41 preguntas en sus 10 categorías, en el orden del cuestionario. Avance total: ${V.persona.avance.pct} %.`,
+      token ? `<a class="boton boton-claro" href="/cuestionario?t=${encodeURIComponent(token)}">Editar cuestionario</a>` : '') +
+      `<p class="seccion-sub">Solo tú las ves. Lo íntimo solo lo lee el motor.</p>${bloques}`;
+  },
+
+  claridad() {
+    const rb = V.rubrica || {};
+    const EJES = [['autoconocimiento', 'Autoconocimiento', 'Qué tanto te miras con honestidad'], ['responsabilidad', 'Responsabilidad', 'Cómo asumes tu parte en los conflictos'], ['calidez', 'Calidez', 'Cómo cuidas, con ejemplos reales'], ['coherencia', 'Coherencia', 'Que tus respuestas no se contradigan']];
+    const preguntas = [...new Set(V.claridad.flojas.flatMap((f) => f.preguntas))].sort((a, b) => a - b);
+    return cabeza('Qué tan bien me conoce el algoritmo', 'Tus respuestas abiertas le dicen al motor qué tan clara es la imagen que tiene de ti. La calidad de una pareja la define el menos claro de los dos.') + `
+      <div class="rejilla-2">
+        <section class="tarjeta"><div class="nivel">${anillo(V.claridad.pct, 'claridad')}<div><h3>${V.claridad.pct >= 80 ? 'Te describiste con claridad' : V.claridad.pct >= 50 ? 'Te conoce a medias' : 'Te conoce poco'}</h3>
+          <p>${preguntas.length ? `Tus coincidencias serían más certeras si le cuentas más en las preguntas ${preguntas.map((n) => token ? `<a href="/cuestionario?t=${encodeURIComponent(token)}&p=${n}">${n}</a>` : n).join(', ')}. No se trata de escribir bonito: se trata de escribir verdad, con ejemplos.` : 'Escribiste con ejemplos reales. Eso hace que tus coincidencias sean de verdad tuyas.'}</p></div></div></section>
+        <section class="tarjeta" style="margin-top:0"><h2>Los cuatro ejes</h2>
+          <div class="barras">${EJES.map(([k, t, dsc]) => `<div class="barra-fila" style="grid-template-columns:150px 1fr 40px"><span>${t}</span><div class="pista"><div class="relleno" data-w="${(rb[k] ?? 0) * 10}"></div></div><b>${rb[k] ?? '—'}</b><span class="por" style="color:var(--gris)">${dsc}</span></div>`).join('')}</div></section>
+      </div>`;
+  },
+
+  filtros() {
+    const QUE = { edad: 'Tu rango de edad', distancia: 'Que ni tú ni la otra persona se moverían de ciudad', alcohol: 'Tu filtro de alcohol', tabaco: 'Tu filtro de tabaco', mascotas: 'Tu filtro de mascotas' };
+    return cabeza('Lo que me deja fuera', 'Solo te mostramos filtros que tú podrías reconsiderar. Nunca te sugeriremos negociar hijos, fe, exclusividad ni tus límites íntimos.') + `
+      <section class="tarjeta">${V.dejanFuera.length ? `<ul class="razones" style="padding:0">${V.dejanFuera.map((x) => `<li><span class="i ojo">!</span><span>${QUE[x.id] || 'Uno de tus filtros'} deja fuera a <b>${x.personas}</b> ${x.personas === 1 ? 'persona' : 'personas'} con quien tendrías hasta <b>${x.mejor} %</b>${x.mejor >= V.umbral ? ' — arriba del umbral' : ''}.</span></li>`).join('')}</ul>`
+        : '<p style="margin:0;color:var(--tinta-2)">Tus filtros no están dejando fuera a nadie con quien tendrías una compatibilidad alta. 👌</p>'}
+        <div class="estado-pool" style="margin-top:18px"><div><b>${V.pool.delOtroLado}</b><span>personas del otro lado</span></div><div><b>${V.pool.compatibles}</b><span>pasan los filtros de los dos</span></div><div><b>${V.masCerca ?? '—'}</b><span>lo más cerca bajo el ${V.umbral} %</span></div></div>
+      </section>`;
+  },
+
+  privacidad() {
+    const P = V.persona, pausada = P.estado === 'pausada';
+    return cabeza('Privacidad y pausa', 'Tú decides cuándo buscar y cuándo no.') + `
+      <section class="tarjeta"><h2>${pausada ? 'Tu perfil está en pausa' : 'Pausar mi perfil'}</h2>
+        <p class="sub">${pausada ? 'No apareces para nadie y nadie aparece para ti. Al reactivarlo, el motor te vuelve a cruzar y todo regresa como estaba.' : '¿Estás conociendo a alguien? Pausa tu perfil: sales del matching sin borrar nada. Tus puertas abiertas se respetan.'}</p>
+        <button class="boton ${pausada ? '' : 'boton-claro'}" id="btn-pausa">${pausada ? 'Reactivar mi perfil' : 'Pausar mi perfil'}</button></section>
+      <section class="tarjeta"><h2>Lo que nunca pasa aquí</h2>
+        <ul class="razones" style="padding:0">
+          <li><span class="i si">✓</span><span>Nadie navega tu perfil. No existe una lista de personas para ver.</span></li>
+          <li><span class="i si">✓</span><span>Tus respuestas íntimas solo las lee el motor, nunca una persona.</span></li>
+          <li><span class="i si">✓</span><span>Nadie se entera si dijiste que no — ni de que dijiste que sí, hasta que haya dos.</span></li>
+          <li><span class="i si">✓</span><span>Lo primero que alguien conoce de ti es tu carta, no tu foto.</span></li>
+        </ul></section>
+      ${token ? `<section class="tarjeta"><h2>Tu enlace privado</h2><p class="sub">Es tu llave: no hay contraseña. Guárdalo.</p>
+        <div class="enlace-privado"><input id="mi-enlace" readonly value="${esc(location.origin + '/persona?t=' + token)}"><button class="boton boton-chico" id="copiar">Copiar</button></div></section>` : ''}
+      <section class="tarjeta"><h2>Cerrar sesión</h2><p class="sub">Olvida tu sesión en este dispositivo. ${token ? 'Para volver, abre tu enlace privado.' : 'Podrás entrar de nuevo desde la lista de personas del demo.'}</p>
+        <button class="boton boton-oscuro" id="btn-salir">⏻ Cerrar sesión</button></section>`;
+  },
+};
+
+const DESPUES = {
+  avisos: marcarLeidos,
+  privacidad() {
+    $('#btn-salir').onclick = () => $('#salir').click();
+    const c = $('#copiar'); if (c) c.onclick = async () => { try { await navigator.clipboard.writeText($('#mi-enlace').value); avisar('Enlace copiado'); } catch { $('#mi-enlace').select(); } };
+    $('#btn-pausa').onclick = async (e) => {
+      e.target.disabled = true;
+      const estado = V.persona.estado === 'pausada' ? 'activa' : 'pausada';
+      try {
+        const r = await api('/api/yo/estado', token ? { token, estado } : { persona: V.persona.id, estado });
+        V = r.vista; avisar(estado === 'pausada' ? 'Perfil en pausa' : 'Perfil reactivado: el motor ya te cruzó'); ir('privacidad');
+      } catch (err) { e.target.disabled = false; avisar(err.message); }
+    };
+  },
+};
+
+/* ── piezas ──────────────────────────────────────────────────────────────── */
+const filaAviso = (a) => `<div class="aviso ${a.leido ? '' : 'nuevo'}"><span>${a.tipo === 'apertura' ? '🔓' : '💘'}</span><div>${esc(a.texto)}<span class="cuando">${hace(a.creado)}</span></div></div>`;
+async function marcarLeidos() {
+  if (!V.avisos.some((a) => !a.leido)) return;
+  try { await api('/api/avisos/leer', token ? { token } : { persona: V.persona.id }); V.avisos.forEach((a) => a.leido = 1); pintarLateral(); } catch {}
 }
-
-function silencio(v) {
-  return `<section class="tarjeta silencio">
-    <div class="grande">🌙</div>
-    <h3>Todavía nadie cruza el ${v.umbral} % contigo</h3>
+function silencio() {
+  return `<section class="tarjeta silencio"><div class="grande">🌙</div><h3>Todavía nadie cruza el ${V.umbral} % contigo</h3>
     <p>El silencio también es parte del servicio: te estamos ahorrando años con las personas incorrectas. En cuanto alguien lo supere, te avisamos a ti y a esa persona al mismo tiempo.</p>
-    ${v.masCerca ? `<div class="cerca">🧭 Lo más cerca que alguien ha estado de ti: <b>${v.masCerca} %</b></div>` : ''}
-  </section>`;
-}
-
-function textoDejaFuera(d) {
-  const que = { edad: 'Tu rango de edad', distancia: 'Que ni tú ni la otra persona se moverían de ciudad', alcohol: 'Tu filtro de alcohol', tabaco: 'Tu filtro de tabaco', mascotas: 'Tu filtro de mascotas' }[d.id] || 'Uno de tus filtros';
-  return `${que} deja fuera a <b>${d.personas}</b> ${d.personas === 1 ? 'persona' : 'personas'} con quien tendrías hasta <b>${d.mejor} %</b>${d.mejor >= vista.umbral ? ' — arriba del umbral' : ''}.`;
+    ${V.masCerca ? `<div class="cerca">🧭 Lo más cerca que alguien ha estado de ti: <b>${V.masCerca} %</b></div>` : ''}</section>`;
 }
 
 function tarjetaCoincidencia(c) {
-  const [pr, o] = PRON[c.genero] || PRON.nobinaria;
-  const abierta = c.puerta.estado === 'abierta';
-  const mia = c.puerta.miDecision;
+  const [pr, lo] = PRON[c.genero] || PRON.nobinaria;
+  const abierta = c.puerta.estado === 'abierta', mia = c.puerta.miDecision;
+  const puertaHtml = (clase, titulo, texto) => `<div class="puerta-fila"><div class="puerta ${clase}"><div class="marco"></div><div class="luz"></div><div class="hoja"></div><span class="candado">🔒</span></div><div class="puerta-texto"><b>${titulo}</b>${texto}</div></div>`;
   let puerta;
-  if (abierta) {
-    puerta = `<div class="puerta-fila"><div class="puerta abierta"><div class="marco"></div><div class="luz"></div><div class="hoja"></div><span class="candado">🔒</span></div>
-      <div class="puerta-texto"><b>Se abrió la puerta</b>Los dos dijeron que sí. Ahora sí: esto es lo que ${pr} quiso que conocieras primero.</div></div>`;
-  } else if (mia === 'si') {
-    puerta = `<div class="puerta-fila"><div class="puerta"><div class="marco"></div><div class="luz"></div><div class="hoja"></div><span class="candado">🔒</span></div>
-      <div class="puerta-texto"><b>Tu sí está guardado 🤍</b>Si ${pr} también dice que sí, la puerta se abre para los dos al mismo tiempo. Si no, nunca sabrás por qué — y ${pr} tampoco sabrá lo tuyo.</div></div>
-      <div class="puerta-acciones"><button class="enlace" data-otra="${esc(c.clave)}" data-decision="no">Cambiar de opinión</button></div>`;
-  } else if (mia === 'no') {
-    puerta = `<div class="puerta-fila"><div class="puerta"><div class="marco"></div><div class="luz"></div><div class="hoja"></div><span class="candado">🔒</span></div>
-      <div class="puerta-texto"><b>Elegiste no abrir esta puerta</b>Nadie lo sabrá. Puedes reconsiderarlo mientras la coincidencia exista.</div></div>
-      <div class="puerta-acciones"><button class="boton boton-claro boton-chico" data-otra="${esc(c.clave)}" data-decision="si">Reconsiderar: sí quiero</button></div>`;
-  } else {
-    puerta = `<div class="puerta-fila"><div class="puerta"><div class="marco"></div><div class="luz"></div><div class="hoja"></div><span class="candado">🔒</span></div>
-      <div class="puerta-texto"><b>La puerta está cerrada</b>Te avisamos porque vale la pena. Pero no se abre hasta que los dos digan que sí — y nadie se entera si el otro dijo que no.</div></div>
-      <div class="puerta-acciones">
-        <button class="boton" data-otra="${esc(c.clave)}" data-decision="si">Sí, quiero conocer${pr === 'él' ? 'lo' : pr === 'ella' ? 'la' : 'le'}</button>
-        <button class="boton boton-fantasma" data-otra="${esc(c.clave)}" data-decision="no">Ahora no</button>
-      </div>`;
-  }
+  if (abierta) puerta = puertaHtml('abierta', 'Se abrió la puerta', `Los dos dijeron que sí. Esto es lo que ${pr} quiso que conocieras primero.`);
+  else if (mia === 'si') puerta = puertaHtml('', 'Tu sí está guardado 🤍', `Si ${pr} también dice que sí, la puerta se abre para los dos al mismo tiempo.`) + `<div class="puerta-acciones"><button class="enlace" data-clave="${esc(c.clave)}" data-decision="no">Cambiar de opinión</button></div>`;
+  else if (mia === 'no') puerta = puertaHtml('', 'Elegiste no abrir esta puerta', 'Nadie lo sabrá. Puedes reconsiderarlo mientras la coincidencia exista.') + `<div class="puerta-acciones"><button class="boton boton-claro boton-chico" data-clave="${esc(c.clave)}" data-decision="si">Reconsiderar: sí quiero</button></div>`;
+  else puerta = puertaHtml('', 'La puerta está cerrada', 'Te avisamos porque vale la pena. Pero no se abre hasta que los dos digan que sí — y nadie se entera si el otro dijo que no.') +
+    `<div class="puerta-acciones"><button class="boton" data-clave="${esc(c.clave)}" data-decision="si">Sí, quiero conocer${lo}</button><button class="boton boton-fantasma" data-clave="${esc(c.clave)}" data-decision="no">Ahora no</button></div>`;
   const r = c.revelado;
   return `<article class="tarjeta coincidencia" id="c-${esc(c.clave)}">
-    <div class="coin-cabeza">${anillo(c.pct)}
-      <div class="coin-titulo">
-        <h3>${abierta ? esc(r.nombre) : `Alguien al ${c.pct} % contigo`}</h3>
-        <div class="meta">${abierta ? `${esc(r.edad)} · ${esc(r.ciudad)}` : `Aviso ${c.puerta.avisada ? hace(c.puerta.avisada) : 'reciente'} · identidad protegida`}</div>
-      </div>
-    </div>
+    <div class="coin-cabeza">${anillo(c.pct)}<div class="coin-titulo"><h3>${abierta ? esc(r.nombre) : `Alguien al ${c.pct} % contigo`}</h3>
+      <div class="meta">${abierta ? `${esc(r.edad)} · ${esc(r.ciudad)}` : `Aviso ${c.puerta.avisada ? hace(c.puerta.avisada) : 'reciente'} · identidad protegida`}</div></div></div>
     <ul class="razones">
       ${c.fuertes.map((f) => `<li><span class="i si">✓</span><span><small>${esc(f.dim)}</small>${esc(f.txt)}</span></li>`).join('')}
       ${c.cuidar ? `<li><span class="i ojo">~</span><span><small>Lo que tendrían que cuidar · ${esc(c.cuidar.dim)}</small>${esc(c.cuidar.txt)}</span></li>` : ''}
     </ul>
-    <div class="puerta-zona">${puerta}
-      ${c.demoId && !abierta ? `<a class="demo-herramienta" href="/persona?id=${esc(c.demoId)}">👁 Herramienta de demo: ver el panel de esa persona</a>` : ''}
-    </div>
+    <div class="puerta-zona">${puerta}${c.demoId ? `<a class="demo-herramienta" href="/persona?id=${esc(c.demoId)}">👁 Herramienta de demo: entrar al tablero de esa persona</a>` : ''}</div>
     ${abierta ? `<div class="revelado">
       <div class="quien">${avatar(r.nombre, r.color, 'xl')}<div><h3>${esc(r.nombreCompleto)}</h3><div class="meta" style="color:var(--gris)">${esc(r.edad)} · ${esc(r.ciudad)}</div></div></div>
       ${r.carta ? `<div class="carta">${esc(r.carta)}</div>` : ''}
       ${r.malinterpretan ? `<p class="entender"><b>Lo que le gustaría que entendieras desde el día uno:</b> ${esc(r.malinterpretan)}</p>` : ''}
       <div class="proximos"><div><span>🎙️</span>Su voz leyendo esta carta</div><div><span>🎬</span>Un video de su martes</div><div><span>📷</span>Y al final, sus fotos</div></div>
-      <p class="seccion-sub" style="margin:12px 0 0">En la versión real, cada paso lo abres tú, en ese orden: primero quién es, al final cómo se ve.</p>
-      ${c.demoId ? `<a class="demo-herramienta" href="/persona?id=${esc(c.demoId)}">👁 Herramienta de demo: ver su panel</a>` : ''}
-    </div>` : ''}
+      <p class="seccion-sub" style="margin:12px 0 0">En la versión real, cada paso lo abres tú, en ese orden: primero quién es, al final cómo se ve.</p></div>` : ''}
   </article>`;
 }
 
 async function decidir(clave, decision, boton) {
   const [a, b] = clave.split('-');
-  const otra = a === vista.persona.id ? b : a;
+  const otra = a === V.persona.id ? b : a;
   boton.disabled = true;
   try {
-    const r = await api('/api/puerta', token ? { token, otra, decision } : { persona: vista.persona.id, otra, decision });
-    const antes = vista.coincidencias.find((c) => c.clave === clave);
-    vista = r.vista;
-    pintarPanel();
+    const antes = V.coincidencias.find((c) => c.clave === clave);
+    const r = await api('/api/puerta', token ? { token, otra, decision } : { persona: V.persona.id, otra, decision });
+    V = r.vista;
     if (r.estado === 'abierta' && antes?.puerta.estado !== 'abierta') {
-      const tarjeta = $('#c-' + CSS.escape(clave));
-      tarjeta?.scrollIntoView({ block: 'start' });
-      // la puerta se pinta cerrada y se abre frente a la persona
-      const pu = tarjeta?.querySelector('.puerta');
-      if (pu && !document.hidden) { pu.classList.remove('abierta'); requestAnimationFrame(() => requestAnimationFrame(() => pu.classList.add('abierta'))); }
+      if (seccion === 'coincidencias') ir('coincidencias'); else location.hash = 'coincidencias';
+      setTimeout(() => {
+        const t = $('#c-' + CSS.escape(clave)); t?.scrollIntoView({ block: 'start' });
+        const pu = t?.querySelector('.puerta');
+        if (pu && !document.hidden) { pu.classList.remove('abierta'); requestAnimationFrame(() => requestAnimationFrame(() => pu.classList.add('abierta'))); }
+      }, 80);
       avisar('💘 Los dos dijeron que sí. Se abrió la puerta.', 4200);
-    } else avisar(decision === 'si' ? 'Tu sí quedó guardado. Nadie lo verá hasta que haya dos.' : 'Listo. Nadie lo sabrá.');
+    } else { ir(seccion); avisar(decision === 'si' ? 'Tu sí quedó guardado. Nadie lo verá hasta que haya dos.' : 'Listo. Nadie lo sabrá.'); }
   } catch (e) { boton.disabled = false; avisar(e.message); }
-}
-
-async function abrirAvisos() {
-  const caja = $('#avisos');
-  caja.hidden = !caja.hidden;
-  if (caja.hidden) return;
-  caja.innerHTML = vista.avisos.length ? vista.avisos.map((a) => `<div class="aviso ${a.leido ? '' : 'nuevo'}"><span>${a.tipo === 'apertura' ? '🔓' : '💘'}</span><div>${esc(a.texto)}<span class="cuando">${hace(a.creado)}</span></div></div>`).join('') : '<p class="vacio">Sin avisos todavía.</p>';
-  if (vista.avisos.some((a) => !a.leido)) {
-    try { await api('/api/avisos/leer', token ? { token } : { persona: vista.persona.id }); vista.avisos.forEach((a) => a.leido = 1); $('#btn-avisos .n')?.remove(); } catch {}
-  }
 }
 </script>
 </body>

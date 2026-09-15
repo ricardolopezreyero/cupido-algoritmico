@@ -136,12 +136,12 @@ const SECCIONES = {
 
   async personas() {
     return cabeza('Personas', 'Toca un nombre para ver sus respuestas, sus pesos y todos sus cruces', `<a class="boton boton-claro" href="/cuestionario">+ Agregar con el cuestionario</a>`) + `
-      <section class="tarjeta"><table class="tabla apilable"><thead><tr><th>Persona</th><th>Fe</th><th>Hijos</th><th>≥ ${D.motor.umbral} %</th><th>Más cerca</th><th>Calidad</th><th>Peso íntimo · fe</th><th></th></tr></thead><tbody>
+      <section class="tarjeta"><table class="tabla apilable"><thead><tr><th>Persona</th><th>Fe</th><th>Hijos</th><th>≥ ${D.motor.umbral} %</th><th>Más cerca</th><th>Claridad</th><th>Peso íntimo · fe</th><th></th></tr></thead><tbody>
       ${D.personas.map((p) => `<tr>
         <td class="nom" data-l="Persona"><a href="#" data-persona="${p.id}" style="display:flex;gap:10px;align-items:center;color:inherit;text-decoration:none">${avatar(p.nombre, p.color, 'sm')}<span>${esc(p.nombre)}<br><span style="font-weight:400;color:var(--gris);font-size:12.5px">${p.edad || '—'} · ${esc(p.ciudad || '')}${p.origen === 'cuestionario' ? ' · cuestionario' : ''}${p.estado === 'pausada' ? ' · en pausa' : ''}${!p.completo ? ` · ${p.avance} %` : ''}</span></span></a></td>
         <td data-l="Fe">${esc(p.fe || '—')}</td><td data-l="Hijos">${esc(p.hijos || '—')}</td>
         <td data-l="≥ ${D.motor.umbral} %">${p.coincidencias.length ? p.coincidencias.map((n) => `<span class="chip">${n}</span>`).join(' ') : '<span class="chip gris">silencio</span>'}</td>
-        <td data-l="Más cerca">${p.mejorBajo || '—'}</td><td data-l="Calidad">${Math.round(((p.q - 0.85) / 0.15) * 100)} %</td>
+        <td data-l="Más cerca">${p.mejorBajo || '—'}</td><td data-l="Claridad" title="Qué tan bien lo conoce el algoritmo (calidad Q ${p.q})">${Math.round(((p.q - 0.85) / 0.15) * 100)} %</td>
         <td data-l="Peso íntimo · fe">${p.pesoSexual} % · ${p.pesoEspiritual} %</td>
         <td data-l="Panel"><a class="enlace" href="/persona?id=${p.id}">Ver su panel</a></td></tr>`).join('')}
       </tbody></table></section>`;

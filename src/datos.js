@@ -276,6 +276,8 @@ export async function vistaPersona(env, P) {
     pesos: pesosVista,
     claridad: { q, pct: Math.round(((q - 0.85) / 0.15) * 100), flojas: flojas.map((k) => ({ eje: k, preguntas: RUBRICA_PREGUNTAS[k] })), fuente: P.l?.fuente || 'lectura' },
     avisos, umbral: UMBRAL, motor: MOTOR_VERSION,
+    // lo suyo, para su propio tablero (nunca se envía nada de otra persona aquí)
+    misRespuestas: P.r, rubrica: P.l?.rubrica || null,
   };
 }
 
@@ -471,6 +473,14 @@ export async function guardarCuestionario(env, ctx, { token: t, nombre, respuest
     if (!eraCompleto) await anotar(env, 'persona', 'Un perfil entró al matching', `${P.nombre} (cuestionario)`);
     const r = await recalcularTodo(env, { soloId: P.id, avisar: true, motivo: 'cuestionario' });
     cruce = { pares: r.pares, arriba: r.arriba, nuevas: r.nuevas };
+  } else if (P.completo) {
+    // borró algo obligatorio: sale del matching hasta completarlo; sus puertas abiertas se respetan
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE personas SET completo = 0 WHERE id = ?`).bind(P.id),
+      env.DB.prepare(`DELETE FROM pares WHERE a = ? OR b = ?`).bind(P.id, P.id),
+      env.DB.prepare(`DELETE FROM puertas WHERE (a = ? OR b = ?) AND estado != 'abierta'`).bind(P.id, P.id),
+    ]);
+    await anotar(env, 'persona', 'Un perfil salió del matching por quedar incompleto', P.nombre);
   }
   return { token: P.token, id: P.id, avance: av, cruce };
 }

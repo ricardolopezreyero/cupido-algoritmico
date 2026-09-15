@@ -455,3 +455,52 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.01em
 }
 .seccion-admin { animation: aparecer .5s var(--ease); }
 /* fin · RLR */
+
+/* ═══ TABLERO DE LA PERSONA (menú izquierdo + contenido) · RLR ═════════════ */
+.lateral nav a .cuenta-nav { margin-left: auto; background: var(--rosa); color: #fff; font-size: 11.5px; font-weight: 700; border-radius: 999px; min-width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; padding: 0 6px; }
+.lateral nav a .cuenta-nav.gris { background: var(--noche-3); color: #d9cfe0; }
+.lateral .quien-lat { display: flex; gap: 10px; align-items: center; margin: 0 8px 18px; padding: 12px; border-radius: 14px; background: var(--noche-2); }
+.lateral .quien-lat b { color: #fff; font-size: 14.5px; display: block; line-height: 1.2; }
+.lateral .quien-lat div span { color: #b9aec2; font-size: 12px; }
+.salir { display: flex; gap: 10px; align-items: center; width: 100%; margin-top: 14px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--noche-3); background: transparent; color: #cbbfd3; font: 500 14.5px var(--sans); cursor: pointer; }
+.salir:hover { background: var(--noche-2); color: #fff; border-color: #ff8ea3; }
+.camino { display: grid; grid-template-columns: repeat(5, 1fr); gap: 0; position: relative; margin-top: 8px; }
+.camino .paso-c { text-align: center; position: relative; padding: 0 4px; }
+.camino .paso-c::before { content: ''; position: absolute; top: 19px; left: -50%; right: 50%; height: 3px; background: #ece5de; z-index: 0; }
+.camino .paso-c:first-child::before { display: none; }
+.camino .paso-c.hecho::before, .camino .paso-c.actual::before { background: linear-gradient(90deg, var(--rosa), #e77a4e); }
+.camino .bola { position: relative; z-index: 1; width: 40px; height: 40px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; background: #f3eee9; border: 2px solid #e4dbd2; color: var(--gris); }
+.camino .hecho .bola { background: var(--rosa); border-color: var(--rosa); color: #fff; }
+.camino .actual .bola { background: #fff; border-color: var(--rosa); box-shadow: 0 0 0 6px rgba(214,69,95,.14); }
+.camino b { display: block; font-size: 13px; line-height: 1.25; }
+.camino span { display: block; font-size: 11.5px; color: var(--gris); line-height: 1.3; margin-top: 2px; }
+@media (max-width: 640px) { .camino { grid-template-columns: 1fr; gap: 10px; } .camino .paso-c { display: grid; grid-template-columns: 40px 1fr; gap: 12px; text-align: left; align-items: center; } .camino .paso-c::before { display: none; } .camino .bola { margin: 0; } }
+.nivel { display: flex; gap: 18px; align-items: center; }
+.nivel .anillo { width: 96px; height: 96px; }
+.nivel h3 { margin: 0 0 2px; font-size: 22px; }
+.nivel p { margin: 0; color: var(--tinta-2); font-size: 14.5px; }
+.logros { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 6px; }
+.logro { border: 1px solid var(--linea); border-radius: 14px; padding: 14px 12px; text-align: center; background: var(--blanco); transition: transform .3s var(--ease); }
+.logro:hover { transform: translateY(-2px); }
+.logro .medalla { width: 46px; height: 46px; border-radius: 50%; margin: 0 auto 8px; display: flex; align-items: center; justify-content: center; font-size: 22px; background: linear-gradient(135deg, #ffe3a3, #f2b45a); box-shadow: inset 0 -3px 0 rgba(0,0,0,.08); }
+.logro b { display: block; font-size: 13.5px; line-height: 1.25; }
+.logro span { display: block; font-size: 12px; color: var(--gris); margin-top: 3px; line-height: 1.3; }
+.logro.bloqueado { background: #faf8f6; }
+.logro.bloqueado .medalla { background: #efe9e3; filter: grayscale(1); opacity: .6; box-shadow: none; }
+.logro.bloqueado b { color: var(--gris); }
+.grupo-acept { margin-bottom: 18px; }
+.grupo-acept h3 { display: flex; align-items: center; gap: 10px; font-size: 18px; margin: 0 0 10px; }
+.fila-acept { display: flex; gap: 14px; align-items: center; padding: 12px 14px; border: 1px solid var(--linea); border-radius: 14px; background: var(--blanco); margin-bottom: 8px; flex-wrap: wrap; }
+.fila-acept .pct { font: 700 24px/1 var(--serif); color: var(--rosa-osc); min-width: 58px; }
+.fila-acept .que { flex: 1; min-width: 180px; font-size: 14.5px; }
+.fila-acept .que span { display: block; color: var(--gris); font-size: 12.5px; }
+.fila-acept .acciones { margin-left: auto; }
+.bloque-resp summary { display: flex; align-items: center; gap: 12px; padding: 14px 0; cursor: pointer; list-style: none; font-weight: 600; }
+.bloque-resp summary::-webkit-details-marker { display: none; }
+.bloque-resp summary .n { width: 28px; height: 28px; border-radius: 8px; background: var(--rosa-suave); color: var(--rosa-osc); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; flex: none; }
+.bloque-resp summary .mini { margin-left: auto; width: 140px; }
+.bloque-resp .preg { padding: 10px 0; border-top: 1px solid var(--linea); font-size: 14px; }
+.bloque-resp .preg b { display: block; margin-bottom: 4px; }
+.bloque-resp .preg div { color: var(--tinta-2); white-space: pre-line; }
+@media (max-width: 560px) { .bloque-resp summary .mini { width: 80px; } }
+/* fin tablero · RLR */

@@ -17,11 +17,11 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 - [x] **Umbral de 90 %**: solo se muestran coincidencias de 90 hacia arriba, ordenadas (96, 95, 94…).
 - [x] **Avisar sin dejar entrar**: aviso a los dos al mismo tiempo, identidad protegida, puerta que solo se abre con dos síes, nadie se entera de un no, retiro silencioso si baja del umbral.
 - [x] **Demo**: 10 hombres y 10 mujeres ficticios con las 41 preguntas completas (estructuradas + textos).
-- [x] **Panel de personas** sin login: coincidencias con razones y "lo que tendrían que cuidar", la puerta, lo que más pesa en tu cálculo, qué tan bien te conoce el algoritmo, lo que te está dejando fuera, lo más cerca que alguien ha estado.
+- [x] **Tablero de la persona** (menú a la izquierda, contenido a la derecha) sin contraseña y con cerrar sesión: Inicio con cifras, camino de 5 pasos y logros · Mis coincidencias (con la puerta) · Aceptaciones agrupadas (esperan tu respuesta, tu sí esperando, puertas abiertas, preferiste no abrir) · Avisos · Lo que más pesa · Mis respuestas en las 10 categorías · Qué tan bien me conoce · Lo que me deja fuera · Privacidad y pausa del perfil.
 - [x] **Panel admin**: resumen con cifras, distribución, vetos por tipo, matriz 10 × 10, detalle de cada par en las dos direcciones, personas con sus respuestas y pesos, puertas, corrida manual por fases, laboratorio de pesos en vivo, bitácora en vivo.
 - [x] **Artículos**: cualquiera publica sin cuenta, lectura cuidada y lista para compartir por WhatsApp, borrador local, anti-spam básico (trampa para robots, límite por IP, palabras sospechosas a revisión) y moderación desde el admin. 6 artículos iniciales.
 - [x] **Cuestionario conectado**: autoguardado, "lo pienso después", enlace privado sin contraseña y motor automático al terminar.
-- [x] **Infraestructura**: Cloudflare Worker + D1, código en GitHub.
+- [x] **Infraestructura**: Cloudflare Worker + D1, código en GitHub, 17 pruebas del motor que corren antes de cada despliegue.
 
 ---
 
@@ -83,7 +83,8 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 - [ ] Respaldos automáticos de la base y prueba de restauración.
 - [ ] Monitoreo y alertas: errores, tiempos, correos rebotados, cruces fallidos.
 - [ ] Bitácora de quién vio qué en el admin.
-- [ ] Pruebas automáticas del motor (casos conocidos: vetos, techos, reciprocidad) para que ningún cambio rompa la lógica en silencio.
+- [x] Pruebas automáticas del motor (`npm run pruebas`: vetos, dato faltante, reciprocidad, techos, pesos personales, privacidad de notas). Corren antes de cada despliegue.
+- [ ] Pruebas de extremo a extremo de la API y los paneles.
 
 ### Artículos
 - [ ] Autores verificados (psicólogos, terapeutas, acompañantes espirituales) con insignia.

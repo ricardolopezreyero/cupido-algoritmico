@@ -10,7 +10,7 @@ Te registras, respondes 41 preguntas una sola vez, y no pasa nada más. No hay s
 
 | | |
 |---|---|
-| **Panel de personas** · `/persona` | Entra como cualquiera de las 20 personas ficticias (10 hombres, 10 mujeres). Sus coincidencias de 90 % hacia arriba, por qué, lo que tendrían que cuidar, la puerta con doble sí y lo que el algoritmo sabe de ti. |
+| **Tablero de la persona** · `/persona` | Entra como cualquiera de las 20 personas ficticias (10 hombres, 10 mujeres) a su tablero con menú lateral: inicio con camino y logros, coincidencias de 90 % hacia arriba, aceptaciones, avisos, lo que más pesa, sus respuestas por categoría, privacidad, pausa y cerrar sesión. |
 | **Panel administrativo** · `/admin` | Cifras, matriz 10 × 10, vetos explicados, el cálculo de cada par en las dos direcciones, puertas, corrida del matching por fases, laboratorio de pesos, artículos y bitácora en vivo. |
 | **Artículos** · `/articulos` | Cualquiera publica sin crear cuenta. |
 | **Cuestionario** · `/cuestionario` | Las 41 preguntas conectadas: autoguardado, enlace privado sin contraseña, y el motor te cruza al terminar. |
@@ -51,9 +51,14 @@ Detalle completo, incluida la revisión de lo sexual y lo espiritual: **[MODELO.
 - `public/` — landing, panel de personas, panel admin, cuestionario, editor de artículos.
 - `seed/` — las 20 personas ficticias (respuestas estructuradas + textos) y los artículos iniciales.
 - `scripts/probar-motor.mjs` — imprime la matriz 10 × 10 y el detalle de cualquier par.
+- `scripts/pruebas-motor.mjs` — 17 pruebas del motor; `npm run deploy` no despliega si alguna falla.
 - [`montecarlo.py`](montecarlo.py) — simulación de 1,000 participantes que informó el diseño de la experiencia.
 
 ## Correrlo
+
+```bash
+npm run pruebas
+```
 
 ```bash
 npm run probar
