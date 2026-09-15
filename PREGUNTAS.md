@@ -1,8 +1,39 @@
 # El cuestionario
 
-**33 preguntas base** (17 abiertas, 16 de opción múltiple) + el **Módulo Profundo** (P34–P41): intimidad sexual y nivel de conciencia. El módulo se responde al final, con su propio encuadre de privacidad, porque ahí viven los matches que las 33 solas no pueden garantizar.
+<!-- Autor: Ricardo López Reyero · RLR · rev 181218 -->
 
-Mismo cuestionario para hombres y mujeres. Varias OM incluyen un campo abierto opcional ("explica si quieres"), que siempre suma señal.
+**33 preguntas base** + el **Módulo Profundo** (P34–P41): intimidad sexual y nivel de conciencia. El módulo se responde al final, con su propio encuadre de privacidad, porque ahí viven las coincidencias que las 33 solas no pueden garantizar.
+
+Mismo cuestionario para todas las personas. La fuente de verdad del texto exacto de cada pregunta y de sus opciones es [`public/js/preguntas.js`](public/js/preguntas.js); este documento explica **por qué** existe cada una.
+
+## Versión 2 · qué cambió y por qué
+
+La numeración de las 41 preguntas no cambió. Lo que cambió son **anclas estructuradas** (un toque rápido junto a cada pregunta abierta) y la **revisión de lo sexual y lo espiritual**. Cada respuesta se guarda con un código estable.
+
+| Pregunta | Nuevo en v2 | Por qué |
+|---|---|---|
+| P1 | **Soy / Busco** | Faltaba lo más básico: quién busca a quién, en las dos direcciones. |
+| P3 | **¿Aceptarías una pareja que ya tiene hijos?** | "Ya tengo hijos" contra "no acepto hijos del otro" es de los vetos más comunes y no existía. |
+| P4 | **Tradición · qué tan presente está en tu semana · formación espiritual de los hijos** | Separar qué crees, qué tanto lo vives y qué tanto necesitas compartirlo. Compartir la práctica protege más que compartir la etiqueta. Los hijos son donde chocan las parejas de tradiciones distintas. |
+| P5 | **Exclusividad en 3 niveles · ritmo para formar hogar** | "No" a "¿la exclusividad es innegociable?" no significaba "quiero relación abierta". Y quien quiere hogar en 1–2 años no embona con quien no tiene calendario. |
+| P6 | Dónde es ese martes | Ciudad grande, mediana, campo, mar o sin lugar fijo. |
+| P7 | La familia de origen en una frase | Muy presente / con límites / distante. |
+| P8 | Tu ambición y la que esperas del otro | La doble dirección que el texto pedía, ahora medible. |
+| P9 | 3 ejes de vida bien vivida | La "función objetivo" de cada persona, comparable. |
+| P10 | Elige tus 3 valores | El texto sigue pidiendo los ejemplos. |
+| P13 | Hacia dónde te inclinas | Para que "innegociable" pueda cruzarse. "Prefiero no decirlo" nunca quita coincidencias. |
+| P17 | Tipo de humor | El humor es casi imposible de fingir; ahora también es comparable. |
+| P21 | Lo que necesitas tras pelear · lo que sabes ofrecer | El cruce necesidad ⟷ oferta, sin interpretación. |
+| P25 | **Importancia de lo íntimo (1–5) · facilidad para hablarlo (1–5)** | Hablar de lo íntimo predice satisfacción; la importancia define el peso personal de la dimensión. |
+| P26 | Cómo cuidas | Se cruza con lo que el otro necesita recibir. |
+| P29 | De qué está hecho tu domingo | Descanso, familia, culto, deporte, naturaleza… |
+| P30 | Qué rol preferirías (si eliges roles claros) | "Roles claros" solo funciona con roles complementarios. |
+| P34 | **Cómo aparece tu deseo: espontáneo, responsivo o depende** | En muchas personas el deseo aparece cuando ya empezó la cercanía. Ninguno es mejor, y cambia cómo se lee una brecha de frecuencia. |
+| P36 | **Qué te enciende y qué te apaga (hasta 3 y 3)** | Casi todo pasa durante el día: se cruza con cómo da cariño la otra persona, no con prácticas. |
+| P38 | **Rejilla de innegociables**: esperar al matrimonio, explorar cosas nuevas, pornografía en la relación, planificación solo natural — "lo necesito / lo acepto / no lo acepto" | El veto íntimo pasa de "semántico" y frágil a determinista y explicable. Esperar al matrimonio es donde la fe y lo íntimo se tocan. |
+| P39 | **Prácticas reales · compartirlas o que te las respeten** | Querer compartir y necesitar respeto son necesidades distintas. |
+
+El detalle de cómo el motor usa cada una está en [MODELO.md](MODELO.md).
 
 Convenciones:
 - 🚫 = alimenta un **filtro duro** (eliminatorio, ver MODELO.md)
@@ -198,7 +229,7 @@ Alcohol (nada / social / frecuente) · Tabaco o vape (no / ocasional / sí) · E
 *Extrae:* la pregunta más dura y más informativa del cuestionario. La rúbrica evalúa autoconocimiento, responsabilidad y realismo. Se cruza con la #16 y la #22: tres oportunidades de decir la verdad sobre uno mismo.
 
 **33. (A) Escríbele una carta corta a tu futura pareja: qué le prometes, y qué le pides.**
-*Extrae:* el cierre perfecto para el matching bidireccional: promesas de A contra peticiones de B, y viceversa, en lenguaje natural. Además, si hay match ≥95%, esta carta es lo primero que la otra persona podrá leer de ti.
+*Extrae:* el cierre perfecto para el matching bidireccional: promesas de A contra peticiones de B, y viceversa, en lenguaje natural. Además, si hay coincidencia de 90 % o más y los dos abren la puerta, esta carta es lo primero que la otra persona podrá leer de ti.
 
 ---
 

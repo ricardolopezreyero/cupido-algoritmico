@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cuestionario · Cupido Algorítmico</title>
+<meta name="description" content="41 preguntas, una sola vez. Todo se guarda solo y no hay contraseña.">
+<meta name="author" content="Ricardo López Reyero">
+<meta name="rev" content="181218">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/cupido.css">
+</head>
+<body data-author="RLR">
+<!-- Cupido Algorítmico · Cuestionario conectado · RLR · Ricardo López Reyero -->
+<header class="barra"><div class="envoltura barra-in">
+  <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
+  <span class="pildora-demo">DEMO · datos visibles en el panel</span>
+  <nav class="menu"><a href="/persona">Personas</a><a href="/articulos">Artículos</a></nav>
+</div></header>
+<div class="progreso" id="progreso" hidden><div class="envoltura-texto"><div class="txt"><span id="p-izq"></span><span id="p-der"></span></div><div class="pista"><div class="relleno" id="p-relleno" style="width:0"></div></div></div></div>
+<main id="app" class="envoltura-texto cuest"></main>
+
+<script type="module">
+// RLR · cuestionario
+import { $, $$, esc, api, avisar } from '/js/ui.js';
+import { PREGUNTAS, BLOQUES, PARTES, avance } from '/js/preguntas.js';
+const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
+const app = $('#app');
+const q = new URLSearchParams(location.search);
+const leer = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
+const escribir = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+let token = q.get('t') || leer('cupido.token');
+let nombre = '';
+let R = {};
+let idx = 0, cola = [], pendientesEnvio = {}, tEnvio = null, enviando = false;
+
+const INTERS = {
+  inicio: null,
+  b19: { grande: '🫁', h: 'Llevas más de la mitad ✓', p: ['Las siguientes 4 preguntas son las más importantes del cuestionario — y las menos cómodas.', 'Si quieres, toma aire o sigue mañana: todo está guardado.'], btn: 'Continuar' },
+  b31: { grande: '🌅', h: 'Últimas 3 del cuestionario base', p: ['Son las que tu futuro match va a sentir más. La carta es lo primero que leerá de ti.', 'Si estás en modo «ya acabemos», guárdalo y termina mañana con la mente fresca.'], btn: 'Vamos' },
+  b34: { grande: '🔐', h: 'Módulo profundo', p: ['Lo que sigue son <b>8 preguntas más íntimas</b>: sexualidad y vida interior. Son incómodas a propósito — porque los matches que fallan, fallan casi siempre en lo que nadie preguntó a tiempo.', 'Nadie humano las lee en la versión real: solo el algoritmo. Preferimos un match menos a un match falso.'], btn: 'Estoy listo/a' },
+};
+
+function armarCola() {
+  cola = [];
+  for (const p of PREGUNTAS) {
+    if (p.n === 19) cola.push({ t: 'inter', k: 'b19' });
+    if (p.n === 31) cola.push({ t: 'inter', k: 'b31' });
+    if (p.n === 34) cola.push({ t: 'inter', k: 'b34' });
+    cola.push({ t: 'q', q: p });
+  }
+  cola.push({ t: 'fin' });
+}
+
+const lleno = (v) => v != null && !(Array.isArray(v) && !v.length) && !(typeof v === 'string' && !v.trim());
+const partesVisibles = (p) => p.parts.filter((pt) => !pt.si || R[pt.si.id] === pt.si.v);
+const contestada = (p) => partesVisibles(p).some((pt) => pt.k === 'grid' ? pt.rows.some(([id]) => lleno(R[id])) : lleno(R[pt.id]));
+
+/* ── guardado automático ─────────────────────────────────────────────────── */
+function marcar(estado) { const g = $('#guardado'); if (g) g.textContent = estado; }
+function poner(id, v, inmediato = true) {
+  R[id] = v;
+  pendientesEnvio[id] = v;
+  marcar('Guardando…');
+  clearTimeout(tEnvio);
+  tEnvio = setTimeout(enviar, inmediato ? 150 : 900);
+  progreso();
+}
+async function enviar() {
+  if (enviando) { tEnvio = setTimeout(enviar, 400); return; }
+  const lote = pendientesEnvio; pendientesEnvio = {};
+  if (!Object.keys(lote).length && token) return;
+  enviando = true;
+  try {
+    const r = await api('/api/cuestionario', { token, nombre, respuestas: lote });
+    if (!token && r.token) { token = r.token; escribir('cupido.token', token); history.replaceState(null, '', `/cuestionario?t=${token}`); }
+    marcar('Guardado ✓');
+    return r;
+  } catch (e) { pendientesEnvio = { ...lote, ...pendientesEnvio }; marcar('No se pudo guardar — reintentando'); tEnvio = setTimeout(enviar, 2500); }
+  finally { enviando = false; }
+}
+
+/* ── progreso ─────────────────────────────────────────────────────────────── */
+function progreso() {
+  const c = cola[idx];
+  if (!c || c.t !== 'q') { $('#progreso').hidden = true; return; }
+  $('#progreso').hidden = false;
+  const bloque = PREGUNTAS.filter((x) => x.b === c.q.b);
+  $('#p-izq').textContent = `Pregunta ${c.q.n} de 41`;
+  $('#p-der').textContent = `${BLOQUES[c.q.b]} · ${bloque.findIndex((x) => x.n === c.q.n) + 1} de ${bloque.length}`;
+  $('#p-relleno').style.width = (100 * PREGUNTAS.filter(contestada).length / PREGUNTAS.length) + '%';
+}
+
+/* ── pantallas ────────────────────────────────────────────────────────────── */
+async function inicio() {
+  $('#progreso').hidden = true;
+  let previo = null;
+  if (token) { try { previo = await api(`/api/cuestionario/${token}`); R = previo.respuestas || {}; nombre = previo.nombre || ''; } catch { token = null; } }
+  const hechas = PREGUNTAS.filter(contestada).length;
+  app.innerHTML = `<div class="intermedio">
+    <div class="grande">💘</div>
+    <h2>${previo ? `Hola de nuevo${nombre && nombre !== 'Sin nombre' ? ', ' + esc(nombre) : ''}` : 'Antes de empezar'}</h2>
+    ${previo ? `<p>Llevas <b>${hechas} de 41</b> preguntas. Todo sigue exactamente donde lo dejaste.</p>` : `
+      <p>Son <b>41 preguntas</b> (33 base + 8 del módulo profundo). A la mayoría le toma entre 40 y 60 minutos hacerlo bien — no tiene que ser de corrido.</p>
+      <p><b>Todo se guarda solo</b> y no hay contraseña: te damos un enlace privado para volver cuando quieras. No hay respuestas correctas: hay respuestas tuyas.</p>`}
+    <div class="tarjeta" style="text-align:left;margin:22px auto;max-width:480px">
+      <div class="campo" style="margin:0"><label for="nombre">¿Cómo quieres que te llamemos?</label>
+      <input id="nombre" maxlength="40" placeholder="Solo tu nombre de pila" value="${esc(nombre && nombre !== 'Sin nombre' ? nombre : '')}">
+      <small>⚠️ Esto es un demo: lo que escribas aquí se ve en el panel administrativo. Usa datos inventados.</small></div>
+    </div>
+    <div class="navega" style="justify-content:center">
+      ${previo ? `<button class="boton boton-fantasma" id="nuevo">Empezar otra persona</button>` : ''}
+      <button class="boton" id="empezar" style="margin-left:0">${previo ? 'Seguir donde iba →' : 'Empezar →'}</button>
+    </div>
+    <p style="margin-top:26px"><button class="enlace" id="azar">⚡ Herramienta de demo: crear una persona al azar completa</button></p>
+  </div>`;
+  $('#empezar').onclick = () => {
+    nombre = $('#nombre').value.trim();
+    armarCola();
+    const primera = cola.findIndex((c) => c.t === 'q' && !contestada(c.q));
+    idx = previo && primera > 0 ? primera : 0;
+    if (nombre) enviar();
+    pintar();
+  };
+  const n = $('#nuevo'); if (n) n.onclick = () => { try { localStorage.removeItem('cupido.token'); } catch {} location.href = '/cuestionario'; };
+  $('#azar').onclick = azar;
+}
+
+function pintar() {
+  const c = cola[idx];
+  progreso();
+  window.scrollTo(0, 0);
+  if (!c) { idx = cola.length - 1; return pintar(); }
+  if (c.t === 'inter') {
+    const it = INTERS[c.k];
+    app.innerHTML = `<div class="intermedio"><div class="grande">${it.grande}</div><h2>${it.h}</h2>${it.p.map((x) => `<p>${x}</p>`).join('')}
+      <div class="navega" style="justify-content:center"><button class="boton boton-fantasma" data-ir="-1">← Atrás</button><button class="boton" style="margin-left:0" data-ir="1">${it.btn} →</button></div></div>`;
+    return enlazarNavegacion();
+  }
+  if (c.t === 'fin') return fin();
+  const p = c.q;
+  const ayudas = p.help ? [['why', '¿Por qué preguntamos esto?'], ['ex', 'Ejemplo de respuesta real'], ['start', '¿No sabes por dónde empezar?']]
+    .filter(([k]) => p.help[k]).map(([k, t]) => `<details><summary>${t}</summary><div class="cuerpo">${p.help[k]}</div></details>`).join('') : '';
+  app.innerHTML = `
+    <div class="q-bloque">Bloque ${p.b} · ${esc(BLOQUES[p.b])}</div>
+    <h1 class="q-titulo">${esc(p.t)}</h1>
+    ${p.note ? `<p class="q-nota">${esc(p.note)}</p>` : ''}
+    <div class="ayudas" style="margin-top:16px">${ayudas}</div>
+    <div id="partes">${partesVisibles(p).map(parte).join('')}</div>
+    <div class="guardado" id="guardado">${token ? 'Guardado ✓' : ''}</div>
+    <div class="navega">
+      <button class="boton boton-fantasma" data-ir="-1">← Atrás</button>
+      <button class="enlace" id="despues">Lo pienso después</button>
+      <button class="boton" data-ir="1">Siguiente →</button>
+    </div>`;
+  enlazarPartes(p);
+  enlazarNavegacion();
+  $('#despues').onclick = () => { cola.splice(idx, 1); cola.splice(cola.length - 1, 0, c); avisar('La guardamos para el final'); pintar(); };
+}
+
+function parte(pt) {
+  const v = R[pt.id];
+  const etiquetaL = pt.l ? `<div class="parte-l">${esc(pt.l)}${pt.nuevo ? '<span class="nuevo">NUEVO v2</span>' : ''}${pt.opcional ? '<span style="font-weight:400;color:var(--gris);font-size:13px">(opcional)</span>' : ''}</div>` : (pt.nuevo ? '<div class="parte-l"><span class="nuevo">NUEVO v2</span></div>' : '');
+  let dentro = '';
+  if (pt.k === 'choice' || pt.k === 'city') {
+    dentro = pt.k === 'city'
+      ? `<select data-id="${pt.id}"><option value="">Elige tu ciudad…</option>${pt.o.map(([c, l]) => `<option value="${c}" ${v === c ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>`
+      : `<div class="opciones">${pt.o.map(([c, l]) => `<button class="opcion ${v === c ? 'sel' : ''}" data-id="${pt.id}" data-v="${c}">${esc(l)}</button>`).join('')}</div>`;
+  } else if (pt.k === 'multi') {
+    const sel = Array.isArray(v) ? v : [];
+    dentro = `<div class="opciones">${pt.o.map(([c, l]) => `<button class="opcion ${sel.includes(c) ? 'sel' : ''}" data-multi="${pt.id}" data-v="${c}">${esc(l)}</button>`).join('')}</div>${pt.max ? `<div class="escala-ext"><span>Hasta ${pt.max}</span></div>` : ''}`;
+  } else if (pt.k === 'scale') {
+    dentro = `<div class="escala">${[1, 2, 3, 4, 5].map((n) => `<button class="opcion ${v === n ? 'sel' : ''}" data-id="${pt.id}" data-n="${n}">${n}</button>`).join('')}</div><div class="escala-ext"><span>${esc(pt.lo || '')}</span><span>${esc(pt.hi || '')}</span></div>`;
+  } else if (pt.k === 'rank') {
+    const orden = Array.isArray(v) ? v : [];
+    dentro = `<div class="escala-ext" style="margin:0 0 8px"><span>Toca en orden. Vuelve a tocar para quitar.</span></div><div class="opciones rank">${pt.o.map(([c, l]) => { const i = orden.indexOf(c); return `<button class="opcion ${i >= 0 ? 'sel' : ''}" data-rank="${pt.id}" data-v="${c}"><span class="num ${i >= 0 ? '' : 'vacio'}">${i >= 0 ? i + 1 : '·'}</span>${esc(l)}</button>`; }).join('')}</div>`;
+  } else if (pt.k === 'text') {
+    dentro = `<textarea data-txt="${pt.id}" style="min-height:${pt.min ? Math.max(90, pt.min) : 150}px" placeholder="Escribe con calma. Aquí no hay prisa.">${esc(v || '')}</textarea>`;
+  } else if (pt.k === 'num') {
+    dentro = `<input type="number" inputmode="numeric" min="${pt.min}" max="${pt.max}" data-num="${pt.id}" value="${v ?? ''}" style="max-width:140px">`;
+  } else if (pt.k === 'range') {
+    const [a, b] = Array.isArray(v) ? v : ['', ''];
+    dentro = `<div class="rango"><input type="number" inputmode="numeric" data-rango="${pt.id}" data-i="0" value="${a}" placeholder="desde"><span>a</span><input type="number" inputmode="numeric" data-rango="${pt.id}" data-i="1" value="${b}" placeholder="hasta"><span>años</span></div>`;
+  } else if (pt.k === 'grid') {
+    dentro = `<div class="rejilla-sx">${pt.rows.map(([rid, rl]) => `<div class="fila"><span>${esc(rl)}</span><div class="opts">${pt.o.map(([c, l]) => `<button class="opcion ${R[rid] === c ? 'sel' : ''}" data-id="${rid}" data-v="${c}">${esc(l)}</button>`).join('')}</div></div>`).join('')}</div>`;
+  }
+  return `<div class="parte">${etiquetaL}${dentro}</div>`;
+}
+
+function enlazarPartes(p) {
+  $$('[data-id][data-v]').forEach((b) => b.onclick = () => { poner(b.dataset.id, b.dataset.v); repintarPartes(p); });
+  $$('[data-id][data-n]').forEach((b) => b.onclick = () => { poner(b.dataset.id, Number(b.dataset.n)); repintarPartes(p); });
+  $$('select[data-id]').forEach((s) => s.onchange = () => poner(s.dataset.id, s.value || null));
+  $$('[data-multi]').forEach((b) => b.onclick = () => {
+    const id = b.dataset.multi, pt = PARTES.find((x) => x.id === id);
+    let sel = Array.isArray(R[id]) ? [...R[id]] : [];
+    if (sel.includes(b.dataset.v)) sel = sel.filter((x) => x !== b.dataset.v);
+    else { if (pt.max && sel.length >= pt.max) sel.shift(); sel.push(b.dataset.v); }
+    poner(id, sel); repintarPartes(p);
+  });
+  $$('[data-rank]').forEach((b) => b.onclick = () => {
+    const id = b.dataset.rank;
+    let o = Array.isArray(R[id]) ? [...R[id]] : [];
+    o = o.includes(b.dataset.v) ? o.filter((x) => x !== b.dataset.v) : [...o, b.dataset.v];
+    poner(id, o); repintarPartes(p);
+  });
+  $$('[data-txt]').forEach((t) => t.oninput = () => poner(t.dataset.txt, t.value, false));
+  $$('[data-num]').forEach((t) => t.oninput = () => poner(t.dataset.num, t.value === '' ? null : Number(t.value), false));
+  $$('[data-rango]').forEach((t) => t.oninput = () => {
+    const id = t.dataset.rango, [a, b] = $$(`[data-rango="${id}"]`).map((x) => x.value);
+    if (a && b) poner(id, [Number(a), Number(b)], false);
+  });
+}
+function repintarPartes(p) { $('#partes').innerHTML = partesVisibles(p).map(parte).join(''); enlazarPartes(p); }
+function enlazarNavegacion() { $$('[data-ir]').forEach((b) => b.onclick = () => { idx = Math.max(0, Math.min(cola.length - 1, idx + Number(b.dataset.ir))); pintar(); }); }
+
+async function fin() {
+  $('#progreso').hidden = true;
+  clearTimeout(tEnvio);
+  app.innerHTML = '<p class="vacio" style="text-align:center;padding:40px 0">Guardando y cruzando tu perfil…</p>';
+  // siempre se consulta al servidor: guarda lo pendiente y devuelve el cruce
+  const lote = pendientesEnvio; pendientesEnvio = {};
+  let r = null;
+  try {
+    r = await api('/api/cuestionario', { token, nombre, respuestas: lote });
+    if (!token && r.token) { token = r.token; escribir('cupido.token', token); history.replaceState(null, '', `/cuestionario?t=${token}`); }
+  } catch (e) { pendientesEnvio = { ...lote, ...pendientesEnvio }; avisar('No se pudo guardar. Revisa tu conexión.'); }
+  const av = avance(R);
+  const faltanEst = PARTES.filter((pt) => pt.k !== 'text' && !pt.opcional && !(pt.si && R[pt.si.id] !== pt.si.v) && !lleno(R[pt.id]));
+  const hechas = PREGUNTAS.filter(contestada).length;
+  app.innerHTML = `<div class="intermedio">
+    <div class="grande">${av.listo ? '💘' : '🌱'}</div>
+    <h2>${av.listo ? 'Entraste al matching' : 'Así va tu cuestionario'}</h2>
+    <p>Respondiste <b>${hechas} de 41</b> preguntas.</p>
+    ${av.listo
+      ? `<p>El motor ya te cruzó con todo el demo${r?.cruce ? `: <b>${r.cruce.pares}</b> ${r.cruce.pares === 1 ? 'par evaluado' : 'pares evaluados'}${r.cruce.nuevas ? ` y <b>${r.cruce.nuevas}</b> ${r.cruce.nuevas === 1 ? 'coincidencia' : 'coincidencias'} arriba del 90 %` : ''}` : ''}. Y luego: silencio — hasta que alguien supere el 90 %.</p>
+         <a class="boton" href="/persona?t=${esc(token)}">Ver mi panel →</a>`
+      : `<p>Para entrar al matching faltan <b>${faltanEst.length}</b> respuestas de opción${lleno(R.carta) ? '' : ' y tu carta (P33)'}. Las abiertas pueden esperar, pero cuentan: sin ellas el algoritmo te conoce menos.</p>`}
+    ${token ? `<div class="tarjeta" style="text-align:left;margin:22px auto;max-width:520px"><b>Tu enlace privado</b><p style="margin:4px 0 0;font-size:14px;color:var(--gris)">Es tu llave: sin contraseña.</p><div class="enlace-privado"><input readonly value="${esc(location.origin + '/cuestionario?t=' + token)}" id="enl"><button class="boton boton-chico" id="cp">Copiar</button></div></div>` : ''}
+    <p style="font-size:14px;color:var(--gris)">Toca cualquier pregunta para revisarla o editarla:</p>
+  </div>
+  <div>${PREGUNTAS.map((p) => `<div class="resumen-item" data-n="${p.n}"><span class="${contestada(p) ? 'ok' : 'pend'}">${contestada(p) ? '✓' : '○'}</span><span style="min-width:28px;color:var(--gris)">${p.n}.</span><span>${esc(p.t)}</span></div>`).join('')}</div>`;
+  $$('.resumen-item').forEach((el) => el.onclick = () => { idx = cola.findIndex((c) => c.t === 'q' && c.q.n === Number(el.dataset.n)); pintar(); });
+  const cp = $('#cp'); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText($('#enl').value); avisar('Enlace copiado'); } catch { $('#enl').select(); } };
+}
+
+/* ── herramienta de demo: una persona completa al azar ───────────────────── */
+const NOMBRES = { mujer: ['Andrea', 'Regina', 'Paola', 'Natalia', 'Carolina', 'Alejandra', 'Isabel', 'Jimena', 'Montserrat', 'Elena'], hombre: ['Sebastián', 'Pablo', 'Iván', 'Alejandro', 'Ricardo', 'Óscar', 'Héctor', 'Arturo', 'Fernando', 'Joaquín'] };
+const TEXTOS = {
+  carta: 'Te prometo presencia de verdad: el celular lejos cuando hablemos, y decirte las cosas con honestidad aunque me cueste. Te prometo reírme contigo de lo que salga mal.\n\nTe pido paciencia en mis días difíciles y que me digas lo que necesitas antes de que se acumule. Te pido que construyamos juntos un hogar tranquilo donde los dos crezcamos.',
+  malinterpretan: 'La gente cree que soy seria porque al principio hablo poco, pero en realidad soy muy cálida cuando agarro confianza. Me gustaría que mi pareja entendiera que necesito un rato a solas para recargar y que eso no es distancia.',
+  soltero: 'Porque durante años puse el trabajo primero y me fui de relaciones antes de que se pusieran serias. Hoy lo veo y estoy trabajando en quedarme cuando da miedo.',
+  aprendi: 'Aprendí que yo me callaba lo que me molestaba para no pelear y luego explotaba por cosas pequeñas. Haría diferente eso: decirlo pronto, con calma, y pedir perdón primero cuando me equivoco.',
+};
+async function azar() {
+  const g = Math.random() < 0.5 ? 'mujer' : 'hombre';
+  const elige = (o) => o[Math.floor(Math.random() * o.length)][0];
+  const varios = (o, n) => [...o].sort(() => Math.random() - 0.5).slice(0, n).map((x) => x[0]);
+  const r = {};
+  for (const pt of PARTES) {
+    if (pt.si) continue;
+    if (pt.id === 'genero') r.genero = g;
+    else if (pt.id === 'busca') r.busca = [g === 'mujer' ? 'hombre' : 'mujer'];
+    else if (pt.k === 'num') r[pt.id] = 26 + Math.floor(Math.random() * 16);
+    else if (pt.k === 'range') { const e = r.edad || 32; r[pt.id] = [e - 5, e + 6]; }
+    else if (pt.k === 'scale') r[pt.id] = 1 + Math.floor(Math.random() * 5);
+    else if (pt.k === 'rank') r[pt.id] = varios(pt.o, pt.o.length);
+    else if (pt.k === 'multi') r[pt.id] = varios(pt.o.filter((o) => o[0] !== 'ninguna'), Math.min(pt.max || 3, 3));
+    else if (pt.k === 'choice' || pt.k === 'city' || pt.grid) r[pt.id] = pt.id === 'ciudad' ? elige(pt.o.slice(0, 8)) : pt.grid ? (Math.random() < 0.75 ? 'acepto' : elige(pt.o)) : elige(pt.o);
+    else if (pt.k === 'text') r[pt.id] = TEXTOS[pt.id] || 'Respuesta de ejemplo generada para el demo: concreta, en primera persona y con un ejemplo de mi vida real.';
+  }
+  if (r.tareas === 'roles') r.rol = elige([['proveer'], ['hogar'], ['ninguno']]);
+  const nom = NOMBRES[g][Math.floor(Math.random() * 10)] + ' (azar)';
+  try { localStorage.removeItem('cupido.token'); } catch {}
+  $('#azar').disabled = true; $('#azar').textContent = 'Creando y cruzando…';
+  const res = await api('/api/cuestionario', { nombre: nom, respuestas: r });
+  avisar(`${nom} entró al matching: ${res.cruce?.pares ?? 0} pares evaluados, ${res.cruce?.nuevas ?? 0} arriba del 90 %`, 4500);
+  setTimeout(() => location.href = `/persona?t=${res.token}`, 1200);
+}
+
+armarCola();
+inicio();
+</script>
+</body>
+</html>

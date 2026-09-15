@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Escribir un artículo · Cupido Algorítmico</title>
+<meta name="description" content="Publica un artículo sin crear cuenta: historias, ciencia de la pareja, guías.">
+<meta name="author" content="Ricardo López Reyero">
+<meta name="rev" content="181218">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/cupido.css">
+</head>
+<body data-author="RLR">
+<!-- Cupido Algorítmico · Editor de artículos · RLR · Ricardo López Reyero -->
+<header class="barra"><div class="envoltura barra-in">
+  <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
+  <nav class="menu"><a href="/persona">Personas</a><a href="/articulos" class="activo">Artículos</a><a href="/admin">Admin</a></nav>
+</div></header>
+
+<main class="envoltura-texto editor">
+  <a class="volver" href="/articulos">← Artículos</a>
+  <p class="eyebrow">Escribir</p>
+  <h1 style="font-size:clamp(30px,5vw,42px);margin:4px 0 8px">Cuenta algo verdadero</h1>
+  <p class="lead" style="margin-top:0">Sin cuenta y sin contraseña. Una historia, una idea, algo que aprendiste buscando pareja o sosteniéndola. Se publica al momento.</p>
+
+  <form id="forma" class="tarjeta" novalidate>
+    <div id="errores" class="errores" hidden></div>
+    <div class="campo"><label for="titulo">Título</label><input id="titulo" class="titulo-grande" maxlength="140" placeholder="Un título que diga de qué va" required></div>
+    <div class="dos-col">
+      <div class="campo"><label for="categoria">Categoría</label><select id="categoria"></select></div>
+      <div class="campo"><label for="resumen">Resumen <small>(opcional)</small></label><input id="resumen" maxlength="280" placeholder="Una o dos frases"></div>
+    </div>
+    <div class="campo">
+      <label for="cuerpo">Tu artículo</label>
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="herramientas" id="herr">
+          <button type="button" data-f="h2" title="Subtítulo">Subtítulo</button>
+          <button type="button" data-f="b" title="Negritas"><b>N</b></button>
+          <button type="button" data-f="i" title="Cursivas"><i>C</i></button>
+          <button type="button" data-f="q" title="Cita">“ Cita</button>
+          <button type="button" data-f="l" title="Lista">• Lista</button>
+        </div>
+        <div class="pestanas"><button type="button" class="on" data-p="escribir">Escribir</button><button type="button" data-p="vista">Vista previa</button></div>
+      </div>
+      <textarea id="cuerpo" placeholder="Escribe con calma. Separa párrafos con una línea en blanco.&#10;&#10;## Así se hace un subtítulo&#10;&#10;**negritas**, *cursivas*, > citas y - listas."></textarea>
+      <div id="vista" class="prosa tarjeta" hidden style="min-height:360px"></div>
+      <small id="conteo">0 palabras · mínimo 120</small>
+    </div>
+    <div class="dos-col">
+      <div class="campo"><label for="autor">¿Cómo firmas?</label><input id="autor" maxlength="60" placeholder="Tu nombre o un seudónimo" required></div>
+      <div class="campo"><label for="bio">Una línea sobre ti <small>(opcional)</small></label><input id="bio" maxlength="160" placeholder="Ej. Psicóloga de pareja en Monterrey"></div>
+    </div>
+    <div class="campo"><label for="correo">Correo <small>(opcional, nunca se publica)</small></label><input id="correo" type="email" maxlength="120" placeholder="Por si necesitamos contactarte"><small>Solo lo ve el equipo. No te suscribimos a nada.</small></div>
+    <input class="trampa" id="sitio_web" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <div style="display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:6px">
+      <small style="color:var(--gris)">Al publicar aceptas que tu texto sea visible para cualquiera. Lo que parezca spam queda en revisión.</small>
+      <button class="boton" id="publicar" type="submit">Publicar artículo</button>
+    </div>
+  </form>
+</main>
+
+<script type="module">
+// RLR · editor
+import { $, $$, esc, api, avisar } from '/js/ui.js';
+const _RLR = 'Ricardo López Reyero', _rev = 181218;
+const cuerpo = $('#cuerpo');
+const BORRADOR = 'cupido.borrador';
+
+api('/api/articulos/categorias').then((cats) => { $('#categoria').innerHTML = cats.map((c) => `<option>${esc(c)}</option>`).join(''); restaurar(); });
+
+// Borrador local: si se cierra la pestaña, no se pierde nada
+function guardarBorrador() { try { localStorage.setItem(BORRADOR, JSON.stringify({ titulo: $('#titulo').value, categoria: $('#categoria').value, resumen: $('#resumen').value, cuerpo: cuerpo.value, autor: $('#autor').value, bio: $('#bio').value })); } catch {} }
+function restaurar() { try { const b = JSON.parse(localStorage.getItem(BORRADOR) || 'null'); if (!b) return; for (const k of ['titulo', 'resumen', 'autor', 'bio']) $('#' + k).value = b[k] || ''; if (b.categoria) $('#categoria').value = b.categoria; cuerpo.value = b.cuerpo || ''; contar(); } catch {} }
+const contar = () => { const n = cuerpo.value.trim() ? cuerpo.value.trim().split(/\s+/).length : 0; $('#conteo').textContent = `${n} palabras · ${Math.max(1, Math.round(n / 210))} min de lectura · mínimo 120`; };
+$$('input, textarea, select').forEach((el) => el.addEventListener('input', () => { contar(); guardarBorrador(); }));
+
+// Formato
+$$('#herr button').forEach((b) => b.onclick = () => {
+  const s = cuerpo.selectionStart, e = cuerpo.selectionEnd, sel = cuerpo.value.slice(s, e) || 'texto';
+  const f = { h2: `\n## ${sel}\n`, b: `**${sel}**`, i: `*${sel}*`, q: `\n> ${sel}\n`, l: `\n- ${sel}\n` }[b.dataset.f];
+  cuerpo.setRangeText(f, s, e, 'end'); cuerpo.focus(); contar(); guardarBorrador();
+});
+
+// Vista previa con el mismo formato mínimo que el servidor
+function md(src) {
+  const inl = (t) => esc(t).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, '$1<em>$2</em>');
+  return src.split(/\n{2,}/).map((bloque) => {
+    const l = bloque.trim();
+    if (!l) return '';
+    if (l.startsWith('## ')) return `<h2>${inl(l.slice(3))}</h2>`;
+    if (l.startsWith('> ')) return `<blockquote><p>${inl(l.replace(/^>\s?/gm, ''))}</p></blockquote>`;
+    if (/^[-*] /.test(l)) return `<ul>${l.split('\n').map((x) => `<li>${inl(x.replace(/^[-*]\s+/, ''))}</li>`).join('')}</ul>`;
+    return `<p>${inl(l.replace(/\n/g, ' '))}</p>`;
+  }).join('');
+}
+$$('.pestanas button').forEach((b) => b.onclick = () => {
+  $$('.pestanas button').forEach((x) => x.classList.toggle('on', x === b));
+  const vista = b.dataset.p === 'vista';
+  cuerpo.hidden = vista; $('#vista').hidden = !vista; $('#herr').style.visibility = vista ? 'hidden' : 'visible';
+  if (vista) $('#vista').innerHTML = md(cuerpo.value) || '<p class="vacio">Aún no hay nada que mostrar.</p>';
+});
+
+$('#forma').onsubmit = async (e) => {
+  e.preventDefault();
+  const boton = $('#publicar');
+  boton.disabled = true; boton.textContent = 'Publicando…';
+  $('#errores').hidden = true;
+  try {
+    const r = await api('/api/articulos', {
+      titulo: $('#titulo').value, categoria: $('#categoria').value, resumen: $('#resumen').value, cuerpo: cuerpo.value,
+      autor_nombre: $('#autor').value, autor_bio: $('#bio').value, autor_correo: $('#correo').value, sitio_web: $('#sitio_web').value,
+    });
+    try { localStorage.removeItem(BORRADOR); } catch {}
+    if (!r.slug) { avisar('Gracias.'); return; }
+    avisar(r.estado === 'publicado' ? 'Tu artículo ya está publicado' : 'Recibido: quedó en revisión');
+    setTimeout(() => location.href = `/articulos/${r.slug}`, 700);
+  } catch (err) {
+    const lista = err.datos?.errores || [err.message];
+    $('#errores').innerHTML = `<b>Antes de publicar:</b><ul style="margin:6px 0 0;padding-left:18px">${lista.map((x) => `<li>${esc(x)}</li>`).join('')}</ul>`;
+    $('#errores').hidden = false; $('#errores').scrollIntoView({ block: 'center' });
+    boton.disabled = false; boton.textContent = 'Publicar artículo';
+  }
+};
+contar();
+</script>
+</body>
+</html>

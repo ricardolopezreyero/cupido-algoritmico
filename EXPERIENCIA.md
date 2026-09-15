@@ -132,7 +132,7 @@ Formato: **riesgo detectado en la simulación** (brazo A → brazo B) y **la ayu
 
 ## Primera impresión multimedia
 
-El algoritmo es ciego a los medios — esa es la tesis del producto. Pero cuando hay match ≥95%, la primera impresión sí importa, y debe ser tuya, no una foto elegida por miedo. Cada perfil incluye:
+El algoritmo es ciego a los medios — esa es la tesis del producto. Pero cuando hay match ≥90 % y los dos abren la puerta, la primera impresión sí importa, y debe ser tuya, no una foto elegida por miedo. Cada perfil incluye:
 
 | Medio | Spec | Guía en pantalla |
 |---|---|---|
@@ -140,7 +140,7 @@ El algoritmo es ciego a los medios — esa es la tesis del producto. Pero cuando
 | **Audio (30–90 s)** | Leer tu carta (P33) en tu propia voz — guion ya resuelto, cero pánico de "¿qué digo?" | *"Tu voz diciendo tu carta. Es lo segundo que tu match conocerá de ti, después de leerla."* |
 | **Video (30–60 s)** | Prompt guiado: "Muéstranos tu domingo perfecto" o "¿Qué verá tu pareja un martes normal contigo?" | Grabación vertical, sin edición requerida; se puede regrabar las veces que sea |
 
-**Orden de revelación al hacer match** (diseñado para que lo físico llegue al final, ya con contexto): 1) % y top-3 dimensiones → 2) carta escrita → 3) audio con su voz → 4) video → 5) fotos. Cada paso se abre cuando el receptor lo decide: la primera impresión se construye en el orden inverso al de Tinder.
+**Orden de revelación al abrirse la puerta (doble sí)** (diseñado para que lo físico llegue al final, ya con contexto): 1) % y top-3 dimensiones → 2) carta escrita → 3) audio con su voz → 4) video → 5) fotos. Cada paso se abre cuando el receptor lo decide: la primera impresión se construye en el orden inverso al de Tinder.
 
 Los medios se suben al final del cuestionario (o después — el perfil puede entrar al matching sin ellos, pero se avisa: *"Si hay match, esto es lo que la otra persona verá. No lo dejes al azar"*). Reemplazables cuando quieras, como todo lo demás.
 

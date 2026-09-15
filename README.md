@@ -2,56 +2,81 @@
 
 **No es una app de citas. Es un sistema de detección de parejas.**
 
-Te registras, respondes 33 preguntas una sola vez, y no pasa nada más. No hay swipes, no hay fotos como moneda de cambio, no hay conversaciones forzadas. Si algún día el algoritmo encuentra a alguien con quien tu compatibilidad supera el **95%**, les avisamos a los dos. Si nunca pasa, nunca te molestamos.
+<!-- Autor: Ricardo López Reyero · RLR · rev 181218 -->
+
+Te registras, respondes 41 preguntas una sola vez, y no pasa nada más. No hay swipes, no hay fotos como moneda de cambio, no hay conversaciones forzadas. Si algún día el algoritmo encuentra a alguien con quien tu compatibilidad supera el **90 %**, les avisamos a los dos al mismo tiempo — pero **la puerta no se abre hasta que los dos digan que sí**. Si nunca pasa, nunca te molestamos.
+
+## El demo
+
+| | |
+|---|---|
+| **Panel de personas** · `/persona` | Entra como cualquiera de las 20 personas ficticias (10 hombres, 10 mujeres). Sus coincidencias de 90 % hacia arriba, por qué, lo que tendrían que cuidar, la puerta con doble sí y lo que el algoritmo sabe de ti. |
+| **Panel administrativo** · `/admin` | Cifras, matriz 10 × 10, vetos explicados, el cálculo de cada par en las dos direcciones, puertas, corrida del matching por fases, laboratorio de pesos, artículos y bitácora en vivo. |
+| **Artículos** · `/articulos` | Cualquiera publica sin crear cuenta. |
+| **Cuestionario** · `/cuestionario` | Las 41 preguntas conectadas: autoguardado, enlace privado sin contraseña, y el motor te cruza al terminar. |
+
+Sin logins a propósito: es un demo y tiene que fluir. Lo que falta para abrirlo a personas reales (enlace mágico por correo, admin protegido, privacidad de datos sensibles, verificación de identidad…) está en **[la lista completa](docs/RUTA.md)**.
 
 ## Por qué
 
 Las apps de citas actuales optimizan lo contrario a lo que prometen:
 
-- **Optimizan atención, no matches.** Su negocio es que sigas dentro, no que salgas emparejado.
-- **El filtro primario es físico.** La foto decide en 2 segundos algo que debería decidirse con información de años: valores, planes de vida, forma de pelear, forma de amar.
+- **Optimizan atención, no parejas.** Su negocio es que sigas dentro, no que salgas emparejado.
+- **El filtro primario es físico.** La foto decide en dos segundos algo que debería decidirse con información de años: valores, planes de vida, forma de pelear, forma de amar.
 - **Generan incertidumbre infinita.** Cientos de opciones mediocres producen parálisis, no pareja.
 
-Cupido Algorítmico invierte la lógica: **máxima información, mínimo ruido**. Solo te enteras de que alguien existe cuando la evidencia de compatibilidad es abrumadora.
+Cupido Algorítmico invierte la lógica: **máxima información, mínimo ruido**. Solo te enteras de que alguien existe cuando la evidencia de compatibilidad es abrumadora — y aun así, nadie entra a tu vida si tú no dices que sí.
 
-## Por qué 33 preguntas
+## Cómo decide (versión 2)
 
-- Es un número **alto pero llenable**: suficiente para cubrir todas las dimensiones que predicen éxito de pareja, sin agotar a quien responde con seriedad.
-- El costo de responderlas es un **filtro en sí mismo**: quien no invierte 40 minutos en describir su vida, no está buscando en serio.
-- Cada pregunta existe porque su respuesta **alimenta el algoritmo**. No hay preguntas decorativas.
+1. **Vetos de ida y vuelta**: los innegociables de los dos (edad, distancia, hijos, exclusividad, fe con práctica, hábitos, política, innegociables íntimos). Eliminan el par y se explican. Un dato que falta nunca veta.
+2. **Diez dimensiones en las dos direcciones**: lo que tú necesitas contra lo que la otra persona da natural, y al revés.
+3. **Pesos personales**: lo sexual y lo espiritual pesan distinto para cada quien, según lo que hace y qué tan negociable lo declara. Conflicto y valores nunca bajan.
+4. **Media geométrica + media armónica**: una dimensión mala no se compensa, y un match bueno solo para uno se hunde.
+5. **Techos y calidad**: una dimensión desastrosa limita el total; la claridad con la que se describió el menos claro de los dos también.
+6. **Umbral de 90 % y puerta con doble sí.**
 
-## Las dimensiones que medimos (y por qué)
-
-La investigación sobre parejas de largo plazo (Gottman, teoría del apego, Big Five, estudios longitudinales de satisfacción marital) es sorprendentemente consistente: lo que predice que una pareja dure y sea feliz **no es lo que las apps miden**. Estas son las 8 dimensiones del cuestionario:
-
-| # | Dimensión | Qué predice | Lógica de matching |
-|---|-----------|-------------|--------------------|
-| 1 | **Filtros duros y logística** | Viabilidad básica | Eliminatoria: edad mutua, hijos, exclusividad, religión innegociable, disposición geográfica |
-| 2 | **Visión de vida** | Que ambos remen hacia el mismo lugar | Similitud alta requerida |
-| 3 | **Valores en acción** | Confianza y respeto a largo plazo | Similitud semántica (no de palabras, de conducta) |
-| 4 | **Personalidad y energía** | Convivencia diaria sin fricción | Similitud en algunas cosas, complementariedad tolerada en otras |
-| 5 | **Conflicto y reparación** | El predictor #1 de divorcio (Gottman) | Compatibilidad de estilos: no importa cuánto pelees, importa cómo reparas |
-| 6 | **Afecto e intimidad** | Satisfacción emocional sostenida | **Cruzada**: lo que A necesita recibir vs. lo que B da naturalmente, en ambas direcciones |
-| 7 | **Vida cotidiana** | El 90% del tiempo real de una pareja | Similitud en hábitos, tolerancias explícitas |
-| 8 | **Profundidad y autoconocimiento** | Madurez emocional: capacidad de estar en pareja | Evaluada por rúbrica, no comparada — es un multiplicador de calidad |
-
-Tres decisiones de diseño importantes:
-
-1. **El cuestionario es idéntico para hombres y mujeres.** El matching no necesita preguntas distintas por sexo; necesita cruzar *lo que tú eres* con *lo que la otra persona busca*, en ambas direcciones. Preguntas asimétricas meterían sesgo sin agregar señal.
-2. **Casi todas las preguntas capturan dos cosas: cómo eres tú y qué necesitas del otro.** El match no es "se parecen", es "A ofrece lo que B necesita **y** B ofrece lo que A necesita".
-3. **Mayoría abiertas, minoría de opción múltiple — cada una con su función.** Las abiertas dan señal semántica y autenticidad (es muy difícil fingir profundidad en texto libre). Las de opción múltiple dan señal dura, comparable y sin ambigüedad para filtros y pesos.
+Detalle completo, incluida la revisión de lo sexual y lo espiritual: **[MODELO.md](MODELO.md)**.
 
 ## Estructura del repo
 
 - [`MANIFIESTO.md`](MANIFIESTO.md) — Por qué existe esto, en una página.
-- [`PREGUNTAS.md`](PREGUNTAS.md) — Las 33 preguntas base + el Módulo Profundo (P34–P41: intimidad sexual y nivel de conciencia), con el razonamiento de cada una.
-- [`MODELO.md`](MODELO.md) — Cómo se calcula el % de compatibilidad y por qué el umbral es 95%.
-- [`EXPERIENCIA.md`](EXPERIENCIA.md) — La experiencia de respuesta (una pregunta por pantalla, ayudas, autoguardado, edición) y la primera impresión multimedia (fotos, audio, video — que el algoritmo nunca ve y solo se revelan al hacer match).
-- [`montecarlo.py`](montecarlo.py) — Simulación de 1,000 participantes que informó el diseño de la experiencia.
+- [`PREGUNTAS.md`](PREGUNTAS.md) — Las 41 preguntas con el razonamiento de cada una y los cambios de la v2.
+- [`MODELO.md`](MODELO.md) — Cómo se calcula el porcentaje, por qué 90 % y por qué la puerta.
+- [`EXPERIENCIA.md`](EXPERIENCIA.md) — La experiencia de respuesta y la primera impresión multimedia.
+- [`docs/RUTA.md`](docs/RUTA.md) — **La lista completa** de lo que falta, priorizada.
+- `public/js/preguntas.js` — el cuestionario v2 (fuente única de verdad).
+- `public/js/motor.js` — el motor de compatibilidad v2 (lo usan el servidor y el navegador).
+- `src/` — Worker de Cloudflare: API, base de datos D1, puertas, avisos, artículos.
+- `public/` — landing, panel de personas, panel admin, cuestionario, editor de artículos.
+- `seed/` — las 20 personas ficticias (respuestas estructuradas + textos) y los artículos iniciales.
+- `scripts/probar-motor.mjs` — imprime la matriz 10 × 10 y el detalle de cualquier par.
+- [`montecarlo.py`](montecarlo.py) — simulación de 1,000 participantes que informó el diseño de la experiencia.
+
+## Correrlo
+
+```bash
+npm run probar
+```
+
+```bash
+node scripts/probar-motor.mjs h01 m01
+```
+
+```bash
+npm run dev
+```
+
+```bash
+npm run deploy
+```
+
+`npm run dev` y `npm run deploy` primero arman `seed/personas.json`. La base se crea y se siembra sola en la primera petición; "Reiniciar demo" en el admin la regresa al estado inicial.
 
 ## El contrato con el usuario
 
 1. Respondes una vez, con honestidad. Puedes actualizar tus respuestas cuando tu vida cambie.
 2. Nadie ve tu perfil. Ni siquiera existe un "perfil" navegable.
-3. Solo recibes una notificación si hay un match ≥95% — y la otra persona recibe la suya al mismo tiempo.
-4. Mentir solo te garantiza hacer match con la pareja ideal de alguien que no eres tú.
+3. Solo te avisamos si hay una coincidencia de 90 % o más — y la otra persona recibe su aviso al mismo tiempo.
+4. La puerta solo se abre si los dos dicen que sí. Nadie se entera nunca de un no.
+5. Mentir solo te garantiza hacer match con la pareja ideal de alguien que no eres tú.

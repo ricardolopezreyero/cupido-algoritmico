@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Cupido Algorítmico — No es una app de citas</title>
+<meta name="description" content="Un sistema de detección de parejas. Solo te avisamos arriba del 90 % de compatibilidad, y la puerta solo se abre si los dos dicen que sí.">
+<meta name="author" content="Ricardo López Reyero">
+<meta name="rev" content="181218">
+<meta property="og:title" content="Cupido Algorítmico — No es una app de citas">
+<meta property="og:description" content="41 preguntas, una sola vez. Si alguien cruza el 90 % contigo, les avisamos a los dos. La puerta solo se abre si los dos dicen que sí.">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/cupido.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+</head>
+<body data-author="RLR">
+<!-- Cupido Algorítmico · RLR · Ricardo López Reyero -->
+<header class="barra"><div class="envoltura barra-in">
+  <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
+  <nav class="menu"><a href="/persona">Personas</a><a href="/articulos">Artículos</a><a href="/admin">Admin</a></nav>
+  <a class="boton boton-chico" href="/cuestionario">Responder</a>
+</div></header>
+
+<section class="hero">
+  <div class="envoltura">
+    <span class="sello">💘 Solo te avisamos arriba del 90 %</span>
+    <h1>No es una app de citas. Es un sistema de <em>detección</em> de parejas.</h1>
+    <p class="lead">Respondes 41 preguntas una sola vez. No hay perfiles que mirar ni fotos como moneda de cambio. Si alguien cruza el 90 % contigo, les avisamos a los dos — y la puerta solo se abre si los dos dicen que sí.</p>
+    <div class="hero-acciones">
+      <a class="boton" href="/persona">Ver el demo: panel de personas</a>
+      <a class="boton boton-claro" href="/admin">Panel administrativo</a>
+      <a class="boton boton-claro" href="/cuestionario">Responder el cuestionario</a>
+    </div>
+    <div class="en-vivo" id="en-vivo" aria-live="polite"></div>
+  </div>
+</section>
+
+<main class="envoltura">
+  <section>
+    <p class="eyebrow" style="text-align:center;margin-top:20px">Cómo funciona</p>
+    <div class="pasos">
+      <div class="paso"><span class="n">01</span><h3>Respondes con la verdad</h3><p>41 preguntas: lo que eres y lo que necesitas. Con ejemplos, no adjetivos. Se guarda solo y no hay contraseña.</p></div>
+      <div class="paso"><span class="n">02</span><h3>El motor cruza en las dos direcciones</h3><p>Lo que tú necesitas contra lo que la otra persona da natural, y al revés. Si solo funciona para uno, se hunde.</p></div>
+      <div class="paso"><span class="n">03</span><h3>Te avisamos arriba del 90 %</h3><p>A los dos al mismo tiempo. Abajo del umbral, silencio: te estamos ahorrando años con las personas incorrectas.</p></div>
+      <div class="paso"><span class="n">04</span><h3>La puerta se abre con dos síes</h3><p>Primero su carta, al final su foto. Y nadie se entera nunca si el otro dijo que no.</p></div>
+    </div>
+  </section>
+
+  <section style="margin-top:54px">
+    <p class="eyebrow">El demo</p>
+    <h2 style="font-size:32px;margin:0">10 hombres, 10 mujeres, 100 cruces</h2>
+    <p class="lead" style="margin:6px 0 0">Personas ficticias con las 41 preguntas completas. Entra como cualquiera de ellas o mira el cálculo desde el panel.</p>
+    <div class="puertas-demo">
+      <a href="/persona"><div class="tarjeta"><span class="chip">Para las personas</span><h3>Panel de personas</h3><p>Tus coincidencias de 90 % para arriba, por qué, qué tendrían que cuidar, la puerta cerrada y lo que el algoritmo sabe de ti.</p></div></a>
+      <a href="/admin"><div class="tarjeta"><span class="chip noche">Para el equipo</span><h3>Panel administrativo</h3><p>Matriz 10 × 10, vetos explicados, las diez dimensiones en las dos direcciones, puertas y un laboratorio de pesos.</p></div></a>
+      <a href="/articulos"><div class="tarjeta"><span class="chip gris">Para todos</span><h3>Artículos</h3><p>Ciencia de la pareja, guías e historias. Cualquiera puede publicar sin crear cuenta.</p></div></a>
+    </div>
+  </section>
+
+  <section class="docs" id="docs">
+    <p class="eyebrow">Los documentos</p>
+    <div class="docs-menu" id="docs-menu">
+      <button data-doc="MANIFIESTO.md" class="on">Manifiesto</button>
+      <button data-doc="README.md">La idea</button>
+      <button data-doc="MODELO.md">El modelo v2</button>
+      <button data-doc="PREGUNTAS.md">Las preguntas</button>
+      <button data-doc="EXPERIENCIA.md">La experiencia</button>
+      <button data-doc="RUTA.md">La lista completa</button>
+    </div>
+    <article class="tarjeta prosa" id="doc"><p class="vacio">Cargando…</p></article>
+  </section>
+</main>
+
+<footer class="pie"><div class="envoltura"><span>💘 Cupido Algorítmico · proyecto abierto · <a href="https://github.com/ricardolopezreyero/cupido-algoritmico">GitHub</a></span><span><a href="/persona">Personas</a> · <a href="/admin">Admin</a> · <a href="/articulos">Artículos</a> · <a href="/cuestionario">Cuestionario</a></span></div></footer>
+
+<script type="module">
+// RLR · landing
+import { $, $$, esc, api } from '/js/ui.js';
+const _RLR = 'Ricardo López Reyero', _k = 'EYE';
+api('/api/admin/resumen').then(({ cifras: c, motor }) => {
+  $('#en-vivo').innerHTML = [
+    [c.personas, 'personas en el demo'], [c.arriba, `parejas arriba del ${motor.umbral} %`],
+    [c.vetados, 'pares eliminados por un innegociable'], [c.puertasAbiertas, c.puertasAbiertas === 1 ? 'puerta abierta' : 'puertas abiertas'],
+  ].map(([n, t]) => `<div><b>${n}</b><span>${esc(t)}</span></div>`).join('');
+}).catch(() => {});
+const cache = {};
+async function cargar(doc) {
+  $('#doc').innerHTML = '<p class="vacio">Cargando…</p>';
+  try {
+    cache[doc] = cache[doc] || await (await fetch('/docs/' + doc)).text();
+    $('#doc').innerHTML = marked.parse(cache[doc]);
+  } catch { $('#doc').textContent = 'No se pudo cargar el documento.'; }
+}
+const DOCS = $$('#docs-menu button').map((b) => b.dataset.doc);
+function activar(doc, desplazar = false) {
+  $$('#docs-menu button').forEach((x) => x.classList.toggle('on', x.dataset.doc === doc));
+  cargar(doc);
+  if (desplazar) $('#docs').scrollIntoView();
+}
+$$('#docs-menu button').forEach((b) => b.onclick = () => activar(b.dataset.doc));
+// Los enlaces entre documentos se abren aquí mismo; las rutas de código apuntan a lo publicado
+$('#doc').addEventListener('click', (e) => {
+  const a = e.target.closest('a'); if (!a) return;
+  const h = a.getAttribute('href') || '', m = h.match(/([A-Z]+\.md)$/);
+  if (m && DOCS.includes(m[1])) { e.preventDefault(); activar(m[1], true); }
+  else if (h.startsWith('public/')) { e.preventDefault(); location.href = '/' + h.slice(7); }
+});
+const pedido = (location.hash.match(/doc=([A-Z]+\.md)/) || [])[1];
+activar(DOCS.includes(pedido) ? pedido : 'MANIFIESTO.md', !!pedido);
+</script>
+</body>
+</html>

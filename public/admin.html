@@ -1,0 +1,385 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Admin · Cupido Algorítmico</title>
+<meta name="author" content="Ricardo López Reyero">
+<meta name="rev" content="181218">
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/cupido.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+</head>
+<body data-author="RLR">
+<!-- Cupido Algorítmico · Panel administrativo · RLR · Ricardo López Reyero -->
+<div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Admin</b></a><button id="abrir-menu" aria-label="Abrir menú">☰</button></div>
+<div class="admin">
+  <aside class="lateral" id="lateral">
+    <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
+    <nav id="nav">
+      <a href="#resumen" data-s="resumen"><span class="ico">📊</span>Resumen</a>
+      <a href="#matriz" data-s="matriz"><span class="ico">🧮</span>Matriz 10 × 10</a>
+      <a href="#coincidencias" data-s="coincidencias"><span class="ico">💘</span>Coincidencias</a>
+      <a href="#personas" data-s="personas"><span class="ico">👥</span>Personas</a>
+      <a href="#puertas" data-s="puertas"><span class="ico">🚪</span>Puertas</a>
+      <div class="sep">Motor</div>
+      <a href="#laboratorio" data-s="laboratorio"><span class="ico">🧪</span>Laboratorio de pesos</a>
+      <a href="#motor" data-s="motor"><span class="ico">⚙️</span>Cómo decide</a>
+      <div class="sep">Contenido</div>
+      <a href="#articulos" data-s="articulos"><span class="ico">📝</span>Artículos</a>
+      <a href="#bitacora" data-s="bitacora"><span class="ico">📜</span>Bitácora</a>
+      <a href="#ruta" data-s="ruta"><span class="ico">🗺️</span>La lista completa</a>
+    </nav>
+    <div class="pie-lat">Demo con datos ficticios · sin login.<br><a href="/persona">Panel de personas →</a></div>
+  </aside>
+  <main class="contenido" id="contenido"><p class="vacio">Cargando el panel…</p></main>
+</div>
+<div class="cajon-velo" id="velo"></div>
+<aside class="cajon" id="cajon" aria-hidden="true"><div class="cajon-cerrar"><button id="cerrar-cajon" aria-label="Cerrar">✕</button></div><div class="cajon-in" id="cajon-in"></div></aside>
+<div class="modal-velo" id="modal"><div class="modal" id="modal-in"></div></div>
+
+<script type="module">
+// RLR · panel admin
+import { $, $$, esc, api, avisar, avatar, hace, colorPct, pronto } from '/js/ui.js';
+import { PREGUNTAS, BLOQUES, PARTE, etiqueta } from '/js/preguntas.js';
+const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
+const cont = $('#contenido');
+let D = null, seccion = 'resumen', sondeo = null, ultimoEvento = 0;
+
+const DIM_BASE = {};
+async function cargar() { D = await api('/api/admin/resumen'); D.motor.dimensiones.forEach((d) => DIM_BASE[d.id] = d.base); ultimoEvento = D.bitacora[0]?.id || 0; }
+const nombre = (id) => D.personas.find((p) => p.id === id)?.nombre || id;
+const colorDe = (id) => D.personas.find((p) => p.id === id)?.color || '#999';
+const corto = (n) => String(n).split(' ')[0];
+
+/* ── navegación con danza entre secciones ────────────────────────────────── */
+async function ir(s) {
+  seccion = s || 'resumen';
+  $$('#nav a').forEach((a) => a.classList.toggle('on', a.dataset.s === seccion));
+  cerrarMenu();
+  clearInterval(sondeo);
+  const fn = SECCIONES[seccion] || SECCIONES.resumen;
+  cont.innerHTML = `<div class="seccion-admin">${await fn()}</div>`;
+  (DESPUES[seccion] || (() => {}))();
+  window.scrollTo(0, 0);
+}
+window.addEventListener('hashchange', () => ir(location.hash.slice(1)));
+const abrirMenu = () => { $('#lateral').classList.add('on'); $('#velo').classList.add('on'); };
+const cerrarMenu = () => { $('#lateral').classList.remove('on'); if (!$('#cajon').classList.contains('on')) $('#velo').classList.remove('on'); };
+$('#abrir-menu').onclick = abrirMenu;
+$('#velo').onclick = () => { cerrarCajon(); cerrarMenu(); };
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarCajon(); cerrarMenu(); } });
+
+const cabeza = (titulo, sub, acciones = '') => `<div class="cabeza-admin"><div><h1>${titulo}</h1><p>${sub}</p></div><div class="acciones">${acciones}</div></div>`;
+const botonesMotor = `<button class="boton" data-accion="correr">⟳ Correr el matching</button><button class="boton boton-claro" data-accion="reiniciar">Reiniciar demo</button>`;
+
+/* ═══ SECCIONES ═══════════════════════════════════════════════════════════ */
+const SECCIONES = {
+  async resumen() {
+    const c = D.cifras, max = Math.max(1, ...D.histograma);
+    const tiposVeto = Object.entries(D.vetosPorTipo).sort((a, b) => b[1] - a[1]);
+    const maxV = Math.max(1, ...tiposVeto.map((t) => t[1]));
+    const NOMBRE_VETO = { edad: 'Edad fuera de rango', distancia: 'Distancia sin mudanza', hijos: 'Hijos (certezas opuestas)', hijos_pareja: 'No acepta pareja con hijos', exclusividad: 'Exclusividad', fe: 'Fe innegociable', fe_practica: 'Misma fe, práctica lejana', fe_hijos: 'Fe de los hijos', alcohol: 'Alcohol', tabaco: 'Tabaco', mascotas: 'Mascotas', politica: 'Política innegociable', sexual: 'Innegociable íntimo' };
+    return cabeza('Panel del matching', `Motor v${D.motor.version} · umbral ${D.motor.umbral} % · ${c.personas} personas en el demo`, botonesMotor) + `
+      <div class="banda">
+        <div><b>${c.personas}</b><span>personas en el matching<br>${c.mujeres} mujeres · ${c.hombres} hombres</span></div>
+        <div><b>${c.paresEvaluados}</b><span>pares evaluados<br>cada quien con quien busca</span></div>
+        <div><b>${c.vetados}</b><span>eliminados por un innegociable (${Math.round(100 * c.vetados / Math.max(1, c.paresEvaluados))} %)</span></div>
+        <div class="rosa"><b>${c.arriba}</b><span>parejas arriba del ${D.motor.umbral} %</span></div>
+        <div><b>${c.conMatch}</b><span>personas con al menos una<br>${c.sinMatch} en silencio</span></div>
+        <div><b>${c.puertasAbiertas}</b><span>puertas abiertas<br>${c.puertasConUnSi} con un sí esperando</span></div>
+      </div>
+      <div class="rejilla-2">
+        <section class="tarjeta"><h2>Distribución de compatibilidad</h2><p class="sub">Pares que pasaron los filtros duros · promedio ${c.promedio} %</p>
+          <div class="histo">${D.histograma.map((n, i) => `<div class="col"><span class="v">${n || ''}</span><div class="bar ${i === 9 ? 'alto' : ''}" data-h="${(100 * n) / max}"></div><span class="l">${i * 10}${i === 9 ? '+' : ''}</span></div>`).join('')}</div>
+        </section>
+        <section class="tarjeta"><h2>Por qué se eliminan pares</h2><p class="sub">Un dealbreaker no es un cero: es la inexistencia del par</p>
+          <div class="barras">${tiposVeto.map(([k, n]) => `<div class="barra-fila" style="grid-template-columns:180px 1fr 34px"><span>${esc(NOMBRE_VETO[k] || k)}</span><div class="pista"><div class="relleno" data-w="${(100 * n) / maxV}"></div></div><b>${n}</b></div>`).join('') || '<p class="vacio">Sin vetos</p>'}</div>
+        </section>
+      </div>
+      <div class="rejilla-2" style="margin-top:16px">
+        <section class="tarjeta"><h2>Las parejas arriba del ${D.motor.umbral} %</h2><p class="sub">Toca una para ver el cálculo completo</p>
+          <div class="lista-pares">${D.fuertes.map(filaPar).join('') || '<p class="vacio">Nadie cruza el umbral todavía.</p>'}</div></section>
+        <section class="tarjeta"><h2>Vetos más dolorosos</h2><p class="sub">Lo que habría sido sin el innegociable</p>
+          <div class="lista-pares">${D.dolorosos.map((p) => `<div class="par-fila" data-par="${p.a}/${p.b}"><span class="pct" style="color:#a39aa8">${p.sinVeto}</span>
+            <span class="duo">${avatar(p.nombreA, colorDe(p.a), 'sm')}${avatar(p.nombreB, colorDe(p.b), 'sm')}</span>
+            <div class="quienes">${esc(corto(p.nombreA))} × ${esc(corto(p.nombreB))}<span>⛔ ${esc(p.vetos[0])}</span></div></div>`).join('')}</div></section>
+      </div>
+      <section class="tarjeta" style="margin-top:16px"><h2>Actividad en vivo</h2><p class="sub">Todo lo que pasa en el sistema, en el momento</p><div class="vivo" id="vivo">${D.bitacora.slice(0, 12).map(evento).join('')}</div></section>`;
+  },
+
+  async matriz() {
+    const { filas, columnas, celdas } = D.matriz;
+    return cabeza('Matriz de compatibilidad', 'Filas: hombres · columnas: mujeres · ⛔ eliminado por un innegociable (el número tenue es lo que habría sido)', botonesMotor) + `
+      <section class="tarjeta"><div class="matriz-caja"><table class="matriz">
+        <thead><tr><th></th>${columnas.map((c) => `<th class="col" title="${esc(c.nombre)}">${esc(corto(c.nombre))}</th>`).join('')}</tr></thead>
+        <tbody>${filas.map((f) => `<tr><th style="text-align:right">${esc(corto(f.nombre))}</th>${columnas.map((c) => {
+          const k = f.id < c.id ? `${f.id}|${c.id}` : `${c.id}|${f.id}`, x = celdas[k];
+          if (!x) return '<td style="background:#f3efeb"></td>';
+          if (x.veto) return `<td class="veto" data-par="${k.replace('|', '/')}" title="${esc(corto(f.nombre))} × ${esc(corto(c.nombre))}: eliminado (${esc(x.vetos.join(', '))}) · habría sido ${x.sinVeto} %">⛔<br>${x.sinVeto}</td>`;
+          return `<td class="${x.pct >= D.motor.umbral ? 'estrella' : ''}" data-par="${k.replace('|', '/')}" style="background:${colorPct(x.pct)};color:${x.pct >= 80 ? '#fff' : '#5b3b44'}" title="${esc(corto(f.nombre))} × ${esc(corto(c.nombre))}: ${x.pct} %">${x.pct}</td>`;
+        }).join('')}</tr>`).join('')}</tbody></table></div>
+        <div class="leyenda"><span><i style="background:#d6455f"></i>90 % o más ★</span><span><i style="background:#e7788d"></i>80–89</span><span><i style="background:#f0a8b6"></i>70–79</span><span><i style="background:#f6cfd7"></i>60–69</span><span><i style="background:repeating-linear-gradient(135deg,#f4efeb 0 4px,#ebe4de 4px 8px)"></i>veto</span></div>
+      </section>`;
+  },
+
+  async coincidencias() {
+    return cabeza('Coincidencias arriba del umbral', 'Lo que cada pareja recibió como aviso, y en qué va su puerta', botonesMotor) +
+      (D.fuertes.map((p) => `<section class="tarjeta"><div class="par-fila" data-par="${p.a}/${p.b}" style="border:0;padding:0">
+        <span class="pct">${p.pct} %</span><span class="duo">${avatar(p.nombreA, colorDe(p.a))}${avatar(p.nombreB, colorDe(p.b))}</span>
+        <div class="quienes"><b>${esc(p.nombreA)} × ${esc(p.nombreB)}</b><span>${p.top.map((t) => `${esc(t.dim)} ${Math.round(t.par * 100)} %`).join(' · ')}</span></div>
+        ${chipPuerta(p.puerta)}</div></section>`).join('') || '<section class="tarjeta"><p class="vacio">Nadie cruza el umbral todavía.</p></section>');
+  },
+
+  async personas() {
+    return cabeza('Personas', 'Toca un nombre para ver sus respuestas, sus pesos y todos sus cruces', `<a class="boton boton-claro" href="/cuestionario">+ Agregar con el cuestionario</a>`) + `
+      <section class="tarjeta"><table class="tabla apilable"><thead><tr><th>Persona</th><th>Fe</th><th>Hijos</th><th>≥ ${D.motor.umbral} %</th><th>Más cerca</th><th>Calidad</th><th>Peso íntimo · fe</th><th></th></tr></thead><tbody>
+      ${D.personas.map((p) => `<tr>
+        <td class="nom" data-l="Persona"><a href="#" data-persona="${p.id}" style="display:flex;gap:10px;align-items:center;color:inherit;text-decoration:none">${avatar(p.nombre, p.color, 'sm')}<span>${esc(p.nombre)}<br><span style="font-weight:400;color:var(--gris);font-size:12.5px">${p.edad || '—'} · ${esc(p.ciudad || '')}${p.origen === 'cuestionario' ? ' · cuestionario' : ''}${p.estado === 'pausada' ? ' · en pausa' : ''}${!p.completo ? ` · ${p.avance} %` : ''}</span></span></a></td>
+        <td data-l="Fe">${esc(p.fe || '—')}</td><td data-l="Hijos">${esc(p.hijos || '—')}</td>
+        <td data-l="≥ ${D.motor.umbral} %">${p.coincidencias.length ? p.coincidencias.map((n) => `<span class="chip">${n}</span>`).join(' ') : '<span class="chip gris">silencio</span>'}</td>
+        <td data-l="Más cerca">${p.mejorBajo || '—'}</td><td data-l="Calidad">${Math.round(((p.q - 0.85) / 0.15) * 100)} %</td>
+        <td data-l="Peso íntimo · fe">${p.pesoSexual} % · ${p.pesoEspiritual} %</td>
+        <td data-l="Panel"><a class="enlace" href="/persona?id=${p.id}">Ver su panel</a></td></tr>`).join('')}
+      </tbody></table></section>`;
+  },
+
+  async puertas() {
+    const est = (p) => p.estado === 'abierta' ? '<span class="chip ok">abierta</span>' : (p.decision_a === 'si' || p.decision_b === 'si') ? '<span class="chip ambar">un sí esperando</span>' : '<span class="chip gris">cerrada</span>';
+    const dec = (d) => d === 'si' ? 'sí' : d === 'no' ? 'no' : '—';
+    return cabeza('Puertas', 'Avisar sí, dejar entrar no: la puerta solo se abre con dos síes. Esta vista es solo del admin — ninguna persona ve la decisión de la otra.') + `
+      <section class="tarjeta"><table class="tabla apilable"><thead><tr><th>Pareja</th><th>%</th><th>Decisiones</th><th>Estado</th><th>Aviso</th></tr></thead><tbody>
+      ${D.puertas.map((p) => `<tr><td class="nom" data-l="Pareja"><span class="duo">${avatar(p.nombreA, colorDe(p.a), 'sm')}${avatar(p.nombreB, colorDe(p.b), 'sm')}</span>${esc(corto(p.nombreA))} × ${esc(corto(p.nombreB))}</td>
+        <td data-l="%">${p.pct}</td><td data-l="Decisiones">${esc(corto(p.nombreA))}: ${dec(p.decision_a)} · ${esc(corto(p.nombreB))}: ${dec(p.decision_b)}</td><td data-l="Estado">${est(p)}</td><td data-l="Aviso">${hace(p.avisada)}</td></tr>`).join('') || '<tr><td colspan="5" class="vacio">Sin puertas</td></tr>'}
+      </tbody></table></section>`;
+  },
+
+  async laboratorio() {
+    return cabeza('Laboratorio de pesos', 'Mueve los pesos base y mira en vivo qué parejas cruzan o dejan el umbral. No se guarda nada: es para pensar el algoritmo.', `<button class="boton boton-claro" id="lab-reset">Restablecer</button>`) + `
+      <div class="rejilla-2">
+        <section class="tarjeta"><h2>Pesos base</h2><p class="sub">Cada persona luego los ajusta con sus propias respuestas (lo íntimo y la fe suben o bajan según lo que hace)</p>
+          <div class="deslizadores">${D.motor.dimensiones.map((d) => `<div class="deslizador"><label for="w-${d.id}">${esc(d.nombre)}</label><input type="range" min="0" max="30" step="1" id="w-${d.id}" data-dim="${d.id}" value="${d.base}"><b id="v-${d.id}">${d.base}</b></div>`).join('')}</div></section>
+        <section class="tarjeta"><h2>Resultado</h2><p class="sub" id="lab-sub">Con los pesos actuales</p>
+          <div class="banda" style="grid-template-columns:repeat(2,1fr);margin-bottom:12px"><div class="rosa"><b id="lab-arriba">${D.cifras.arriba}</b><span>parejas arriba del ${D.motor.umbral} %</span></div><div><b id="lab-cambios">0</b><span>parejas cambiaron de lado</span></div></div>
+          <div class="lista-pares" id="lab-lista"><p class="vacio">Mueve un peso para ver el efecto.</p></div></section>
+      </div>`;
+  },
+
+  async motor() {
+    return cabeza('Cómo decide el motor', 'La lógica v2, en una pantalla') + `
+      <section class="tarjeta prosa" style="font-size:16.5px">
+        <h2 style="margin-top:0">1 · Vetos de ida y vuelta</h2>
+        <p>Antes de calcular nada, cada par debe pasar los innegociables de los dos: quién busca a quién, edad, distancia, hijos (certezas opuestas y aceptar hijos del otro), exclusividad, fe innegociable (misma tradición <em>y</em> práctica parecida), formación espiritual de los hijos, hábitos, política innegociable y los innegociables íntimos ("lo necesito" contra "no lo acepto"). <b>Un dato que falta nunca veta</b>: es duda, no incumplimiento.</p>
+        <h2>2 · Diez dimensiones en las dos direcciones</h2>
+        <p>Para cada par se calcula <b>A→B</b> (¿B tiene lo que A necesita?) y <b>B→A</b> por separado, porque la compatibilidad no es simétrica: lo que tú necesitas recibir contra lo que la otra persona da naturalmente.</p>
+        <h2>3 · Pesos personales</h2>
+        <p>Lo íntimo pesa más para quien le da importancia y lo declara poco negociable; la fe, para quien necesita compartirla y la practica seguido. Se deduce de lo que la persona <em>hace</em>. Conflicto y valores nunca bajan de su peso base.</p>
+        <div class="formula">S(A→B) = exp( Σ wᵢ(A) · ln sᵢ(A→B) )      ← media geométrica ponderada<br>S(A,B) = 2·S(A→B)·S(B→A) / (S(A→B)+S(B→A))   ← media armónica: si es bueno solo para uno, se hunde<br>% = S(A,B) × techo × min(Q(A), Q(B))</div>
+        <h2>4 · Techos y calidad</h2>
+        <p>Una dimensión desastrosa pone techo al total (conflicto &lt; 50 % → máximo 84; lo íntimo o la fe por debajo de 55 % para quien son centrales → máximo 86; cualquier dimensión &lt; 35 % → máximo 80). La calidad Q (autoconocimiento, responsabilidad, calidez, coherencia) va de 0.85 a 1 y se toma la del menos claro de los dos.</p>
+        <h2>5 · Umbral y puerta</h2>
+        <p>De ${D.motor.umbral} % hacia arriba se avisa a los dos al mismo tiempo. La puerta se abre solo con dos síes y nadie se entera de un no. Si el número baja del umbral y la puerta no se abrió, se retira en silencio.</p>
+      </section>`;
+  },
+
+  async articulos() {
+    const lista = await api('/api/admin/articulos');
+    const est = { publicado: 'ok', revision: 'ambar', oculto: 'gris' };
+    return cabeza('Artículos', 'Cualquier persona puede publicar sin cuenta. Lo que huele a spam queda en revisión.', `<a class="boton boton-claro" href="/articulos/escribir">Escribir</a><a class="boton boton-claro" href="/articulos" target="_blank">Ver sección</a>`) + `
+      <section class="tarjeta"><table class="tabla apilable"><thead><tr><th>Título</th><th>Autor</th><th>Estado</th><th>Lecturas</th><th>Acciones</th></tr></thead><tbody>
+      ${lista.map((a) => `<tr><td class="nom" data-l="Título"><a href="/articulos/${esc(a.slug)}" target="_blank" style="color:inherit">${esc(a.titulo)}</a>${a.destacado ? ' <span class="chip">destacado</span>' : ''}<br><span style="font-weight:400;color:var(--gris);font-size:12.5px">${esc(a.categoria)} · ${hace(a.creado)}</span></td>
+        <td data-l="Autor">${esc(a.autor_nombre)}${a.autor_correo ? `<br><span style="color:var(--gris);font-size:12.5px">${esc(a.autor_correo)}</span>` : ''}</td>
+        <td data-l="Estado"><span class="chip ${est[a.estado]}">${esc(a.estado)}</span></td><td data-l="Lecturas">${a.lecturas}</td>
+        <td data-l="Acciones"><div class="acciones">
+          ${a.estado !== 'publicado' ? `<button class="boton boton-chico" data-art="${a.id}" data-acc="publicar">Publicar</button>` : `<button class="boton boton-claro boton-chico" data-art="${a.id}" data-acc="ocultar">Ocultar</button>`}
+          <button class="boton boton-fantasma boton-chico" data-art="${a.id}" data-acc="${a.destacado ? 'quitar_destacado' : 'destacar'}">${a.destacado ? 'Quitar destacado' : 'Destacar'}</button></div></td></tr>`).join('')}
+      </tbody></table></section>`;
+  },
+
+  async bitacora() {
+    const ev = await api('/api/admin/bitacora');
+    return cabeza('Bitácora', 'Todo queda registrado: motor, puertas, artículos, cambios de admin') + `<section class="tarjeta"><div class="vivo" id="vivo" style="max-height:none">${ev.map(evento).join('')}</div></section>`;
+  },
+
+  async ruta() {
+    const md = await (await fetch('/docs/RUTA.md')).text();
+    const html = window.marked ? marked.parse(md) : `<pre>${esc(md)}</pre>`;
+    // enlaces a otros documentos: se abren en el visor de la portada
+    return `<section class="tarjeta prosa" style="font-size:16.5px">${html.replace(/href="(?:\.\.\/)?(?:docs\/)?([A-Z]+\.md)"/g, 'href="/#doc=$1" target="_blank"')}</section>`;
+  },
+};
+
+const DESPUES = {
+  resumen() { animarBarras(); vivir(); },
+  personas() { $$('[data-persona]').forEach((a) => a.onclick = (e) => { e.preventDefault(); verPersona(a.dataset.persona); }); },
+  laboratorio: laboratorio,
+  articulos() { $$('[data-art]').forEach((b) => b.onclick = async () => { b.disabled = true; await api(`/api/admin/articulos/${b.dataset.art}`, { accion: b.dataset.acc }); avisar('Listo'); ir('articulos'); }); },
+  bitacora() { vivir(); },
+};
+function animarBarras() { pronto(() => { $$('.histo .bar').forEach((b) => b.style.height = b.dataset.h + '%'); $$('.relleno[data-w]').forEach((b) => b.style.width = b.dataset.w + '%'); }); }
+
+/* ── piezas ──────────────────────────────────────────────────────────────── */
+function chipPuerta(p) {
+  if (!p) return '<span class="chip gris">sin puerta</span>';
+  if (p.estado === 'abierta') return '<span class="chip ok">🔓 abierta</span>';
+  if (p.decision_a === 'si' || p.decision_b === 'si') return '<span class="chip ambar">🤍 un sí</span>';
+  return '<span class="chip gris">🔒 cerrada</span>';
+}
+const filaPar = (p) => `<div class="par-fila" data-par="${p.a}/${p.b}"><span class="pct">${p.pct}</span>
+  <span class="duo">${avatar(p.nombreA, colorDe(p.a), 'sm')}${avatar(p.nombreB, colorDe(p.b), 'sm')}</span>
+  <div class="quienes">${esc(corto(p.nombreA))} × ${esc(corto(p.nombreB))}<span>${p.top.map((t) => esc(t.dim)).join(' · ')}</span></div>${chipPuerta(p.puerta)}</div>`;
+const ICONO = { motor: '⚙️', puerta: '🚪', articulo: '📝', admin: '🛠️', persona: '👤', sistema: '💾' };
+const evento = (e) => `<div class="ev"><span class="t">${hace(e.creado)}</span><div><b>${ICONO[e.tipo] || '•'} ${esc(e.accion)}</b><span>${esc(e.detalle || '')}</span></div></div>`;
+
+function vivir() {
+  clearInterval(sondeo);
+  sondeo = setInterval(async () => {
+    if (document.hidden || !$('#vivo')) return;
+    try {
+      const nuevos = (await api(`/api/admin/bitacora?despues=${ultimoEvento}`));
+      if (!nuevos.length) return;
+      ultimoEvento = nuevos[0].id;
+      $('#vivo').insertAdjacentHTML('afterbegin', nuevos.map(evento).join(''));
+    } catch {}
+  }, 5000);
+}
+
+/* ── delegación de clics: pares y acciones del motor ─────────────────────── */
+document.addEventListener('click', async (e) => {
+  const par = e.target.closest('[data-par]');
+  if (par) { const [a, b] = par.dataset.par.split('/'); return verPar(a, b); }
+  const acc = e.target.closest('[data-accion]');
+  if (!acc) return;
+  if (acc.dataset.accion === 'correr') return correr();
+  if (acc.dataset.accion === 'reiniciar') {
+    if (!confirm('¿Reiniciar el demo? Personas, cruces, puertas y avisos vuelven al estado inicial. Los artículos se quedan.')) return;
+    acc.disabled = true;
+    await api('/api/admin/reiniciar', {});
+    await cargar(); avisar('Demo reiniciado'); ir(seccion);
+  }
+});
+
+/* ── cajón: detalle de un par ────────────────────────────────────────────── */
+function abrirCajon(html) { $('#cajon-in').innerHTML = html; $('#cajon').classList.add('on'); $('#velo').classList.add('on'); $('#cajon').setAttribute('aria-hidden', 'false'); $('#cajon').scrollTop = 0; }
+function cerrarCajon() { $('#cajon').classList.remove('on'); $('#cajon').setAttribute('aria-hidden', 'true'); if (!$('#lateral').classList.contains('on')) $('#velo').classList.remove('on'); }
+$('#cerrar-cajon').onclick = cerrarCajon;
+const mini = (v, w = null) => v == null ? '<span style="color:var(--gris)">—</span>' : `<div class="mini"><div class="pista"><div class="relleno" style="width:${Math.round(v * 100)}%;background:${colorPct(Math.round(v * 100))}"></div></div><b>${Math.round(v * 100)}</b></div>`;
+const notasHtml = (dims) => `<ul class="notas">${Object.values(dims).flatMap((d) => d.notas).map((n) => `<li><span class="s ${n.ok > 0 ? 'ok' : n.ok < 0 ? 'no' : 'mm'}">${n.ok > 0 ? '✓' : n.ok < 0 ? '✗' : '~'}</span><span>${esc(n.txt)}</span></li>`).join('')}</ul>`;
+const razonesHtml = (r) => `<ul class="notas">${r.fuertes.map((f) => `<li><span class="s ok">✓</span><span>${esc(f.txt)}</span></li>`).join('')}${r.cuidar ? `<li><span class="s mm">~</span><span>${esc(r.cuidar.txt)}</span></li>` : ''}</ul>`;
+
+async function verPar(a, b) {
+  abrirCajon('<p class="vacio">Calculando…</p>');
+  const d = await api(`/api/admin/par/${a}/${b}`);
+  const A = corto(d.nombreA), B = corto(d.nombreB);
+  abrirCajon(`
+    <div style="display:flex;gap:14px;align-items:center;flex-wrap:wrap"><span class="duo">${avatar(d.nombreA, d.colorA, 'xl')}${avatar(d.nombreB, d.colorB, 'xl')}</span>
+      <div><h2 style="margin:0;font-size:26px">${esc(d.nombreA)} × ${esc(d.nombreB)}</h2>
+      <div style="color:var(--gris);font-size:14px">${A}→${B} ${d.abS} · ${B}→${A} ${d.baS} · armónica ${d.armonica} · calidad ${d.q.a} / ${d.q.b}</div></div></div>
+    <div style="display:flex;align-items:baseline;gap:12px;margin:18px 0 10px"><span style="font:700 56px/1 var(--serif);color:${d.veto ? '#a39aa8' : 'var(--rosa-osc)'}">${d.veto ? '⛔' : d.pct + ' %'}</span>${d.veto ? `<span style="font-size:15px;color:var(--gris)">habría sido <b>${d.sinVeto} %</b></span>` : d.pct >= D.motor.umbral ? '<span class="chip">arriba del umbral: se avisó a los dos</span>' : '<span class="chip gris">abajo del umbral: nadie ve nada</span>'}</div>
+    ${d.vetos.length ? `<div class="vetos"><b>Eliminado por:</b><ul style="margin:6px 0 0;padding-left:18px">${d.vetos.map((v) => `<li>${esc(v.txt)}</li>`).join('')}</ul></div>` : ''}
+    ${d.techos.length ? `<div class="techos"><b>Techos aplicados:</b> ${d.techos.map((t) => `${esc(t.txt)} (máx. ${Math.round(t.valor * 100)})`).join(' · ')}</div>` : ''}
+    <h3 style="margin:22px 0 4px">Las diez dimensiones</h3>
+    <p style="color:var(--gris);font-size:13.5px;margin:0">Cada lado con sus propios pesos. «Par» es la media armónica de las dos direcciones.</p>
+    <div style="overflow-x:auto"><table class="dims"><thead><tr><th>Dimensión</th><th>Peso ${esc(A)}</th><th>${esc(A)}→${esc(B)}</th><th>${esc(B)}→${esc(A)}</th><th>Peso ${esc(B)}</th><th>Par</th></tr></thead><tbody>
+      ${d.dimensiones.map((x) => `<tr><td>${esc(x.nombre)}</td><td>${Math.round(d.ab[x.id].w * 100)} %</td><td>${mini(d.ab[x.id].s)}</td><td>${mini(d.ba[x.id].s)}</td><td>${Math.round(d.ba[x.id].w * 100)} %</td><td>${mini(d.dims[x.id].par)}</td></tr>`).join('')}
+    </tbody></table></div>
+    <div class="rejilla-2" style="margin-top:18px">
+      <div class="tarjeta"><h3 style="margin:0">Lo que el motor ve desde ${esc(A)}</h3>${notasHtml(d.ab)}</div>
+      <div class="tarjeta" style="margin-top:0"><h3 style="margin:0">Lo que el motor ve desde ${esc(B)}</h3>${notasHtml(d.ba)}</div>
+    </div>
+    ${!d.veto && d.pct >= D.motor.umbral ? `<div class="rejilla-2" style="margin-top:16px">
+      <div class="tarjeta"><h3 style="margin:0">Lo que ${esc(A)} lee en su panel</h3>${razonesHtml(d.razonesA)}<a class="enlace" href="/persona?id=${d.a}">Abrir su panel</a></div>
+      <div class="tarjeta" style="margin-top:0"><h3 style="margin:0">Lo que ${esc(B)} lee en su panel</h3>${razonesHtml(d.razonesB)}<a class="enlace" href="/persona?id=${d.b}">Abrir su panel</a></div></div>` : ''}
+    <p style="margin-top:18px;font-size:13.5px;color:var(--gris)">Lo que cada persona ve está escrito en otra voz: nunca le mostramos el detalle íntimo del otro.</p>`);
+}
+
+/* ── cajón: detalle de una persona ───────────────────────────────────────── */
+async function verPersona(id) {
+  abrirCajon('<p class="vacio">Cargando…</p>');
+  const p = await api(`/api/admin/persona/${id}`);
+  const r = p.respuestas, rb = p.lectura?.rubrica || {};
+  const bloques = Object.entries(BLOQUES).map(([n, nombreB]) => {
+    const preguntas = PREGUNTAS.filter((q) => q.b === Number(n));
+    return `<details class="tarjeta" style="padding:0 18px"><summary style="padding:14px 0;cursor:pointer;font-weight:600">${n} · ${esc(nombreB)}</summary><div style="padding-bottom:14px">
+      ${preguntas.map((q) => `<div style="margin:12px 0"><div style="font-weight:600;font-size:14px">${q.n}. ${esc(q.t)}</div>
+        ${q.parts.flatMap((pt) => pt.k === 'grid' ? pt.rows.map(([rid, rl]) => ({ id: rid, l: rl })) : [pt]).map((pt) => {
+          const v = r[pt.id];
+          if (v == null || v === '' || (Array.isArray(v) && !v.length)) return '';
+          const txt = PARTE[pt.id]?.k === 'text' ? `<span style="white-space:pre-line">${esc(v)}</span>` : Array.isArray(v) && PARTE[pt.id]?.k === 'range' ? `${v[0]}–${v[1]}` : esc(etiqueta(pt.id, v));
+          return `<div style="font-size:14px;color:var(--tinta-2);margin-top:4px">${pt.l ? `<span style="color:var(--gris)">${esc(pt.l)}:</span> ` : ''}${txt}</div>`;
+        }).join('')}</div>`).join('')}
+    </div></details>`;
+  }).join('');
+  const w = Object.entries(p.pesos.w).sort((a, b) => b[1] - a[1]);
+  abrirCajon(`
+    <div style="display:flex;gap:14px;align-items:center">${avatar(p.nombre, p.color, 'xl')}<div><h2 style="margin:0;font-size:28px">${esc(p.nombre)}</h2>
+      <div style="color:var(--gris)">${p.edad || '—'} años · ${esc(etiqueta('ciudad', r.ciudad))} · ${p.origen === 'demo' ? 'persona ficticia del demo' : 'llegó por el cuestionario'}</div>
+      <div class="acciones" style="margin-top:8px"><a class="boton boton-chico" href="/persona?id=${p.id}">Ver su panel</a><button class="boton boton-claro boton-chico" id="btn-estado">${p.estado === 'pausada' ? 'Reactivar' : 'Pausar perfil'}</button></div></div></div>
+    ${p.bio ? `<p style="margin:16px 0 0;color:var(--tinta-2)">${esc(p.bio)}</p>` : ''}
+    <div class="rejilla-2" style="margin-top:16px">
+      <div class="tarjeta"><h3 style="margin:0 0 8px">Sus pesos personales</h3><div class="barras">${w.map(([k, v]) => `<div class="barra-fila" style="grid-template-columns:130px 1fr 40px"><span>${esc(D.motor.dimensiones.find((d) => d.id === k).nombre)}</span><div class="pista"><div class="relleno ${p.pesos.por[k] ? 'sube' : ''}" style="width:${Math.min(100, v * 400)}%"></div></div><b>${Math.round(v * 100)}</b>${p.pesos.por[k] ? `<span class="por">↑ ${esc(p.pesos.por[k])}</span>` : ''}</div>`).join('')}</div></div>
+      <div class="tarjeta" style="margin-top:0"><h3 style="margin:0 0 8px">Lectura de sus respuestas abiertas</h3>
+        ${['autoconocimiento', 'responsabilidad', 'calidez', 'coherencia'].map((k) => `<div class="barra-fila" style="grid-template-columns:130px 1fr 40px"><span>${k[0].toUpperCase() + k.slice(1)}</span><div class="pista"><div class="relleno" style="width:${(rb[k] || 0) * 10}%"></div></div><b>${rb[k] ?? '—'}</b></div>`).join('')}
+        <p style="font-size:13.5px;color:var(--gris);margin:10px 0 0">Calidad Q = ${p.q} · fuente: ${esc(p.lectura?.fuente || 'lectura del demo')}</p>
+        ${p.lectura?.carta ? `<p style="font-size:13.5px;margin:8px 0 0"><b>Su carta promete:</b> ${esc(p.lectura.carta.promete.join(', '))}<br><b>Pide:</b> ${esc(p.lectura.carta.pide.join(', '))}</p>` : ''}</div>
+    </div>
+    <h3 style="margin:22px 0 8px">Todos sus cruces</h3>
+    <div class="lista-pares">${p.pares.map((x) => `<div class="par-fila" data-par="${[p.id, x.otra].sort().join('/')}"><span class="pct" style="${x.veto ? 'color:#a39aa8' : ''}">${x.veto ? '⛔' : x.pct}</span>${avatar(x.nombre, x.color, 'sm')}<div class="quienes">${esc(x.nombre)}<span>${x.veto ? `habría sido ${x.sinVeto} % · ${esc(x.vetos[0])}` : x.techos.length ? `techo: ${esc(x.techos[0])}` : x.pct >= D.motor.umbral ? 'arriba del umbral' : ''}</span></div></div>`).join('') || '<p class="vacio">Sin cruces (perfil incompleto o en pausa)</p>'}</div>
+    <h3 style="margin:22px 0 8px">Sus respuestas</h3>
+    <p style="font-size:13.5px;color:var(--gris);margin:0 0 10px">Solo visibles en el demo. En producción nadie humano lee lo íntimo: solo el motor.</p>
+    ${bloques}`);
+  $('#btn-estado').onclick = async () => { await api(`/api/admin/persona/${p.id}/estado`, { estado: p.estado === 'pausada' ? 'activa' : 'pausada' }); await cargar(); avisar(p.estado === 'pausada' ? 'Perfil reactivado y cruces recalculados' : 'Perfil en pausa: sale del matching'); verPersona(id); if (seccion !== 'laboratorio') ir(seccion); };
+}
+
+/* ── corrida manual por fases ────────────────────────────────────────────── */
+async function correr() {
+  const nombres = ['Inventario', 'Filtros duros', 'Dimensiones', 'Reciprocidad y techos', 'Umbral y avisos'];
+  $('#modal-in').innerHTML = `<h2>Corriendo el matching</h2><p class="sub">Cada paso muestra lo que el motor encontró de verdad.</p>
+    <div class="fases">${nombres.map((n, i) => `<div class="fase" id="fase-${i + 1}"><div class="t"><span class="e"></span>${i + 1} · ${n}</div><ul></ul></div>`).join('')}</div>
+    <div style="display:flex;justify-content:flex-end;margin-top:18px"><button class="boton" id="cerrar-modal" disabled>Listo</button></div>`;
+  $('#modal').classList.add('on');
+  for (let f = 1; f <= 5; f++) {
+    const el = $('#fase-' + f); el.classList.add('activa');
+    const t0 = Date.now();
+    let r;
+    try { r = await api('/api/admin/correr', { fase: f }); } catch (e) { el.querySelector('ul').innerHTML = `<li>Falló: ${esc(e.message)}</li>`; break; }
+    await new Promise((ok) => setTimeout(ok, Math.max(0, 750 - (Date.now() - t0))));
+    for (const l of r.lineas) { el.querySelector('ul').insertAdjacentHTML('beforeend', `<li>${esc(l)}</li>`); await new Promise((ok) => setTimeout(ok, 220)); }
+    el.classList.remove('activa'); el.classList.add('lista');
+  }
+  $('#cerrar-modal').disabled = false;
+  $('#cerrar-modal').onclick = async () => { $('#modal').classList.remove('on'); await cargar(); ir(seccion); };
+}
+
+/* ── laboratorio de pesos ────────────────────────────────────────────────── */
+function laboratorio() {
+  const actual = new Map(Object.entries(D.matriz.celdas).map(([k, v]) => [k.replace('|', '/'), v.pct]));
+  // incluye pares fuera de la matriz (otras combinaciones de género)
+  let t;
+  const correrLab = async () => {
+    const base = Object.fromEntries($$('[data-dim]').map((i) => [i.dataset.dim, Number(i.value)]));
+    const cambio = $$('[data-dim]').some((i) => Number(i.value) !== DIM_BASE[i.dataset.dim]);
+    $('#lab-sub').textContent = cambio ? 'Con tus pesos de prueba (no se guarda)' : 'Con los pesos actuales';
+    const r = await api('/api/admin/laboratorio', { base });
+    const cambios = r.pares.map((p) => ({ ...p, antes: actual.get(`${p.a}/${p.b}`) ?? null }))
+      .filter((p) => p.antes != null && (p.antes >= D.motor.umbral) !== (p.pct >= D.motor.umbral));
+    $('#lab-arriba').textContent = r.arriba;
+    $('#lab-cambios').textContent = cambios.length;
+    const top = r.pares.filter((p) => p.pct >= D.motor.umbral).sort((a, b) => b.pct - a.pct);
+    $('#lab-lista').innerHTML = [
+      ...cambios.map((p) => `<div class="par-fila" data-par="${p.a}/${p.b}"><span class="pct">${p.pct}</span><span class="duo">${avatar(nombre(p.a), colorDe(p.a), 'sm')}${avatar(nombre(p.b), colorDe(p.b), 'sm')}</span><div class="quienes">${esc(corto(nombre(p.a)))} × ${esc(corto(nombre(p.b)))}<span class="cambio ${p.pct >= D.motor.umbral ? 'sube' : 'baja'}">${p.pct >= D.motor.umbral ? '▲ cruzó el umbral' : '▼ salió del umbral'} (antes ${p.antes})</span></div></div>`),
+      ...top.filter((p) => !cambios.includes(p)).map((p) => `<div class="par-fila" data-par="${p.a}/${p.b}"><span class="pct">${p.pct}</span><span class="duo">${avatar(nombre(p.a), colorDe(p.a), 'sm')}${avatar(nombre(p.b), colorDe(p.b), 'sm')}</span><div class="quienes">${esc(corto(nombre(p.a)))} × ${esc(corto(nombre(p.b)))}<span>antes ${actual.get(`${p.a}/${p.b}`) ?? '—'}</span></div></div>`),
+    ].join('') || '<p class="vacio">Con estos pesos nadie cruza el umbral.</p>';
+  };
+  $$('[data-dim]').forEach((i) => i.oninput = () => { $('#v-' + i.dataset.dim).textContent = i.value; clearTimeout(t); t = setTimeout(correrLab, 350); });
+  $('#lab-reset').onclick = () => { $$('[data-dim]').forEach((i) => { i.value = DIM_BASE[i.dataset.dim]; $('#v-' + i.dataset.dim).textContent = i.value; }); correrLab(); };
+}
+
+await cargar();
+ir(location.hash.slice(1) || 'resumen');
+</script>
+</body>
+</html>

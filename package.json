@@ -1,0 +1,14 @@
+{
+  "name": "cupido-algoritmico",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "author": "Ricardo López Reyero",
+  "description": "Sistema de detección de pareja: motor recíproco v2, panel de personas, panel admin y artículos. RLR",
+  "scripts": {
+    "semilla": "node scripts/armar-seed.mjs",
+    "probar": "node scripts/probar-motor.mjs",
+    "dev": "npm run semilla && wrangler dev",
+    "deploy": "npm run semilla && wrangler deploy"
+  }
+}
