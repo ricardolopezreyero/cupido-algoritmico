@@ -22,3 +22,7 @@ Nosotros hacemos lo contrario.
 No somos una app de citas. Somos lo que debió existir siempre: un sistema serio para la búsqueda más seria de tu vida.
 
 **Tú pon la verdad. Nosotros ponemos la lógica. El amor lo ponen ustedes dos.**
+
+Atentamente,
+
+**[Ing. Ricardo López Reyero](https://ricardolopezreyero.com)**
