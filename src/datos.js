@@ -9,6 +9,7 @@ import { cruzar, esCandidato, razonesPersona, pesos, calidad, lecturaHeuristica,
 import { PARTE, avance, etiqueta } from '../public/js/preguntas.js';
 import PERSONAS_DEMO from '../seed/personas.json';
 import ARTICULOS_BASE from '../seed/articulos.json';
+import { ESQUEMA_MEDIOS, mediosDe } from './medios.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -46,6 +47,7 @@ const ESQUEMA = [
      creado TEXT NOT NULL DEFAULT (datetime('now')), usado TEXT)`,
   `CREATE INDEX IF NOT EXISTS idx_enlaces_correo ON enlaces(correo, creado)`,
   `CREATE INDEX IF NOT EXISTS idx_sesiones_persona ON sesiones(persona)`,
+  ESQUEMA_MEDIOS,
   `CREATE INDEX IF NOT EXISTS idx_pares_pct ON pares(pct)`,
   `CREATE INDEX IF NOT EXISTS idx_avisos_persona ON avisos(persona, leido)`,
   `CREATE INDEX IF NOT EXISTS idx_articulos_estado ON articulos(estado, creado)`,
@@ -224,9 +226,10 @@ export async function decidir(env, yo, otra, decision) {
 /* ═══════════════════════════════════════════════════════════════════════════
    VISTA DE LA PERSONA
    ═══════════════════════════════════════════════════════════════════════════ */
-const REVELA = (O) => ({
+const REVELA = (O, medios = {}) => ({
   nombre: O.nombre.split(' ')[0], nombreCompleto: O.nombre, edad: O.edad, ciudad: etiqueta('ciudad', O.r.ciudad), color: O.color,
   carta: O.r.carta || '', malinterpretan: O.r.malinterpretan || '', martes: O.r.martes || '',
+  medios, // foto, voz y video: solo llegan aquí porque la puerta ya se abrió
 });
 const RUBRICA_PREGUNTAS = { autoconocimiento: [16, 32, 41], responsabilidad: [20, 22, 37], calidez: [26, 31, 33], coherencia: [6, 29] };
 
@@ -256,7 +259,7 @@ export async function vistaPersona(env, P) {
         genero: O.genero,
         ...razonesPersona(det, P.id),
         puerta: { estado: abierta ? 'abierta' : 'cerrada', miDecision: mia, avisada: pu?.avisada || null },
-        revelado: abierta ? REVELA(O) : null,
+        revelado: abierta ? REVELA(O, await mediosDe(env, O.id)) : null,
       });
     } else if (!fx.veto) {
       if (!masCerca || fx.pct > masCerca) masCerca = fx.pct;
@@ -293,6 +296,7 @@ export async function vistaPersona(env, P) {
     avisos, umbral: UMBRAL, motor: MOTOR_VERSION,
     // lo suyo, para su propio tablero (nunca se envía nada de otra persona aquí)
     misRespuestas: P.r, rubrica: P.l?.rubrica || null,
+    misMedios: await mediosDe(env, P.id),
   };
 }
 

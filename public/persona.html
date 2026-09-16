@@ -113,6 +113,7 @@ function derivados() {
     { m: '🌟', t: 'Arriba del 95 %', d: 'Una coincidencia excepcional', ok: c.some((x) => x.pct >= 95) },
     { m: '🤍', t: 'Dijiste que sí', d: 'Te animaste a conocer', ok: miSi.length + abiertas.length > 0 },
     { m: '🔓', t: 'Puerta abierta', d: 'Los dos dijeron que sí', ok: abiertas.length > 0 },
+    { m: '📷', t: 'Con rostro y voz', d: 'Foto, voz y video listos', ok: !!(V.misMedios?.foto && V.misMedios?.audio && V.misMedios?.video) },
   ];
   const pasos = [
     { i: '📝', t: 'Responder', d: 'tus 41 preguntas', ok: P.avance.listo },
@@ -124,6 +125,9 @@ function derivados() {
   return { esperanMi, miSi, abiertas, miNo, logros, pasos, nuevos: V.avisos.filter((a) => !a.leido).length };
 }
 
+const miAvatar = (P, clase = '') => V.misMedios?.foto ? `<img class="avatar foto ${clase}" src="${esc(V.misMedios.foto.url)}" alt="">` : avatar(P.nombre === 'Sin nombre' ? '♥' : P.nombre, P.color, clase);
+const avatarDe = (r, clase = '') => r.medios?.foto ? `<img class="avatar foto ${clase}" src="${esc(r.medios.foto.url)}" alt="${esc(r.nombre)}">` : avatar(r.nombre, r.color, clase);
+
 /* ── menú lateral en el orden del camino ─────────────────────────────────── */
 const MENU = [
   { sep: 'Mi búsqueda' },
@@ -134,6 +138,7 @@ const MENU = [
   { sep: 'Mi perfil' },
   { s: 'pesos', i: '🧭', t: 'Lo que más pesa' },
   { s: 'respuestas', i: '📋', t: 'Mis respuestas' },
+  { s: 'medios', i: '📷', t: 'Foto, voz y video', n: () => (V.persona.completo && !(DEMO() && V.persona.origen === 'demo') ? 3 - Object.keys(V.misMedios || {}).length : 0), alerta: false },
   { s: 'claridad', i: '🔎', t: 'Qué tan bien me conoce' },
   { s: 'filtros', i: '🚧', t: 'Lo que me deja fuera', n: () => V.dejanFuera.length },
   { sep: 'Cuenta' },
@@ -141,7 +146,7 @@ const MENU = [
 ];
 function pintarLateral() {
   const d = derivados(), P = V.persona;
-  $('#quien-lat').innerHTML = `${avatar(P.nombre === 'Sin nombre' ? '♥' : P.nombre, P.color)}<div><b>${esc(P.nombre === 'Sin nombre' ? 'Tu cuenta' : P.nombre)}</b><span>${P.edad ? esc(P.edad) + ' · ' : ''}${esc(P.ciudad || '')}</span></div>`;
+  $('#quien-lat').innerHTML = `<a href="#medios" class="avatar-enlace" title="Cambiar mi foto">${miAvatar(P)}<span class="lapiz">✎</span></a><div><b>${esc(P.nombre === 'Sin nombre' ? 'Tu cuenta' : P.nombre)}</b><span>${P.edad ? esc(P.edad) + ' · ' : ''}${esc(P.ciudad || '')}</span></div>`;
   $('#nav').innerHTML = MENU.map((m) => {
     if (m.sep) return `<div class="sep">${m.sep}</div>`;
     const n = m.n ? m.n(d) : 0;
@@ -276,6 +281,29 @@ const SECCIONES = {
       `<p class="seccion-sub">Solo tú las ves. Lo íntimo solo lo lee el motor.</p>${bloques}`;
   },
 
+  medios() {
+    const P = V.persona, M = V.misMedios || {};
+    if (DEMO() && P.origen === 'demo') return cabeza('Foto, voz y video', 'Lo que la otra persona conoce de ti al final, cuando la puerta ya se abrió.') +
+      `<section class="tarjeta"><p style="margin:0 0 12px;color:var(--tinta-2)">En la cuenta demo no se suben archivos. Con tu propia cuenta, al terminar el cuestionario, aquí pones tu foto, grabas tu voz y subes un video.</p><button class="boton" id="crear-cuenta">Crear mi cuenta</button></section>`;
+    if (!P.completo) return cabeza('Foto, voz y video', 'Primero el cuestionario. Después, tu rostro y tu voz.') +
+      `<section class="tarjeta"><div class="nivel"><div class="anillo" style="display:flex;align-items:center;justify-content:center;font-size:36px">🔒</div><div><h3>Se abre al 100 % del cuestionario</h3>
+        <p>Vas en <b>${P.avance.pct} %</b>. Aquí no se elige a nadie por la foto: primero lo que eres, al final cómo te ves. Cuando termines, podrás subir tu foto, grabar tu voz y un video corto.</p>
+        <p style="margin-top:10px"><a class="boton" href="/cuestionario">Seguir con mi cuestionario</a></p></div></div></section>`;
+    const bloque = (tipo, icono, titulo, sub, vista, acepta) => `<section class="tarjeta medio" data-tipo="${tipo}"><h2>${icono} ${titulo}</h2><p class="sub">${sub}</p>
+      <div class="medio-vista" id="vista-${tipo}">${vista}</div>
+      <div class="acciones medio-acciones">
+        <label class="boton boton-claro boton-chico">${M[tipo] ? 'Cambiar' : 'Subir'} ${tipo === 'foto' ? 'foto' : 'archivo'}<input type="file" accept="${acepta}" data-subir="${tipo}" hidden></label>
+        ${tipo !== 'foto' ? `<button class="boton boton-chico" data-grabar="${tipo}">🔴 Grabar ${tipo === 'audio' ? 'mi voz' : 'video'}</button>` : ''}
+        ${M[tipo] ? `<button class="enlace" data-borrar="${tipo}">Quitar</button>` : ''}
+        <span class="medio-estado" id="estado-${tipo}"></span>
+      </div></section>`;
+    return cabeza('Foto, voz y video', 'Solo lo ve la persona con quien se abrió una puerta. Nadie lo ve antes: primero quién eres, al final cómo te ves.') + `
+      <div class="cinta-demo" style="background:var(--rosa-suave);border-color:var(--rosa-linea);color:var(--tinta-2)"><span>🔐</span><span>Estos archivos <b>no aparecen en ninguna lista</b>. Se muestran una sola vez: cuando los dos dijeron que sí.</span></div>
+      ${bloque('foto', '📷', 'Tu foto', 'Una foto donde se te vea la cara, con luz natural. La ajustamos nosotros.', M.foto ? `<img src="${esc(M.foto.url)}" alt="Tu foto">` : `<div class="medio-vacio">${avatar(P.nombre === 'Sin nombre' ? '♥' : P.nombre, P.color, 'xl')}<span>Hoy te representa tu inicial.</span></div>`, 'image/*')}
+      ${bloque('audio', '🎙️', 'Tu voz', 'Lee tu carta en voz alta, o cuenta tu martes. Hasta 90 segundos.', M.audio ? `<audio controls preload="metadata" src="${esc(M.audio.url)}"></audio>` : `<div class="medio-vacio"><span style="font-size:34px">🎙️</span><span>Todavía no hay voz.</span></div>`, 'audio/*')}
+      ${bloque('video', '🎬', 'Tu video', 'Un video corto y sin producción: tú, hablando como hablas. Hasta 45 segundos.', M.video ? `<video controls playsinline preload="metadata" src="${esc(M.video.url)}"></video>` : `<div class="medio-vacio"><span style="font-size:34px">🎬</span><span>Todavía no hay video.</span></div>`, 'video/*')}`;
+  },
+
   claridad() {
     const rb = V.rubrica || {};
     const EJES = [['autoconocimiento', 'Autoconocimiento', 'Qué tanto te miras con honestidad'], ['responsabilidad', 'Responsabilidad', 'Cómo asumes tu parte en los conflictos'], ['calidez', 'Calidez', 'Cómo cuidas, con ejemplos reales'], ['coherencia', 'Coherencia', 'Que tus respuestas no se contradigan']];
@@ -323,6 +351,12 @@ const DESPUES = {
   inicio() { const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta; },
   avisos: marcarLeidos,
   respuestas() { const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta; },
+  medios() {
+    const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta;
+    $$('[data-subir]').forEach((i) => i.onchange = () => i.files[0] && subirMedio(i.dataset.subir, i.files[0]));
+    $$('[data-borrar]').forEach((b) => b.onclick = async () => { if (!confirm('¿Quitar este archivo?')) return; try { const r = await api2('DELETE', `/api/medio/${b.dataset.borrar}`); V.misMedios = r.medios; ir('medios'); avisar('Listo, se quitó.'); } catch (e) { avisar(e.message); } });
+    $$('[data-grabar]').forEach((b) => b.onclick = () => grabar(b.dataset.grabar, b));
+  },
   privacidad() {
     $('#btn-salir').onclick = () => $('#salir').click();
     const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta;
@@ -336,6 +370,56 @@ const DESPUES = {
     };
   },
 };
+
+/* ── medios: subir (la foto se reduce aquí mismo), grabar voz o video ──── */
+async function api2(metodo, ruta, cuerpo, tipo) {
+  const r = await fetch(ruta, { method: metodo, headers: tipo ? { 'content-type': tipo } : {}, body: cuerpo });
+  let j = null; try { j = await r.json(); } catch {}
+  if (!r.ok) throw new Error(j?.error || 'Algo falló');
+  return j;
+}
+async function reducirFoto(archivo) {
+  const bmp = await createImageBitmap(archivo).catch(() => null);
+  if (!bmp) return archivo;
+  const max = 1400, k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
+  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+  return await new Promise((res) => c.toBlob((b) => res(b || archivo), 'image/jpeg', 0.86));
+}
+async function subirMedio(tipo, archivo) {
+  const est = $('#estado-' + tipo); if (est) est.textContent = 'Subiendo…';
+  try {
+    const cuerpo = tipo === 'foto' ? await reducirFoto(archivo) : archivo;
+    const mime = tipo === 'foto' ? 'image/jpeg' : (archivo.type || (tipo === 'audio' ? 'audio/webm' : 'video/webm')).split(';')[0];
+    const r = await api2('PUT', `/api/medio/${tipo}`, cuerpo, mime);
+    V.misMedios = r.medios; pintarLateral(); ir('medios');
+    avisar(tipo === 'foto' ? 'Tu foto quedó guardada.' : tipo === 'audio' ? 'Tu voz quedó guardada.' : 'Tu video quedó guardado.');
+  } catch (e) { if (est) est.textContent = ''; avisar(e.message); }
+}
+let grabadora = null;
+async function grabar(tipo, boton) {
+  if (grabadora) { grabadora.stop(); return; }
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { avisar('Tu navegador no puede grabar aquí. Sube un archivo.'); return; }
+  let stream;
+  try { stream = await navigator.mediaDevices.getUserMedia(tipo === 'audio' ? { audio: true } : { audio: true, video: { facingMode: 'user', width: { ideal: 1280 } } }); }
+  catch { avisar('No se pudo usar el micrófono o la cámara. Revisa los permisos.'); return; }
+  const vista = $('#vista-' + tipo);
+  if (tipo === 'video') { vista.innerHTML = '<video autoplay muted playsinline></video>'; vista.querySelector('video').srcObject = stream; }
+  else vista.innerHTML = '<div class="medio-vacio grabando"><span style="font-size:34px">🎙️</span><span>Grabando… habla con calma.</span></div>';
+  const limite = tipo === 'audio' ? 90 : 45;
+  const mime = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm', 'audio/mp4', 'audio/webm'].filter((m) => m.startsWith(tipo)).find((m) => MediaRecorder.isTypeSupported(m));
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+  const partes = []; let seg = 0;
+  rec.ondataavailable = (e) => e.data.size && partes.push(e.data);
+  const reloj = setInterval(() => { seg++; boton.textContent = `⏹ Detener (${limite - seg} s)`; if (seg >= limite) rec.stop(); }, 1000);
+  rec.onstop = () => {
+    clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); grabadora = null;
+    const blob = new Blob(partes, { type: rec.mimeType || mime || (tipo === 'audio' ? 'audio/webm' : 'video/webm') });
+    subirMedio(tipo, blob);
+  };
+  grabadora = rec; boton.textContent = `⏹ Detener (${limite} s)`;
+  rec.start(1000);
+}
 
 /* ── piezas ──────────────────────────────────────────────────────────────── */
 const filaAviso = (a) => `<div class="aviso ${a.leido ? '' : 'nuevo'}"><span>${a.tipo === 'apertura' ? '🔓' : '💘'}</span><div>${esc(a.texto)}<span class="cuando">${hace(a.creado)}</span></div></div>`;
@@ -369,11 +453,15 @@ function tarjetaCoincidencia(c) {
     </ul>
     <div class="puerta-zona">${puerta}${c.demoId ? `<a class="demo-herramienta" href="/persona?id=${esc(c.demoId)}">👁 Herramienta de demo: entrar al tablero de esa persona</a>` : ''}</div>
     ${abierta ? `<div class="revelado">
-      <div class="quien">${avatar(r.nombre, r.color, 'xl')}<div><h3>${esc(r.nombreCompleto)}</h3><div class="meta" style="color:var(--gris)">${esc(r.edad)} · ${esc(r.ciudad)}</div></div></div>
+      <div class="quien">${avatarDe(r, 'xl')}<div><h3>${esc(r.nombreCompleto)}</h3><div class="meta" style="color:var(--gris)">${esc(r.edad)} · ${esc(r.ciudad)}</div></div></div>
       ${r.carta ? `<div class="carta">${esc(r.carta)}</div>` : ''}
       ${r.malinterpretan ? `<p class="entender"><b>Lo que le gustaría que entendieras desde el día uno:</b> ${esc(r.malinterpretan)}</p>` : ''}
-      <div class="proximos"><div><span>🎙️</span>Su voz leyendo esta carta</div><div><span>🎬</span>Un video de su martes</div><div><span>📷</span>Y al final, sus fotos</div></div>
-      <p class="seccion-sub" style="margin:12px 0 0">En la versión real, cada paso lo abres tú, en ese orden: primero quién es, al final cómo se ve.</p></div>` : ''}
+      <div class="revelado-medios">
+        ${r.medios?.audio ? `<div class="rm"><b>🎙️ Su voz</b><audio controls preload="metadata" src="${esc(r.medios.audio.url)}"></audio></div>` : ''}
+        ${r.medios?.video ? `<div class="rm"><b>🎬 Su video</b><video controls playsinline preload="metadata" src="${esc(r.medios.video.url)}"></video></div>` : ''}
+        ${r.medios?.foto ? `<div class="rm"><b>📷 Su foto</b><img src="${esc(r.medios.foto.url)}" alt="${esc(r.nombre)}"></div>` : ''}
+      </div>
+      ${!(r.medios?.foto || r.medios?.audio || r.medios?.video) ? `<div class="proximos"><div><span>🎙️</span>Su voz</div><div><span>🎬</span>Su video</div><div><span>📷</span>Su foto</div></div><p class="seccion-sub" style="margin:12px 0 0">${esc(r.nombre)} todavía no ha subido foto, voz ni video. Aparecerán aquí en cuanto lo haga.</p>` : ''}</div>` : ''}
   </article>`;
 }
 

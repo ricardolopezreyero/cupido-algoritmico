@@ -544,3 +544,22 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.01em
 .acceso-correo { display: flex; align-items: center; gap: 10px; background: var(--rosa-suave); border-radius: 12px; padding: 12px 14px; font-size: 14.5px; }
 .acceso-correo b { word-break: break-all; }
 /* fin acceso · RLR */
+
+/* ── Foto, voz y video · RLR ───────────────────────────────────────────── */
+.avatar.foto { object-fit: cover; padding: 0; }
+.avatar-enlace { position: relative; display: inline-flex; flex: none; text-decoration: none; }
+.avatar-enlace .lapiz { position: absolute; right: -3px; bottom: -3px; width: 18px; height: 18px; border-radius: 50%; background: var(--rosa); color: #fff; font-size: 11px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--noche-2); }
+.medio { margin-bottom: 16px; }
+.medio-vista img { display: block; width: 100%; max-width: 360px; border-radius: 16px; aspect-ratio: 4 / 5; object-fit: cover; }
+.medio-vista video { display: block; width: 100%; max-width: 420px; border-radius: 16px; background: #000; }
+.medio-vista audio { width: 100%; max-width: 420px; display: block; }
+.medio-vacio { display: flex; gap: 14px; align-items: center; color: var(--gris); font-size: 14px; padding: 10px 0; }
+.medio-vacio.grabando { color: var(--rosa-osc); font-weight: 600; }
+.medio-acciones { margin-top: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.medio-estado { font-size: 13px; color: var(--gris); }
+.revelado-medios { display: grid; gap: 14px; margin-top: 16px; }
+.revelado-medios .rm b { display: block; margin-bottom: 6px; font-size: 14px; }
+.revelado-medios img { display: block; width: 100%; max-width: 380px; border-radius: 16px; }
+.revelado-medios video { display: block; width: 100%; max-width: 480px; border-radius: 16px; background: #000; }
+.revelado-medios audio { width: 100%; max-width: 480px; display: block; }
+/* fin medios · RLR */

@@ -9,6 +9,7 @@
 import { asegurar, vistaPersona, vistaAdmin, detallePar, detallePersona, persona, decidir, correrFase, reiniciarDemo, guardarCuestionario, anotar, recalcularTodo } from './datos.js';
 import { quien, entrarDemo, pedirEnlace, canjearEnlace, cerrarSesion, cookieSesion, DEMO_ID } from './acceso.js';
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
+import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
 import { personas } from './datos.js';
 import MANIFIESTO from '../MANIFIESTO.md';
@@ -122,6 +123,17 @@ async function api(req, env, ctx, url) {
     await anotar(env, 'persona', b.estado === 'pausada' ? 'Una persona pausó su perfil' : 'Una persona reactivó su perfil', yo.P.nombre);
     await recalcularTodo(env, { avisar: true, motivo: 'estado' });
     return json({ ok: true, vista: await vistaPersona(env, await persona(env, yo.P.id)) });
+  }
+  /* ── Medios: foto, voz y video (solo con cuestionario completo; se ven solo con puerta abierta) ── */
+  if ((x = m(/^\/api\/medio\/(foto|audio|video)$/)) && (metodo === 'PUT' || metodo === 'DELETE')) {
+    if (!yo) return sinSesion();
+    if (yo.sesion.demo && yo.P.origen === 'demo') return error('En la cuenta demo no se suben archivos. Crea tu cuenta con tu correo.', 403);
+    const r = metodo === 'PUT' ? await guardarMedio(env, yo.P, x[1], req) : await borrarMedio(env, yo.P, x[1]);
+    return r.error ? error(r.error, r.status) : json(r);
+  }
+  if ((x = m(/^\/api\/medio\/([a-z0-9]+)\/(foto|audio|video)$/)) && metodo === 'GET') {
+    if (!yo) return new Response('Sin sesión', { status: 401 });
+    return await servirMedio(env, req, yo.P.id, x[1], x[2]);
   }
   if (ruta === '/api/avisos/leer' && metodo === 'POST') {
     if (!yo) return sinSesion();

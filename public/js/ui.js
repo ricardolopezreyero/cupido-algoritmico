@@ -52,6 +52,7 @@ export function animarAnillos(raiz = document) {
     if (a._hecho) continue;
     a._hecho = true;
     const pct = Number(a.dataset.pct), arco = $('.arco', a), c = 2 * Math.PI * 44;
+    if (!arco) continue; // anillo decorativo (sin porcentaje)
     // pestaña en segundo plano: sin animación, el número final de una vez
     if (document.hidden) { arco.style.transition = 'none'; arco.style.strokeDashoffset = String(c * (1 - pct / 100)); $('.cuenta', a).textContent = pct; continue; }
     requestAnimationFrame(() => { arco.style.strokeDashoffset = String(c * (1 - pct / 100)); });
