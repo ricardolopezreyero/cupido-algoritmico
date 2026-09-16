@@ -198,6 +198,13 @@ function parte(pt) {
     dentro = `<textarea data-txt="${pt.id}" style="min-height:${pt.min ? Math.max(90, pt.min) : 150}px" placeholder="Escribe con calma. Aquí no hay prisa.">${esc(v || '')}</textarea>`;
   } else if (pt.k === 'num') {
     dentro = `<input type="number" inputmode="numeric" min="${pt.min}" max="${pt.max}" data-num="${pt.id}" value="${v ?? ''}" style="max-width:140px">`;
+  } else if (pt.k === 'fecha') {
+    const [y, mo, d] = /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v.split('-') : ['', '', ''];
+    const anio = y || (R.edad ? String(new Date().getFullYear() - Number(R.edad)) : '');
+    const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+    dentro = `<div class="rango fecha"><input type="number" inputmode="numeric" data-fecha="${pt.id}" data-p="y" value="${esc(anio)}" placeholder="año" min="1920" max="2010" title="Año (calculado con tu edad; puedes corregirlo)">
+      <select data-fecha="${pt.id}" data-p="m"><option value="">mes</option>${MESES.map((m, i) => `<option value="${String(i + 1).padStart(2, '0')}" ${mo === String(i + 1).padStart(2, '0') ? 'selected' : ''}>${m}</option>`).join('')}</select>
+      <input type="number" inputmode="numeric" data-fecha="${pt.id}" data-p="d" value="${d ? Number(d) : ''}" placeholder="día" min="1" max="31"></div>${pt.nota ? `<div class="escala-ext"><span>${esc(pt.nota)}</span></div>` : ''}`;
   } else if (pt.k === 'range') {
     const [a, b] = Array.isArray(v) ? v : ['', ''];
     dentro = `<div class="rango"><input type="number" inputmode="numeric" data-rango="${pt.id}" data-i="0" value="${a}" placeholder="desde"><span>a</span><input type="number" inputmode="numeric" data-rango="${pt.id}" data-i="1" value="${b}" placeholder="hasta"><span>años</span></div>`;
@@ -226,6 +233,14 @@ function enlazarPartes(p) {
   });
   $$('[data-txt]').forEach((t) => t.oninput = () => poner(t.dataset.txt, t.value, false));
   $$('[data-num]').forEach((t) => t.oninput = () => poner(t.dataset.num, t.value === '' ? null : Number(t.value), false));
+  $$('[data-fecha]').forEach((t) => t.oninput = () => {
+    const id = t.dataset.fecha, g = (k) => $(`[data-fecha="${id}"][data-p="${k}"]`).value;
+    const y = g('y'), m = g('m'), d = g('d');
+    if (y && m && d) poner(id, `${y}-${m}-${String(d).padStart(2, '0')}`, false); else poner(id, null, false);
+  });
+  // al escribir la edad, el año de nacimiento se calcula solo (si nadie lo ha tocado)
+  $$('[data-num="edad"]').forEach((t) => t.addEventListener('input', () => { const y = $('[data-fecha][data-p="y"]'); if (y && t.value && !y.dataset.tocado) y.value = new Date().getFullYear() - Number(t.value); }));
+  $$('[data-fecha][data-p="y"]').forEach((y) => y.addEventListener('input', () => y.dataset.tocado = '1'));
   $$('[data-rango]').forEach((t) => t.oninput = () => {
     const id = t.dataset.rango, [a, b] = $$(`[data-rango="${id}"]`).map((x) => x.value);
     if (a && b) poner(id, [Number(a), Number(b)], false);

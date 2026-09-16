@@ -293,7 +293,9 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.01em
 .opciones { display: flex; flex-direction: column; gap: 8px; }
 .opcion { border: 1.5px solid var(--linea-2); border-radius: 12px; padding: 12px 15px; cursor: pointer; background: var(--blanco); font: 15px/1.4 var(--sans); text-align: left; color: var(--tinta); transition: border-color .15s, background .15s; }
 .opcion:hover { border-color: #e2b6c0; }
-.opcion.sel { border-color: var(--rosa); background: #fff3f5; font-weight: 600; }
+.opcion.sel { border-color: var(--rosa-osc); background: var(--rosa); color: #fff; font-weight: 600; box-shadow: 0 6px 16px rgba(214,69,95,.28); }
+.opcion.sel .num { background: #fff; color: var(--rosa-osc); }
+.rango.fecha select { max-width: 160px; }
 .escala { display: flex; gap: 8px; }
 .escala .opcion { flex: 1; text-align: center; padding: 12px 0; }
 .escala-ext { display: flex; justify-content: space-between; font-size: 12.5px; color: var(--gris); margin-top: 6px; gap: 10px; }

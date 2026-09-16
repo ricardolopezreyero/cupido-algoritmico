@@ -451,6 +451,7 @@ function limpiarRespuestas(entrada = {}) {
     if (!p) continue;
     if (p.k === 'text') r[k] = String(v ?? '').slice(0, 4000);
     else if (p.k === 'num') { const n = parseInt(v, 10); if (Number.isFinite(n)) r[k] = Math.max(p.min ?? 0, Math.min(p.max ?? 999, n)); }
+    else if (p.k === 'fecha') { const t = String(v ?? ''); if (t === '') r[k] = null; else if (/^(19[2-9]\d|20[01]\d)-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(t) && !Number.isNaN(Date.parse(t))) r[k] = t; }
     else if (p.k === 'range') { if (Array.isArray(v) && v.length === 2) { const [x, y] = v.map((z) => parseInt(z, 10)); if (Number.isFinite(x) && Number.isFinite(y)) r[k] = [Math.max(18, Math.min(x, y)), Math.min(99, Math.max(x, y))]; } }
     else if (p.k === 'scale') { const n = parseInt(v, 10); if (n >= 1 && n <= 5) r[k] = n; }
     else if (p.k === 'multi') { const ok = new Set(p.o.map((o) => o[0])); if (Array.isArray(v)) r[k] = [...new Set(v.filter((x) => ok.has(x)))].slice(0, p.max || 20); }

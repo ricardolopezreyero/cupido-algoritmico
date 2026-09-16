@@ -42,13 +42,13 @@ const SX = [['necesito', 'Lo necesito'], ['acepto', 'Lo acepto'], ['no', 'No lo 
    Banderas: filtro (alimenta un veto) · nuevo (agregado en v2) · opcional · si (se muestra solo si…) */
 export const PREGUNTAS = [
   /* ── Bloque 1 · Filtros y logística ─────────────────────────────────────── */
-  { n: 1, b: 1, t: '¿Quién eres, a quién buscas y qué edades considerarías de verdad?',
-    help: { why: 'Es un filtro de ida y vuelta: solo hay coincidencia si cada uno cae en lo que el otro busca. Sé honesto con el rango — solo te presentaremos a quien de verdad considerarías.' },
+  { n: 1, b: 1, t: '¿Quién eres y a quién buscas?',
+    help: { why: 'Es un filtro de ida y vuelta: solo hay coincidencia si cada uno cae en lo que el otro busca. El rango de edad que considerarías no se pregunta aquí: lo decides después, como filtro sobre quienes te digan que sí.' },
     parts: [
       { id: 'genero', k: 'choice', l: 'Soy', filtro: true, nuevo: true, o: [['mujer', 'Mujer'], ['hombre', 'Hombre'], ['nobinaria', 'Persona no binaria']] },
       { id: 'busca', k: 'multi', l: 'Busco', filtro: true, nuevo: true, o: [['hombre', 'Hombres'], ['mujer', 'Mujeres'], ['nobinaria', 'Personas no binarias']] },
       { id: 'edad', k: 'num', l: 'Tu edad', min: 18, max: 99, filtro: true },
-      { id: 'edad_rango', k: 'range', l: 'Rango de edad que considerarías', min: 18, max: 99, filtro: true },
+      { id: 'nacimiento', k: 'fecha', l: 'Fecha de nacimiento', opcional: true, nota: 'El año lo calculamos con tu edad; tú pones mes y día.' },
     ] },
   { n: 2, b: 1, t: '¿En qué ciudad vives, y qué tan lejos llegarías por la persona correcta?',
     help: { why: 'La distancia no mata coincidencias; la inflexibilidad mutua sí. No respondas lo romántico: responde lo real. ¿De verdad te irías?' },
