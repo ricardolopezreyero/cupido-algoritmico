@@ -159,7 +159,8 @@ function pintar() {
   }
   if (c.t === 'fin') return fin();
   const p = c.q;
-  const ayudas = p.help ? [['why', '¿Por qué preguntamos esto?'], ['ex', 'Ejemplo de respuesta real'], ['start', '¿No sabes por dónde empezar?']]
+  // Sin '¿por qué preguntamos esto?': si ya estás aquí, te vamos a preguntar cosas (Ricardo, 16 sep 2026)
+  const ayudas = p.help ? [['ex', 'Ejemplo de respuesta real'], ['start', '¿No sabes por dónde empezar?']]
     .filter(([k]) => p.help[k]).map(([k, t]) => `<details><summary>${t}</summary><div class="cuerpo">${p.help[k]}</div></details>`).join('') : '';
   app.innerHTML = `
     <div class="q-bloque">Bloque ${p.b} · ${esc(BLOQUES[p.b])}</div>
@@ -180,7 +181,7 @@ function pintar() {
 
 function parte(pt) {
   const v = R[pt.id];
-  const etiquetaL = pt.l ? `<div class="parte-l">${esc(pt.l)}${pt.nuevo ? '<span class="nuevo">NUEVO v2</span>' : ''}${pt.opcional ? '<span style="font-weight:400;color:var(--gris);font-size:13px">(opcional)</span>' : ''}</div>` : (pt.nuevo ? '<div class="parte-l"><span class="nuevo">NUEVO v2</span></div>' : '');
+  const etiquetaL = pt.l ? `<div class="parte-l">${esc(pt.l)}${pt.opcional ? '<span style="font-weight:400;color:var(--gris);font-size:13px">(opcional)</span>' : ''}</div>` : '';
   let dentro = '';
   if (pt.k === 'choice' || pt.k === 'city') {
     dentro = pt.k === 'city'
