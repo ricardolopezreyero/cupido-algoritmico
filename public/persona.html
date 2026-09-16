@@ -15,23 +15,14 @@
 <body data-author="RLR">
 <!-- Cupido Algorítmico · Tablero de la persona · RLR · Ricardo López Reyero -->
 
-<!-- Selector (sin sesión) -->
-<div id="raiz-selector" hidden>
-  <header class="barra"><div class="envoltura barra-in">
-    <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
-    <span class="pildora-demo">DEMO</span>
-    <nav class="menu"><a href="/persona" class="activo">Personas</a><a href="/articulos">Artículos</a><a href="/admin">Admin</a></nav>
-  </div></header>
-  <main id="selector" class="envoltura persona-main"></main>
-</div>
-
 <!-- Tablero (con sesión) -->
-<div id="raiz-tablero" hidden>
+<div id="raiz-tablero">
   <div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Mi tablero</b></a><button id="abrir-menu" aria-label="Abrir menú">☰</button></div>
   <div class="admin">
     <aside class="lateral" id="lateral">
       <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
       <div class="quien-lat" id="quien-lat"></div>
+      <button class="demo-switch" id="demo-switch" hidden title="Cuenta demo: siempre encendida"><span class="pal"></span><span><b>Cuenta demo · encendida</b><small>Datos ficticios. Para apagarla, crea tu cuenta.</small></span></button>
       <nav id="nav"></nav>
       <button class="salir" id="salir"><span>⏻</span>Cerrar sesión</button>
       <div class="pie-lat" id="pie-lat"></div>
@@ -41,66 +32,69 @@
   <div class="cajon-velo" id="velo"></div>
 </div>
 
+<!-- Crear cuenta (desde el interruptor de la cuenta demo) -->
+<div class="modal-velo" id="modal-cuenta">
+  <div class="modal claro" role="dialog" aria-labelledby="mc-t">
+    <button class="cerrar" id="mc-cerrar" aria-label="Cerrar">×</button>
+    <h2 id="mc-t">La cuenta demo no se apaga: se cambia por la tuya</h2>
+    <p class="sub">Con tu correo creamos tu cuenta y te mandamos un enlace para entrar. Sin contraseña. Luego respondes tus 41 preguntas y el motor te cruza.</p>
+    <form id="mc-form" novalidate>
+      <div class="campo"><label for="mc-correo">Tu correo</label><input id="mc-correo" type="email" autocomplete="email" inputmode="email" placeholder="tu@correo.com" maxlength="254"></div>
+      <div class="acciones"><button class="boton" type="submit" id="mc-btn">Crear mi cuenta →</button><button class="boton boton-fantasma" type="button" id="mc-seguir">Seguir en el demo</button></div>
+      <p class="nota-entrar" style="text-align:left">El enlace vale 20 minutos y se usa una sola vez.</p>
+    </form>
+    <div id="mc-listo" hidden></div>
+  </div>
+</div>
+
 <script type="module">
 // RLR · tablero de la persona
 import { $, $$, esc, api, avisar, avatar, anillo, animarAnillos, hace, pronto } from '/js/ui.js';
 import { PREGUNTAS, BLOQUES, etiqueta, PARTE } from '/js/preguntas.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
-/* ── sesión sin contraseña: se recuerda en este dispositivo ─────────────── */
-const SESION = 'cupido.sesion';
-const leerSesion = () => { try { return JSON.parse(localStorage.getItem(SESION) || 'null'); } catch { return null; } };
-const guardarSesion = (s) => { try { localStorage.setItem(SESION, JSON.stringify(s)); } catch {} };
-const borrarSesion = () => { try { localStorage.removeItem(SESION); } catch {} };
-
-const q = new URLSearchParams(location.search);
-let id = q.get('id'), token = q.get('t');
-if (id || token) guardarSesion(token ? { t: token } : { id });
-else { const s = leerSesion(); if (s?.t) token = s.t; else if (s?.id) id = s.id; }
+/* ── sesión: cookie que puso el Worker (correo con enlace mágico, o demo) ── */
+const salirA = (ruta) => location.replace(ruta);
 const PRON = { mujer: ['ella', 'la'], hombre: ['él', 'lo'], nobinaria: ['esa persona', 'le'] };
-const CIUDADES = { cdmx: 'Ciudad de México', monterrey: 'Monterrey', guadalajara: 'Guadalajara', puebla: 'Puebla', queretaro: 'Querétaro', torreon: 'Torreón', saltillo: 'Saltillo', merida: 'Mérida', leon: 'León', tijuana: 'Tijuana', chihuahua: 'Chihuahua', cancun: 'Cancún', sanluis: 'San Luis Potosí', aguascalientes: 'Aguascalientes', morelia: 'Morelia', hermosillo: 'Hermosillo', oaxaca: 'Oaxaca', veracruz: 'Veracruz', otra: 'Otra ciudad' };
 
-if (!id && !token) selector(); else tablero();
-
-/* ═══ SELECTOR ═══════════════════════════════════════════════════════════ */
-async function selector() {
-  $('#raiz-selector').hidden = false;
-  document.title = 'Entrar · Cupido Algorítmico';
-  const pool = await api('/api/pool');
-  let seg = (() => { try { return localStorage.getItem('cupido.segmento') || 'mujer'; } catch { return 'mujer'; } })();
-  const hayCuest = pool.some((p) => p.origen === 'cuestionario');
-  $('#selector').innerHTML = `
-    <section class="selector-hero">
-      <p class="eyebrow">Entrar al tablero</p>
-      <h1>Entra como cualquiera de las 20 personas</h1>
-      <p class="lead">Son ficticias, pero respondieron las 41 preguntas completas. Elige a alguien y entra a su tablero: sus coincidencias, sus aceptaciones y todo lo que el algoritmo sabe de esa persona.</p>
-      <div class="segmento" role="tablist"><button data-s="mujer">Mujeres</button><button data-s="hombre">Hombres</button>${hayCuest ? '<button data-s="cuestionario">Del cuestionario</button>' : ''}</div>
-    </section>
-    <section id="rejilla" class="rejilla-personas"></section>
-    <p class="nota-privada">🔑 <span>Sin contraseñas: en la versión real cada persona entra con su enlace privado y, desde otro dispositivo, con un enlace mágico a su correo.</span></p>`;
-  const pintar = () => {
-    const lista = pool.filter((p) => (seg === 'cuestionario' ? p.origen === 'cuestionario' : p.origen === 'demo' && p.genero === seg));
-    $('#rejilla').innerHTML = lista.map((p) => `
-      <a class="ficha" href="/persona?id=${esc(p.id)}">${avatar(p.nombre, p.color)}
-        <div><b>${esc(p.nombre)}</b><span class="meta">${p.edad ? esc(p.edad) + ' · ' : ''}${esc(CIUDADES[p.ciudad] || '')}${p.completo ? '' : ' · sin terminar'}</span>${p.bio ? `<p>${esc(p.bio)}</p>` : ''}</div>
-        ${p.avisos ? `<span class="badge">${p.avisos} ${p.avisos === 1 ? 'aviso' : 'avisos'}</span>` : ''}</a>`).join('') || '<p class="vacio">Aún nadie ha llenado el cuestionario conectado.</p>';
-    $$('.segmento button').forEach((b) => b.classList.toggle('on', b.dataset.s === seg));
-  };
-  $$('.segmento button').forEach((b) => b.onclick = () => { seg = b.dataset.s; try { localStorage.setItem('cupido.segmento', seg); } catch {} pintar(); });
-  pintar();
-}
+tablero();
 
 /* ═══ TABLERO ════════════════════════════════════════════════════════════ */
 let V = null, seccion = 'inicio';
 const cont = $('#contenido');
 
 async function tablero() {
-  $('#raiz-tablero').hidden = false;
-  try { V = await api(token ? `/api/yo/${encodeURIComponent(token)}` : `/api/persona/${encodeURIComponent(id)}`); }
-  catch { borrarSesion(); location.replace('/persona'); return; }
-  document.title = `${V.persona.nombreCorto} · Mi tablero`;
+  try { V = await api('/api/yo'); }
+  catch (e) { if (e.status === 401) salirA('/entrar'); else cont.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; return; }
+  document.title = `${V.persona.nombreCorto || 'Mi tablero'} · Cupido Algorítmico`;
+  const ds = $('#demo-switch'); ds.hidden = !V.sesion.demo; ds.onclick = abrirModalCuenta;
   ir(location.hash.slice(1) || 'inicio');
 }
+const DEMO = () => !!V?.sesion?.demo;
+/* ── el interruptor no se apaga: se cambia por una cuenta propia ─────────── */
+function abrirModalCuenta() {
+  const pal = $('#demo-switch .pal');
+  pal.classList.add('off'); setTimeout(() => pal.classList.remove('off'), 700); // intenta apagarse… y vuelve
+  $('#modal-cuenta').classList.add('on'); setTimeout(() => $('#mc-correo')?.focus(), 200);
+}
+const cerrarModalCuenta = () => $('#modal-cuenta').classList.remove('on');
+$('#mc-cerrar').onclick = cerrarModalCuenta; $('#mc-seguir').onclick = cerrarModalCuenta;
+$('#modal-cuenta').onclick = (e) => { if (e.target.id === 'modal-cuenta') cerrarModalCuenta(); };
+$('#mc-form').onsubmit = async (e) => {
+  e.preventDefault();
+  const correo = $('#mc-correo').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(correo)) { avisar('Ese correo no se ve bien. Revísalo.'); return; }
+  const b = $('#mc-btn'); b.disabled = true; b.textContent = 'Mandando…';
+  try {
+    const r = await api('/api/entrar', { correo });
+    $('#mc-form').hidden = true;
+    const l = $('#mc-listo'); l.hidden = false;
+    l.innerHTML = `<div class="enviado"><div class="grande">📬</div><h2>Revisa tu correo</h2><p>Te mandamos tu enlace a <b>${esc(r.correo)}</b>. Al abrirlo entras a tu propia cuenta y esta sesión demo se cierra.</p>
+      ${r.sinCorreo ? `<p style="font-size:13px;background:var(--ambar-suave);padding:10px;border-radius:10px"><b>Modo desarrollo</b>: <a href="${esc(r.enlace)}">${esc(r.enlace)}</a></p>` : ''}
+      <p class="nota-entrar">¿No llega? Revisa el spam. Vale 20 minutos.</p></div>`;
+  } catch (err) { avisar(err.message); b.disabled = false; b.textContent = 'Crear mi cuenta →'; }
+};
+
 window.addEventListener('hashchange', () => V && ir(location.hash.slice(1)));
 
 /* ── derivados: aceptaciones, logros y camino ────────────────────────────── */
@@ -147,22 +141,22 @@ const MENU = [
 ];
 function pintarLateral() {
   const d = derivados(), P = V.persona;
-  $('#quien-lat').innerHTML = `${avatar(P.nombre, P.color)}<div><b>${esc(P.nombre)}</b><span>${P.edad ? esc(P.edad) + ' · ' : ''}${esc(P.ciudad || '')}</span></div>`;
+  $('#quien-lat').innerHTML = `${avatar(P.nombre === 'Sin nombre' ? '♥' : P.nombre, P.color)}<div><b>${esc(P.nombre === 'Sin nombre' ? 'Tu cuenta' : P.nombre)}</b><span>${P.edad ? esc(P.edad) + ' · ' : ''}${esc(P.ciudad || '')}</span></div>`;
   $('#nav').innerHTML = MENU.map((m) => {
     if (m.sep) return `<div class="sep">${m.sep}</div>`;
     const n = m.n ? m.n(d) : 0;
     return `<a href="#${m.s}" data-s="${m.s}" class="${m.s === seccion ? 'on' : ''}"><span class="ico">${m.i}</span>${m.t}${n ? `<span class="cuenta-nav ${m.alerta ? '' : 'gris'}">${n}</span>` : ''}</a>`;
   }).join('');
-  $('#pie-lat').innerHTML = P.pool === 'demo' && !token ? 'Demo con datos ficticios.<br><a href="/admin">Ver el panel admin →</a>' : 'Tu enlace es tu llave: sin contraseña.';
+  $('#pie-lat').innerHTML = DEMO() ? 'Demo con datos ficticios.<br><a href="/admin">Ver el panel admin →</a>' : `Sin contraseña: entras con tu correo.${V.sesion.correo ? `<br><span style="word-break:break-all">${esc(V.sesion.correo)}</span>` : ''}`;
 }
 $('#abrir-menu').onclick = () => { $('#lateral').classList.add('on'); $('#velo').classList.add('on'); };
 const cerrarMenu = () => { $('#lateral').classList.remove('on'); $('#velo').classList.remove('on'); };
 $('#velo').onclick = cerrarMenu;
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') cerrarMenu(); });
-$('#salir').onclick = () => {
-  borrarSesion();
-  avisar('Sesión cerrada en este dispositivo');
-  setTimeout(() => location.replace(token ? '/' : '/persona'), 500);
+$('#salir').onclick = async () => {
+  try { await api('/api/salir', {}); } catch {}
+  avisar('Sesión cerrada');
+  setTimeout(() => salirA('/entrar'), 400);
 };
 
 function ir(s) {
@@ -186,8 +180,9 @@ const SECCIONES = {
     const siguiente = d.logros.find((l) => !l.ok);
     const mejor = c[0];
     const estado = !P.completo ? ['ambar', 'Tu perfil aún no entra al matching'] : P.estado === 'pausada' ? ['ambar', 'Tu perfil está en pausa'] : ['ok', 'En el matching'];
-    return cabeza(`Hola, ${esc(P.nombreCorto)}.`, `<span class="chip ${estado[0]}">${estado[1]}</span> &nbsp;Tu búsqueda, en una sola pantalla.`,
-      d.esperanMi.length ? `<a class="boton" href="#aceptaciones">Responder ${d.esperanMi.length} ${d.esperanMi.length === 1 ? 'coincidencia' : 'coincidencias'}</a>` : `<a class="boton boton-claro" href="#coincidencias">Ver coincidencias</a>`) + `
+    return cabeza(`Hola${P.nombreCorto ? ', ' + esc(P.nombreCorto) : ''}.`, `<span class="chip ${estado[0]}">${estado[1]}</span> &nbsp;Tu búsqueda, en una sola pantalla.`,
+      d.esperanMi.length ? `<a class="boton" href="#aceptaciones">Responder ${d.esperanMi.length} ${d.esperanMi.length === 1 ? 'coincidencia' : 'coincidencias'}</a>` : !P.completo ? `<a class="boton" href="/cuestionario">Responder mi cuestionario</a>` : `<a class="boton boton-claro" href="#coincidencias">Ver coincidencias</a>`) +
+      (DEMO() ? `<div class="cinta-demo"><span>🎛️</span><span><b>Estás en la cuenta demo</b>, viendo el tablero de ${esc(P.nombre)}, una persona ficticia. Todo lo que ves es real en el sistema: coincidencias, puertas, avisos. Así verías el tuyo.</span><button class="boton boton-chico" id="crear-cuenta">Quiero mi propia cuenta</button></div>` : '') + `
       <div class="banda">
         <div class="rosa"><b>${c.length}</b><span>coincidencias<br>arriba del ${V.umbral} %</span></div>
         <div><b>${d.esperanMi.length}</b><span>esperan<br>tu respuesta</span></div>
@@ -256,6 +251,7 @@ const SECCIONES = {
 
   respuestas() {
     const r = V.misRespuestas || {};
+    if (!V.persona.avance.estructuradas && !DEMO()) return cabeza('Mis respuestas', 'Todavía no has respondido nada.', `<a class="boton" href="/cuestionario">Empezar mi cuestionario</a>`) + `<section class="tarjeta"><p style="margin:0;color:var(--tinta-2)">Son 41 preguntas en 10 categorías. Se guardan solas y puedes parar cuando quieras.</p></section>`;
     const lleno = (v) => v != null && v !== '' && !(Array.isArray(v) && !v.length);
     const bloques = Object.entries(BLOQUES).map(([n, nombre]) => {
       const preguntas = PREGUNTAS.filter((p) => p.b === Number(n));
@@ -271,12 +267,12 @@ const SECCIONES = {
             const txt = k === 'range' ? `${v[0]} a ${v[1]} años` : k === 'text' ? esc(v) : esc(etiqueta(pt.id, v));
             return `<div>${pt.l ? `<span style="color:var(--gris)">${esc(pt.l)}:</span> ` : ''}${txt}</div>`;
           }).join('') : '<div class="vacio">Sin responder</div>'}
-          ${token ? `<a class="enlace" style="font-size:13px" href="/cuestionario?t=${encodeURIComponent(token)}&p=${p.n}">Editar</a>` : ''}</div>`;
+          ${DEMO() ? '' : `<a class="enlace" style="font-size:13px" href="/cuestionario?p=${p.n}">Editar</a>`}</div>`;
         }).join('')}
       </details>`;
     }).join('');
     return cabeza('Mis respuestas', `Las 41 preguntas en sus 10 categorías, en el orden del cuestionario. Avance total: ${V.persona.avance.pct} %.`,
-      token ? `<a class="boton boton-claro" href="/cuestionario?t=${encodeURIComponent(token)}">Editar cuestionario</a>` : '') +
+      DEMO() ? `<button class="boton boton-claro" id="crear-cuenta">Responder el mío</button>` : `<a class="boton boton-claro" href="/cuestionario">Editar cuestionario</a>`) +
       `<p class="seccion-sub">Solo tú las ves. Lo íntimo solo lo lee el motor.</p>${bloques}`;
   },
 
@@ -287,7 +283,7 @@ const SECCIONES = {
     return cabeza('Qué tan bien me conoce el algoritmo', 'Tus respuestas abiertas le dicen al motor qué tan clara es la imagen que tiene de ti. La calidad de una pareja la define el menos claro de los dos.') + `
       <div class="rejilla-2">
         <section class="tarjeta"><div class="nivel">${anillo(V.claridad.pct, 'claridad')}<div><h3>${V.claridad.pct >= 80 ? 'Te describiste con claridad' : V.claridad.pct >= 50 ? 'Te conoce a medias' : 'Te conoce poco'}</h3>
-          <p>${preguntas.length ? `Tus coincidencias serían más certeras si le cuentas más en las preguntas ${preguntas.map((n) => token ? `<a href="/cuestionario?t=${encodeURIComponent(token)}&p=${n}">${n}</a>` : n).join(', ')}. No se trata de escribir bonito: se trata de escribir verdad, con ejemplos.` : 'Escribiste con ejemplos reales. Eso hace que tus coincidencias sean de verdad tuyas.'}</p></div></div></section>
+          <p>${preguntas.length ? `Tus coincidencias serían más certeras si le cuentas más en las preguntas ${preguntas.map((n) => DEMO() ? n : `<a href="/cuestionario?p=${n}">${n}</a>`).join(', ')}. No se trata de escribir bonito: se trata de escribir verdad, con ejemplos.` : 'Escribiste con ejemplos reales. Eso hace que tus coincidencias sean de verdad tuyas.'}</p></div></div></section>
         <section class="tarjeta" style="margin-top:0"><h2>Los cuatro ejes</h2>
           <div class="barras">${EJES.map(([k, t, dsc]) => `<div class="barra-fila" style="grid-template-columns:150px 1fr 40px"><span>${t}</span><div class="pista"><div class="relleno" data-w="${(rb[k] ?? 0) * 10}"></div></div><b>${rb[k] ?? '—'}</b><span class="por" style="color:var(--gris)">${dsc}</span></div>`).join('')}</div></section>
       </div>`;
@@ -315,23 +311,26 @@ const SECCIONES = {
           <li><span class="i si">✓</span><span>Nadie se entera si dijiste que no — ni de que dijiste que sí, hasta que haya dos.</span></li>
           <li><span class="i si">✓</span><span>Lo primero que alguien conoce de ti es tu carta, no tu foto.</span></li>
         </ul></section>
-      ${token ? `<section class="tarjeta"><h2>Tu enlace privado</h2><p class="sub">Es tu llave: no hay contraseña. Guárdalo.</p>
-        <div class="enlace-privado"><input id="mi-enlace" readonly value="${esc(location.origin + '/persona?t=' + token)}"><button class="boton boton-chico" id="copiar">Copiar</button></div></section>` : ''}
-      <section class="tarjeta"><h2>Cerrar sesión</h2><p class="sub">Olvida tu sesión en este dispositivo. ${token ? 'Para volver, abre tu enlace privado.' : 'Podrás entrar de nuevo desde la lista de personas del demo.'}</p>
+      <section class="tarjeta"><h2>Tu acceso</h2>
+        ${DEMO() ? `<p class="sub">Esta es la <b>cuenta demo</b>: datos ficticios que cualquiera puede ver. Para tener tu propio tablero, crea tu cuenta con tu correo.</p><button class="boton" id="crear-cuenta">Crear mi cuenta</button>`
+          : `<p class="sub">Sin contraseña. Cada vez que entres te mandamos un enlace a tu correo; vale 20 minutos y se usa una sola vez.</p><div class="acceso-correo"><span>✉️</span><b>${esc(V.sesion.correo || '')}</b></div>`}</section>
+      <section class="tarjeta"><h2>Cerrar sesión</h2><p class="sub">Olvida tu sesión en este dispositivo. ${DEMO() ? 'El demo siempre está a un clic en la puerta de entrada.' : 'Para volver, pide un enlace nuevo con tu correo.'}</p>
         <button class="boton boton-oscuro" id="btn-salir">⏻ Cerrar sesión</button></section>`;
   },
 };
 
 const DESPUES = {
+  inicio() { const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta; },
   avisos: marcarLeidos,
+  respuestas() { const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta; },
   privacidad() {
     $('#btn-salir').onclick = () => $('#salir').click();
-    const c = $('#copiar'); if (c) c.onclick = async () => { try { await navigator.clipboard.writeText($('#mi-enlace').value); avisar('Enlace copiado'); } catch { $('#mi-enlace').select(); } };
+    const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta;
     $('#btn-pausa').onclick = async (e) => {
       e.target.disabled = true;
       const estado = V.persona.estado === 'pausada' ? 'activa' : 'pausada';
       try {
-        const r = await api('/api/yo/estado', token ? { token, estado } : { persona: V.persona.id, estado });
+        const r = await api('/api/yo/estado', { estado });
         V = r.vista; avisar(estado === 'pausada' ? 'Perfil en pausa' : 'Perfil reactivado: el motor ya te cruzó'); ir('privacidad');
       } catch (err) { e.target.disabled = false; avisar(err.message); }
     };
@@ -342,7 +341,7 @@ const DESPUES = {
 const filaAviso = (a) => `<div class="aviso ${a.leido ? '' : 'nuevo'}"><span>${a.tipo === 'apertura' ? '🔓' : '💘'}</span><div>${esc(a.texto)}<span class="cuando">${hace(a.creado)}</span></div></div>`;
 async function marcarLeidos() {
   if (!V.avisos.some((a) => !a.leido)) return;
-  try { await api('/api/avisos/leer', token ? { token } : { persona: V.persona.id }); V.avisos.forEach((a) => a.leido = 1); pintarLateral(); } catch {}
+  try { await api('/api/avisos/leer', {}); V.avisos.forEach((a) => a.leido = 1); pintarLateral(); } catch {}
 }
 function silencio() {
   return `<section class="tarjeta silencio"><div class="grande">🌙</div><h3>Todavía nadie cruza el ${V.umbral} % contigo</h3>
@@ -384,7 +383,7 @@ async function decidir(clave, decision, boton) {
   boton.disabled = true;
   try {
     const antes = V.coincidencias.find((c) => c.clave === clave);
-    const r = await api('/api/puerta', token ? { token, otra, decision } : { persona: V.persona.id, otra, decision });
+    const r = await api('/api/puerta', { otra, decision });
     V = r.vista;
     if (r.estado === 'abierta' && antes?.puerta.estado !== 'abierta') {
       if (seccion === 'coincidencias') ir('coincidencias'); else location.hash = 'coincidencias';

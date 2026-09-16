@@ -20,7 +20,8 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 - [x] **Tablero de la persona** (menú a la izquierda, contenido a la derecha) sin contraseña y con cerrar sesión: Inicio con cifras, camino de 5 pasos y logros · Mis coincidencias (con la puerta) · Aceptaciones agrupadas (esperan tu respuesta, tu sí esperando, puertas abiertas, preferiste no abrir) · Avisos · Lo que más pesa · Mis respuestas en las 10 categorías · Qué tan bien me conoce · Lo que me deja fuera · Privacidad y pausa del perfil.
 - [x] **Panel admin**: resumen con cifras, distribución, vetos por tipo, matriz 10 × 10, detalle de cada par en las dos direcciones, personas con sus respuestas y pesos, puertas, corrida manual por fases, laboratorio de pesos en vivo, bitácora en vivo.
 - [x] **Artículos**: cualquiera publica sin cuenta, lectura cuidada y lista para compartir por WhatsApp, borrador local, anti-spam básico (trampa para robots, límite por IP, palabras sospechosas a revisión) y moderación desde el admin. 6 artículos iniciales.
-- [x] **Cuestionario conectado**: autoguardado, "lo pienso después", enlace privado sin contraseña y motor automático al terminar.
+- [x] **Cuestionario conectado**: autoguardado, "lo pienso después" y motor automático al terminar; guarda en la cuenta de la persona.
+- [x] **Acceso sin contraseñas** (16 sep 2026): el correo es la cuenta → enlace mágico (20 min, un solo uso, límite por correo e IP); sesión en cookie HttpOnly de 90 días; cerrar sesión. **Cuenta demo a un clic** (`/demo`): tablero de Diego con puerta abierta, coincidencia esperando y avisos; se limpia en cada entrada; interruptor "cuenta demo" que no se apaga: invita a crear cuenta.
 - [x] **Infraestructura**: Cloudflare Worker + D1, código en GitHub, 17 pruebas del motor que corren antes de cada despliegue.
 
 ---
@@ -28,10 +29,10 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 ## 1 · Antes de abrirlo a personas reales (bloquea el lanzamiento)
 
 ### Acceso sin contraseñas
-- [ ] **Enlace mágico por correo** para la persona: recuperar su panel en otro dispositivo y recibir avisos. El enlace privado que ya existe se vuelve la sesión.
-- [ ] **Remitente de correo** con dominio propio verificado (Resend o Cloudflare Email Service) y plantillas: aviso de coincidencia, puerta abierta, enlace mágico.
+- [x] **Enlace mágico por correo** (hecho; ver arriba).
+- [ ] **Remitente con dominio propio.** Hoy el enlace sale de `cupido@superleads.mx` vía Resend (dominio ya verificado, temporal). Falta decidir el dominio de Cupido, verificarlo en Resend y cambiar `FROM_EMAIL` en `wrangler.jsonc`. Plantillas pendientes: aviso de coincidencia y puerta abierta por correo.
 - [ ] **Proteger el admin** con Cloudflare Access (código al correo, sin escribir login) y roles: operación del matching ≠ moderación de artículos.
-- [ ] **Separar el pool demo del real.** Los datos reales nunca se mezclan con los ficticios; el selector "entra como cualquiera" solo existe en demo.
+- [ ] **Separar el pool demo del real.** Las cuentas reales ya nacen en `pool = real` y "Reiniciar demo" las respeta, pero el motor todavía las cruza con las 20 personas ficticias (útil para probar; hay que apagarlo antes de abrir).
 
 ### Privacidad y datos sensibles
 - [ ] **Aviso de privacidad y consentimiento expreso.** Vida sexual, creencias religiosas y opiniones políticas son datos personales sensibles en México: requieren consentimiento expreso y por escrito (casilla separada, firma electrónica), finalidades claras y medidas de seguridad reforzadas. **Validar con abogado** contra la ley vigente de protección de datos en posesión de particulares.

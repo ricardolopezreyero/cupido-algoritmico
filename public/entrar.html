@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Entrar · Cupido Algorítmico</title>
+<meta name="description" content="Entra con tu correo (sin contraseña) o mira la cuenta demo a un clic.">
+<meta name="author" content="Ricardo López Reyero">
+<meta name="rev" content="181218">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/cupido.css">
+</head>
+<body data-author="RLR">
+<!-- Cupido Algorítmico · Entrar · RLR · Ricardo López Reyero -->
+<header class="barra"><div class="envoltura barra-in">
+  <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
+  <nav class="menu"><a href="/entrar" class="activo">Entrar</a><a href="/articulos">Artículos</a><a href="/admin">Admin</a></nav>
+</div></header>
+
+<main class="envoltura entrar">
+  <section class="entrar-hero">
+    <p class="eyebrow">Entrar</p>
+    <h1>Sin contraseña. <em>Tu correo es tu cuenta.</em></h1>
+    <p class="lead" id="aviso-arriba">Te mandamos un enlace, lo abres y ya estás dentro. Y si solo quieres ver cómo se siente, la cuenta demo está a un clic.</p>
+  </section>
+
+  <div class="entrar-rejilla">
+    <section class="tarjeta entrar-correo" id="tarjeta-correo">
+      <h2>Entrar con mi correo</h2>
+      <p class="sub">Si ya tienes cuenta, entras. Si no, la creamos con ese correo. Nunca te pediremos una contraseña.</p>
+      <form id="f-correo" novalidate>
+        <div class="campo"><label for="correo">Tu correo</label><input id="correo" type="email" autocomplete="email" inputmode="email" placeholder="tu@correo.com" required maxlength="254"></div>
+        <button class="boton" type="submit" id="btn-correo">Mandarme mi enlace →</button>
+        <p class="nota-entrar">El enlace vale 20 minutos y se usa una sola vez.</p>
+      </form>
+    </section>
+
+    <section class="tarjeta entrar-demo">
+      <span class="chip ambar">Demo · datos ficticios</span>
+      <h2>Ver la cuenta demo</h2>
+      <p class="sub">Entras al tablero de Diego, una de las 20 personas ficticias. Ves sus coincidencias arriba del 90 %, una puerta abierta con su carta, y una coincidencia que espera su respuesta. Así se vería el tuyo.</p>
+      <a class="boton boton-oscuro" href="/demo" id="btn-demo">Entrar al demo, sin registro →</a>
+      <p class="nota-entrar">Un clic. Sin correo, sin cuenta.</p>
+    </section>
+  </div>
+
+  <p class="nota-privada" style="max-width:720px;margin:26px auto 0">🔒 <span>Nadie navega perfiles. Tus respuestas íntimas solo las lee el motor. Solo te avisamos arriba del 90 % y la puerta se abre con dos síes.</span></p>
+</main>
+
+<footer class="pie"><div class="envoltura"><span>💘 Cupido Algorítmico · proyecto abierto · <a href="https://github.com/ricardolopezreyero/cupido-algoritmico">GitHub</a></span><span><a href="/">Inicio</a> · <a href="/admin">Admin</a> · <a href="/articulos">Artículos</a></span></div></footer>
+
+<script type="module">
+// RLR · entrar
+import { $, esc, api, avisar } from '/js/ui.js';
+const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
+const q = new URLSearchParams(location.search);
+const ERRORES = { vencido: 'Ese enlace ya venció (valen 20 minutos). Pide uno nuevo con tu correo.', usado: 'Ese enlace ya se usó. Pide uno nuevo con tu correo.', 'inválido': 'Ese enlace no es válido. Pide uno nuevo con tu correo.' };
+if (q.get('error')) { $('#aviso-arriba').innerHTML = `<span class="chip ambar">Enlace</span> ${esc(ERRORES[q.get('error')] || ERRORES['inválido'])}`; $('#correo').focus(); }
+else if (q.get('luego') === 'cuestionario') $('#aviso-arriba').textContent = 'Para responder tu cuestionario primero entra con tu correo: así tus respuestas quedan en tu cuenta.';
+
+$('#f-correo').onsubmit = async (e) => {
+  e.preventDefault();
+  const correo = $('#correo').value.trim();
+  if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(correo)) { avisar('Ese correo no se ve bien. Revísalo.'); $('#correo').focus(); return; }
+  const b = $('#btn-correo'); b.disabled = true; b.textContent = 'Mandando…';
+  try {
+    const r = await api('/api/entrar', { correo });
+    $('#tarjeta-correo').innerHTML = `<div class="enviado"><div class="grande">📬</div><h2>Revisa tu correo</h2>
+      <p>Te mandamos tu enlace a <b>${esc(r.correo)}</b>. Ábrelo desde este mismo dispositivo o desde tu celular: entras directo.</p>
+      <p class="nota-entrar">¿No llega? Revisa el spam. Vale 20 minutos.</p>
+      ${r.sinCorreo ? `<div class="tarjeta" style="margin-top:14px;padding:14px;background:var(--ambar-suave);border-color:#f0dcb8"><b>Modo desarrollo</b>: no hay llave de correo, así que aquí está tu enlace:<br><a href="${esc(r.enlace)}">${esc(r.enlace)}</a></div>` : ''}
+      <p style="margin-top:18px"><button class="enlace" id="otra-vez">Usar otro correo</button></p></div>`;
+    $('#otra-vez').onclick = () => location.replace('/entrar');
+  } catch (err) { avisar(err.message || 'No se pudo mandar el correo'); b.disabled = false; b.textContent = 'Mandarme mi enlace →'; }
+};
+</script>
+</body>
+</html>

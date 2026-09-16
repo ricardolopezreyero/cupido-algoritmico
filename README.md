@@ -10,12 +10,13 @@ Te registras, respondes 41 preguntas una sola vez, y no pasa nada más. No hay s
 
 | | |
 |---|---|
-| **Tablero de la persona** · `/persona` | Entra como cualquiera de las 20 personas ficticias (10 hombres, 10 mujeres) a su tablero con menú lateral: inicio con camino y logros, coincidencias de 90 % hacia arriba, aceptaciones, avisos, lo que más pesa, sus respuestas por categoría, privacidad, pausa y cerrar sesión. |
+| **Entrar** · `/entrar` | Sin contraseñas. Con tu correo te mandamos un enlace mágico (vale 20 minutos, un solo uso); si no tienes cuenta, se crea con ese correo. O la **cuenta demo a un clic** (`/demo`): entras al tablero de Diego, una persona ficticia, con el interruptor "cuenta demo" encendido que no se apaga: si lo tocas, te invita a crear tu cuenta. |
+| **Tablero de la persona** · `/persona` | Menú lateral: inicio con camino y logros, coincidencias de 90 % hacia arriba, aceptaciones, avisos, lo que más pesa, sus respuestas por categoría, privacidad, pausa y cerrar sesión. |
 | **Panel administrativo** · `/admin` | Cifras, matriz 10 × 10, vetos explicados, el cálculo de cada par en las dos direcciones, puertas, corrida del matching por fases, laboratorio de pesos, artículos y bitácora en vivo. |
 | **Artículos** · `/articulos` | Cualquiera publica sin crear cuenta. |
-| **Cuestionario** · `/cuestionario` | Las 41 preguntas conectadas: autoguardado, enlace privado sin contraseña, y el motor te cruza al terminar. |
+| **Cuestionario** · `/cuestionario` | Las 41 preguntas conectadas a tu cuenta: autoguardado y el motor te cruza al terminar. |
 
-Sin logins a propósito: es un demo y tiene que fluir. Lo que falta para abrirlo a personas reales (enlace mágico por correo, admin protegido, privacidad de datos sensibles, verificación de identidad…) está en **[la lista completa](docs/RUTA.md)**.
+Sin contraseñas a propósito: el correo es la cuenta (enlace mágico) y el demo está a un clic. Lo que falta para abrirlo a personas reales (admin protegido, privacidad de datos sensibles, verificación de identidad, dominio propio para el correo…) está en **[la lista completa](docs/RUTA.md)**.
 
 ## Por qué
 

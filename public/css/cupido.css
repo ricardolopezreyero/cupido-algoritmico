@@ -504,3 +504,41 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.01em
 .bloque-resp .preg div { color: var(--tinta-2); white-space: pre-line; }
 @media (max-width: 560px) { .bloque-resp summary .mini { width: 80px; } }
 /* fin tablero · RLR */
+
+/* ── Entrar (correo o demo) · RLR ──────────────────────────────────────── */
+.entrar { padding-bottom: 60px; }
+.entrar-hero { text-align: center; padding-top: 44px; }
+.entrar-hero h1 { font-size: clamp(30px, 5vw, 46px); margin: 6px auto 10px; max-width: 760px; }
+.entrar-hero h1 em { font-style: italic; color: var(--rosa); }
+.entrar-hero .lead { max-width: 620px; margin: 0 auto; }
+.entrar-rejilla { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 34px; }
+.entrar-rejilla h2 { margin: 6px 0 4px; font-size: 24px; }
+.entrar-rejilla .sub { color: var(--tinta-2); font-size: 15px; margin: 0 0 18px; }
+.entrar-rejilla .boton { width: 100%; }
+.entrar-demo { background: linear-gradient(160deg, #fff 0%, #fdf3e1 100%); border-color: #f0dcb8; }
+.nota-entrar { font-size: 13px; color: var(--gris); margin: 10px 0 0; text-align: center; }
+.enviado { text-align: center; padding: 12px 0; }
+.enviado .grande { font-size: 44px; }
+.enviado h2 { margin: 6px 0; }
+.enviado p { color: var(--tinta-2); margin: 8px 0; }
+@media (max-width: 760px) { .entrar-rejilla { grid-template-columns: 1fr; } .entrar-demo { order: -1; } }
+
+/* ── Interruptor "cuenta demo" (siempre encendido) ─────────────────────── */
+.demo-switch { display: flex; align-items: center; gap: 10px; margin: 0 8px 14px; padding: 10px 12px; border-radius: 12px; background: #3a2a1a; border: 1px solid #6b4a1e; color: #f6dfb5; font-size: 13px; cursor: pointer; text-align: left; width: calc(100% - 16px); font-family: var(--sans); }
+.demo-switch:hover { background: #4a3520; }
+.demo-switch b { display: block; color: #ffe3a3; font-size: 13px; }
+.demo-switch small { display: block; color: #d9b984; font-size: 11.5px; line-height: 1.3; }
+.demo-switch .pal { flex: none; width: 38px; height: 22px; border-radius: 999px; background: var(--ambar); position: relative; box-shadow: inset 0 1px 3px rgba(0,0,0,.25); }
+.demo-switch .pal::after { content: ''; position: absolute; top: 3px; right: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+.demo-switch .pal.off::after { right: auto; left: 3px; }
+.cinta-demo { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; background: var(--ambar-suave); border: 1px solid #f0dcb8; border-radius: 14px; padding: 12px 16px; margin-bottom: 18px; font-size: 14px; color: #6b4a1e; }
+.cinta-demo b { color: #8a5a12; }
+.cinta-demo .boton { margin-left: auto; }
+.modal.claro { background: var(--blanco); color: var(--tinta); }
+.modal.claro h2 { color: var(--tinta); }
+.modal.claro .sub { color: var(--tinta-2); }
+.modal .cerrar { position: absolute; top: 14px; right: 14px; background: transparent; border: 0; font-size: 22px; cursor: pointer; color: inherit; opacity: .7; }
+.modal { position: relative; }
+.acceso-correo { display: flex; align-items: center; gap: 10px; background: var(--rosa-suave); border-radius: 12px; padding: 12px 14px; font-size: 14.5px; }
+.acceso-correo b { word-break: break-all; }
+/* fin acceso · RLR */

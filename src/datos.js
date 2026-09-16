@@ -38,6 +38,14 @@ const ESQUEMA = [
   `CREATE TABLE IF NOT EXISTS bitacora (
      id INTEGER PRIMARY KEY AUTOINCREMENT, tipo TEXT NOT NULL, accion TEXT NOT NULL, detalle TEXT,
      creado TEXT NOT NULL DEFAULT (datetime('now')))`,
+  `CREATE TABLE IF NOT EXISTS sesiones (
+     id TEXT PRIMARY KEY, persona TEXT NOT NULL, demo INTEGER NOT NULL DEFAULT 0,
+     creada TEXT NOT NULL DEFAULT (datetime('now')), usada TEXT NOT NULL DEFAULT (datetime('now')))`,
+  `CREATE TABLE IF NOT EXISTS enlaces (
+     token TEXT PRIMARY KEY, correo TEXT NOT NULL, ip_hash TEXT,
+     creado TEXT NOT NULL DEFAULT (datetime('now')), usado TEXT)`,
+  `CREATE INDEX IF NOT EXISTS idx_enlaces_correo ON enlaces(correo, creado)`,
+  `CREATE INDEX IF NOT EXISTS idx_sesiones_persona ON sesiones(persona)`,
   `CREATE INDEX IF NOT EXISTS idx_pares_pct ON pares(pct)`,
   `CREATE INDEX IF NOT EXISTS idx_avisos_persona ON avisos(persona, leido)`,
   `CREATE INDEX IF NOT EXISTS idx_articulos_estado ON articulos(estado, creado)`,
@@ -47,6 +55,9 @@ let listo = false;
 export async function asegurar(env) {
   if (listo) return;
   await env.DB.batch(ESQUEMA.map((q) => env.DB.prepare(q)));
+  // migración v2.1: el correo es la cuenta (la columna no existía en bases sembradas antes)
+  try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN correo TEXT`).run(); } catch { /* ya existe */ }
+  await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_personas_correo ON personas(correo)`).run();
   const n = await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas`).first();
   if (!n.n) await sembrarDemo(env);
   const a = await env.DB.prepare(`SELECT COUNT(*) AS n FROM articulos`).first();
@@ -66,7 +77,6 @@ export async function personas(env, { soloActivas = false } = {}) {
   return (await env.DB.prepare(q).all()).results.map(fila);
 }
 export async function persona(env, id) { return fila(await env.DB.prepare(`SELECT * FROM personas WHERE id = ?`).bind(id).first()); }
-export async function personaPorToken(env, t) { return fila(await env.DB.prepare(`SELECT * FROM personas WHERE token = ?`).bind(t).first()); }
 const clave = (x, y) => (x < y ? [x, y] : [y, x]);
 
 /* ── siembra del demo ─────────────────────────────────────────────────────── */
@@ -81,7 +91,8 @@ async function sembrarDemo(env) {
   // Estados de puerta de ejemplo, para que el demo muestre todos los momentos
   const decisiones = [
     ['h03', 'm03', 'si', 'si'],   // Emilio y Valeria: la puerta ya se abrió
-    ['h01', 'm01', 'si', null],   // Diego ya dijo que sí; Mariana aún no decide
+    ['h01', 'm01', 'si', 'si'],   // Diego y Mariana: abierta (Diego es la cuenta demo; ver src/acceso.js)
+    ['h01', 'm07', null, 'si'],   // Daniela ya dijo que sí a Diego; él aún no decide
     ['h08', 'm08', 'si', null],   // Samuel ya dijo que sí
     ['h04', 'm04', null, 'si'],   // Renata ya dijo que sí; Tomás no ha decidido
   ];
@@ -102,12 +113,16 @@ async function sembrarArticulos(env) {
 }
 
 export async function reiniciarDemo(env) {
+  // Solo lo ficticio: las cuentas reales (pool 'real') y sus puertas abiertas se respetan
   await env.DB.batch([
-    env.DB.prepare(`DELETE FROM pares`), env.DB.prepare(`DELETE FROM puertas`),
-    env.DB.prepare(`DELETE FROM avisos`), env.DB.prepare(`DELETE FROM personas`),
+    env.DB.prepare(`DELETE FROM personas WHERE pool = 'demo'`),
+    env.DB.prepare(`DELETE FROM pares`),
+    env.DB.prepare(`DELETE FROM puertas WHERE a NOT IN (SELECT id FROM personas) OR b NOT IN (SELECT id FROM personas)`),
+    env.DB.prepare(`DELETE FROM avisos WHERE persona NOT IN (SELECT id FROM personas) OR (otra IS NOT NULL AND otra NOT IN (SELECT id FROM personas))`),
+    env.DB.prepare(`DELETE FROM sesiones WHERE persona NOT IN (SELECT id FROM personas)`),
   ]);
   await sembrarDemo(env);
-  await anotar(env, 'admin', 'Se reinició el demo', 'Personas, cruces, puertas y avisos de vuelta al estado inicial');
+  await anotar(env, 'admin', 'Se reinició el demo', 'Personas ficticias, cruces, puertas y avisos de vuelta al estado inicial');
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -269,7 +284,7 @@ export async function vistaPersona(env, P) {
   const avisos = (await env.DB.prepare(`SELECT id, tipo, texto, pct, leido, creado FROM avisos WHERE persona = ? ORDER BY id DESC LIMIT 20`).bind(P.id).all()).results;
 
   return {
-    persona: { id: P.id, nombre: P.nombre, nombreCorto: P.nombre.split(' ')[0], edad: P.edad, ciudad: etiqueta('ciudad', P.r.ciudad), genero: P.genero, color: P.color, pool: P.pool, estado: P.estado, completo: !!P.completo, avance: avance(P.r), origen: P.origen },
+    persona: { id: P.id, nombre: P.nombre, nombreCorto: P.nombre === 'Sin nombre' ? '' : P.nombre.split(' ')[0], edad: P.edad, ciudad: etiqueta('ciudad', P.r.ciudad), genero: P.genero, color: P.color, pool: P.pool, estado: P.estado, completo: !!P.completo, avance: avance(P.r), origen: P.origen, correo: P.pool === 'real' ? P.correo || null : null },
     pool: { delOtroLado: delOtroLado.length, compatibles: pares.filter((x) => !x.veto).length, evaluados: pares.length },
     coincidencias, masCerca,
     dejanFuera: Object.values(dejanFuera),
@@ -425,9 +440,8 @@ export async function correrFase(env, fase) {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CUESTIONARIO CONECTADO (sin login: enlace privado)
+   CUESTIONARIO CONECTADO (la sesión dice quién responde; ver src/acceso.js)
    ═══════════════════════════════════════════════════════════════════════════ */
-const token = () => [...crypto.getRandomValues(new Uint8Array(18))].map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, 28);
 const COLORES = ['#d6455f', '#e07a4e', '#8a6bbf', '#2f8f83', '#1d4ed8', '#0891b2', '#be185d', '#15803d', '#a16207', '#6d28d9'];
 
 function limpiarRespuestas(entrada = {}) {
@@ -446,18 +460,20 @@ function limpiarRespuestas(entrada = {}) {
   return r;
 }
 
-export async function guardarCuestionario(env, ctx, { token: t, nombre, respuestas }) {
-  let P = t ? await personaPorToken(env, t) : null;
+// `P` es la persona de la sesión. Sin sesión solo entra la herramienta de demo
+// "crear una persona al azar", que nace en el pool ficticio.
+export async function guardarCuestionario(env, ctx, P, { nombre, respuestas }) {
   const limpio = limpiarRespuestas(respuestas);
   const nom = String(nombre || '').trim().slice(0, 40);
+  let nueva = false;
   if (!P) {
+    nueva = true;
     const id = 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
-    const tk = token();
     const color = COLORES[Math.floor(Math.random() * COLORES.length)];
-    await env.DB.prepare(`INSERT INTO personas (id, pool, nombre, genero, edad, ciudad, color, respuestas, token, origen, estado, completo) VALUES (?, 'demo', ?, ?, ?, ?, ?, ?, ?, 'cuestionario', 'activa', 0)`)
-      .bind(id, nom || 'Sin nombre', limpio.genero || null, limpio.edad || null, limpio.ciudad || null, color, JSON.stringify(limpio), tk).run();
-    await anotar(env, 'persona', 'Alguien empezó el cuestionario', nom || 'Sin nombre');
-    P = await personaPorToken(env, tk);
+    await env.DB.prepare(`INSERT INTO personas (id, pool, nombre, genero, edad, ciudad, color, respuestas, origen, estado, completo) VALUES (?, 'demo', ?, ?, ?, ?, ?, ?, 'cuestionario', 'activa', 0)`)
+      .bind(id, nom || 'Sin nombre', limpio.genero || null, limpio.edad || null, limpio.ciudad || null, color, JSON.stringify(limpio)).run();
+    await anotar(env, 'persona', 'Se creó una persona de demo desde el cuestionario', nom || 'Sin nombre');
+    P = await persona(env, id);
   } else {
     const r = { ...P.r, ...limpio };
     await env.DB.prepare(`UPDATE personas SET nombre = COALESCE(NULLIF(?, ''), nombre), genero = ?, edad = ?, ciudad = ?, respuestas = ?, actualizada = datetime('now') WHERE id = ?`)
@@ -482,6 +498,6 @@ export async function guardarCuestionario(env, ctx, { token: t, nombre, respuest
     ]);
     await anotar(env, 'persona', 'Un perfil salió del matching por quedar incompleto', P.nombre);
   }
-  return { token: P.token, id: P.id, avance: av, cruce };
+  return { id: P.id, nueva, avance: av, cruce };
 }
 // fin · RLR

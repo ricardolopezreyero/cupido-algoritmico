@@ -16,8 +16,8 @@
 <!-- Cupido Algorítmico · Cuestionario conectado · RLR · Ricardo López Reyero -->
 <header class="barra"><div class="envoltura barra-in">
   <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
-  <span class="pildora-demo">DEMO · datos visibles en el panel</span>
-  <nav class="menu"><a href="/persona">Personas</a><a href="/articulos">Artículos</a></nav>
+  <span class="pildora-demo" id="pildora" hidden>CUENTA DEMO</span>
+  <nav class="menu"><a href="/persona">Mi tablero</a><a href="/articulos">Artículos</a></nav>
 </div></header>
 <div class="progreso" id="progreso" hidden><div class="envoltura-texto"><div class="txt"><span id="p-izq"></span><span id="p-der"></span></div><div class="pista"><div class="relleno" id="p-relleno" style="width:0"></div></div></div></div>
 <main id="app" class="envoltura-texto cuest"></main>
@@ -29,9 +29,8 @@ import { PREGUNTAS, BLOQUES, PARTES, avance } from '/js/preguntas.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const app = $('#app');
 const q = new URLSearchParams(location.search);
-const leer = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
-const escribir = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
-let token = q.get('t') || leer('cupido.token');
+// La sesión (cookie) dice quién responde: no hay token ni enlace privado
+let sesion = null, ficticia = false;
 let nombre = '';
 let R = {};
 let idx = 0, cola = [], pendientesEnvio = {}, tEnvio = null, enviando = false;
@@ -71,14 +70,16 @@ function poner(id, v, inmediato = true) {
 async function enviar() {
   if (enviando) { tEnvio = setTimeout(enviar, 400); return; }
   const lote = pendientesEnvio; pendientesEnvio = {};
-  if (!Object.keys(lote).length && token) return;
+  if (!Object.keys(lote).length) return;
   enviando = true;
   try {
-    const r = await api('/api/cuestionario', { token, nombre, respuestas: lote });
-    if (!token && r.token) { token = r.token; escribir('cupido.token', token); history.replaceState(null, '', `/cuestionario?t=${token}`); }
+    const r = await api('/api/cuestionario', { nombre, respuestas: lote });
     marcar('Guardado ✓');
     return r;
-  } catch (e) { pendientesEnvio = { ...lote, ...pendientesEnvio }; marcar('No se pudo guardar — reintentando'); tEnvio = setTimeout(enviar, 2500); }
+  } catch (e) {
+    if (e.status === 401) { location.replace('/entrar?luego=cuestionario'); return; }
+    pendientesEnvio = { ...lote, ...pendientesEnvio }; marcar('No se pudo guardar — reintentando'); tEnvio = setTimeout(enviar, 2500);
+  }
   finally { enviando = false; }
 }
 
@@ -94,37 +95,54 @@ function progreso() {
 }
 
 /* ── pantallas ────────────────────────────────────────────────────────────── */
+async function cargarSesion() {
+  try { const previo = await api('/api/cuestionario'); R = previo.respuestas || {}; nombre = previo.nombre || ''; sesion = previo.sesion; ficticia = !!previo.ficticia; return previo; }
+  catch (e) { location.replace('/entrar?luego=cuestionario'); return null; }
+}
 async function inicio() {
   $('#progreso').hidden = true;
-  let previo = null;
-  if (token) { try { previo = await api(`/api/cuestionario/${token}`); R = previo.respuestas || {}; nombre = previo.nombre || ''; } catch { token = null; } }
+  const previo = await cargarSesion();
+  if (!previo) return;
+  $('#pildora').hidden = !sesion.demo;
+  if (ficticia) return pantallaDemo(previo);
   const hechas = PREGUNTAS.filter(contestada).length;
+  const empezado = hechas > 0;
   app.innerHTML = `<div class="intermedio">
     <div class="grande">💘</div>
-    <h2>${previo ? `Hola de nuevo${nombre && nombre !== 'Sin nombre' ? ', ' + esc(nombre) : ''}` : 'Antes de empezar'}</h2>
-    ${previo ? `<p>Llevas <b>${hechas} de 41</b> preguntas. Todo sigue exactamente donde lo dejaste.</p>` : `
+    <h2>${empezado ? `Hola de nuevo${nombre ? ', ' + esc(nombre) : ''}` : 'Antes de empezar'}</h2>
+    ${empezado ? `<p>Llevas <b>${hechas} de 41</b> preguntas. Todo sigue exactamente donde lo dejaste.</p>` : `
       <p>Son <b>41 preguntas</b> (33 base + 8 del módulo profundo). A la mayoría le toma entre 40 y 60 minutos hacerlo bien — no tiene que ser de corrido.</p>
-      <p><b>Todo se guarda solo</b> y no hay contraseña: te damos un enlace privado para volver cuando quieras. No hay respuestas correctas: hay respuestas tuyas.</p>`}
+      <p><b>Todo se guarda solo</b> en tu cuenta${sesion.correo ? ` (${esc(sesion.correo)})` : ''}: puedes parar y volver cuando quieras, desde cualquier dispositivo. No hay respuestas correctas: hay respuestas tuyas.</p>`}
     <div class="tarjeta" style="text-align:left;margin:22px auto;max-width:480px">
       <div class="campo" style="margin:0"><label for="nombre">¿Cómo quieres que te llamemos?</label>
-      <input id="nombre" maxlength="40" placeholder="Solo tu nombre de pila" value="${esc(nombre && nombre !== 'Sin nombre' ? nombre : '')}">
-      <small>⚠️ Esto es un demo: lo que escribas aquí se ve en el panel administrativo. Usa datos inventados.</small></div>
+      <input id="nombre" maxlength="40" placeholder="Solo tu nombre de pila" value="${esc(nombre)}">
+      <small>${sesion.demo ? '⚠️ Persona de demo: lo que escribas se ve en el panel administrativo.' : 'Solo tu nombre de pila. Tu apellido y tu foto llegan al final, cuando una puerta se abre.'}</small></div>
     </div>
     <div class="navega" style="justify-content:center">
-      ${previo ? `<button class="boton boton-fantasma" id="nuevo">Empezar otra persona</button>` : ''}
-      <button class="boton" id="empezar" style="margin-left:0">${previo ? 'Seguir donde iba →' : 'Empezar →'}</button>
+      <button class="boton" id="empezar" style="margin-left:0">${empezado ? 'Seguir donde iba →' : 'Empezar →'}</button>
     </div>
-    <p style="margin-top:26px"><button class="enlace" id="azar">⚡ Herramienta de demo: crear una persona al azar completa</button></p>
   </div>`;
   $('#empezar').onclick = () => {
     nombre = $('#nombre').value.trim();
     armarCola();
     const primera = cola.findIndex((c) => c.t === 'q' && !contestada(c.q));
-    idx = previo && primera > 0 ? primera : 0;
-    if (nombre) enviar();
+    idx = empezado && primera > 0 ? primera : 0;
+    if (nombre) { pendientesEnvio.nombre = nombre; enviar(); }
     pintar();
   };
-  const n = $('#nuevo'); if (n) n.onclick = () => { try { localStorage.removeItem('cupido.token'); } catch {} location.href = '/cuestionario'; };
+}
+// Cuenta demo: el cuestionario de esa persona ya está respondido
+function pantallaDemo(previo) {
+  app.innerHTML = `<div class="intermedio">
+    <div class="grande">🎛️</div>
+    <h2>Estás en la cuenta demo</h2>
+    <p>El cuestionario de <b>${esc(nombre)}</b> ya está respondido: puedes leerlo completo en <a href="/persona#respuestas">Mis respuestas</a>. Para responder el tuyo, crea tu cuenta con tu correo.</p>
+    <div class="navega" style="justify-content:center;flex-wrap:wrap">
+      <a class="boton" href="/entrar" style="margin-left:0">Crear mi cuenta con mi correo →</a>
+      <a class="boton boton-claro" href="/persona">Volver al tablero demo</a>
+    </div>
+    <p style="margin-top:30px"><button class="enlace" id="azar">⚡ Herramienta de demo: crear una persona ficticia al azar y ver su tablero</button></p>
+  </div>`;
   $('#azar').onclick = azar;
 }
 
@@ -149,7 +167,7 @@ function pintar() {
     ${p.note ? `<p class="q-nota">${esc(p.note)}</p>` : ''}
     <div class="ayudas" style="margin-top:16px">${ayudas}</div>
     <div id="partes">${partesVisibles(p).map(parte).join('')}</div>
-    <div class="guardado" id="guardado">${token ? 'Guardado ✓' : ''}</div>
+    <div class="guardado" id="guardado"></div>
     <div class="navega">
       <button class="boton boton-fantasma" data-ir="-1">← Atrás</button>
       <button class="enlace" id="despues">Lo pienso después</button>
@@ -224,9 +242,8 @@ async function fin() {
   const lote = pendientesEnvio; pendientesEnvio = {};
   let r = null;
   try {
-    r = await api('/api/cuestionario', { token, nombre, respuestas: lote });
-    if (!token && r.token) { token = r.token; escribir('cupido.token', token); history.replaceState(null, '', `/cuestionario?t=${token}`); }
-  } catch (e) { pendientesEnvio = { ...lote, ...pendientesEnvio }; avisar('No se pudo guardar. Revisa tu conexión.'); }
+    r = await api('/api/cuestionario', { nombre, respuestas: lote });
+  } catch (e) { pendientesEnvio = { ...lote, ...pendientesEnvio }; avisar(e.status === 401 ? 'Tu sesión terminó. Entra de nuevo con tu correo.' : 'No se pudo guardar. Revisa tu conexión.'); }
   const av = avance(R);
   const faltanEst = PARTES.filter((pt) => pt.k !== 'text' && !pt.opcional && !(pt.si && R[pt.si.id] !== pt.si.v) && !lleno(R[pt.id]));
   const hechas = PREGUNTAS.filter(contestada).length;
@@ -236,14 +253,13 @@ async function fin() {
     <p>Respondiste <b>${hechas} de 41</b> preguntas.</p>
     ${av.listo
       ? `<p>El motor ya te cruzó con todo el demo${r?.cruce ? `: <b>${r.cruce.pares}</b> ${r.cruce.pares === 1 ? 'par evaluado' : 'pares evaluados'}${r.cruce.nuevas ? ` y <b>${r.cruce.nuevas}</b> ${r.cruce.nuevas === 1 ? 'coincidencia' : 'coincidencias'} arriba del 90 %` : ''}` : ''}. Y luego: silencio — hasta que alguien supere el 90 %.</p>
-         <a class="boton" href="/persona?t=${esc(token)}">Ver mi panel →</a>`
+         <a class="boton" href="/persona">Ver mi tablero →</a>`
       : `<p>Para entrar al matching faltan <b>${faltanEst.length}</b> respuestas de opción${lleno(R.carta) ? '' : ' y tu carta (P33)'}. Las abiertas pueden esperar, pero cuentan: sin ellas el algoritmo te conoce menos.</p>`}
-    ${token ? `<div class="tarjeta" style="text-align:left;margin:22px auto;max-width:520px"><b>Tu enlace privado</b><p style="margin:4px 0 0;font-size:14px;color:var(--gris)">Es tu llave: sin contraseña.</p><div class="enlace-privado"><input readonly value="${esc(location.origin + '/cuestionario?t=' + token)}" id="enl"><button class="boton boton-chico" id="cp">Copiar</button></div></div>` : ''}
+    ${av.listo ? '' : `<p><a class="boton boton-claro" href="/persona">Ir a mi tablero</a></p>`}
     <p style="font-size:14px;color:var(--gris)">Toca cualquier pregunta para revisarla o editarla:</p>
   </div>
   <div>${PREGUNTAS.map((p) => `<div class="resumen-item" data-n="${p.n}"><span class="${contestada(p) ? 'ok' : 'pend'}">${contestada(p) ? '✓' : '○'}</span><span style="min-width:28px;color:var(--gris)">${p.n}.</span><span>${esc(p.t)}</span></div>`).join('')}</div>`;
   $$('.resumen-item').forEach((el) => el.onclick = () => { idx = cola.findIndex((c) => c.t === 'q' && c.q.n === Number(el.dataset.n)); pintar(); });
-  const cp = $('#cp'); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText($('#enl').value); avisar('Enlace copiado'); } catch { $('#enl').select(); } };
 }
 
 /* ── herramienta de demo: una persona completa al azar ───────────────────── */
@@ -273,22 +289,23 @@ async function azar() {
   }
   if (r.tareas === 'roles') r.rol = elige([['proveer'], ['hogar'], ['ninguno']]);
   const nom = NOMBRES[g][Math.floor(Math.random() * 10)] + ' (azar)';
-  try { localStorage.removeItem('cupido.token'); } catch {}
   $('#azar').disabled = true; $('#azar').textContent = 'Creando y cruzando…';
-  const res = await api('/api/cuestionario', { nombre: nom, respuestas: r });
+  const res = await api('/api/cuestionario', { nueva: true, nombre: nom, respuestas: r }); // el servidor abre una sesión demo sobre la persona nueva
   avisar(`${nom} entró al matching: ${res.cruce?.pares ?? 0} pares evaluados, ${res.cruce?.nuevas ?? 0} arriba del 90 %`, 4500);
-  setTimeout(() => location.href = `/persona?t=${res.token}`, 1200);
+  setTimeout(() => location.href = '/persona', 1200);
 }
 
 armarCola();
 // ?p=22 abre directo esa pregunta (desde el panel: "cuéntale más en la 22")
 const saltar = Number(q.get('p'));
-if (token && saltar >= 1 && saltar <= 41) {
-  api(`/api/cuestionario/${token}`).then((previo) => {
-    R = previo.respuestas || {}; nombre = previo.nombre || '';
+if (saltar >= 1 && saltar <= 41) {
+  cargarSesion().then((previo) => {
+    if (!previo) return;
+    $('#pildora').hidden = !sesion.demo;
+    if (ficticia) return pantallaDemo(previo);
     idx = cola.findIndex((c) => c.t === 'q' && c.q.n === saltar);
     pintar();
-  }).catch(() => inicio());
+  });
 } else inicio();
 </script>
 </body>

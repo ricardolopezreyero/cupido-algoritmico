@@ -114,7 +114,7 @@ export function layout({ titulo, descripcion = '', cuerpo, url = '', activo = ''
 <!-- RLR · Ricardo López Reyero -->
 ${barra(activo)}
 ${cuerpo}
-<footer class="pie"><div class="envoltura"><span>💘 Cupido Algorítmico · demo</span><span><a href="/">Inicio</a> · <a href="/articulos">Artículos</a> · <a href="/persona">Panel de personas</a> · <a href="/admin">Admin</a></span></div></footer>
+<footer class="pie"><div class="envoltura"><span>💘 Cupido Algorítmico · demo</span><span><a href="/">Inicio</a> · <a href="/articulos">Artículos</a> · <a href="/entrar">Entrar</a> · <a href="/demo">Demo</a> · <a href="/admin">Admin</a></span></div></footer>
 </body></html>`;
 }
 
@@ -122,7 +122,7 @@ export function barra(activo) {
   const item = (href, txt, id) => `<a href="${href}" class="${activo === id ? 'activo' : ''}">${txt}</a>`;
   return `<header class="barra"><div class="envoltura barra-in">
   <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
-  <nav class="menu">${item('/persona', 'Personas', 'persona')}${item('/articulos', 'Artículos', 'articulos')}${item('/admin', 'Admin', 'admin')}</nav>
+  <nav class="menu">${item('/entrar', 'Entrar', 'entrar')}${item('/articulos', 'Artículos', 'articulos')}${item('/admin', 'Admin', 'admin')}</nav>
   <a class="boton boton-chico" href="/cuestionario">Responder</a>
 </div></header>`;
 }

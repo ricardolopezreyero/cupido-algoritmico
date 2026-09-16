@@ -1,11 +1,13 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    Cupido Algorítmico · Worker (Cloudflare) — enrutador y API
    Autor: Ricardo López Reyero
-   Demo sin login a propósito: cero fricción. Lo que falta para abrirlo a
-   personas reales está en docs/RUTA.md (magic link, admin protegido, etc.).
+   Acceso sin contraseñas: tu correo es tu cuenta (enlace mágico) y el demo
+   está a un clic (/demo). Lo que falta para abrirlo a personas reales está
+   en docs/RUTA.md (admin protegido, privacidad, verificación…).
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
-import { asegurar, vistaPersona, vistaAdmin, detallePar, detallePersona, persona, personaPorToken, decidir, correrFase, reiniciarDemo, guardarCuestionario, anotar, recalcularTodo } from './datos.js';
+import { asegurar, vistaPersona, vistaAdmin, detallePar, detallePersona, persona, decidir, correrFase, reiniciarDemo, guardarCuestionario, anotar, recalcularTodo } from './datos.js';
+import { quien, entrarDemo, pedirEnlace, canjearEnlace, cerrarSesion, cookieSesion, DEMO_ID } from './acceso.js';
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
 import { personas } from './datos.js';
@@ -21,8 +23,9 @@ const _k = 'EYE', _rev = 181218;
 
 const DOCS = { 'MANIFIESTO.md': MANIFIESTO, 'README.md': README, 'PREGUNTAS.md': PREGUNTAS, 'MODELO.md': MODELO, 'EXPERIENCIA.md': EXPERIENCIA, 'RUTA.md': RUTA };
 
-const json = (data, status = 200) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
+const json = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra } });
 const error = (msg, status = 400) => json({ error: msg }, status);
+const irA = (ruta, url, cookie) => new Response(null, { status: 302, headers: { location: new URL(ruta, url).href, 'cache-control': 'no-store', ...(cookie ? { 'set-cookie': cookie } : {}) } });
 
 async function leerJson(req, max = 250_000) {
   const txt = await req.text();
@@ -33,18 +36,39 @@ async function leerJson(req, max = 250_000) {
 export default {
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
-    const ruta = url.pathname;
+    const ruta = url.pathname.replace(/\/$/, '') || '/';
     try {
-      if (ruta === '/demo.html' || ruta === '/demo') return Response.redirect(new URL('/cuestionario', url).href, 301);
       if (ruta.startsWith('/docs/')) {
         const d = DOCS[ruta.slice(6)];
         return d ? new Response(d, { headers: { 'content-type': 'text/markdown; charset=utf-8' } }) : new Response('No existe', { status: 404 });
       }
       await asegurar(env);
       if (ruta.startsWith('/api/')) return await api(req, env, ctx, url);
-      if (ruta === '/articulos' || ruta === '/articulos/') return await paginaLista(env, url);
-      if (ruta === '/articulos/escribir' || ruta === '/articulos/escribir/') return env.ASSETS.fetch(new Request(new URL('/escribir', url), req));
-      if (ruta.startsWith('/articulos/')) return await paginaArticulo(env, url, decodeURIComponent(ruta.slice(11).replace(/\/$/, '')));
+
+      /* ── acceso ── */
+      if (ruta === '/demo' || ruta === '/demo.html') {
+        // El demo a un clic: sesión sobre la persona demo, siempre limpia
+        return irA('/persona', url, cookieSesion(await entrarDemo(env), url));
+      }
+      if (ruta === '/persona' && url.searchParams.get('id')) {
+        // Desde el admin: "ver su panel" entra como esa persona ficticia (solo pool demo)
+        try { return irA('/persona', url, cookieSesion(await entrarDemo(env, url.searchParams.get('id')), url)); }
+        catch { return irA('/entrar', url); }
+      }
+      let x;
+      if ((x = ruta.match(/^\/entrar\/([a-z0-9]{20,40})$/))) {
+        const r = await canjearEnlace(env, x[1]);
+        if (!r.ok) return irA(`/entrar?error=${r.motivo}`, url);
+        return irA(r.completo ? '/persona' : '/cuestionario', url, cookieSesion(r.sesion, url));
+      }
+      if (ruta === '/persona' || ruta === '/cuestionario') {
+        // Sin sesión no hay tablero ni cuestionario: a la puerta de entrada
+        if (!(await quien(env, req))) return irA(`/entrar${ruta === '/cuestionario' ? '?luego=cuestionario' : ''}`, url);
+      }
+
+      if (ruta === '/articulos') return await paginaLista(env, url);
+      if (ruta === '/articulos/escribir') return env.ASSETS.fetch(new Request(new URL('/escribir', url), req));
+      if (ruta.startsWith('/articulos/')) return await paginaArticulo(env, url, decodeURIComponent(ruta.slice(11)));
       return env.ASSETS.fetch(req);
     } catch (e) {
       console.error(ruta, e.stack || e.message);
@@ -59,57 +83,66 @@ async function api(req, env, ctx, url) {
   const metodo = req.method;
   let x;
 
-  /* ── Personas (demo: se entra eligiendo a quién ser; reales: enlace privado) ── */
-  if (ruta === '/api/pool' && metodo === 'GET') {
-    const todas = await personas(env);
-    const nuevos = new Map((await env.DB.prepare(`SELECT persona, COUNT(*) AS n FROM avisos WHERE leido = 0 GROUP BY persona`).all()).results.map((r) => [r.persona, r.n]));
-    return json(todas.filter((p) => p.pool === 'demo').map((p) => ({ id: p.id, nombre: p.nombre, edad: p.edad, genero: p.genero, color: p.color, ciudad: p.r.ciudad, origen: p.origen, completo: !!p.completo, bio: p.origen === 'demo' ? p.bio : null, avisos: nuevos.get(p.id) || 0 })));
+  /* ── Acceso: correo (enlace mágico) o demo ─────────────────────────────── */
+  if (ruta === '/api/entrar' && metodo === 'POST') {
+    const b = await leerJson(req, 2000);
+    const r = await pedirEnlace(env, req, url, b.correo);
+    return json(r, r.ok ? 200 : 422);
   }
-  if ((x = m(/^\/api\/persona\/([a-z0-9]+)$/)) && metodo === 'GET') {
-    const P = await persona(env, x[1]);
-    if (!P || P.pool !== 'demo') return error('No existe', 404);
-    return json(await vistaPersona(env, P));
+  if (ruta === '/api/demo' && metodo === 'POST') {
+    const b = await leerJson(req, 2000);
+    const id = String(b.persona || DEMO_ID);
+    if (!/^[a-z0-9]{2,20}$/.test(id)) return error('Persona inválida');
+    return json({ ok: true }, 200, { 'set-cookie': cookieSesion(await entrarDemo(env, id), url) });
   }
-  if ((x = m(/^\/api\/yo\/([a-z0-9]{20,40})$/)) && metodo === 'GET') {
-    const P = await personaPorToken(env, x[1]);
-    if (!P) return error('Enlace inválido', 404);
-    return json({ ...(await vistaPersona(env, P)), token: true });
+  if (ruta === '/api/salir' && metodo === 'POST') {
+    await cerrarSesion(env, req);
+    return json({ ok: true }, 200, { 'set-cookie': cookieSesion('', url, true) });
+  }
+
+  /* ── La persona (siempre desde su sesión; nunca por id) ────────────────── */
+  const yo = await quien(env, req);
+  const sinSesion = () => error('Sin sesión. Entra de nuevo.', 401);
+  if (ruta === '/api/yo' && metodo === 'GET') {
+    if (!yo) return sinSesion();
+    return json({ ...(await vistaPersona(env, yo.P)), sesion: yo.sesion });
   }
   if (ruta === '/api/puerta' && metodo === 'POST') {
+    if (!yo) return sinSesion();
     const b = await leerJson(req);
-    const P = b.token ? await personaPorToken(env, b.token) : await persona(env, b.persona);
-    if (!P) return error('No existe', 404);
-    const r = await decidir(env, P.id, String(b.otra || ''), b.decision);
-    return json({ ok: true, ...r, vista: await vistaPersona(env, P) });
+    const r = await decidir(env, yo.P.id, String(b.otra || ''), b.decision);
+    return json({ ok: true, ...r, vista: await vistaPersona(env, yo.P) });
   }
   if (ruta === '/api/yo/estado' && metodo === 'POST') {
     // la persona pausa o reactiva su perfil ("estoy conociendo a alguien")
+    if (!yo) return sinSesion();
     const b = await leerJson(req);
-    const P = b.token ? await personaPorToken(env, b.token) : await persona(env, b.persona);
-    if (!P) return error('No existe', 404);
     if (!['activa', 'pausada'].includes(b.estado)) return error('Estado inválido');
-    await env.DB.prepare(`UPDATE personas SET estado = ? WHERE id = ?`).bind(b.estado, P.id).run();
-    await anotar(env, 'persona', b.estado === 'pausada' ? 'Una persona pausó su perfil' : 'Una persona reactivó su perfil', P.nombre);
+    await env.DB.prepare(`UPDATE personas SET estado = ? WHERE id = ?`).bind(b.estado, yo.P.id).run();
+    await anotar(env, 'persona', b.estado === 'pausada' ? 'Una persona pausó su perfil' : 'Una persona reactivó su perfil', yo.P.nombre);
     await recalcularTodo(env, { avisar: true, motivo: 'estado' });
-    return json({ ok: true, vista: await vistaPersona(env, await persona(env, P.id)) });
+    return json({ ok: true, vista: await vistaPersona(env, await persona(env, yo.P.id)) });
   }
   if (ruta === '/api/avisos/leer' && metodo === 'POST') {
-    const b = await leerJson(req);
-    const P = b.token ? await personaPorToken(env, b.token) : await persona(env, b.persona);
-    if (!P) return error('No existe', 404);
-    await env.DB.prepare(`UPDATE avisos SET leido = 1 WHERE persona = ?`).bind(P.id).run();
+    if (!yo) return sinSesion();
+    await env.DB.prepare(`UPDATE avisos SET leido = 1 WHERE persona = ?`).bind(yo.P.id).run();
     return json({ ok: true });
   }
 
   /* ── Cuestionario conectado ─────────────────────────────────────────────── */
+  if (ruta === '/api/cuestionario' && metodo === 'GET') {
+    if (!yo) return sinSesion();
+    return json({ id: yo.P.id, nombre: yo.P.nombre === 'Sin nombre' ? '' : yo.P.nombre, respuestas: yo.P.r, completo: !!yo.P.completo, sesion: yo.sesion, ficticia: yo.P.origen === 'demo' });
+  }
   if (ruta === '/api/cuestionario' && metodo === 'POST') {
     const b = await leerJson(req);
-    return json(await guardarCuestionario(env, ctx, b));
-  }
-  if ((x = m(/^\/api\/cuestionario\/([a-z0-9]{20,40})$/)) && metodo === 'GET') {
-    const P = await personaPorToken(env, x[1]);
-    if (!P) return error('Enlace inválido', 404);
-    return json({ id: P.id, nombre: P.nombre, respuestas: P.r, completo: !!P.completo });
+    // `nueva`: herramienta de demo "crear una persona al azar" (nace ficticia, con su propia sesión demo)
+    const P = b.nueva ? null : yo?.P || null;
+    if (!P && !b.nueva) return sinSesion();
+    if (P && yo.sesion.demo && P.origen === 'demo') return error('En la cuenta demo el cuestionario ya está respondido. Crea tu cuenta con tu correo para responder el tuyo.', 403);
+    const r = await guardarCuestionario(env, ctx, P, b);
+    if (r.nueva) return json(r, 200, { 'set-cookie': cookieSesion(await entrarDemo(env, r.id), url) });
+    return json(r);
   }
 
   /* ── Artículos ──────────────────────────────────────────────────────────── */
