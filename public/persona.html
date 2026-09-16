@@ -55,6 +55,7 @@
 // RLR · tablero de la persona
 import { $, $$, esc, api, avisar, avatar, anillo, animarAnillos, hace, pronto } from '/js/ui.js';
 import { PREGUNTAS, BLOQUES, etiqueta, PARTE } from '/js/preguntas.js';
+import { AREAS_VIDA, leerVida } from '/js/vida.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
 /* ── sesión: cookie que puso el Worker (correo con enlace mágico, o demo) ── */
@@ -174,6 +175,7 @@ const MENU = [
   { sep: 'Mi perfil' },
   { s: 'pesos', i: '🧭', t: 'Lo que más pesa' },
   { s: 'respuestas', i: '📋', t: 'Mis respuestas' },
+  { s: 'vida', i: '🧭', t: 'Mi vida hoy' },
   { s: 'medios', i: '📷', t: 'Foto, voz y video', n: () => (V.persona.completo && !(DEMO() && V.persona.origen === 'demo') ? 3 - Object.keys(V.misMedios || {}).length : 0), alerta: false },
   { s: 'claridad', i: '🔎', t: 'Qué tan bien me conoce' },
   { s: 'filtros', i: '🚧', t: 'Lo que me deja fuera', n: () => V.dejanFuera.length },
@@ -318,6 +320,21 @@ const SECCIONES = {
       `<p class="seccion-sub">Solo tú las ves. Lo íntimo solo lo lee el motor.</p>${bloques}`;
   },
 
+  vida() {
+    const v = vidaActual();
+    const L = leerVida(v);
+    return cabeza('Mi vida hoy', 'Del 0 al 100 %: qué tan lleno está cada elemento de tu vida hoy. No hay respuesta correcta. Es para que te veas.') + `
+      <div class="rejilla-2 vida-rejilla">
+        <section class="tarjeta"><h2>Los elementos</h2><p class="sub">Mueve cada uno hasta donde sientas que está. Se guarda solo.</p>
+          <div class="vida-lista">${AREAS_VIDA.map((a) => `<div class="vida-fila"><span class="ico">${a.i}</span><div><b>${a.n}</b><small>${a.d}</small>
+            <input type="range" min="0" max="100" step="5" value="${v[a.id] ?? 50}" data-vida="${a.id}" aria-label="${a.n}"></div><output id="v-${a.id}">${v[a.id] ?? 50} %</output></div>`).join('')}</div></section>
+        <section class="tarjeta" style="margin-top:0"><h2>Cómo te ves</h2><p class="sub">Tu figura de hoy. Cuando la vuelvas a mover, cambia contigo.</p>
+          <div id="rueda">${ruedaVida(v)}</div>
+          <div id="lectura-vida">${lecturaVida(L)}</div></section>
+      </div>
+      <p class="seccion-sub">${DEMO() && V.persona.origen === 'demo' ? 'En la cuenta demo esto se recuerda solo en este dispositivo.' : 'Solo tú lo ves. No entra al cálculo de coincidencias: es un espejo, no un filtro.'}</p>`;
+  },
+
   medios() {
     const P = V.persona, M = V.misMedios || {};
     if (DEMO() && P.origen === 'demo') return cabeza('Foto, voz y video', 'Lo que la otra persona conoce de ti al final, cuando la puerta ya se abrió.') +
@@ -395,6 +412,16 @@ const SECCIONES = {
 };
 
 const DESPUES = {
+  vida() {
+    let t = null;
+    $$('[data-vida]').forEach((s) => s.oninput = () => {
+      const v = vidaActual(); v[s.dataset.vida] = Number(s.value);
+      $('#v-' + s.dataset.vida).textContent = s.value + ' %';
+      V.vida = v; try { localStorage.setItem('cupido.vida.' + V.persona.id, JSON.stringify(v)); } catch {}
+      $('#rueda').innerHTML = ruedaVida(v); $('#lectura-vida').innerHTML = lecturaVida(leerVida(v));
+      clearTimeout(t); t = setTimeout(async () => { try { await api('/api/yo/vida', v); } catch (e) { avisar(e.message); } }, 700);
+    });
+  },
   estilo() {
     TIPOS_UI.forEach(cargarFuente); // para que las muestras se vean con su propia letra
     $$('[data-color]').forEach((b) => b.onclick = async () => { await guardarEstilo({ color: b.dataset.color }); ir('estilo'); });
@@ -422,6 +449,34 @@ const DESPUES = {
     };
   },
 };
+
+/* ── mi vida hoy: valores, rueda y lectura ───────────────────────────────── */
+function vidaActual() {
+  if (V.vida && Object.keys(V.vida).length) return { ...V.vida };
+  try { const l = JSON.parse(localStorage.getItem('cupido.vida.' + V.persona.id) || 'null'); if (l && (DEMO() || !V.vida)) return l; } catch {}
+  if (DEMO() && V.persona.origen === 'demo') { // muestra: la persona ficticia ya se calificó
+    const base = { pareja: 35, familia: 80, hijos: 50, amigos: 70, trabajo: 75, dinero: 60, salud: 65, espiritu: 70, diversion: 55, legado: 45 };
+    let h = 0; for (const c of V.persona.id) h = (h * 31 + c.charCodeAt(0)) % 97;
+    return Object.fromEntries(AREAS_VIDA.map((a, i) => [a.id, Math.max(10, Math.min(95, base[a.id] + (((h + i * 13) % 5) - 2) * 5))]));
+  }
+  return {};
+}
+function ruedaVida(v) {
+  const N = AREAS_VIDA.length, cx = 150, cy = 150, R = 105;
+  const ang = (i) => -Math.PI / 2 + (2 * Math.PI * i) / N;
+  const punto = (i, r) => [cx + r * Math.cos(ang(i)), cy + r * Math.sin(ang(i))];
+  const anillos = [25, 50, 75, 100].map((p) => `<polygon class="malla" points="${AREAS_VIDA.map((_, i) => punto(i, (R * p) / 100).map((n) => n.toFixed(1)).join(',')).join(' ')}"/>`).join('');
+  const ejes = AREAS_VIDA.map((a, i) => { const [x, y] = punto(i, R); const [lx, ly] = punto(i, R + 22); return `<line class="eje" x1="${cx}" y1="${cy}" x2="${x.toFixed(1)}" y2="${y.toFixed(1)}"/><text x="${lx.toFixed(1)}" y="${ly.toFixed(1)}" text-anchor="middle" dominant-baseline="middle">${a.i}</text>`; }).join('');
+  const forma = AREAS_VIDA.map((a, i) => punto(i, (R * (v[a.id] ?? 50)) / 100).map((n) => n.toFixed(1)).join(',')).join(' ');
+  const puntos = AREAS_VIDA.map((a, i) => { const [x, y] = punto(i, (R * (v[a.id] ?? 50)) / 100); return `<circle class="pt" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="4"><title>${a.n}: ${v[a.id] ?? 50} %</title></circle>`; }).join('');
+  return `<svg class="rueda" viewBox="0 0 300 300" role="img" aria-label="Rueda de mi vida">${anillos}${ejes}<polygon class="forma" points="${forma}"/>${puntos}</svg>`;
+}
+function lecturaVida(L) {
+  if (!L) return '<p class="vacio" style="margin:0">Mueve los deslizadores y aquí aparece tu lectura.</p>';
+  return `<div class="vida-lectura"><div><b>${L.promedio} %</b><span>promedio de tu vida hoy</span></div>
+    <div><b>${L.lleno.i} ${L.lleno.n}</b><span>lo más lleno</span></div><div><b>${L.vacio.i} ${L.vacio.n}</b><span>lo más vacío</span></div></div>
+    <p class="seccion-sub" style="margin:10px 0 0">${L.vacio.id === 'pareja' ? 'Pareja es hoy tu elemento más vacío. Por eso estás aquí, y por eso no lo llenaremos con cualquiera.' : `Hoy lo que más pide atención es <b>${L.vacio.n.toLowerCase()}</b>. Una pareja no lo llena; una buena pareja lo acompaña.`}</p>`;
+}
 
 /* ── medios: subir (la foto se reduce aquí mismo), grabar voz o video ──── */
 async function api2(metodo, ruta, cuerpo, tipo) {

@@ -45,6 +45,7 @@
 // RLR · panel admin
 import { $, $$, esc, api, avisar, avatar, hace, colorPct, pronto } from '/js/ui.js';
 import { PREGUNTAS, BLOQUES, PARTE, etiqueta } from '/js/preguntas.js';
+import { AREAS_VIDA } from '/js/vida.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const cont = $('#contenido');
 let D = null, seccion = 'resumen', sondeo = null, ultimoEvento = 0;
@@ -319,6 +320,7 @@ async function verPersona(id) {
       <div style="color:var(--gris)">${p.edad || '—'} años · ${esc(etiqueta('ciudad', r.ciudad))} · ${p.origen === 'demo' ? 'persona ficticia del demo' : 'llegó por el cuestionario'}</div>
       <div class="acciones" style="margin-top:8px"><a class="boton boton-chico" href="/persona?id=${p.id}">Ver su panel</a><button class="boton boton-claro boton-chico" id="btn-estado">${p.estado === 'pausada' ? 'Reactivar' : 'Pausar perfil'}</button></div></div></div>
     ${p.bio ? `<p style="margin:16px 0 0;color:var(--tinta-2)">${esc(p.bio)}</p>` : ''}
+    ${p.vida && Object.keys(p.vida).length ? `<div class="tarjeta" style="margin-top:16px"><h3 style="margin:0 0 8px">Cómo se ve a sí misma hoy</h3><div class="barras">${AREAS_VIDA.filter((a) => p.vida[a.id] != null).map((a) => `<div class="barra-fila" style="grid-template-columns:130px 1fr 44px"><span>${a.i} ${a.n}</span><div class="pista"><div class="relleno" style="width:${p.vida[a.id]}%"></div></div><b>${p.vida[a.id]} %</b></div>`).join('')}</div></div>` : ''}
     <div class="rejilla-2" style="margin-top:16px">
       <div class="tarjeta"><h3 style="margin:0 0 8px">Sus pesos personales</h3><div class="barras">${w.map(([k, v]) => `<div class="barra-fila" style="grid-template-columns:130px 1fr 40px"><span>${esc(D.motor.dimensiones.find((d) => d.id === k).nombre)}</span><div class="pista"><div class="relleno ${p.pesos.por[k] ? 'sube' : ''}" style="width:${Math.min(100, v * 400)}%"></div></div><b>${Math.round(v * 100)}</b>${p.pesos.por[k] ? `<span class="por">↑ ${esc(p.pesos.por[k])}</span>` : ''}</div>`).join('')}</div></div>
       <div class="tarjeta" style="margin-top:0"><h3 style="margin:0 0 8px">Lectura de sus respuestas abiertas</h3>

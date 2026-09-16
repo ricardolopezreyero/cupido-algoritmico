@@ -584,3 +584,25 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 .estilo .tipo-muestra { font-size: 22px; line-height: 1.1; margin-bottom: 6px; }
 .estilo .tipo-muestra em { font-style: normal; font-size: 13px; color: var(--gris); display: block; margin-top: 2px; }
 /* fin estilo · RLR */
+
+/* ── Mi vida hoy: deslizadores y rueda · RLR ───────────────────────────── */
+.vida-lista { display: grid; gap: 6px; }
+.vida-fila { display: grid; grid-template-columns: 34px 1fr 56px; gap: 12px; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--linea); }
+.vida-fila:last-child { border-bottom: 0; }
+.vida-fila .ico { font-size: 24px; text-align: center; }
+.vida-fila b { display: block; font-size: 14.5px; line-height: 1.2; }
+.vida-fila small { display: block; color: var(--gris); font-size: 12px; margin-bottom: 4px; }
+.vida-fila output { font: 700 15px var(--serif); color: var(--rosa-osc); text-align: right; }
+.vida-fila input[type=range] { width: 100%; accent-color: var(--rosa); margin: 0; }
+.rueda { width: 100%; max-width: 340px; display: block; margin: 0 auto; }
+.rueda .malla { fill: none; stroke: var(--linea-2); stroke-width: 1; }
+.rueda .eje { stroke: var(--linea); stroke-width: 1; }
+.rueda text { font-size: 17px; }
+.rueda .forma { fill: var(--rosa); fill-opacity: .22; stroke: var(--rosa); stroke-width: 2.5; stroke-linejoin: round; transition: all .5s var(--ease); }
+.rueda .pt { fill: var(--rosa); }
+.vida-lectura { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.vida-lectura div { background: var(--crema); border-radius: 12px; padding: 10px 12px; }
+.vida-lectura b { display: block; font-size: 16px; line-height: 1.2; }
+.vida-lectura span { font-size: 12px; color: var(--gris); }
+@media (max-width: 560px) { .vida-lectura { grid-template-columns: 1fr; } }
+/* fin vida · RLR */

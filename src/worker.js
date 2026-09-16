@@ -10,6 +10,7 @@ import { asegurar, vistaPersona, vistaAdmin, detallePar, detallePersona, persona
 import { quien, entrarDemo, pedirEnlace, canjearEnlace, cerrarSesion, cookieSesion, DEMO_ID } from './acceso.js';
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
+import { limpiarVida } from '../public/js/vida.js';
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
 import { personas } from './datos.js';
 import MANIFIESTO from '../MANIFIESTO.md';
@@ -132,6 +133,13 @@ async function api(req, env, ctx, url) {
     const aj = { color: COLORES.includes(b.color) ? b.color : 'rosa', tipo: TIPOS.includes(b.tipo) ? b.tipo : 'clasica' };
     if (!(yo.sesion.demo && yo.P.origen === 'demo')) await env.DB.prepare(`UPDATE personas SET ajustes = ? WHERE id = ?`).bind(JSON.stringify(aj), yo.P.id).run();
     return json({ ok: true, ajustes: aj });
+  }
+  if (ruta === '/api/yo/vida' && metodo === 'POST') {
+    // los elementos de su vida, del 0 al 100 %, como ella misma se ve hoy
+    if (!yo) return sinSesion();
+    const v = limpiarVida(await leerJson(req, 4000));
+    if (!(yo.sesion.demo && yo.P.origen === 'demo')) await env.DB.prepare(`UPDATE personas SET vida = ? WHERE id = ?`).bind(JSON.stringify(v), yo.P.id).run();
+    return json({ ok: true, vida: v });
   }
   /* ── Medios: foto, voz y video (solo con cuestionario completo; se ven solo con puerta abierta) ── */
   if ((x = m(/^\/api\/medio\/(foto|audio|video)$/)) && (metodo === 'PUT' || metodo === 'DELETE')) {

@@ -60,6 +60,7 @@ export async function asegurar(env) {
   // migración v2.1: el correo es la cuenta (la columna no existía en bases sembradas antes)
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN correo TEXT`).run(); } catch { /* ya existe */ }
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN ajustes TEXT`).run(); } catch { /* ya existe */ }
+  try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN vida TEXT`).run(); } catch { /* ya existe */ }
   await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_personas_correo ON personas(correo)`).run();
   const n = await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas`).first();
   if (!n.n) await sembrarDemo(env);
@@ -299,6 +300,7 @@ export async function vistaPersona(env, P) {
     misRespuestas: P.r, rubrica: P.l?.rubrica || null,
     misMedios: await mediosDe(env, P.id),
     ajustes: (() => { try { return JSON.parse(P.ajustes || '{}'); } catch { return {}; } })(),
+    vida: (() => { try { return JSON.parse(P.vida || 'null'); } catch { return null; } })(),
   };
 }
 
@@ -379,6 +381,7 @@ export async function detallePersona(env, id) {
   const nombres = new Map((await env.DB.prepare(`SELECT id, nombre, color FROM personas`).all()).results.map((p) => [p.id, p]));
   return {
     id: P.id, nombre: P.nombre, edad: P.edad, genero: P.genero, color: P.color, bio: P.bio, origen: P.origen, estado: P.estado,
+    vida: (() => { try { return JSON.parse(P.vida || 'null'); } catch { return null; } })(),
     respuestas: P.r, lectura: P.l, avance: avance(P.r), pesos: pesos(P), q: calidad(P),
     pares: pares.map((fx) => {
       const otra = fx.a === id ? fx.b : fx.a, det = JSON.parse(fx.detalle);
