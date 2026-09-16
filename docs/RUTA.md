@@ -30,7 +30,7 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 
 ### Acceso sin contraseñas
 - [x] **Enlace mágico por correo** (hecho; ver arriba).
-- [ ] **Remitente con dominio propio.** Hoy el enlace sale de `cupido@superleads.mx` vía Resend (dominio ya verificado, temporal). Falta decidir el dominio de Cupido, verificarlo en Resend y cambiar `FROM_EMAIL` en `wrangler.jsonc`. Plantillas pendientes: aviso de coincidencia y puerta abierta por correo.
+- [ ] **Remitente:** `cupido@capitaltorreon.com` vía Resend (decisión de Ricardo, 16 sep 2026: el producto viable sale por Capital Torreón). Falta que los registros DNS de Resend queden en Cloudflare y el dominio se verifique; luego `wrangler secret put RESEND_KEY`. Plantillas pendientes: aviso de coincidencia y puerta abierta por correo.
 - [ ] **Proteger el admin** con Cloudflare Access (código al correo, sin escribir login) y roles: operación del matching ≠ moderación de artículos.
 - [ ] **Separar el pool demo del real.** Las cuentas reales ya nacen en `pool = real` y "Reiniciar demo" las respeta, pero el motor todavía las cruza con las 20 personas ficticias (útil para probar; hay que apagarlo antes de abrir).
 
