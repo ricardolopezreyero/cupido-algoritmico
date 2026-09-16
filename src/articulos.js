@@ -122,8 +122,8 @@ export function barra(activo) {
   const item = (href, txt, id) => `<a href="${href}" class="${activo === id ? 'activo' : ''}">${txt}</a>`;
   return `<header class="barra"><div class="envoltura barra-in">
   <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
-  <nav class="menu">${item('/entrar', 'Entrar', 'entrar')}${item('/articulos', 'Artículos', 'articulos')}${item('/admin', 'Admin', 'admin')}</nav>
-  <a class="boton boton-chico" href="/cuestionario">Responder</a>
+  <nav class="menu">${item('/demo', 'Ver el demo', 'demo')}${item('/articulos', 'Artículos', 'articulos')}</nav>
+  <a class="boton boton-chico" href="/entrar">Ingresar</a>
 </div></header>`;
 }
 
