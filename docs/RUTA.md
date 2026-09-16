@@ -21,6 +21,7 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 - [x] **Panel admin**: resumen con cifras, distribución, vetos por tipo, matriz 10 × 10, detalle de cada par en las dos direcciones, personas con sus respuestas y pesos, puertas, corrida manual por fases, laboratorio de pesos en vivo, bitácora en vivo.
 - [x] **Artículos**: cualquiera publica sin cuenta, lectura cuidada y lista para compartir por WhatsApp, borrador local, anti-spam básico (trampa para robots, límite por IP, palabras sospechosas a revisión) y moderación desde el admin. 6 artículos iniciales.
 - [x] **Cuestionario conectado**: autoguardado, "lo pienso después" y motor automático al terminar; guarda en la cuenta de la persona.
+- [x] **Mi estilo** (16 sep 2026): la persona elige color (Rosa Cupido, Vino, Azul profundo, Verde bosque) y tipografía (Clásica, Editorial, Moderna, Cálida) para su tablero; se guarda en su cuenta y se aplica sin parpadeo al entrar.
 - [x] **Foto, voz y video** (16 sep 2026): sección del tablero que se abre solo con el cuestionario al 100 %; foto (se reduce en el navegador), voz (grabar hasta 90 s o subir) y video (grabar hasta 45 s o subir) en R2 `cupido-medios`; el avatar del menú se cambia tocándolo. La otra persona solo los ve cuando la puerta se abrió; el Worker verifica la puerta antes de servir cada archivo.
 - [x] **Acceso sin contraseñas** (16 sep 2026): el correo es la cuenta → enlace mágico (20 min, un solo uso, límite por correo e IP); sesión en cookie HttpOnly de 90 días; cerrar sesión. **Cuenta demo a un clic** (`/demo`): tablero de Diego con puerta abierta, coincidencia esperando y avisos; se limpia en cada entrada; interruptor "cuenta demo" que no se apaga: invita a crear cuenta.
 - [x] **Infraestructura**: Cloudflare Worker + D1, código en GitHub, 17 pruebas del motor que corren antes de cada despliegue.
@@ -133,6 +134,7 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 - [ ] ¿**Una puerta abierta a la vez** o varias?
 - [ ] ¿Abierto a **todas las orientaciones** desde el lanzamiento? (el motor ya lo soporta)
 - [ ] ¿Cuánto tiempo vive una puerta sin respuesta?
+- [ ] **¿Qué hace la persona adentro mientras no hay coincidencia?** (Ricardo, 16 sep 2026: "si en 5 años no encuentran a nadie, ¿qué tendrían que estar haciendo adentro?"). Ideas sobre la mesa: sala o chat de la comunidad; artículos y respuestas de especialistas; un "diario" guiado que mejora su claridad (y su Q); retos de pareja consigo mismo; ver cómo cambia su lectura con el tiempo. Regla que no se negocia: nada de navegar perfiles. Decisión pendiente de Ricardo.
 
 ## Monetización (después — solo para no perderlo)
 

@@ -11,6 +11,10 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/cupido.css">
+<script>
+// RLR · estilo elegido, aplicado antes de pintar (sin parpadeo); el servidor lo confirma después
+(function () { try { var e = JSON.parse(localStorage.getItem('cupido.estilo') || '{}'); if (e.color) document.documentElement.dataset.color = e.color; if (e.tipo) document.documentElement.dataset.tipo = e.tipo; } catch (x) {} })();
+</script>
 </head>
 <body data-author="RLR">
 <!-- Cupido Algorítmico · Tablero de la persona · RLR · Ricardo López Reyero -->
@@ -67,10 +71,42 @@ async function tablero() {
   try { V = await api('/api/yo'); }
   catch (e) { if (e.status === 401) salirA('/entrar'); else cont.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; return; }
   document.title = `${V.persona.nombreCorto || 'Mi tablero'} · Cupido Algorítmico`;
+  V.ajustes = aplicarEstilo(V.ajustes || (() => { try { return JSON.parse(localStorage.getItem('cupido.estilo') || '{}'); } catch { return {}; } })());
   const ds = $('#demo-switch'); ds.hidden = !V.sesion.demo; ds.onclick = abrirModalCuenta;
   ir(location.hash.slice(1) || 'inicio');
 }
 const DEMO = () => !!V?.sesion?.demo;
+
+/* ── Mi estilo: 4 colores y 4 tipografías ───────────────────────────────── */
+const COLORES_UI = [
+  { id: 'rosa', n: 'Rosa Cupido', d: 'El original', c: ['#d6455f', '#1c1622', '#fbeef1'] },
+  { id: 'vino', n: 'Vino', d: 'Serio y cálido', c: ['#8e2043', '#1f1116', '#f7ecef'] },
+  { id: 'azul', n: 'Azul profundo', d: 'Sobrio, como un banco', c: ['#2f55c9', '#121729', '#edf1fc'] },
+  { id: 'verde', n: 'Verde bosque', d: 'Tranquilo', c: ['#1f8a7a', '#10201d', '#e9f5f2'] },
+];
+const TIPOS_UI = [
+  { id: 'clasica', n: 'Clásica', d: 'Fraunces + Inter', fam: "'Fraunces', Georgia, serif", link: null },
+  { id: 'editorial', n: 'Editorial', d: 'Playfair + Source Sans', fam: "'Playfair Display', Georgia, serif", link: 'https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap' },
+  { id: 'moderna', n: 'Moderna', d: 'Space Grotesk + Inter', fam: "'Space Grotesk', 'Inter', sans-serif", link: 'https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&display=swap' },
+  { id: 'calida', n: 'Cálida', d: 'Lora + Nunito', fam: "'Lora', Georgia, serif", link: 'https://fonts.googleapis.com/css2?family=Lora:wght@500;600;700&family=Nunito:wght@400;500;600;700&display=swap' },
+];
+function cargarFuente(t) {
+  if (!t?.link || document.querySelector(`link[data-fuente="${t.id}"]`)) return;
+  const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = t.link; l.dataset.fuente = t.id; document.head.appendChild(l);
+}
+function aplicarEstilo(aj = {}) {
+  const color = COLORES_UI.some((c) => c.id === aj.color) ? aj.color : 'rosa';
+  const tipo = TIPOS_UI.some((t) => t.id === aj.tipo) ? aj.tipo : 'clasica';
+  cargarFuente(TIPOS_UI.find((t) => t.id === tipo));
+  if (color === 'rosa') delete document.documentElement.dataset.color; else document.documentElement.dataset.color = color;
+  if (tipo === 'clasica') delete document.documentElement.dataset.tipo; else document.documentElement.dataset.tipo = tipo;
+  try { localStorage.setItem('cupido.estilo', JSON.stringify({ color, tipo })); } catch {}
+  return { color, tipo };
+}
+async function guardarEstilo(cambio) {
+  V.ajustes = aplicarEstilo({ ...(V.ajustes || {}), ...cambio });
+  try { const r = await api('/api/yo/ajustes', V.ajustes); V.ajustes = r.ajustes; } catch (e) { avisar(e.message); }
+}
 /* ── el interruptor no se apaga: se cambia por una cuenta propia ─────────── */
 function abrirModalCuenta() {
   const pal = $('#demo-switch .pal');
@@ -142,6 +178,7 @@ const MENU = [
   { s: 'claridad', i: '🔎', t: 'Qué tan bien me conoce' },
   { s: 'filtros', i: '🚧', t: 'Lo que me deja fuera', n: () => V.dejanFuera.length },
   { sep: 'Cuenta' },
+  { s: 'estilo', i: '🎨', t: 'Mi estilo' },
   { s: 'privacidad', i: '🔒', t: 'Privacidad y pausa' },
 ];
 function pintarLateral() {
@@ -326,6 +363,16 @@ const SECCIONES = {
       </section>`;
   },
 
+  estilo() {
+    const aj = V.ajustes || {};
+    return cabeza('Mi estilo', 'Tu tablero, a tu gusto. Elige un color y una tipografía; se guardan en tu cuenta.') + `
+      <section class="tarjeta"><h2>Color</h2><p class="sub">Cambia los botones, los acentos y la barra lateral.</p>
+        <div class="estilos">${COLORES_UI.map((c) => `<button class="estilo ${(aj.color || 'rosa') === c.id ? 'on' : ''}" data-color="${c.id}"><div class="muestra">${c.c.map((x) => `<span style="background:${x}"></span>`).join('')}</div><b>${c.n}</b><small>${c.d}</small></button>`).join('')}</div></section>
+      <section class="tarjeta"><h2>Tipografía</h2><p class="sub">Cambia los títulos y el texto de todo el tablero.</p>
+        <div class="estilos">${TIPOS_UI.map((t) => `<button class="estilo ${(aj.tipo || 'clasica') === t.id ? 'on' : ''}" data-tipo="${t.id}"><div class="tipo-muestra" style="font-family:${t.fam}">Cupido<em>${t.d}</em></div><b>${t.n}</b></button>`).join('')}</div></section>
+      <p class="seccion-sub">${DEMO() && V.persona.origen === 'demo' ? 'En la cuenta demo el estilo se recuerda solo en este dispositivo.' : 'Se aplica en todos tus dispositivos al entrar con tu correo.'}</p>`;
+  },
+
   privacidad() {
     const P = V.persona, pausada = P.estado === 'pausada';
     return cabeza('Privacidad y pausa', 'Tú decides cuándo buscar y cuándo no.') + `
@@ -348,6 +395,11 @@ const SECCIONES = {
 };
 
 const DESPUES = {
+  estilo() {
+    TIPOS_UI.forEach(cargarFuente); // para que las muestras se vean con su propia letra
+    $$('[data-color]').forEach((b) => b.onclick = async () => { await guardarEstilo({ color: b.dataset.color }); ir('estilo'); });
+    $$('[data-tipo]').forEach((b) => b.onclick = async () => { await guardarEstilo({ tipo: b.dataset.tipo }); ir('estilo'); });
+  },
   inicio() { const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta; },
   avisos: marcarLeidos,
   respuestas() { const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta; },

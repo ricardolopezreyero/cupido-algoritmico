@@ -124,6 +124,15 @@ async function api(req, env, ctx, url) {
     await recalcularTodo(env, { avisar: true, motivo: 'estado' });
     return json({ ok: true, vista: await vistaPersona(env, await persona(env, yo.P.id)) });
   }
+  if (ruta === '/api/yo/ajustes' && metodo === 'POST') {
+    // cómo quiere ver su tablero: 4 colores y 4 tipografías (se guarda en su cuenta)
+    if (!yo) return sinSesion();
+    const b = await leerJson(req, 2000);
+    const COLORES = ['rosa', 'vino', 'azul', 'verde'], TIPOS = ['clasica', 'editorial', 'moderna', 'calida'];
+    const aj = { color: COLORES.includes(b.color) ? b.color : 'rosa', tipo: TIPOS.includes(b.tipo) ? b.tipo : 'clasica' };
+    if (!(yo.sesion.demo && yo.P.origen === 'demo')) await env.DB.prepare(`UPDATE personas SET ajustes = ? WHERE id = ?`).bind(JSON.stringify(aj), yo.P.id).run();
+    return json({ ok: true, ajustes: aj });
+  }
   /* ── Medios: foto, voz y video (solo con cuestionario completo; se ven solo con puerta abierta) ── */
   if ((x = m(/^\/api\/medio\/(foto|audio|video)$/)) && (metodo === 'PUT' || metodo === 'DELETE')) {
     if (!yo) return sinSesion();

@@ -59,6 +59,7 @@ export async function asegurar(env) {
   await env.DB.batch(ESQUEMA.map((q) => env.DB.prepare(q)));
   // migración v2.1: el correo es la cuenta (la columna no existía en bases sembradas antes)
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN correo TEXT`).run(); } catch { /* ya existe */ }
+  try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN ajustes TEXT`).run(); } catch { /* ya existe */ }
   await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_personas_correo ON personas(correo)`).run();
   const n = await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas`).first();
   if (!n.n) await sembrarDemo(env);
@@ -297,6 +298,7 @@ export async function vistaPersona(env, P) {
     // lo suyo, para su propio tablero (nunca se envía nada de otra persona aquí)
     misRespuestas: P.r, rubrica: P.l?.rubrica || null,
     misMedios: await mediosDe(env, P.id),
+    ajustes: (() => { try { return JSON.parse(P.ajustes || '{}'); } catch { return {}; } })(),
   };
 }
 

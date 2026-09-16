@@ -563,3 +563,24 @@ h1, h2, h3 { font-family: var(--serif); font-weight: 600; letter-spacing: -.01em
 .revelado-medios video { display: block; width: 100%; max-width: 480px; border-radius: 16px; background: #000; }
 .revelado-medios audio { width: 100%; max-width: 480px; display: block; }
 /* fin medios · RLR */
+
+/* ── Mi estilo: 4 colores y 4 tipografías (se aplican con data-color / data-tipo en <html>) · RLR ── */
+html[data-color="vino"] { --rosa: #8e2043; --rosa-osc: #6d1633; --rosa-suave: #f7ecef; --rosa-linea: #e6c3cd; --noche: #1f1116; --noche-2: #2d1a21; --noche-3: #3f2530; }
+html[data-color="azul"] { --rosa: #2f55c9; --rosa-osc: #233f9a; --rosa-suave: #edf1fc; --rosa-linea: #c6d1f2; --noche: #121729; --noche-2: #1c2338; --noche-3: #2a3350; }
+html[data-color="verde"] { --rosa: #1f8a7a; --rosa-osc: #166457; --rosa-suave: #e9f5f2; --rosa-linea: #bfe0d8; --noche: #10201d; --noche-2: #192d29; --noche-3: #25403a; }
+html[data-color="azul"] .banda .rosa b, html[data-color="verde"] .banda .rosa b, html[data-color="vino"] .banda .rosa b { color: #fff; }
+html[data-tipo="editorial"] { --serif: 'Playfair Display', Georgia, serif; --sans: 'Source Sans 3', 'Inter', system-ui, sans-serif; }
+html[data-tipo="moderna"] { --serif: 'Space Grotesk', 'Inter', system-ui, sans-serif; --sans: 'Inter', system-ui, sans-serif; }
+html[data-tipo="calida"] { --serif: 'Lora', Georgia, serif; --sans: 'Nunito', 'Inter', system-ui, sans-serif; }
+html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="moderna"] h3 { letter-spacing: -.02em; }
+.estilos { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.estilo { border: 2px solid var(--linea); border-radius: 14px; padding: 14px; cursor: pointer; background: var(--blanco); text-align: left; font: inherit; color: var(--tinta); transition: transform .25s var(--ease), border-color .2s; }
+.estilo:hover { transform: translateY(-2px); }
+.estilo.on { border-color: var(--rosa); box-shadow: 0 0 0 4px var(--rosa-suave); }
+.estilo .muestra { display: flex; gap: 6px; margin-bottom: 10px; }
+.estilo .muestra span { width: 22px; height: 22px; border-radius: 50%; }
+.estilo b { display: block; font-size: 14px; }
+.estilo small { color: var(--gris); font-size: 12px; }
+.estilo .tipo-muestra { font-size: 22px; line-height: 1.1; margin-bottom: 6px; }
+.estilo .tipo-muestra em { font-style: normal; font-size: 13px; color: var(--gris); display: block; margin-top: 2px; }
+/* fin estilo · RLR */
