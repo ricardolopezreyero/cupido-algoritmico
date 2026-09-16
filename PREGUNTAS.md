@@ -2,7 +2,7 @@
 
 <!-- Autor: Ricardo López Reyero · RLR · rev 181218 -->
 
-**33 preguntas base** + el **Módulo Profundo** (P34–P41): intimidad sexual y nivel de conciencia. El módulo se responde al final, con su propio encuadre de privacidad, porque ahí viven las coincidencias que las 33 solas no pueden garantizar.
+**33 preguntas base** + el **Módulo Profundo** (P34–P43): intimidad sexual y nivel de conciencia. El módulo se responde al final, con su propio encuadre de privacidad, porque ahí viven las coincidencias que las 33 solas no pueden garantizar.
 
 Mismo cuestionario para todas las personas. La fuente de verdad del texto exacto de cada pregunta y de sus opciones es [`public/js/preguntas.js`](public/js/preguntas.js); este documento explica **por qué** existe cada una.
 
@@ -198,7 +198,9 @@ Y ahora ordena cómo *demuestras* amor tú.
 ## Bloque 7 · Vida cotidiana
 
 **27. (OM) Hábitos — marca cómo eres tú y qué aceptas en tu pareja:**
-Alcohol (nada / social / frecuente) · Tabaco o vape (no / ocasional / sí) · Ejercicio (nada / a veces / parte de mi vida) · Mascotas (tengo y son familia / me gustan / prefiero sin mascotas — alergias cuentan).
+Alcohol (nada / social / frecuente) · Tabaco o vape (no / ocasional / sí) · Ejercicio (nada / a veces / parte de mi vida) · **Comida (v2.1): cuido mucho lo que como / equilibrado, sin obsesión / como lo que se me antoja**, y en tu pareja aceptas hasta: solo alguien que se cuida / equilibrado está bien / me da igual · **Cocinar (v2.1):** me gusta y lo hago seguido / a veces, lo básico / no cocino · Mascotas (tengo y son familia / me gustan / prefiero sin mascotas — alergias cuentan).
+
+*Sobre la comida:* «solo alguien que se cuida» contra «como lo que se me antoja» es eliminatorio (filtro suave, reconsiderable). El punto medio nunca veta: quien acepta «equilibrado» cruza con quien se cuida y con quien va en equilibrio, y solo pierde puntos contra quien come por antojo. Dos personas que no cocinan reciben una nota, no un castigo.
 
 *Extrae:* matriz tolerancia × hábito en ambas direcciones. Barata de responder, altísimo valor: la mitad de la fricción doméstica vive aquí. 🚫 parcial: un "no acepto" contra un hábito declarado es eliminatorio.
 
@@ -239,7 +241,7 @@ Se presenta después de la P33, con esta pantalla de entrada:
 
 > *"Lo que sigue son 8 preguntas más íntimas: sexualidad y vida interior. Son incómodas a propósito — porque los matches que fallan, fallan casi siempre en lo que nadie preguntó a tiempo. Nadie las lee más que el algoritmo. Puedes responderlas ahora o volver después, pero tu perfil no entra al matching sin ellas: preferimos un match menos a un match falso."*
 
-### Intimidad sexual (P34–P38)
+### Intimidad sexual (P34–P40)
 
 La P25 mide cuánto importa lo físico y qué tan fácil te es hablarlo. Este bloque va a donde la P25 no llega. La incompatibilidad sexual no aparece en la primera cita: aparece en el año dos, y para entonces ya duele. Preguntamos antes.
 
@@ -268,7 +270,17 @@ Tu pareja: Prefiero que sea como yo / Me gustaría que me abriera mundo / Necesi
 **38. (A) ¿Qué es innegociable para ti en lo sexual — como necesidad y como límite? Di la verdad completa: esta respuesta decide matches.**
 *Extrae:* 🚫 filtro duro semántico. Una necesidad declarada de A contra un límite declarado de B mata el par, sin importar el resto. Es la pregunta más incómoda del sistema y la más barata: cuesta un minuto aquí o cuesta dos años después.
 
-### Nivel de conciencia y vida interior (P39–P41)
+**39. (OM · v2.1) Cómo vives la intimidad en el día a día.**
+Contacto físico no sexual que necesitas a diario (1–5) · La iniciativa (me gusta tomarla yo / que la tomen / los dos por igual) · Tu forma natural, hasta 2 (lento y sensual / intenso y apasionado / juguetón / tierno y cercano / aventurero) · Después, lo que más necesitas (abrazados un rato / hablar y reír / dormir enseguida / depende).
+
+*Extrae:* la mayoría de los desencuentros sexuales no son de práctica: son de ritmo, de quién inicia y de qué pasa después. Contacto diario se compara en distancia; iniciativa premia el complemento (uno inicia, al otro le gusta que inicien) y castiga «a los dos les gusta que el otro inicie»; el estilo cruza iguales y vecinos (tierno~lento, juguetón~aventurero); «dormir enseguida» contra «abrazados un rato» baja.
+
+**40. (OM · v2.1) Tu historia, tu cuerpo y cuando no hay ganas.**
+Tu experiencia sexual (poca o ninguna / algunas relaciones / bastante) · La de tu pareja (me da igual / parecida a la mía / prefiero poca) · Cuando no tienes ganas (lo digo directo y con cariño / espero que se note / a veces cedo aunque no quiera / me cuesta decirlo y me alejo) · Cuando tu pareja no tiene ganas (lo tomo bien / me duele aunque lo entienda / suelo insistir un poco).
+
+*Extrae:* la experiencia previa importa menos de lo que se cree, pero importa que los dos la vivan sin juicio: solo cuenta contra lo que cada uno declaró esperar. Y el «hoy no» existe en todas las parejas: «me cuesta decirlo» × «me cuesta decirlo» y «suelo insistir» × «a veces cedo» son las dos combinaciones que más bajan, con nota para cuidarlo. La rejilla de la P38 gana dos filas: pruebas de salud sexual antes de intimar y contarse fantasías sin juzgarse.
+
+### Nivel de conciencia y vida interior (P41–P43)
 
 La P4 mide religión como filtro social. Esto mide otra cosa: cómo trabajas tu interior y cuánto necesitas que tu pareja lo haga.
 

@@ -16,11 +16,12 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 - [x] **Cuestionario v2** con anclas estructuradas junto a cada pregunta abierta y "quién eres / a quién buscas".
 - [x] **Umbral de 90 %**: solo se muestran coincidencias de 90 hacia arriba, ordenadas (96, 95, 94…).
 - [x] **Avisar sin dejar entrar**: aviso a los dos al mismo tiempo, identidad protegida, puerta que solo se abre con dos síes, nadie se entera de un no, retiro silencioso si baja del umbral.
-- [x] **Demo**: 10 hombres y 10 mujeres ficticios con las 41 preguntas completas (estructuradas + textos).
+- [x] **Demo**: 10 hombres y 10 mujeres ficticios con las 43 preguntas completas (estructuradas + textos).
 - [x] **Tablero de la persona** (menú a la izquierda, contenido a la derecha) sin contraseña y con cerrar sesión: Inicio con cifras, camino de 5 pasos y logros · Mis coincidencias (con la puerta) · Aceptaciones agrupadas (esperan tu respuesta, tu sí esperando, puertas abiertas, preferiste no abrir) · Avisos · Lo que más pesa · Mis respuestas en las 10 categorías · Qué tan bien me conoce · Lo que me deja fuera · Privacidad y pausa del perfil.
 - [x] **Panel admin**: resumen con cifras, distribución, vetos por tipo, matriz 10 × 10, detalle de cada par en las dos direcciones, personas con sus respuestas y pesos, puertas, corrida manual por fases, laboratorio de pesos en vivo, bitácora en vivo.
 - [x] **Artículos**: cualquiera publica sin cuenta, lectura cuidada y lista para compartir por WhatsApp, borrador local, anti-spam básico (trampa para robots, límite por IP, palabras sospechosas a revisión) y moderación desde el admin. 6 artículos iniciales.
 - [x] **Cuestionario conectado**: autoguardado, "lo pienso después" y motor automático al terminar; guarda en la cuenta de la persona.
+- [x] **Cuestionario v2.1** (16 sep 2026): dos preguntas íntimas más (P39 día a día: contacto, iniciativa, forma natural, después; P40 historia y "hoy no") + dos filas en innegociables (pruebas de salud sexual, fantasías sin juicio) + comida y cocinar en hábitos con veto suave "solo alguien que se cuida" vs "como lo que se me antoja". 43 preguntas. Los 20 perfiles del demo completados; misma forma (9 parejas ≥90).
 - [x] **Mi vida hoy** (16 sep 2026): 10 elementos de la vida con icono (pareja, familia, hijos, amigos, trabajo, dinero, salud, espíritu, diversión, legado), deslizador de 0 a 100 %, rueda que cambia en vivo y lectura corta (promedio, lo más lleno, lo más vacío). Se guarda en la cuenta; el admin lo ve en el detalle de la persona. Es espejo, no filtro: no entra al cálculo. Idea de Ricardo para después: usarlo hacia un eneagrama.
 - [x] **Mi estilo** (16 sep 2026): la persona elige color (Rosa Cupido, Vino, Azul profundo, Verde bosque) y tipografía (Clásica, Editorial, Moderna, Cálida) para su tablero; se guarda en su cuenta y se aplica sin parpadeo al entrar.
 - [x] **Foto, voz y video** (16 sep 2026): sección del tablero que se abre solo con el cuestionario al 100 %; foto (se reduce en el navegador), voz (grabar hasta 90 s o subir) y video (grabar hasta 45 s o subir) en R2 `cupido-medios`; el avatar del menú se cambia tocándolo. La otra persona solo los ve cuando la puerta se abrió; el Worker verifica la puerta antes de servir cada archivo.
@@ -79,7 +80,7 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 - [ ] Todas las orientaciones e identidades desde el día uno (el motor ya cruza "quién busca a quién" en las dos direcciones).
 - [ ] Explicar a la persona su "lo más cerca" con más contexto (qué dimensión le faltó a esa persona, sin decir quién).
 - [ ] Accesibilidad (lector de pantalla, contraste, teclado) y rendimiento en celulares de gama baja.
-- [ ] Simulación Monte Carlo v2 del cuestionario de 41 preguntas con las anclas nuevas (la actual mide 33).
+- [ ] Simulación Monte Carlo v2 del cuestionario de 43 preguntas con las anclas nuevas (la actual mide 33).
 
 ### Operación
 - [ ] **Repositorio privado** (hoy es público: el motor con sus pesos queda visible, y el propio modelo dice que los pesos de producción no se publican).

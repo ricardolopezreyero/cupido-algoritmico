@@ -1,6 +1,6 @@
 # Modelo de matching · versión 2
 
-Cómo pasamos de 41 respuestas × 2 personas a un solo número — por qué solo mostramos coincidencias de **90 % hacia arriba**, y por qué la puerta no se abre sola.
+Cómo pasamos de 43 respuestas × 2 personas a un solo número — por qué solo mostramos coincidencias de **90 % hacia arriba**, y por qué la puerta no se abre sola.
 
 <!-- Autor: Ricardo López Reyero · RLR · rev 181218 -->
 
@@ -22,7 +22,7 @@ Cada persona queda en dos capas:
 
 1. **Respuestas estructuradas** — opciones, escalas, rankings y la rejilla de innegociables. Se guardan con **códigos estables**, nunca con el texto visible: con un millón de personas los textos del cuestionario van a cambiar y los datos no se deben romper.
 2. **Lectura de las respuestas abiertas** — un modelo de lenguaje las lee **una sola vez por persona** y deja:
-   - Una **rúbrica 0–10** en cuatro ejes: autoconocimiento (P16, P32, P41), responsabilidad emocional (P20, P22, P37), calidez demostrada (P26, P31, P33) y coherencia interna (contradicciones entre P6↔P29, P16↔P32, P14↔P29).
+   - Una **rúbrica 0–10** en cuatro ejes: autoconocimiento (P16, P32, P43), responsabilidad emocional (P20, P22, P37), calidez demostrada (P26, P31, P33) y coherencia interna (contradicciones entre P6↔P29, P16↔P32, P14↔P29).
    - Las **etiquetas de la carta** (P33): qué promete y qué pide, de un vocabulario cerrado.
 
    Sin llave de IA el sistema no se detiene: usa una lectura heurística que nunca premia, solo evita que el perfil quede ciego.
@@ -91,6 +91,8 @@ En la v1 lo íntimo pesaba 12 % para todos y tres de sus cinco preguntas eran te
 5. **Apertura en doble dirección (P35).** "Prefiero que sea como yo", "que me abra mundo" o "que respete mis límites sin presionarme" definen curvas distintas: un 2 que quiere que le abran mundo cruza con un 3 o un 4; un 2 que necesita respeto a sus límites, no con un 5.
 6. **Innegociables en rejilla (P38, nuevo):** esperar al matrimonio, explorar cosas nuevas con regularidad, pornografía en la relación y planificación familiar solo con métodos naturales — cada fila con "lo necesito / lo acepto / no lo acepto". El veto se volvió **determinista y explicable**. El texto libre sigue para lo que no está en la lista.
 7. **Techo íntimo:** si lo íntimo es muy importante para alguien (peso personal alto) y ahí el par está por debajo de 55 %, el total no puede pasar de 86.
+8. **El día a día íntimo (v2.1, P39–P40).** Seis factores nuevos dentro de la misma dimensión, con pesos chicos que suman 24 %: contacto físico diario (distancia 1–5), iniciativa (complemento), forma natural (iguales o vecinas), lo que necesitan después, experiencia contra lo que cada uno espera de la del otro, y el «hoy no» (cómo se dice y cómo se recibe). Las notas a la persona nunca revelan el detalle del otro: «uno toma la iniciativa y al otro le gusta que la tomen», «a los dos les cuesta decir hoy no: cuídenlo». La rejilla de innegociables suma pruebas de salud sexual y fantasías sin juicio, con el mismo veto «lo necesito / no lo acepto».
+9. **Comida (v2.1, P27).** En vida cotidiana: «solo alguien que se cuida» contra «como lo que se me antoja» es veto suave; el punto medio nunca veta y quien acepta «equilibrado» solo pierde puntos contra el antojo. Cocinar cuenta poco: dos que no cocinan reciben una nota.
 
 ## Revisión de lo espiritual (v2)
 

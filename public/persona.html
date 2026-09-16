@@ -41,7 +41,7 @@
   <div class="modal claro" role="dialog" aria-labelledby="mc-t">
     <button class="cerrar" id="mc-cerrar" aria-label="Cerrar">×</button>
     <h2 id="mc-t">La cuenta demo no se apaga: se cambia por la tuya</h2>
-    <p class="sub">Con tu correo creamos tu cuenta y te mandamos un enlace para entrar. Sin contraseña. Luego respondes tus 41 preguntas y el motor te cruza.</p>
+    <p class="sub">Con tu correo creamos tu cuenta y te mandamos un enlace para entrar. Sin contraseña. Luego respondes tus 43 preguntas y el motor te cruza.</p>
     <form id="mc-form" novalidate>
       <div class="campo"><label for="mc-correo">Tu correo</label><input id="mc-correo" type="email" autocomplete="email" inputmode="email" placeholder="tu@correo.com" maxlength="254"></div>
       <div class="acciones"><button class="boton" type="submit" id="mc-btn">Crear mi cuenta →</button><button class="boton boton-fantasma" type="button" id="mc-seguir">Seguir en el demo</button></div>
@@ -142,7 +142,7 @@ function derivados() {
   const abiertas = c.filter((x) => x.puerta.estado === 'abierta');
   const miNo = c.filter((x) => x.puerta.estado !== 'abierta' && x.puerta.miDecision === 'no');
   const logros = [
-    { m: '📝', t: 'Cuestionario completo', d: 'Las 41 preguntas', ok: P.avance.listo },
+    { m: '📝', t: 'Cuestionario completo', d: 'Las 43 preguntas', ok: P.avance.listo },
     { m: '🔐', t: 'Módulo profundo', d: 'Intimidad y vida interior', ok: !!(r.deseo && r.sx_esperar && (r.practicas || []).length) },
     { m: '✉️', t: 'Carta escrita', d: 'Lo primero que leerá tu match', ok: String(r.carta || '').length > 80 },
     { m: '🔎', t: 'Te conoce bien', d: 'Claridad de 80 % o más', ok: V.claridad.pct >= 80 },
@@ -153,7 +153,7 @@ function derivados() {
     { m: '📷', t: 'Con rostro y voz', d: 'Foto, voz y video listos', ok: !!(V.misMedios?.foto && V.misMedios?.audio && V.misMedios?.video) },
   ];
   const pasos = [
-    { i: '📝', t: 'Responder', d: 'tus 41 preguntas', ok: P.avance.listo },
+    { i: '📝', t: 'Responder', d: 'tus 43 preguntas', ok: P.avance.listo },
     { i: '⚙️', t: 'Entrar al matching', d: P.estado === 'pausada' ? 'perfil en pausa' : 'el motor te cruza', ok: P.completo && P.estado === 'activa' },
     { i: '💘', t: 'Coincidencia', d: `alguien arriba del ${V.umbral} %`, ok: c.length > 0 },
     { i: '🤍', t: 'Tu sí', d: 'decides conocer', ok: miSi.length + abiertas.length > 0 },
@@ -295,7 +295,7 @@ const SECCIONES = {
 
   respuestas() {
     const r = V.misRespuestas || {};
-    if (!V.persona.avance.estructuradas && !DEMO()) return cabeza('Mis respuestas', 'Todavía no has respondido nada.', `<a class="boton" href="/cuestionario">Empezar mi cuestionario</a>`) + `<section class="tarjeta"><p style="margin:0;color:var(--tinta-2)">Son 41 preguntas en 10 categorías. Se guardan solas y puedes parar cuando quieras.</p></section>`;
+    if (!V.persona.avance.estructuradas && !DEMO()) return cabeza('Mis respuestas', 'Todavía no has respondido nada.', `<a class="boton" href="/cuestionario">Empezar mi cuestionario</a>`) + `<section class="tarjeta"><p style="margin:0;color:var(--tinta-2)">Son 43 preguntas en 10 categorías. Se guardan solas y puedes parar cuando quieras.</p></section>`;
     const lleno = (v) => v != null && v !== '' && !(Array.isArray(v) && !v.length);
     const bloques = Object.entries(BLOQUES).map(([n, nombre]) => {
       const preguntas = PREGUNTAS.filter((p) => p.b === Number(n));
@@ -315,7 +315,7 @@ const SECCIONES = {
         }).join('')}
       </details>`;
     }).join('');
-    return cabeza('Mis respuestas', `Las 41 preguntas en sus 10 categorías, en el orden del cuestionario. Avance total: ${V.persona.avance.pct} %.`,
+    return cabeza('Mis respuestas', `Las 43 preguntas en sus 10 categorías, en el orden del cuestionario. Avance total: ${V.persona.avance.pct} %.`,
       DEMO() ? `<button class="boton boton-claro" id="crear-cuenta">Responder el mío</button>` : `<a class="boton boton-claro" href="/cuestionario">Editar cuestionario</a>`) +
       `<p class="seccion-sub">Solo tú las ves. Lo íntimo solo lo lee el motor.</p>${bloques}`;
   },
@@ -372,7 +372,7 @@ const SECCIONES = {
   },
 
   filtros() {
-    const QUE = { edad: 'Tu rango de edad', distancia: 'Que ni tú ni la otra persona se moverían de ciudad', alcohol: 'Tu filtro de alcohol', tabaco: 'Tu filtro de tabaco', mascotas: 'Tu filtro de mascotas' };
+    const QUE = { edad: 'Tu rango de edad', distancia: 'Que ni tú ni la otra persona se moverían de ciudad', alcohol: 'Tu filtro de alcohol', tabaco: 'Tu filtro de tabaco', comida: 'Tu filtro de comida (solo alguien que se cuida)', mascotas: 'Tu filtro de mascotas' };
     return cabeza('Lo que me deja fuera', 'Solo te mostramos filtros que tú podrías reconsiderar. Nunca te sugeriremos negociar hijos, fe, exclusividad ni tus límites íntimos.') + `
       <section class="tarjeta">${V.dejanFuera.length ? `<ul class="razones" style="padding:0">${V.dejanFuera.map((x) => `<li><span class="i ojo">!</span><span>${QUE[x.id] || 'Uno de tus filtros'} deja fuera a <b>${x.personas}</b> ${x.personas === 1 ? 'persona' : 'personas'} con quien tendrías hasta <b>${x.mejor} %</b>${x.mejor >= V.umbral ? ' — arriba del umbral' : ''}.</span></li>`).join('')}</ul>`
         : '<p style="margin:0;color:var(--tinta-2)">Tus filtros no están dejando fuera a nadie con quien tendrías una compatibilidad alta. 👌</p>'}

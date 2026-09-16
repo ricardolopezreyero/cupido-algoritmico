@@ -262,6 +262,9 @@ export const PREGUNTAS = [
       { id: 'tabaco_acepto', k: 'choice', l: 'Tabaco o vape — en tu pareja aceptas hasta:', filtro: true, o: [['no', 'Nada'], ['ocasional', 'Ocasional'], ['si', 'Me da igual']] },
       { id: 'ejercicio', k: 'choice', l: 'Ejercicio — tú:', o: [['nada', 'Nada'], ['aveces', 'A veces'], ['vida', 'Parte de mi vida']] },
       { id: 'ejercicio_pareja', k: 'choice', l: 'Ejercicio — en tu pareja prefieres:', o: [['igual', 'Me da igual'], ['algo', 'Que se mueva algo'], ['activo', 'Que sea activo/a como yo']] },
+      { id: 'comida', k: 'choice', l: 'Comida — tú:', nuevo: true, o: [['cuido', 'Cuido mucho lo que como'], ['equilibrio', 'Equilibrado, sin obsesión'], ['antojo', 'Como lo que se me antoja']] },
+      { id: 'comida_acepto', k: 'choice', l: 'Comida — en tu pareja aceptas hasta:', filtro: true, nuevo: true, o: [['cuido', 'Solo alguien que también se cuida'], ['equilibrio', 'Equilibrado está bien'], ['antojo', 'Me da igual cómo coma']] },
+      { id: 'cocinar', k: 'choice', l: 'Cocinar — tú:', nuevo: true, o: [['me_gusta', 'Me gusta y lo hago seguido'], ['a_veces', 'A veces, lo básico'], ['no', 'No cocino']] },
       { id: 'mascotas', k: 'choice', l: 'Mascotas — tú:', o: [['familia', 'Tengo y son familia'], ['gustan', 'Me gustan'], ['sin', 'Prefiero sin mascotas']] },
       { id: 'mascotas_acepto', k: 'choice', l: 'Mascotas — en tu pareja aceptas:', filtro: true, o: [['si', 'Que tenga y sean familia'], ['gustan', 'Que le gusten, sin más'], ['no', 'Prefiero que no tenga (alergias cuentan)']] },
     ] },
@@ -349,12 +352,37 @@ export const PREGUNTAS = [
         ['sx_esperar', 'Esperar al matrimonio para la intimidad sexual'],
         ['sx_explorar', 'Explorar cosas nuevas juntos con regularidad'],
         ['sx_porno', 'Pornografía dentro de la relación'],
-        ['sx_natural', 'Planificación familiar solo con métodos naturales']] },
+        ['sx_natural', 'Planificación familiar solo con métodos naturales'],
+        ['sx_pruebas', 'Hacernos pruebas de salud sexual antes de intimar'],
+        ['sx_fantasias', 'Contarnos fantasías y deseos sin juzgarnos']] },
       { id: 'innegociables', k: 'text', l: 'Algo más que sea innegociable para ti', opcional: true },
     ] },
 
+  { n: 39, b: 9, t: 'Cómo vives la intimidad en el día a día.',
+    note: 'No es técnica: es cómo te acercas, cómo te gusta que se acerquen y qué necesitas después.',
+    help: { why: 'La mayoría de los desencuentros sexuales no son de práctica: son de ritmo, de quién inicia y de qué pasa después. Preguntarlo evita que uno se sienta rechazado y el otro presionado.' },
+    parts: [
+      { id: 'contacto_diario', k: 'scale', l: '¿Cuánto contacto físico no sexual necesitas a diario? (abrazos, caricias, dormir pegados)', nuevo: true, lo: 'Poco: necesito mi espacio', hi: 'Mucho: todo el tiempo' },
+      { id: 'iniciativa', k: 'choice', l: 'La iniciativa', nuevo: true, o: [['yo', 'Me gusta tomarla yo'], ['otro', 'Me gusta que la tomen'], ['ambos', 'Los dos, por igual']] },
+      { id: 'estilo', k: 'multi', max: 2, l: 'Tu forma natural (hasta 2)', nuevo: true, o: [
+        ['lento', 'Lento y sensual'], ['intenso', 'Intenso y apasionado'], ['jugueton', 'Juguetón, con risa'], ['tierno', 'Tierno y muy cercano'], ['aventurero', 'Aventurero, con novedad']] },
+      { id: 'despues', k: 'choice', l: 'Después, lo que más necesitas es…', nuevo: true, o: [
+        ['abrazo', 'Quedarnos abrazados un buen rato'], ['hablar', 'Hablar y reír'], ['dormir', 'Dormir enseguida, sin más'], ['depende', 'Depende del día']] },
+    ] },
+  { n: 40, b: 9, t: 'Tu historia, tu cuerpo y cuando no hay ganas.',
+    note: 'Nadie humano lee esto. Solo sirve para no cruzarte con quien te haría sentir juzgado/a o presionado/a.',
+    help: { why: 'La experiencia previa importa menos de lo que la gente cree, pero importa mucho que los dos la vivan sin juicio. Y el "no tengo ganas" existe en todas las parejas: cómo se dice y cómo se recibe predice más que la frecuencia.' },
+    parts: [
+      { id: 'experiencia', k: 'choice', l: 'Tu experiencia sexual hasta hoy', nuevo: true, o: [['poca', 'Poca o ninguna'], ['algo', 'Algunas relaciones'], ['bastante', 'Bastante']] },
+      { id: 'experiencia_pareja', k: 'choice', l: 'La de tu pareja', nuevo: true, o: [['igual', 'Me da igual'], ['parecida', 'Prefiero que sea parecida a la mía'], ['poca', 'Prefiero que sea poca']] },
+      { id: 'sin_ganas', k: 'choice', l: 'Cuando no tienes ganas, ¿qué haces la mayoría de las veces?', nuevo: true, o: [
+        ['directo', 'Lo digo directo y con cariño'], ['senal', 'Espero que se note'], ['cedo', 'A veces cedo aunque no quiera'], ['cuesta', 'Me cuesta decirlo y me alejo']] },
+      { id: 'sin_ganas_pareja', k: 'choice', l: 'Cuando tu pareja no tiene ganas, tú…', nuevo: true, o: [
+        ['bien', 'Lo tomo bien y busco cercanía de otra forma'], ['duele', 'Me duele, aunque lo entienda'], ['insisto', 'Suelo insistir un poco']] },
+    ] },
+
   /* ── Módulo Profundo · Conciencia y vida interior (revisado en v2) ──────── */
-  { n: 39, b: 10, t: '¿Qué prácticas sostienen tu vida interior — y qué papel esperas que jueguen en tu vida en pareja?',
+  { n: 41, b: 10, t: '¿Qué prácticas sostienen tu vida interior — y qué papel esperas que jueguen en tu vida en pareja?',
     note: 'Oración, meditación, terapia, escribir, naturaleza… o ninguna. Todas son respuestas válidas.',
     help: { why: 'No nos digas qué crees: dinos qué HACES, y cada cuánto. Y si lo quieres compartir o solo necesitas que te lo respeten: son necesidades distintas.' },
     parts: [
@@ -366,7 +394,7 @@ export const PREGUNTAS = [
         ['juntos', 'Me gustaría compartirlas juntos'], ['espacio', 'Necesito que respete mi espacio para ellas'], ['igual', 'Me da igual']] },
       { id: 'practicas_texto', k: 'text', l: 'Qué haces y cada cuánto' },
     ] },
-  { n: 40, b: 10, t: 'Sobre tu propio crecimiento: ¿dónde estás?',
+  { n: 42, b: 10, t: 'Sobre tu propio crecimiento: ¿dónde estás?',
     help: { why: 'El desnivel de conciencia es la fuente silenciosa de «ya no hablamos el mismo idioma» a los cinco años.' },
     parts: [
       { id: 'crecimiento', k: 'choice', o: [
@@ -374,7 +402,7 @@ export const PREGUNTAS = [
         ['central', 'El crecimiento constante (terapia, lectura, práctica) es central en mi vida']] },
       { id: 'crecimiento_pareja', k: 'choice', l: '¿Y tu pareja?', o: [['conmigo', 'Necesito que crezca conmigo'], ['acompane', 'Basta con que me acompañe']] },
     ] },
-  { n: 41, b: 10, t: 'Cuéntame la última vez que cambiaste de opinión sobre algo importante de ti mismo/a. ¿Qué te lo mostró?',
+  { n: 43, b: 10, t: 'Cuéntame la última vez que cambiaste de opinión sobre algo importante de ti mismo/a. ¿Qué te lo mostró?',
     parts: [{ id: 'cambie', k: 'text' }] },
 ];
 

@@ -233,7 +233,7 @@ const REVELA = (O, medios = {}) => ({
   carta: O.r.carta || '', malinterpretan: O.r.malinterpretan || '', martes: O.r.martes || '',
   medios, // foto, voz y video: solo llegan aquí porque la puerta ya se abrió
 });
-const RUBRICA_PREGUNTAS = { autoconocimiento: [16, 32, 41], responsabilidad: [20, 22, 37], calidez: [26, 31, 33], coherencia: [6, 29] };
+const RUBRICA_PREGUNTAS = { autoconocimiento: [16, 32, 43], responsabilidad: [20, 22, 37], calidez: [26, 31, 33], coherencia: [6, 29] };
 
 export async function vistaPersona(env, P) {
   const todas = await personas(env);

@@ -4,7 +4,7 @@
 
 <!-- Autor: Ricardo López Reyero · RLR · rev 181218 -->
 
-Te registras, respondes 41 preguntas una sola vez, y no pasa nada más. No hay swipes, no hay fotos como moneda de cambio, no hay conversaciones forzadas. Si algún día el algoritmo encuentra a alguien con quien tu compatibilidad supera el **90 %**, les avisamos a los dos al mismo tiempo — pero **la puerta no se abre hasta que los dos digan que sí**. Si nunca pasa, nunca te molestamos.
+Te registras, respondes 43 preguntas una sola vez, y no pasa nada más. No hay swipes, no hay fotos como moneda de cambio, no hay conversaciones forzadas. Si algún día el algoritmo encuentra a alguien con quien tu compatibilidad supera el **90 %**, les avisamos a los dos al mismo tiempo — pero **la puerta no se abre hasta que los dos digan que sí**. Si nunca pasa, nunca te molestamos.
 
 ## El demo
 
@@ -14,7 +14,7 @@ Te registras, respondes 41 preguntas una sola vez, y no pasa nada más. No hay s
 | **Tablero de la persona** · `/persona` | Menú lateral: inicio con camino y logros, coincidencias de 90 % hacia arriba, aceptaciones, avisos, lo que más pesa, sus respuestas por categoría, privacidad, pausa y cerrar sesión. |
 | **Panel administrativo** · `/admin` | Cifras, matriz 10 × 10, vetos explicados, el cálculo de cada par en las dos direcciones, puertas, corrida del matching por fases, laboratorio de pesos, artículos y bitácora en vivo. |
 | **Artículos** · `/articulos` | Cualquiera publica sin crear cuenta. |
-| **Cuestionario** · `/cuestionario` | Las 41 preguntas conectadas a tu cuenta: autoguardado y el motor te cruza al terminar. |
+| **Cuestionario** · `/cuestionario` | Las 43 preguntas conectadas a tu cuenta: autoguardado y el motor te cruza al terminar. |
 
 Sin contraseñas a propósito: el correo es la cuenta (enlace mágico) y el demo está a un clic. Lo que falta para abrirlo a personas reales (admin protegido, privacidad de datos sensibles, verificación de identidad, dominio propio para el correo…) está en **[la lista completa](docs/RUTA.md)**.
 
@@ -42,7 +42,7 @@ Detalle completo, incluida la revisión de lo sexual y lo espiritual: **[MODELO.
 ## Estructura del repo
 
 - [`MANIFIESTO.md`](MANIFIESTO.md) — Por qué existe esto, en una página.
-- [`PREGUNTAS.md`](PREGUNTAS.md) — Las 41 preguntas con el razonamiento de cada una y los cambios de la v2.
+- [`PREGUNTAS.md`](PREGUNTAS.md) — Las 43 preguntas con el razonamiento de cada una y los cambios de la v2.
 - [`MODELO.md`](MODELO.md) — Cómo se calcula el porcentaje, por qué 90 % y por qué la puerta.
 - [`EXPERIENCIA.md`](EXPERIENCIA.md) — La experiencia de respuesta y la primera impresión multimedia.
 - [`docs/RUTA.md`](docs/RUTA.md) — **La lista completa** de lo que falta, priorizada.

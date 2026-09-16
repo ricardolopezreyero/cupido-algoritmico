@@ -78,7 +78,7 @@ const T = {
   necesito: { hablar: 'hablarlo pronto', rato: 'un rato a solas y luego hablar', gesto: 'un gesto de cariño', espacio: 'varios días de espacio' },
   frecuencia: { varias: 'varias veces por semana', una_dos: 'una o dos veces por semana', mes: 'algunas veces al mes', conexion: 'la frecuencia le importa poco' },
   domingo: { descanso: 'descanso', familia: 'familia', culto: 'misa o culto', deporte: 'deporte', naturaleza: 'naturaleza', amigos: 'amigos', cultura: 'cultura', fiesta: 'fiesta', proyectos: 'proyectos propios' },
-  sx: { sx_esperar: 'esperar al matrimonio', sx_explorar: 'explorar cosas nuevas con regularidad', sx_porno: 'pornografía en la relación', sx_natural: 'solo métodos naturales de planificación' },
+  sx: { sx_esperar: 'esperar al matrimonio', sx_explorar: 'explorar cosas nuevas con regularidad', sx_porno: 'pornografía en la relación', sx_natural: 'solo métodos naturales de planificación', sx_pruebas: 'pruebas de salud sexual antes de intimar', sx_fantasias: 'contarse fantasías sin juzgarse' },
 };
 
 /* ── matrices de compatibilidad ──────────────────────────────────────────── */
@@ -110,7 +110,7 @@ const ORD = {
   postura: ['progresista', 'centro', 'conservadora'], energia: ['solo', 'depende', 'gente'],
   viernes: ['casa', 'pequeno', 'fiesta'], planes: ['planifico', 'flexible', 'fluyo'],
   cercania: ['todo', 'juntos', 'independencia'], alcohol: ['nada', 'social', 'frecuente'],
-  tabaco: ['no', 'ocasional', 'si'], cronotipo: ['madrugador', 'flexible', 'nocturno'],
+  tabaco: ['no', 'ocasional', 'si'], cronotipo: ['madrugador', 'flexible', 'nocturno'], comida: ['cuido', 'equilibrio', 'antojo'], experiencia: ['poca', 'algo', 'bastante'],
   frecuencia: ['varias', 'una_dos', 'mes'], fe_practica: ['diario', 'semana', 'aveces', 'casi_nunca', 'nunca'],
   crecimiento: ['paz', 'cuando', 'central'],
 };
@@ -193,6 +193,10 @@ export function vetos(A, B) {
     const tab = nivel(ORD.tabaco, Y.r.tabaco), tabOk = nivel(ORD.tabaco, X.r.tabaco_acepto);
     if (tab != null && tabOk != null && tab > tabOk)
       add('tabaco', de, true, `${X.nombre} no acepta tabaco a ese nivel y ${Y.nombre} fuma (${Y.r.tabaco})`, 'Un hábito de uno no lo acepta el otro');
+    // Comida: "solo alguien que se cuida" contra "como lo que se me antoja" (el punto medio nunca veta)
+    const com = nivel(ORD.comida, Y.r.comida), comOk = nivel(ORD.comida, X.r.comida_acepto);
+    if (com != null && comOk != null && com > comOk + 1)
+      add('comida', de, true, `${X.nombre} solo acepta a alguien que se cuida en la comida y ${Y.nombre} come lo que se le antoja`, 'La forma de comer de uno no la acepta el otro');
     if (X.r.mascotas_acepto === 'no' && Y.r.mascotas === 'familia')
       add('mascotas', de, true, `${X.nombre} prefiere pareja sin mascotas y ${Y.nombre} tiene y son familia`, 'Mascotas: uno tiene y el otro prefiere que no');
   }
@@ -419,7 +423,50 @@ function dIntimidad(A, B) {
   }
   const resp = B.l?.rubrica?.responsabilidad;
   const man = hay(resp) ? 0.55 + 0.045 * resp : null;
-  return { s: mezcla([[fre, 0.3], [ape, 0.2], [com, 0.15], [enc, 0.15], [apa, 0.1], [man, 0.1]]), notas: n };
+  // v2.1 · el día a día íntimo: contacto, iniciativa, estilo, después, experiencia y el "no tengo ganas"
+  let con = null;
+  if (hay(a.contacto_diario) && hay(b.contacto_diario)) {
+    const d = Math.abs(a.contacto_diario - b.contacto_diario);
+    con = [1, 0.85, 0.6, 0.4, 0.25][d];
+    if (d === 0 && a.contacto_diario >= 4) n.push(nota(1, 'Los dos necesitan mucho contacto físico a diario', `${P} necesitan la misma cercanía física en el día a día`));
+    else if (d >= 3) n.push(nota(-1, `Contacto diario: tú ${a.contacto_diario}/5 y ${el(B)} ${b.contacto_diario}/5`, `${P} uno necesita mucho más contacto diario que el otro`));
+  }
+  let ini = null;
+  if (hay(a.iniciativa) && hay(b.iniciativa)) {
+    const x = a.iniciativa, y = b.iniciativa;
+    ini = x === 'ambos' || y === 'ambos' ? (x === y ? 1 : 0.9) : x !== y ? 1 : x === 'yo' ? 0.75 : 0.5;
+    if (ini === 1 && x !== y) n.push(nota(1, 'Uno toma la iniciativa y al otro le gusta que la tomen', `${P} embonan en quién da el primer paso`));
+    else if (ini === 0.5) n.push(nota(-1, 'A los dos les gusta que el otro inicie: nadie daría el primer paso', `${P} a los dos les gusta que el otro inicie: alguien tendría que animarse`));
+  }
+  let est = null;
+  if (hay(a.estilo) && hay(b.estilo)) {
+    const VECINOS = { lento: ['tierno'], tierno: ['lento', 'jugueton'], jugueton: ['tierno', 'aventurero'], intenso: ['aventurero'], aventurero: ['intenso', 'jugueton'] };
+    const iguales = comun(a.estilo, b.estilo).length, vecinos = arr(a.estilo).some((x) => arr(b.estilo).some((y) => (VECINOS[x] || []).includes(y)));
+    est = iguales ? 1 : vecinos ? 0.8 : 0.5;
+    if (iguales) n.push(nota(1, `Su forma natural en lo íntimo se parece (${comun(a.estilo, b.estilo).join(', ')})`, `${P} su forma natural se parece`));
+    else if (est === 0.5) n.push(nota(-1, `Estilos distintos: tú ${arr(a.estilo).join('/')} y ${el(B)} ${arr(b.estilo).join('/')}`, null));
+  }
+  let des = null;
+  if (hay(a.despues) && hay(b.despues)) {
+    des = a.despues === b.despues || a.despues === 'depende' || b.despues === 'depende' ? 1 : [a.despues, b.despues].includes('dormir') ? 0.5 : 0.8;
+    if (des === 0.5) n.push(nota(-1, 'Después: uno quiere cercanía y el otro dormir', `${P} lo que necesitan después es distinto: vale la pena hablarlo`));
+  }
+  let exp = null;
+  if (hay(a.experiencia_pareja) && hay(b.experiencia)) {
+    const d = hay(a.experiencia) ? Math.abs(nivel(ORD.experiencia, a.experiencia) - nivel(ORD.experiencia, b.experiencia)) : 0;
+    exp = a.experiencia_pareja === 'igual' ? 1 : a.experiencia_pareja === 'parecida' ? [1, 0.7, 0.4][d] : { poca: 1, algo: 0.6, bastante: 0.3 }[b.experiencia];
+    if (exp <= 0.4) n.push(nota(-1, `Prefieres experiencia ${a.experiencia_pareja === 'poca' ? 'poca' : 'parecida a la tuya'} y la de ${el(B)} es ${b.experiencia}`, `${P} lo que esperan de la historia del otro no embona`));
+  }
+  let sg = null;
+  if (hay(a.sin_ganas) && hay(b.sin_ganas)) {
+    const dice = { directo: 1, senal: 0.8, cedo: 0.55, cuesta: 0.6 };
+    const recibe = { bien: 1, duele: 0.8, insisto: 0.5 };
+    sg = mezcla([[dice[b.sin_ganas], 1], [hay(b.sin_ganas_pareja) ? recibe[b.sin_ganas_pareja] : null, 1]]);
+    if (a.sin_ganas === 'cuesta' && b.sin_ganas === 'cuesta') { sg = 0.35; n.push(nota(-1, 'A los dos les cuesta decir cuando no hay ganas', `${P} a los dos les cuesta decir "hoy no": cuídenlo desde el principio`)); }
+    else if (b.sin_ganas_pareja === 'insisto' && ['cedo', 'cuesta'].includes(a.sin_ganas)) { sg = 0.3; n.push(nota(-1, `${el(B)} suele insistir y a ti te cuesta decir que no`, `${P} hay un riesgo de presión que tendrían que cuidar`)); }
+    else if (b.sin_ganas === 'directo' && b.sin_ganas_pareja === 'bien') n.push(nota(1, `${el(B)} dice "hoy no" con cariño y lo recibe bien`, `${P} saben decir y recibir un "hoy no"`));
+  }
+  return { s: mezcla([[fre, 0.22], [ape, 0.15], [com, 0.12], [enc, 0.12], [apa, 0.08], [man, 0.07], [con, 0.08], [ini, 0.05], [est, 0.04], [des, 0.03], [exp, 0.02], [sg, 0.02]]), notas: n };
 }
 
 function dEspiritual(A, B) {
@@ -490,7 +537,21 @@ function dCotidiano(A, B) {
     if (tar >= 0.9) n.push(nota(1, 'Imaginan igual la división de la casa'));
     else if (tar < 0.5) n.push(nota(-1, 'Imaginan muy distinta la división de la casa'));
   }
-  return { s: mezcla([[hab, 0.2], [eje, 0.1], [mas, 0.1], [cro, 0.15], [ord, 0.15], [dom, 0.15], [tar, 0.15]]), notas: n };
+  // Comida: cómo come el otro contra lo que yo acepto; el punto medio siempre cruza
+  let comi = null;
+  if (hay(a.comida_acepto) && hay(b.comida)) {
+    const lb = nivel(ORD.comida, b.comida);
+    comi = a.comida_acepto === 'antojo' ? [1, 0.9, 0.75][Math.abs(nivel(ORD.comida, a.comida ?? 'equilibrio') - lb)] : a.comida_acepto === 'equilibrio' ? [1, 1, 0.4][lb] : [1, 0.6, 0.2][lb];
+    if (hay(a.comida) && a.comida === b.comida && a.comida !== 'antojo') n.push(nota(1, `Comen parecido: los dos ${a.comida === 'cuido' ? 'se cuidan' : 'van en equilibrio'}`));
+    else if (comi <= 0.4) n.push(nota(-1, `Tú ${a.comida_acepto === 'cuido' ? 'quieres a alguien que se cuide' : 'aceptas hasta equilibrado'} y ${el(B)} come lo que se le antoja`, 'La forma de comer les va a pedir acuerdos'));
+  }
+  let coc = null;
+  if (hay(a.cocinar) && hay(b.cocinar)) {
+    coc = a.cocinar === 'no' && b.cocinar === 'no' ? 0.7 : 1;
+    if (coc < 1) n.push(nota(0, 'Ninguno cocina: van a comer fuera o pedir mucho', 'Ninguno de los dos cocina: conviene hablarlo'));
+    else if (a.cocinar === 'me_gusta' && b.cocinar === 'me_gusta') n.push(nota(1, 'A los dos les gusta cocinar'));
+  }
+  return { s: mezcla([[hab, 0.17], [comi, 0.12], [coc, 0.04], [eje, 0.09], [mas, 0.09], [cro, 0.13], [ord, 0.13], [dom, 0.12], [tar, 0.11]]), notas: n };
 }
 
 function dPersonalidad(A, B) {

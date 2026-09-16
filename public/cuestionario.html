@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Cuestionario · Cupido Algorítmico</title>
-<meta name="description" content="41 preguntas, una sola vez. Todo se guarda solo y no hay contraseña.">
+<meta name="description" content="43 preguntas, una sola vez. Todo se guarda solo y no hay contraseña.">
 <meta name="author" content="Ricardo López Reyero">
 <meta name="rev" content="181218">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -89,7 +89,7 @@ function progreso() {
   if (!c || c.t !== 'q') { $('#progreso').hidden = true; return; }
   $('#progreso').hidden = false;
   const bloque = PREGUNTAS.filter((x) => x.b === c.q.b);
-  $('#p-izq').textContent = `Pregunta ${c.q.n} de 41`;
+  $('#p-izq').textContent = `Pregunta ${c.q.n} de ${PREGUNTAS.length}`;
   $('#p-der').textContent = `${BLOQUES[c.q.b]} · ${bloque.findIndex((x) => x.n === c.q.n) + 1} de ${bloque.length}`;
   $('#p-relleno').style.width = (100 * PREGUNTAS.filter(contestada).length / PREGUNTAS.length) + '%';
 }
@@ -110,8 +110,8 @@ async function inicio() {
   app.innerHTML = `<div class="intermedio">
     <div class="grande">💘</div>
     <h2>${empezado ? `Hola de nuevo${nombre ? ', ' + esc(nombre) : ''}` : 'Antes de empezar'}</h2>
-    ${empezado ? `<p>Llevas <b>${hechas} de 41</b> preguntas. Todo sigue exactamente donde lo dejaste.</p>` : `
-      <p>Son <b>41 preguntas</b> (33 base + 8 del módulo profundo). A la mayoría le toma entre 40 y 60 minutos hacerlo bien — no tiene que ser de corrido.</p>
+    ${empezado ? `<p>Llevas <b>${hechas} de 43</b> preguntas. Todo sigue exactamente donde lo dejaste.</p>` : `
+      <p>Son <b>43 preguntas</b> (33 base + 10 del módulo profundo). A la mayoría le toma entre 40 y 60 minutos hacerlo bien — no tiene que ser de corrido.</p>
       <p><b>Todo se guarda solo</b> en tu cuenta${sesion.correo ? ` (${esc(sesion.correo)})` : ''}: puedes parar y volver cuando quieras, desde cualquier dispositivo. No hay respuestas correctas: hay respuestas tuyas.</p>`}
     <div class="tarjeta" style="text-align:left;margin:22px auto;max-width:480px">
       <div class="campo" style="margin:0"><label for="nombre">¿Cómo quieres que te llamemos?</label>
@@ -266,7 +266,7 @@ async function fin() {
   app.innerHTML = `<div class="intermedio">
     <div class="grande">${av.listo ? '💘' : '🌱'}</div>
     <h2>${av.listo ? 'Entraste al matching' : 'Así va tu cuestionario'}</h2>
-    <p>Respondiste <b>${hechas} de 41</b> preguntas.</p>
+    <p>Respondiste <b>${hechas} de 43</b> preguntas.</p>
     ${av.listo
       ? `<p>El motor ya te cruzó con todo el demo${r?.cruce ? `: <b>${r.cruce.pares}</b> ${r.cruce.pares === 1 ? 'par evaluado' : 'pares evaluados'}${r.cruce.nuevas ? ` y <b>${r.cruce.nuevas}</b> ${r.cruce.nuevas === 1 ? 'coincidencia' : 'coincidencias'} arriba del 90 %` : ''}` : ''}. Y luego: silencio — hasta que alguien supere el 90 %.</p>
          <a class="boton" href="/persona">Ver mi tablero →</a>`
@@ -314,7 +314,7 @@ async function azar() {
 armarCola();
 // ?p=22 abre directo esa pregunta (desde el panel: "cuéntale más en la 22")
 const saltar = Number(q.get('p'));
-if (saltar >= 1 && saltar <= 41) {
+if (saltar >= 1 && saltar <= 43) {
   cargarSesion().then((previo) => {
     if (!previo) return;
     $('#pildora').hidden = !sesion.demo;

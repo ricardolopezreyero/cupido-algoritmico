@@ -22,6 +22,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'algo', deseo: 'responsivo', apertura: 2, apertura_pareja: 'respete',
       enciende: ['escucha', 'ternura', 'equipo'], apaga: ['presion', 'pendientes', 'frialdad'],
       sx_esperar: 'necesito', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'necesito',
+      contacto_diario: 3, iniciativa: 'otro', estilo: ['tierno', 'lento'], despues: 'depende', experiencia: 'poca', experiencia_pareja: 'parecida', sin_ganas: 'senal', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'acepto', sx_fantasias: 'acepto', comida: 'cuido', comida_acepto: 'equilibrio', cocinar: 'no',
       practicas: ['oracion', 'culto', 'servicio'], practicas_pareja: 'juntos', crecimiento: 'cuando', crecimiento_pareja: 'conmigo' },
     l: { rubrica: { autoconocimiento: 9, responsabilidad: 9, calidez: 9, coherencia: 9 }, carta: { promete: ['presencia', 'fe', 'familia'], pide: ['honestidad', 'paciencia', 'fe'] } } },
 
@@ -41,6 +43,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'algo', deseo: 'ambos', apertura: 3, apertura_pareja: 'como_yo',
       enciende: ['palabras', 'iniciativa', 'novedad'], apaga: ['frialdad', 'descuido', 'celular'],
       sx_esperar: 'acepto', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'acepto',
+      contacto_diario: 3, iniciativa: 'ambos', estilo: ['jugueton', 'intenso'], despues: 'hablar', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'duele',
+      sx_pruebas: 'acepto', sx_fantasias: 'acepto', comida: 'cuido', comida_acepto: 'cuido', cocinar: 'me_gusta',
       practicas: ['culto', 'lectura'], practicas_pareja: 'espacio', crecimiento: 'cuando', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 8, responsabilidad: 8, calidez: 8, coherencia: 8 }, carta: { promete: ['alegria', 'honestidad', 'pasion', 'equipo'], pide: ['presencia', 'crecimiento', 'pasion'] } } },
 
@@ -60,6 +64,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'muy', deseo: 'responsivo', apertura: 3, apertura_pareja: 'como_yo',
       enciende: ['escucha', 'ternura', 'juego'], apaga: ['prisa', 'criticas', 'celular'],
       sx_esperar: 'no', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'acepto',
+      contacto_diario: 4, iniciativa: 'otro', estilo: ['jugueton', 'intenso'], despues: 'abrazo', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'necesito', sx_fantasias: 'acepto', comida: 'cuido', comida_acepto: 'equilibrio', cocinar: 'a_veces',
       practicas: ['meditacion', 'terapia', 'cuerpo', 'naturaleza', 'diario'], practicas_pareja: 'juntos', crecimiento: 'central', crecimiento_pareja: 'conmigo' },
     l: { rubrica: { autoconocimiento: 10, responsabilidad: 9, calidez: 9, coherencia: 9 }, carta: { promete: ['presencia', 'honestidad', 'crecimiento', 'ternura'], pide: ['calma', 'crecimiento', 'humor'] } } },
 
@@ -79,6 +85,8 @@ export const ESQUELETOS = [
       frecuencia: 'varias', frecuencia_negociable: 'algo', deseo: 'espontaneo', apertura: 4, apertura_pareja: 'como_yo',
       enciende: ['palabras', 'novedad', 'iniciativa'], apaga: ['frialdad', 'comparaciones', 'celular'],
       sx_esperar: 'no', sx_explorar: 'necesito', sx_porno: 'acepto', sx_natural: 'no',
+      contacto_diario: 2, iniciativa: 'yo', estilo: ['aventurero', 'intenso'], despues: 'hablar', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'duele',
+      sx_pruebas: 'necesito', sx_fantasias: 'necesito', comida: 'equilibrio', comida_acepto: 'antojo', cocinar: 'no',
       practicas: ['terapia', 'lectura', 'diario'], practicas_pareja: 'espacio', crecimiento: 'central', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 9, responsabilidad: 8, calidez: 7, coherencia: 9 }, carta: { promete: ['honestidad', 'respeto', 'aventura', 'pasion'], pide: ['respeto', 'crecimiento', 'humor'] } } },
 
@@ -98,6 +106,8 @@ export const ESQUELETOS = [
       frecuencia: 'varias', frecuencia_negociable: 'poco', deseo: 'espontaneo', apertura: 5, apertura_pareja: 'como_yo',
       enciende: ['iniciativa', 'novedad', 'palabras'], apaga: ['frialdad', 'prisa', 'comparaciones'],
       sx_esperar: 'no', sx_explorar: 'necesito', sx_porno: 'acepto', sx_natural: 'no',
+      contacto_diario: 4, iniciativa: 'yo', estilo: ['aventurero', 'intenso'], despues: 'abrazo', experiencia: 'bastante', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'duele',
+      sx_pruebas: 'acepto', sx_fantasias: 'necesito', comida: 'cuido', comida_acepto: 'equilibrio', cocinar: 'me_gusta',
       practicas: ['terapia'], practicas_pareja: 'igual', crecimiento: 'cuando', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 8, responsabilidad: 7, calidez: 7, coherencia: 8 }, carta: { promete: ['pasion', 'honestidad', 'libertad'], pide: ['respeto', 'libertad', 'humor'] } } },
 
@@ -117,6 +127,8 @@ export const ESQUELETOS = [
       frecuencia: 'mes', frecuencia_negociable: 'muy', deseo: 'responsivo', apertura: 2, apertura_pareja: 'respete',
       enciende: ['cuidado', 'equipo', 'ternura'], apaga: ['presion', 'criticas', 'descuido'],
       sx_esperar: 'no', sx_explorar: 'no', sx_porno: 'no', sx_natural: 'no',
+      contacto_diario: 2, iniciativa: 'otro', estilo: ['tierno', 'lento'], despues: 'depende', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'cuesta', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'acepto', sx_fantasias: 'acepto', comida: 'equilibrio', comida_acepto: 'antojo', cocinar: 'a_veces',
       practicas: ['ninguna'], practicas_pareja: 'igual', crecimiento: 'paz', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 6, responsabilidad: 6, calidez: 7, coherencia: 7 }, carta: { promete: ['orden', 'lealtad', 'calma'], pide: ['respeto', 'paciencia', 'libertad'] } } },
 
@@ -136,6 +148,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'muy', deseo: 'responsivo', apertura: 2, apertura_pareja: 'respete',
       enciende: ['ternura', 'cuidado', 'equipo'], apaga: ['presion', 'criticas', 'pendientes'],
       sx_esperar: 'acepto', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'acepto',
+      contacto_diario: 5, iniciativa: 'otro', estilo: ['tierno', 'lento'], despues: 'abrazo', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'senal', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'acepto', sx_fantasias: 'acepto', comida: 'equilibrio', comida_acepto: 'equilibrio', cocinar: 'no',
       practicas: ['oracion', 'culto'], practicas_pareja: 'espacio', crecimiento: 'cuando', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 8, responsabilidad: 9, calidez: 9, coherencia: 9 }, carta: { promete: ['familia', 'cuidado', 'lealtad', 'alegria'], pide: ['ternura', 'presencia', 'equipo'] } } },
 
@@ -155,6 +169,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'algo', deseo: 'responsivo', apertura: 2, apertura_pareja: 'respete',
       enciende: ['palabras', 'escucha', 'cuidado'], apaga: ['presion', 'criticas', 'pendientes'],
       sx_esperar: 'necesito', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'acepto',
+      contacto_diario: 4, iniciativa: 'otro', estilo: ['tierno', 'lento'], despues: 'hablar', experiencia: 'poca', experiencia_pareja: 'parecida', sin_ganas: 'senal', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'necesito', sx_fantasias: 'acepto', comida: 'equilibrio', comida_acepto: 'antojo', cocinar: 'me_gusta',
       practicas: ['oracion', 'culto', 'lectura', 'servicio'], practicas_pareja: 'juntos', crecimiento: 'central', crecimiento_pareja: 'conmigo' },
     l: { rubrica: { autoconocimiento: 9, responsabilidad: 9, calidez: 9, coherencia: 9 }, carta: { promete: ['fe', 'familia', 'cuidado', 'lealtad'], pide: ['fe', 'honestidad', 'paciencia'] } } },
 
@@ -174,6 +190,8 @@ export const ESQUELETOS = [
       frecuencia: 'varias', frecuencia_negociable: 'algo', deseo: 'espontaneo', apertura: 4, apertura_pareja: 'abra',
       enciende: ['novedad', 'juego', 'iniciativa'], apaga: ['frialdad', 'prisa', 'celular'],
       sx_esperar: 'no', sx_explorar: 'necesito', sx_porno: 'acepto', sx_natural: 'no',
+      contacto_diario: 4, iniciativa: 'yo', estilo: ['aventurero', 'intenso'], despues: 'abrazo', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'duele',
+      sx_pruebas: 'acepto', sx_fantasias: 'necesito', comida: 'cuido', comida_acepto: 'cuido', cocinar: 'a_veces',
       practicas: ['naturaleza', 'cuerpo', 'meditacion'], practicas_pareja: 'juntos', crecimiento: 'cuando', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 8, responsabilidad: 8, calidez: 9, coherencia: 8 }, carta: { promete: ['aventura', 'alegria', 'pasion', 'presencia'], pide: ['aventura', 'libertad', 'humor'] } } },
 
@@ -193,6 +211,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'muy', deseo: 'responsivo', apertura: 3, apertura_pareja: 'como_yo',
       enciende: ['escucha', 'cuidado', 'equipo'], apaga: ['presion', 'frialdad', 'comparaciones'],
       sx_esperar: 'no', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'acepto',
+      contacto_diario: 3, iniciativa: 'otro', estilo: ['jugueton', 'intenso'], despues: 'depende', experiencia: 'bastante', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'acepto', sx_fantasias: 'acepto', comida: 'equilibrio', comida_acepto: 'equilibrio', cocinar: 'no',
       practicas: ['oracion', 'lectura'], practicas_pareja: 'espacio', crecimiento: 'cuando', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 9, responsabilidad: 9, calidez: 9, coherencia: 9 }, carta: { promete: ['lealtad', 'calma', 'respeto', 'ternura'], pide: ['respeto', 'ternura', 'paciencia'] } } },
 
@@ -213,6 +233,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'algo', deseo: 'espontaneo', apertura: 2, apertura_pareja: 'como_yo',
       enciende: ['palabras', 'equipo', 'cuidado'], apaga: ['criticas', 'pendientes', 'frialdad'],
       sx_esperar: 'acepto', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'acepto',
+      contacto_diario: 4, iniciativa: 'yo', estilo: ['tierno', 'lento'], despues: 'abrazo', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'acepto', sx_fantasias: 'acepto', comida: 'cuido', comida_acepto: 'equilibrio', cocinar: 'me_gusta',
       practicas: ['oracion', 'culto', 'servicio'], practicas_pareja: 'juntos', crecimiento: 'cuando', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 9, responsabilidad: 9, calidez: 8, coherencia: 9 }, carta: { promete: ['honestidad', 'presencia', 'familia', 'paciencia'], pide: ['fe', 'equipo', 'alegria'] } } },
 
@@ -232,6 +254,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'algo', deseo: 'espontaneo', apertura: 3, apertura_pareja: 'como_yo',
       enciende: ['palabras', 'novedad', 'juego'], apaga: ['criticas', 'frialdad', 'celular'],
       sx_esperar: 'no', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'no',
+      contacto_diario: 3, iniciativa: 'yo', estilo: ['jugueton', 'intenso'], despues: 'hablar', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'acepto', sx_fantasias: 'acepto', comida: 'cuido', comida_acepto: 'cuido', cocinar: 'a_veces',
       practicas: ['culto', 'naturaleza'], practicas_pareja: 'espacio', crecimiento: 'cuando', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 8, responsabilidad: 8, calidez: 8, coherencia: 8 }, carta: { promete: ['presencia', 'pasion', 'crecimiento', 'alegria'], pide: ['honestidad', 'alegria', 'pasion'] } } },
 
@@ -251,6 +275,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'algo', deseo: 'ambos', apertura: 3, apertura_pareja: 'como_yo',
       enciende: ['ternura', 'escucha', 'equipo'], apaga: ['frialdad', 'criticas', 'prisa'],
       sx_esperar: 'no', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'acepto',
+      contacto_diario: 4, iniciativa: 'ambos', estilo: ['jugueton', 'intenso'], despues: 'abrazo', experiencia: 'bastante', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'necesito', sx_fantasias: 'acepto', comida: 'cuido', comida_acepto: 'equilibrio', cocinar: 'no',
       practicas: ['meditacion', 'terapia', 'naturaleza', 'diario'], practicas_pareja: 'juntos', crecimiento: 'central', crecimiento_pareja: 'conmigo' },
     l: { rubrica: { autoconocimiento: 9, responsabilidad: 9, calidez: 9, coherencia: 9 }, carta: { promete: ['presencia', 'calma', 'humor', 'crecimiento'], pide: ['honestidad', 'ternura', 'crecimiento'] } } },
 
@@ -270,6 +296,8 @@ export const ESQUELETOS = [
       frecuencia: 'varias', frecuencia_negociable: 'algo', deseo: 'espontaneo', apertura: 4, apertura_pareja: 'como_yo',
       enciende: ['palabras', 'juego', 'novedad'], apaga: ['criticas', 'frialdad', 'celular'],
       sx_esperar: 'no', sx_explorar: 'necesito', sx_porno: 'acepto', sx_natural: 'no',
+      contacto_diario: 3, iniciativa: 'yo', estilo: ['aventurero', 'intenso'], despues: 'abrazo', experiencia: 'bastante', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'necesito', sx_fantasias: 'necesito', comida: 'equilibrio', comida_acepto: 'antojo', cocinar: 'me_gusta',
       practicas: ['lectura', 'terapia'], practicas_pareja: 'espacio', crecimiento: 'central', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 8, responsabilidad: 9, calidez: 8, coherencia: 8 }, carta: { promete: ['humor', 'honestidad', 'respeto', 'crecimiento'], pide: ['honestidad', 'aventura', 'respeto'] } } },
 
@@ -289,6 +317,8 @@ export const ESQUELETOS = [
       frecuencia: 'varias', frecuencia_negociable: 'poco', deseo: 'espontaneo', apertura: 5, apertura_pareja: 'como_yo',
       enciende: ['iniciativa', 'novedad', 'juego'], apaga: ['frialdad', 'criticas', 'celular'],
       sx_esperar: 'no', sx_explorar: 'necesito', sx_porno: 'acepto', sx_natural: 'no',
+      contacto_diario: 4, iniciativa: 'yo', estilo: ['aventurero', 'intenso'], despues: 'abrazo', experiencia: 'bastante', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'duele',
+      sx_pruebas: 'acepto', sx_fantasias: 'necesito', comida: 'cuido', comida_acepto: 'cuido', cocinar: 'a_veces',
       practicas: ['ninguna'], practicas_pareja: 'igual', crecimiento: 'cuando', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 7, responsabilidad: 7, calidez: 7, coherencia: 8 }, carta: { promete: ['pasion', 'aventura', 'honestidad'], pide: ['libertad', 'humor', 'pasion'] } } },
 
@@ -308,6 +338,8 @@ export const ESQUELETOS = [
       frecuencia: 'varias', frecuencia_negociable: 'poco', deseo: 'espontaneo', apertura: 4, apertura_pareja: 'abra',
       enciende: ['iniciativa', 'novedad', 'juego'], apaga: ['criticas', 'comparaciones', 'celular'],
       sx_esperar: 'no', sx_explorar: 'necesito', sx_porno: 'necesito', sx_natural: 'no',
+      contacto_diario: 4, iniciativa: 'yo', estilo: ['aventurero', 'intenso'], despues: 'abrazo', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'cuesta', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'acepto', sx_fantasias: 'necesito', comida: 'equilibrio', comida_acepto: 'antojo', cocinar: 'no',
       practicas: ['ninguna'], practicas_pareja: 'igual', crecimiento: 'paz', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 5, responsabilidad: 4, calidez: 6, coherencia: 6 }, carta: { promete: ['lealtad', 'alegria'], pide: ['respeto', 'libertad', 'pasion'] } } },
 
@@ -327,6 +359,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'algo', deseo: 'espontaneo', apertura: 2, apertura_pareja: 'como_yo',
       enciende: ['ternura', 'cuidado', 'juego'], apaga: ['frialdad', 'criticas', 'celular'],
       sx_esperar: 'no', sx_explorar: 'acepto', sx_porno: 'acepto', sx_natural: 'acepto',
+      contacto_diario: 5, iniciativa: 'yo', estilo: ['tierno', 'lento'], despues: 'abrazo', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'senal', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'acepto', sx_fantasias: 'acepto', comida: 'equilibrio', comida_acepto: 'antojo', cocinar: 'me_gusta',
       practicas: ['ninguna'], practicas_pareja: 'igual', crecimiento: 'paz', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 8, responsabilidad: 8, calidez: 9, coherencia: 8 }, carta: { promete: ['familia', 'lealtad', 'humor', 'cuidado'], pide: ['paciencia', 'alegria', 'familia'] } } },
 
@@ -346,6 +380,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'algo', deseo: 'espontaneo', apertura: 2, apertura_pareja: 'como_yo',
       enciende: ['palabras', 'equipo', 'cuidado'], apaga: ['frialdad', 'criticas', 'celular'],
       sx_esperar: 'necesito', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'acepto',
+      contacto_diario: 4, iniciativa: 'yo', estilo: ['tierno', 'lento'], despues: 'hablar', experiencia: 'poca', experiencia_pareja: 'parecida', sin_ganas: 'senal', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'necesito', sx_fantasias: 'acepto', comida: 'cuido', comida_acepto: 'antojo', cocinar: 'a_veces',
       practicas: ['oracion', 'culto', 'lectura', 'servicio'], practicas_pareja: 'juntos', crecimiento: 'central', crecimiento_pareja: 'conmigo' },
     l: { rubrica: { autoconocimiento: 9, responsabilidad: 9, calidez: 9, coherencia: 9 }, carta: { promete: ['fe', 'lealtad', 'familia', 'presencia'], pide: ['fe', 'ternura', 'equipo'] } } },
 
@@ -365,6 +401,8 @@ export const ESQUELETOS = [
       frecuencia: 'varias', frecuencia_negociable: 'algo', deseo: 'espontaneo', apertura: 5, apertura_pareja: 'como_yo',
       enciende: ['juego', 'novedad', 'ternura'], apaga: ['criticas', 'frialdad', 'celular'],
       sx_esperar: 'no', sx_explorar: 'necesito', sx_porno: 'acepto', sx_natural: 'no',
+      contacto_diario: 5, iniciativa: 'yo', estilo: ['aventurero', 'intenso'], despues: 'abrazo', experiencia: 'algo', experiencia_pareja: 'igual', sin_ganas: 'directo', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'acepto', sx_fantasias: 'necesito', comida: 'cuido', comida_acepto: 'cuido', cocinar: 'no',
       practicas: ['naturaleza', 'cuerpo'], practicas_pareja: 'juntos', crecimiento: 'cuando', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 8, responsabilidad: 8, calidez: 8, coherencia: 8 }, carta: { promete: ['aventura', 'humor', 'presencia', 'libertad'], pide: ['alegria', 'pasion', 'aventura'] } } },
 
@@ -384,6 +422,8 @@ export const ESQUELETOS = [
       frecuencia: 'una_dos', frecuencia_negociable: 'muy', deseo: 'ambos', apertura: 3, apertura_pareja: 'como_yo',
       enciende: ['escucha', 'equipo', 'cuidado'], apaga: ['frialdad', 'criticas', 'pendientes'],
       sx_esperar: 'no', sx_explorar: 'acepto', sx_porno: 'no', sx_natural: 'acepto',
+      contacto_diario: 3, iniciativa: 'ambos', estilo: ['jugueton', 'intenso'], despues: 'depende', experiencia: 'bastante', experiencia_pareja: 'igual', sin_ganas: 'senal', sin_ganas_pareja: 'bien',
+      sx_pruebas: 'acepto', sx_fantasias: 'acepto', comida: 'cuido', comida_acepto: 'antojo', cocinar: 'me_gusta',
       practicas: ['oracion', 'culto', 'servicio'], practicas_pareja: 'espacio', crecimiento: 'cuando', crecimiento_pareja: 'acompane' },
     l: { rubrica: { autoconocimiento: 9, responsabilidad: 9, calidez: 8, coherencia: 9 }, carta: { promete: ['lealtad', 'respeto', 'paciencia', 'ternura'], pide: ['ternura', 'respeto', 'calma'] } } },
 ];

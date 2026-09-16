@@ -177,7 +177,7 @@ export async function paginaArticulo(env, url, slug) {
     <div class="prosa">${markdown(a.cuerpo)}</div>
   </article>
   <section class="envoltura-texto art-cierre">
-    <div class="caja-cta"><h3>¿Buscas en serio?</h3><p>41 preguntas, una sola vez. Si alguien cruza el 90 % contigo, te avisamos — y la puerta solo se abre si los dos dicen que sí.</p><a class="boton" href="/cuestionario">Responder el cuestionario</a> <a class="boton boton-claro" href="/articulos/escribir">Escribir un artículo</a></div>
+    <div class="caja-cta"><h3>¿Buscas en serio?</h3><p>43 preguntas, una sola vez. Si alguien cruza el 90 % contigo, te avisamos — y la puerta solo se abre si los dos dicen que sí.</p><a class="boton" href="/cuestionario">Responder el cuestionario</a> <a class="boton boton-claro" href="/articulos/escribir">Escribir un artículo</a></div>
     ${relacionados.length ? `<h3 class="rel-t">Sigue leyendo</h3><div class="rel">${relacionados.map((r) => `<a href="/articulos/${esc(r.slug)}"><span class="chip">${esc(r.categoria)}</span><b>${esc(r.titulo)}</b></a>`).join('')}</div>` : ''}
   </section>
 </main>`;
