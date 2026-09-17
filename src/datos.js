@@ -63,6 +63,7 @@ export async function asegurar(env) {
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN correo TEXT`).run(); } catch { /* ya existe */ }
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN ajustes TEXT`).run(); } catch { /* ya existe */ }
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN vida TEXT`).run(); } catch { /* ya existe */ }
+  try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN visita_a TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN visita_b TEXT`).run(); } catch { /* ya existen */ }
   await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_personas_correo ON personas(correo)`).run();
   const n = await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas`).first();
   if (!n.n) await sembrarDemo(env);

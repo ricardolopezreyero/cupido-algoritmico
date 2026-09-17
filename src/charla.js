@@ -10,6 +10,7 @@
 import { persona, anotar } from './datos.js';
 import { PREGUNTAS } from '../public/js/preguntas.js';
 import { ELEMENTOS, ELEMENTO } from '../public/js/elementos.js';
+import { avisarVivo, presenciaVivo } from './viva.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -18,6 +19,7 @@ export const ESQUEMA_CHARLA = [
   `CREATE TABLE IF NOT EXISTS charlas (
      a TEXT NOT NULL, b TEXT NOT NULL, creada TEXT NOT NULL DEFAULT (datetime('now')),
      escribe_a TEXT, escribe_b TEXT, leido_a INTEGER NOT NULL DEFAULT 0, leido_b INTEGER NOT NULL DEFAULT 0,
+     visita_a TEXT, visita_b TEXT,
      PRIMARY KEY (a, b))`,
   `CREATE TABLE IF NOT EXISTS mensajes (
      id INTEGER PRIMARY KEY AUTOINCREMENT, a TEXT NOT NULL, b TEXT NOT NULL, de TEXT NOT NULL,
@@ -79,9 +81,10 @@ export async function misCharlas(env, yo) {
     const leido = c.a === yo ? c.leido_a : c.leido_b;
     const ult = await env.DB.prepare(`SELECT id, de, tipo, texto, creado FROM mensajes WHERE a = ? AND b = ? ORDER BY id DESC LIMIT 1`).bind(c.a, c.b).first();
     const nuevos = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND id > ? AND de != ?`).bind(c.a, c.b, leido, yo).first()).n;
-    lista.push({ otra: otraId, nombre: nom(O), color: O.color, nuevos, ultimo: ult ? { texto: ult.tipo === 'archivo' ? '📎 ' + (ult.texto || 'Archivo') : ult.tipo === 'gif' ? '🎞️ GIF' : ult.texto, mio: ult.de === yo, creado: ult.creado } : null });
+    lista.push({ otra: otraId, nombre: nom(O), color: O.color, nuevos, ultimo: ult ? { texto: ult.tipo === 'archivo' ? '📎 ' + (ult.texto || 'Archivo') : ult.tipo === 'gif' ? '🎞️ GIF' : ult.texto, mio: ult.de === yo, creado: ult.creado } : null, orden: ult?.creado || c.creada });
   }
-  return lista;
+  // orden: no leídos primero, luego por último mensaje
+  return lista.sort((x, y) => (y.nuevos > 0) - (x.nuevos > 0) || String(y.orden).localeCompare(String(x.orden)));
 }
 
 /* ── la charla completa (o solo lo nuevo) ────────────────────────────────── */
@@ -91,8 +94,11 @@ export async function verCharla(env, yo, otraId, despues = 0) {
   const O = await persona(env, otraId);
   const msgs = (await env.DB.prepare(`SELECT id, de, tipo, texto, archivo, auto, creado FROM mensajes WHERE a = ? AND b = ? AND id > ? ORDER BY id ASC LIMIT 300`).bind(c.a, c.b, despues).all()).results
     .map((m) => ({ ...m, archivo: m.archivo ? JSON.parse(m.archivo) : null, mio: m.de === yo }));
-  // marca como leído hasta el último
-  if (msgs.length) await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'leido_a' : 'leido_b'} = MAX(${c.soyA ? 'leido_a' : 'leido_b'}, ?) WHERE a = ? AND b = ?`).bind(msgs[msgs.length - 1].id, c.a, c.b).run();
+  const miLeido = c.soyA ? c.leido_a : c.leido_b;
+  // marca como leído hasta el último y registra la visita; avisa al otro que ya vi
+  const ultimoId = msgs.length ? msgs[msgs.length - 1].id : 0;
+  await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'leido_a' : 'leido_b'} = MAX(${c.soyA ? 'leido_a' : 'leido_b'}, ?), ${c.soyA ? 'visita_a' : 'visita_b'} = datetime('now') WHERE a = ? AND b = ?`).bind(ultimoId, c.a, c.b).run();
+  if (ultimoId > miLeido && msgs.some((m) => !m.mio)) await avisarVivo(env, c.a, c.b, { t: 'visto', persona: yo, hasta: ultimoId, excepto: yo });
   const escribeOtro = c.soyA ? c.escribe_b : c.escribe_a;
   const otroEscribiendo = !!escribeOtro && (Date.now() - Date.parse(escribeOtro.replace(' ', 'T') + 'Z')) < 4500;
   const mios = (await env.DB.prepare(`SELECT elemento FROM liberaciones WHERE persona = ? AND otra = ?`).bind(yo, otraId).all()).results.map((r) => r.elemento);
@@ -102,7 +108,9 @@ export async function verCharla(env, yo, otraId, despues = 0) {
   for (const r of (await env.DB.prepare(`SELECT r.mensaje, r.persona, r.emoji FROM reacciones r JOIN mensajes m ON m.id = r.mensaje WHERE m.a = ? AND m.b = ?`).bind(c.a, c.b).all()).results)
     (reac[r.mensaje] = reac[r.mensaje] || []).push({ emoji: r.emoji, mia: r.persona === yo });
   const vistoHasta = c.soyA ? c.leido_b : c.leido_a;
-  return { otra: { id: otraId, nombre: nom(O), nombreCompleto: O.nombre, color: O.color, carta: O.r.carta || '', martes: O.r.martes || '' }, mensajes: msgs, otroEscribiendo, compartido: { mios, suyos }, reacciones: reac, vistoHasta };
+  const enLinea = (await presenciaVivo(env, c.a, c.b)).includes(otraId);
+  const ultimaVez = c.soyA ? c.visita_b : c.visita_a;
+  return { otra: { id: otraId, nombre: nom(O), nombreCompleto: O.nombre, color: O.color, carta: O.r.carta || '', martes: O.r.martes || '', enLinea, ultimaVez }, mensajes: msgs, otroEscribiendo, compartido: { mios, suyos }, reacciones: reac, vistoHasta, miLeido };
 }
 
 export async function enviar(env, yo, otraId, { texto, tipo = 'texto', gif } = {}) {
@@ -115,7 +123,10 @@ export async function enviar(env, yo, otraId, { texto, tipo = 'texto', gif } = {
     if (!/^https:\/\/(media\.tenor\.com|c\.tenor\.com|media[0-9]*\.giphy\.com)\//.test(url)) return { error: 'GIF inválido', status: 400 };
     archivo = JSON.stringify({ url, preview, ancho: Number(gif?.ancho) || null, alto: Number(gif?.alto) || null }); t = 'GIF';
   } else { tipo = 'texto'; if (!t) return { error: 'Escribe algo', status: 400 }; }
+  const ritmo = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND de = ? AND creado > datetime('now', '-60 seconds')`).bind(c.a, c.b, yo).first()).n;
+  if (ritmo >= 40) return { error: 'Vas muy rápido. Respira un segundo.', status: 429 };
   const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo) VALUES (?, ?, ?, ?, ?, ?)`).bind(c.a, c.b, yo, tipo, t, archivo).run();
+  await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo, vista: tipo === 'sticker' ? t : tipo === 'gif' ? '🎞️ GIF' : t.slice(0, 80), excepto: yo });
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'escribe_a' : 'escribe_b'} = NULL, ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
   return { ok: true, id: r.meta.last_row_id };
 }
@@ -137,6 +148,7 @@ export async function reaccionar(env, yo, otraId, mensajeId, emoji) {
   const actual = await env.DB.prepare(`SELECT emoji FROM reacciones WHERE mensaje = ? AND persona = ?`).bind(m.id, yo).first();
   if (!e || actual?.emoji === e) await env.DB.prepare(`DELETE FROM reacciones WHERE mensaje = ? AND persona = ?`).bind(m.id, yo).run();
   else await env.DB.prepare(`INSERT INTO reacciones (mensaje, persona, emoji) VALUES (?, ?, ?) ON CONFLICT(mensaje, persona) DO UPDATE SET emoji = excluded.emoji, creado = datetime('now')`).bind(m.id, yo, e).run();
+  await avisarVivo(env, c.a, c.b, { t: 'reaccion', mensaje: m.id, excepto: yo });
   return { ok: true };
 }
 
@@ -156,6 +168,14 @@ export async function buscarGif(env, q) {
   } catch (e) { return { gifs: [], error: e.message }; }
 }
 
+/* ── WebSocket: el Worker valida la puerta y le pasa la conexión al objeto ── */
+export async function conectarVivo(env, req, yo, otraId) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return new Response('No hay una puerta abierta con esa persona', { status: 403 });
+  const obj = env.CHARLA_VIVA.get(env.CHARLA_VIVA.idFromName(`${c.a}|${c.b}`));
+  return obj.fetch('https://viva/ws', { headers: { upgrade: 'websocket', 'x-persona': yo } });
+}
+
 /* ── archivos adjuntos (R2, solo los dos) ───────────────────────────────── */
 export async function adjuntar(env, req, yo, otraId, nombre) {
   const c = await charlaDe(env, yo, otraId);
@@ -171,6 +191,7 @@ export async function adjuntar(env, req, yo, otraId, nombre) {
   const archivo = { clave: claveR2, mime, nombre: limpio, tamano: cuerpo.byteLength };
   const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo) VALUES (?, ?, ?, 'archivo', ?, ?)`).bind(c.a, c.b, yo, limpio, JSON.stringify(archivo)).run();
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
+  await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo: 'archivo', vista: /^image\//.test(mime) ? '📷 Foto' : /^audio\//.test(mime) ? '🎤 Nota de voz' : /^video\//.test(mime) ? '🎬 Video' : '📎 ' + limpio, excepto: yo });
   await anotar(env, 'charla', 'Se mandó un archivo en una charla', `${Math.round(cuerpo.byteLength / 1024)} KB · ${mime}`);
   return { ok: true, id: r.meta.last_row_id };
 }
@@ -208,6 +229,7 @@ export async function liberar(env, yo, otraId, elementos) {
       env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(c.a, c.b, `${nom(Yo)} compartió: ${nuevos.map((e) => `${ELEMENTO[e].i} ${ELEMENTO[e].n}`).join(' · ')}`),
     ]);
     await anotar(env, 'charla', 'Una persona liberó parte de su perfil', `${nuevos.length} elemento(s)`);
+    await avisarVivo(env, c.a, c.b, { t: 'mensaje', de: 'sistema', tipo: 'sistema', excepto: yo });
   }
   const mios = [...ya, ...nuevos];
   return { ok: true, mios };

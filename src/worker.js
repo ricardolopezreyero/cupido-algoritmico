@@ -11,7 +11,8 @@ import { quien, entrarDemo, pedirEnlace, canjearEnlace, cerrarSesion, cookieSesi
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
-import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido, reaccionar, buscarGif } from './charla.js';
+import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido, reaccionar, buscarGif, conectarVivo } from './charla.js';
+export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
 import { personas } from './datos.js';
 import MANIFIESTO from '../MANIFIESTO.md';
@@ -152,6 +153,7 @@ async function api(req, env, ctx, url) {
   }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/reaccion$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await reaccionar(env, yo.P.id, x[1], b.mensaje, b.emoji); return r.error ? error(r.error, r.status) : json(r); }
   if (ruta === '/api/gif' && metodo === 'GET') { if (!yo) return sinSesion(); return json(await buscarGif(env, url.searchParams.get('q') || '')); }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/ws$/)) && metodo === 'GET') { if (!yo) return new Response('Sin sesión', { status: 401 }); return await conectarVivo(env, req, yo.P.id, x[1]); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/escribiendo$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const r = await escribiendo(env, yo.P.id, x[1]); return r.error ? error(r.error, r.status) : json(r); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/archivo$/)) && metodo === 'PUT') {
     if (!yo) return sinSesion();

@@ -469,8 +469,16 @@ const DESPUES = {
 
 /* ── la charla: mensajes, "está escribiendo", archivos y liberar el perfil ─ */
 const otraDe = (c) => { const [a, b] = c.clave.split('-'); return a === V.persona.id ? b : a; };
-let CH = { otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null, reac: {}, visto: 0, grabando: null };
-function detenerCharla() { clearInterval(CH.reloj); if (CH.grabando) { try { CH.grabando.stop(); } catch {} } CH = { otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null, reac: {}, visto: 0, grabando: null }; cerrarPaneles(); }
+let CH = null;
+const CH0 = () => ({ otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null, reac: {}, visto: 0, grabando: null, ws: null, vivo: false, reintento: 0, ping: null, ultimoDe: null, ultimoTs: 0, ultimoDia: null, sinLeer: 0, escribiendoTimer: null, divisor: false, traer: null });
+CH = CH0();
+window.__cupidoVivo = () => ({ vivo: CH.vivo, otra: CH.otra, ultimo: CH.ultimo, escribiendo: !!CH.escribiendo }); // diagnóstico
+function detenerCharla() {
+  clearInterval(CH.reloj); clearInterval(CH.ping); clearTimeout(CH.escribiendoTimer);
+  if (CH.grabando) { try { CH.grabando.stop(); } catch {} }
+  if (CH.ws) { CH.ws.onclose = null; try { CH.ws.close(); } catch {} }
+  CH = CH0(); cerrarPaneles(); document.title = document.title.replace(/^\(\d+\) /, '');
+}
 const EMOJIS = {
   'Caritas': '😀 😄 😁 😂 🤣 😊 😍 🥰 😘 😗 😚 😋 😜 🤪 😎 🤩 🥳 😏 😌 🤗 🤭 🤔 🤫 😶 🙄 😬 😴 🤤 😇 🥺 😢 😭 😤 😡 🤯 😱 😳 🥶 🥵 😈'.split(' '),
   'Corazones': '❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💕 💞 💓 💗 💖 💘 💝 💟 ❣️ 💌 💋 🌹 🌷 🌸 💐 ✨ ⭐ 🌟 💫 🔥 🎉'.split(' '),
@@ -480,16 +488,28 @@ const EMOJIS = {
 const STICKERS = '😍 🥰 😘 🤗 😂 🤣 😎 🥳 😴 🤔 😢 🙈 🙏 👏 💪 🫶 ❤️‍🔥 💘 💖 💐 🌹 ☕ 🍷 🌙 ☀️ 🔥 ✨ 🎉 🎶 💃 🕺 🫂'.split(' ');
 const REACCIONES = ['❤️', '😂', '😮', '😢', '👍', '🔥'];
 const ROMPEHIELOS = (nombre) => [`¿Cómo fue tu martes hoy, ${nombre}?`, 'Leí tu carta dos veces. ¿Qué te llevó a escribirla así?', '¿Qué es lo primero que haces un domingo?', 'Cuéntame algo que te haga reír de verdad.'];
+const SOLO_EMOJI = /^(?:\p{Extended_Pictographic}[\p{Emoji_Modifier}‍️\p{Extended_Pictographic}]*\s*){1,3}$/u;
+const linkear = (t) => t.replace(/(https?:\/\/[^\s<]+[^\s<.,;:!?)"'])/g, (u) => `<a href="${u}" target="_blank" rel="noopener nofollow">${u.replace(/^https?:\/\//, '').slice(0, 60)}${u.replace(/^https?:\/\//, '').length > 60 ? '…' : ''}</a>`);
+const borradorK = (otra) => `cupido.borrador.${V.persona.id}.${otra}`;
 
 function vistaCharla(otra) {
   const c = (V.charlas || []).find((x) => x.otra === otra);
   if (!c) return cabeza('Charla', 'No hay una puerta abierta con esa persona.') + `<p><a class="enlace" href="#charlas">← Volver a las charlas</a></p>`;
-  return `<div class="cabeza-admin"><div><p style="margin:0 0 6px"><a class="enlace" href="#charlas">← Charlas</a></p><h1 style="display:flex;align-items:center;gap:12px">${avatar(c.nombre, c.color)}${esc(c.nombre)}</h1><p id="ch-estado">Puerta abierta · nada se borra</p></div><div class="acciones"><button class="boton boton-claro boton-chico" id="ch-compartir">🔓 Compartir mi perfil</button></div></div>
-    <div class="charla-rejilla">
+  return `<div class="ch-cabeza">
+      <a class="ch-volver" href="#charlas" aria-label="Volver">←</a>
+      ${avatar(c.nombre, c.color)}
+      <div class="ch-quien"><b>${esc(c.nombre)}</b><span id="ch-presencia"><i class="pres"></i>conectando…</span></div>
+      <div class="ch-cab-acc">
+        <button class="ch-h" id="ch-aviso" title="Avisarme cuando escriba">🔔</button>
+        <button class="ch-h" id="ch-lado-btn" title="Perfil compartido">🔓</button>
+        <button class="boton boton-claro boton-chico" id="ch-compartir">Compartir mi perfil</button>
+      </div>
+    </div>
+    <div class="charla-rejilla" id="ch-rejilla">
       <section class="tarjeta charla" id="ch-zona">
         <div class="ch-mensajes" id="ch-mensajes"><p class="vacio">Cargando…</p></div>
+        <button class="ch-abajo" id="ch-abajo" hidden>↓ <span id="ch-abajo-n"></span></button>
         <div class="ch-rompehielos" id="ch-rompehielos" hidden></div>
-        <div class="ch-escribiendo" id="ch-escribiendo" hidden><span></span><span></span><span></span> ${esc(c.nombre)} está escribiendo</div>
         <div class="ch-panel" id="ch-panel" hidden></div>
         <form class="ch-compositor" id="ch-form">
           <div class="ch-herr">
@@ -503,33 +523,36 @@ function vistaCharla(otra) {
           <textarea id="ch-texto" rows="1" maxlength="2000" placeholder="Escribe…" autocomplete="off" enterkeyhint="send"></textarea>
           <button class="boton boton-chico ch-enviar" type="submit" aria-label="Enviar">➤</button>
         </form>
+        <p class="ch-seguro">🔒 Solo ustedes dos leen esto. Nada se borra. Sin perfiles públicos.</p>
       </section>
       <aside class="tarjeta ch-lado" id="ch-lado"><p class="vacio">Cargando…</p></aside>
     </div>`;
 }
-const diaDe = (iso) => { const d = new Date(String(iso).replace(' ', 'T') + 'Z'), hoy = new Date(); const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1); const f = (x) => x.toDateString(); return f(d) === f(hoy) ? 'Hoy' : f(d) === f(ayer) ? 'Ayer' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }); };
-const horaDe = (iso) => new Date(String(iso).replace(' ', 'T') + 'Z').toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
+const fechaDe = (iso) => new Date(String(iso).replace(' ', 'T') + 'Z');
+const diaDe = (iso) => { const d = fechaDe(iso), hoy = new Date(); const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1); const f = (x) => x.toDateString(); return f(d) === f(hoy) ? 'Hoy' : f(d) === f(ayer) ? 'Ayer' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }); };
+const horaDe = (iso) => fechaDe(iso).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
 const reaccionesHtml = (id) => { const r = CH.reac[id] || []; return r.length ? `<div class="reacs">${r.map((x) => `<span class="${x.mia ? 'mia' : ''}">${esc(x.emoji)}</span>`).join('')}</div>` : ''; };
-function filaMensaje(m) {
+function filaMensaje(m, seguido) {
   if (m.tipo === 'sistema') return `<div class="msg sistema" data-id="${m.id}"><span>${esc(m.texto)}</span></div>`;
   const ruta = `/api/charla/${esc(CH.otra)}/archivo/${m.id}`;
   let cuerpo, clase = '';
   if (m.tipo === 'sticker') { cuerpo = esc(m.texto); clase = 'sticker'; }
-  else if (m.tipo === 'gif') { cuerpo = `<img src="${esc(m.archivo?.preview || m.archivo?.url || '')}" alt="GIF" loading="lazy" ${m.archivo?.ancho ? `width="${m.archivo.ancho}" height="${m.archivo.alto}"` : ''}>`; clase = 'media'; }
+  else if (m.tipo === 'gif') { cuerpo = `<img src="${esc(m.archivo?.preview || m.archivo?.url || '')}" alt="GIF" loading="lazy">`; clase = 'media'; }
   else if (m.tipo === 'archivo') {
     const mime = m.archivo?.mime || '';
     if (/^image\//.test(mime)) { cuerpo = `<a href="${ruta}" target="_blank" rel="noopener"><img src="${ruta}" alt="${esc(m.archivo.nombre)}" loading="lazy"></a>`; clase = 'media'; }
     else if (/^audio\//.test(mime)) { cuerpo = `<div class="voz">🎤 <audio controls preload="metadata" src="${ruta}"></audio></div>`; }
     else if (/^video\//.test(mime)) { cuerpo = `<video controls playsinline preload="metadata" src="${ruta}"></video>`; clase = 'media'; }
     else cuerpo = `<a class="ch-doc" href="${ruta}">📄 ${esc(m.archivo?.nombre || 'archivo')} <small>${Math.round((m.archivo?.tamano || 0) / 1024)} KB</small></a>`;
-  } else cuerpo = esc(m.texto);
-  return `<div class="msg ${m.mio ? 'mio' : 'suyo'} ${clase}" data-id="${m.id}"><div class="globo">${cuerpo}</div>${reaccionesHtml(m.id)}<div class="cuando">${horaDe(m.creado)}${m.auto ? ' · saludo automático' : ''}</div><button class="reac-btn" data-reac="${m.id}" title="Reaccionar">☺</button></div>`;
+  } else if (SOLO_EMOJI.test(m.texto || '')) { cuerpo = esc(m.texto); clase = 'jumbo'; }
+  else cuerpo = linkear(esc(m.texto));
+  const av = !m.mio && !seguido ? avatar(CH.datos?.otra?.nombre || '?', CH.datos?.otra?.color, 'sm msg-av') : '';
+  return `<div class="msg ${m.mio ? 'mio' : 'suyo'} ${clase} ${seguido ? 'seguido' : ''} fin-grupo" data-id="${m.id}">${av}<div class="globo">${cuerpo}</div>${reaccionesHtml(m.id)}<div class="cuando">${horaDe(m.creado)}${m.auto ? ' · saludo automático' : ''}</div><button class="reac-btn" data-reac="${m.id}" title="Reaccionar">☺</button></div>`;
 }
 function repintarReacciones() {
   $$('#ch-mensajes .msg[data-id]').forEach((el) => {
-    const id = Number(el.dataset.id), ya = el.querySelector('.reacs');
-    const nuevo = reaccionesHtml(id);
-    if (ya) { if (nuevo) ya.outerHTML = nuevo; else ya.remove(); } else if (nuevo) el.querySelector('.globo')?.insertAdjacentHTML('afterend', nuevo);
+    const id = Number(el.dataset.id), ya = el.querySelector('.reacs'), nuevo = reaccionesHtml(id);
+    if (ya) { if (nuevo) { if (ya.outerHTML !== nuevo) ya.outerHTML = nuevo; } else ya.remove(); } else if (nuevo) el.querySelector('.globo')?.insertAdjacentHTML('afterend', nuevo);
   });
 }
 function repintarVisto() {
@@ -538,6 +561,23 @@ function repintarVisto() {
   const ultimo = [...mios].reverse().find((el) => Number(el.dataset.id) <= CH.visto && !el.textContent.includes('saludo automático'));
   if (ultimo) ultimo.querySelector('.cuando')?.insertAdjacentHTML('beforeend', '<span class="visto"> · Visto ✓✓</span>');
 }
+function pintarPresencia() {
+  const p = $('#ch-presencia'); if (!p || !CH.datos) return;
+  const o = CH.datos.otra;
+  if (CH.escribiendo) p.innerHTML = `<i class="pres on"></i>escribiendo…`;
+  else if (o.enLinea) p.innerHTML = `<i class="pres on"></i>en línea`;
+  else p.innerHTML = `<i class="pres"></i>${o.ultimaVez ? 'última vez ' + hace(o.ultimaVez) : 'sin conexión'}`;
+}
+function mostrarEscribiendo(on) {
+  CH.escribiendo = on; pintarPresencia();
+  const caja = $('#ch-mensajes'); if (!caja) return;
+  let b = $('#ch-burbuja-escribe');
+  if (on && !b) { const abajo = cercaDelFinal(caja); caja.insertAdjacentHTML('beforeend', `<div class="msg suyo escribe" id="ch-burbuja-escribe">${avatar(CH.datos?.otra?.nombre || '?', CH.datos?.otra?.color, 'sm msg-av')}<div class="globo"><span></span><span></span><span></span></div></div>`); if (abajo) caja.scrollTop = caja.scrollHeight; }
+  if (!on && b) b.remove();
+  clearTimeout(CH.escribiendoTimer);
+  if (on) CH.escribiendoTimer = setTimeout(() => mostrarEscribiendo(false), 5000);
+}
+const cercaDelFinal = (caja) => caja.scrollHeight - caja.scrollTop - caja.clientHeight < 140;
 function cerrarPaneles() { const p = $('#ch-panel'); if (p) { p.hidden = true; p.innerHTML = ''; } $$('.ch-h.on').forEach((b) => b.classList.remove('on')); }
 function abrirPanel(cual, boton) {
   const p = $('#ch-panel');
@@ -548,29 +588,20 @@ function abrirPanel(cual, boton) {
       <div class="ch-emojis" id="ch-emojis">${Object.entries(EMOJIS).map(([g, l]) => `<div class="grupo">${g}</div><div class="fila-e">${l.map((e) => `<button type="button" data-e="${e}">${e}</button>`).join('')}</div>`).join('')}</div>
       <div class="ch-emojis stickers" id="ch-stickers" hidden><div class="fila-e">${STICKERS.map((e) => `<button type="button" data-s="${e}">${e}</button>`).join('')}</div></div>`;
     $$('.ch-tabs button', p).forEach((b) => b.onclick = () => { $$('.ch-tabs button', p).forEach((x) => x.classList.toggle('on', x === b)); $('#ch-emojis').hidden = b.dataset.t !== 'emojis'; $('#ch-stickers').hidden = b.dataset.t !== 'stickers'; });
-    $$('[data-e]', p).forEach((b) => b.onclick = () => { const t = $('#ch-texto'); const i = t.selectionStart ?? t.value.length; t.value = t.value.slice(0, i) + b.dataset.e + t.value.slice(i); t.focus(); t.selectionStart = t.selectionEnd = i + b.dataset.e.length; });
+    $$('[data-e]', p).forEach((b) => b.onclick = () => { const t = $('#ch-texto'); const i = t.selectionStart ?? t.value.length; t.value = t.value.slice(0, i) + b.dataset.e + t.value.slice(i); t.focus(); t.selectionStart = t.selectionEnd = i + b.dataset.e.length; t.dispatchEvent(new Event('input')); });
     $$('[data-s]', p).forEach((b) => b.onclick = () => { mandar({ tipo: 'sticker', texto: b.dataset.s }); cerrarPaneles(); });
-  } else if (cual === 'gif') {
-    p.innerHTML = `<div class="ch-gif-busca"><input type="search" id="gif-q" placeholder="Busca un GIF… (risa, abrazo, café)" autocomplete="off"><span class="nota-entrar" style="margin:0">Tenor</span></div><div class="ch-gifs" id="ch-gifs"><p class="vacio">Cargando…</p></div>`;
-    const q = $('#gif-q'); let t = null;
-    const buscar = async () => {
-      try {
-        const r = await api(`/api/gif?q=${encodeURIComponent(q.value.trim())}`);
-        if (r.sinLlave) { $('#ch-gifs').innerHTML = '<p class="vacio" style="padding:10px">Los GIF se activan al poner la llave de Tenor en el servidor. Mientras, hay stickers 😊.</p>'; return; }
-        $('#ch-gifs').innerHTML = r.gifs.length ? r.gifs.map((g) => `<button type="button" data-gif='${esc(JSON.stringify(g))}'><img src="${esc(g.preview)}" alt="" loading="lazy"></button>`).join('') : `<p class="vacio" style="padding:10px">${esc(r.error || 'Sin resultados')}</p>`;
-        $$('[data-gif]', p).forEach((b) => b.onclick = () => { mandar({ tipo: 'gif', gif: JSON.parse(b.dataset.gif) }); cerrarPaneles(); });
-      } catch (e) { $('#ch-gifs').innerHTML = `<p class="vacio">${esc(e.message)}</p>`; }
-    };
-    q.oninput = () => { clearTimeout(t); t = setTimeout(buscar, 350); };
-    q.focus(); buscar();
   }
 }
+function señalEscribiendo(on) {
+  if (CH.vivo && CH.ws?.readyState === 1) { try { CH.ws.send(JSON.stringify({ t: 'escribiendo', on })); } catch {} }
+  else if (on) api(`/api/charla/${encodeURIComponent(CH.otra)}/escribiendo`, {}).catch(() => {});
+}
 async function mandar(cuerpo) {
-  const otra = CH.otra;
-  const caja = $('#ch-mensajes');
-  const temp = document.createElement('div'); temp.className = `msg mio pendiente ${cuerpo.tipo === 'sticker' ? 'sticker' : ''}`;
-  temp.innerHTML = `<div class="globo">${cuerpo.tipo === 'gif' ? '🎞️ GIF…' : esc(cuerpo.texto || '')}</div><div class="cuando">enviando…</div>`;
+  const otra = CH.otra, caja = $('#ch-mensajes');
+  const temp = document.createElement('div'); temp.className = `msg mio pendiente fin-grupo ${cuerpo.tipo === 'sticker' ? 'sticker' : SOLO_EMOJI.test(cuerpo.texto || '') ? 'jumbo' : ''}`;
+  temp.innerHTML = `<div class="globo">${esc(cuerpo.texto || '')}</div><div class="cuando">enviando…</div>`;
   caja.appendChild(temp); caja.scrollTop = caja.scrollHeight;
+  señalEscribiendo(false);
   try { await api(`/api/charla/${encodeURIComponent(otra)}`, cuerpo); await CH.traer(); }
   catch (err) { temp.remove(); avisar(err.message); throw err; }
 }
@@ -578,7 +609,9 @@ async function subirAdjunto(clase, archivo) {
   const otra = CH.otra;
   if (!archivo) return;
   if (archivo.size > 15 * 1024 * 1024) { avisar('Máximo 15 MB.'); return; }
-  const est = $('#ch-estado'); est.textContent = `Mandando ${archivo.name || clase}…`;
+  const caja = $('#ch-mensajes');
+  const temp = document.createElement('div'); temp.className = 'msg mio pendiente fin-grupo'; temp.innerHTML = `<div class="globo">${clase === 'foto' ? '📷' : clase === 'video' ? '🎬' : clase === 'voz' ? '🎤' : '📎'} Mandando ${esc(archivo.name || clase)}…</div><div class="cuando"><span class="ch-barra"><i></i></span></div>`;
+  caja.appendChild(temp); caja.scrollTop = caja.scrollHeight;
   try {
     const esFoto = clase === 'foto' || /^image\/(jpeg|png|webp|heic)/.test(archivo.type);
     const cuerpo = esFoto ? await reducirFoto(archivo) : archivo;
@@ -586,8 +619,7 @@ async function subirAdjunto(clase, archivo) {
     const nombre = esFoto && !/\.jpe?g$/i.test(archivo.name || '') ? (archivo.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg' : (archivo.name || clase);
     await api2('PUT', `/api/charla/${encodeURIComponent(otra)}/archivo?nombre=${encodeURIComponent(nombre)}`, cuerpo, mime);
     await CH.traer();
-  } catch (err) { avisar(err.message); }
-  est.textContent = 'Puerta abierta · nada se borra';
+  } catch (err) { temp.remove(); avisar(err.message); }
 }
 async function notaDeVoz(boton) {
   if (CH.grabando) { CH.grabando.stop(); return; }
@@ -606,6 +638,25 @@ async function notaDeVoz(boton) {
   CH.grabando = rec; boton.textContent = '⏹ 0s'; boton.classList.add('grabando'); rec.start(500);
   avisar('Grabando… toca ⏹ para mandar.', 2500);
 }
+function conectarVivo(otra) {
+  if (!('WebSocket' in window)) return;
+  const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/charla/${encodeURIComponent(otra)}/ws`;
+  let ws; try { ws = new WebSocket(url); } catch { return; }
+  CH.ws = ws;
+  ws.onopen = () => { if (CH.otra !== otra) return; CH.vivo = true; CH.reintento = 0; clearInterval(CH.reloj); CH.reloj = setInterval(() => CH.traer?.(false), 12000); clearInterval(CH.ping); CH.ping = setInterval(() => { try { ws.send('{"t":"ping"}'); } catch {} }, 25000); try { ws.send('{"t":"quien"}'); } catch {} };
+  ws.onmessage = (e) => {
+    if (CH.otra !== otra) return;
+    let ev; try { ev = JSON.parse(e.data); } catch { return; }
+    if (ev.t === 'mensaje') { CH.traer?.(true, ev); }
+    else if (ev.t === 'escribiendo') mostrarEscribiendo(!!ev.on);
+    else if (ev.t === 'reaccion') CH.traer?.(true);
+    else if (ev.t === 'visto') { CH.visto = Math.max(CH.visto, ev.hasta || 0); repintarVisto(); }
+    else if (ev.t === 'presencia') { if (CH.datos) { CH.datos.otra.enLinea = !!ev.en; if (!ev.en) CH.datos.otra.ultimaVez = new Date().toISOString().replace('T', ' ').slice(0, 19); } pintarPresencia(); }
+    else if (ev.t === 'quien') { if (CH.datos) CH.datos.otra.enLinea = (ev.en || []).includes(otra); pintarPresencia(); }
+  };
+  ws.onclose = () => { if (CH.otra !== otra) return; CH.vivo = false; clearInterval(CH.ping); clearInterval(CH.reloj); CH.reloj = setInterval(() => CH.traer?.(false), 2500); const espera = Math.min(15000, 1000 * 2 ** CH.reintento++); setTimeout(() => { if (CH.otra === otra && !CH.vivo) conectarVivo(otra); }, espera); };
+  ws.onerror = () => { try { ws.close(); } catch {} };
+}
 async function engancharCharla(otra) {
   detenerCharla(); CH.otra = otra;
   const caja = $('#ch-mensajes');
@@ -620,41 +671,64 @@ async function engancharCharla(otra) {
       <div id="ch-perfil"></div>`;
     const v = $('#ch-ver'); if (v) v.onclick = verPerfilCompartido;
   };
-  let ultimoDia = null;
-  const traer = async (forzar = false) => {
-    if (document.hidden && !forzar) return; // en segundo plano no se sondea; las acciones propias sí traen
+  const traer = async (forzar = false, ev = null) => {
+    if (document.hidden && !forzar) return;
     try {
       const d = await api(`/api/charla/${encodeURIComponent(otra)}?despues=${CH.ultimo}`);
       if (CH.otra !== otra) return;
       const primera = !CH.datos;
-      CH.datos = d; CH.reac = d.reacciones || {}; CH.visto = d.vistoHasta || 0;
-      if (primera) caja.innerHTML = '';
+      if (primera) { CH.datos = d; caja.innerHTML = ''; } else { d.otra.enLinea = CH.vivo ? CH.datos.otra.enLinea : d.otra.enLinea; CH.datos = d; }
+      CH.reac = d.reacciones || {}; CH.visto = Math.max(CH.visto, d.vistoHasta || 0);
       $$('.msg.pendiente', caja).forEach((el) => el.remove());
       if (d.mensajes.length) {
-        const abajo = caja.scrollHeight - caja.scrollTop - caja.clientHeight < 120;
+        const abajo = primera || cercaDelFinal(caja);
         let html = '';
-        for (const m of d.mensajes) { const dia = diaDe(m.creado); if (dia !== ultimoDia) { html += `<div class="ch-dia"><span>${dia}</span></div>`; ultimoDia = dia; } html += filaMensaje(m); }
+        for (const m of d.mensajes) {
+          const dia = diaDe(m.creado); if (dia !== CH.ultimoDia) { html += `<div class="ch-dia"><span>${dia}</span></div>`; CH.ultimoDia = dia; CH.ultimoDe = null; }
+          if (primera && !CH.divisor && !m.mio && m.id > (d.miLeido || 0) && m.tipo !== 'sistema') { html += `<div class="ch-dia nuevo"><span>Mensajes nuevos</span></div>`; CH.divisor = true; CH.ultimoDe = null; }
+          const ts = fechaDe(m.creado).getTime();
+          const seguido = m.tipo !== 'sistema' && CH.ultimoDe === m.de && ts - CH.ultimoTs < 3 * 60000;
+          if (seguido) { const k = html.lastIndexOf(' fin-grupo'); if (k >= 0) html = html.slice(0, k) + html.slice(k + 10); } // el anterior deja de cerrar el grupo
+          html += filaMensaje(m, seguido);
+          CH.ultimoDe = m.tipo === 'sistema' ? null : m.de; CH.ultimoTs = ts;
+        }
+        const escribe = $('#ch-burbuja-escribe'); if (escribe) escribe.remove();
+        // si el mensaje nuevo continúa el grupo del último ya pintado, quítale el cierre al último
+        const ultimoPintado = caja.querySelector('.msg[data-id]:last-of-type');
+        if (ultimoPintado && d.mensajes[0] && !primera) {
+          const mismo = (ultimoPintado.classList.contains('mio') === d.mensajes[0].mio) && d.mensajes[0].tipo !== 'sistema' && !ultimoPintado.classList.contains('sistema');
+          if (mismo && Date.now() - CH.ultimoTsPintado < 3 * 60000) ultimoPintado.classList.remove('fin-grupo');
+        }
         caja.insertAdjacentHTML('beforeend', html);
-        CH.ultimo = d.mensajes[d.mensajes.length - 1].id;
-        if (primera || abajo) caja.scrollTop = caja.scrollHeight;
+        if (escribe && CH.escribiendo) caja.appendChild(escribe);
+        CH.ultimo = d.mensajes[d.mensajes.length - 1].id; CH.ultimoTsPintado = fechaDe(d.mensajes[d.mensajes.length - 1].creado).getTime();
+        if (abajo) caja.scrollTop = caja.scrollHeight;
+        else { const n = d.mensajes.filter((m) => !m.mio && m.tipo !== 'sistema').length; if (n) { CH.sinLeer += n; $('#ch-abajo-n').textContent = CH.sinLeer; $('#ch-abajo').hidden = false; } }
+        if (ev && !ev.mio && ev.de !== 'sistema' && document.hidden) avisarFuera(d.otra.nombre, ev.vista || 'Mensaje nuevo');
         const mia = (V.charlas || []).find((x) => x.otra === otra); if (mia) { mia.nuevos = 0; pintarLateral(); }
+        if (d.mensajes.some((m) => !m.mio && m.tipo !== 'sistema')) mostrarEscribiendo(false);
       }
       repintarReacciones(); repintarVisto();
-      $('#ch-escribiendo').hidden = !d.otroEscribiendo;
-      const soloAuto = $$('#ch-mensajes .msg:not(.sistema)').every((el) => el.textContent.includes('saludo automático'));
+      if (!CH.vivo && d.otroEscribiendo) mostrarEscribiendo(true);
+      pintarPresencia();
+      const soloAuto = $$('#ch-mensajes .msg:not(.sistema):not(.escribe)').every((el) => el.textContent.includes('saludo automático'));
       const rh = $('#ch-rompehielos'); rh.hidden = !soloAuto;
-      if (soloAuto && !rh.innerHTML) { rh.innerHTML = `<span>Para romper el hielo:</span>${ROMPEHIELOS(d.otra.nombre).map((t) => `<button type="button">${esc(t)}</button>`).join('')}`; $$('button', rh).forEach((b) => b.onclick = () => { const t = $('#ch-texto'); t.value = b.textContent; t.focus(); }); }
+      if (soloAuto && !rh.innerHTML) { rh.innerHTML = `<span>Para romper el hielo:</span>${ROMPEHIELOS(d.otra.nombre).map((t) => `<button type="button">${esc(t)}</button>`).join('')}`; $$('button', rh).forEach((b) => b.onclick = () => { const t = $('#ch-texto'); t.value = b.textContent; t.focus(); t.dispatchEvent(new Event('input')); }); }
       if (primera || d.mensajes.some((m) => m.tipo === 'sistema')) pintarLado();
     } catch (e) { if (e.status === 404) { caja.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; detenerCharla(); } }
   };
-  CH.traer = () => traer(true);
+  CH.traer = (forzar = true, ev = null) => traer(forzar, ev);
   await traer(true);
-  CH.reloj = setInterval(() => traer(false), 1800);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden && CH.otra === otra) traer(true); });
+  CH.reloj = setInterval(() => traer(false), 2500);
+  conectarVivo(otra);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && CH.otra === otra) { traer(true); document.title = document.title.replace(/^\(\d+\) /, ''); CH.fuera = 0; } });
   const txt = $('#ch-texto'), form = $('#ch-form');
-  txt.oninput = async () => {
+  try { const b = localStorage.getItem(borradorK(otra)); if (b) { txt.value = b; txt.dispatchEvent(new Event('input')); } } catch {}
+  txt.oninput = () => {
     txt.style.height = 'auto'; txt.style.height = Math.min(140, txt.scrollHeight) + 'px';
-    if (Date.now() - CH.tecleo > 2000 && txt.value.trim()) { CH.tecleo = Date.now(); try { await api(`/api/charla/${encodeURIComponent(otra)}/escribiendo`, {}); } catch {} }
+    try { if (txt.value) localStorage.setItem(borradorK(otra), txt.value); else localStorage.removeItem(borradorK(otra)); } catch {}
+    if (txt.value.trim() && Date.now() - CH.tecleo > 1500) { CH.tecleo = Date.now(); señalEscribiendo(true); }
+    if (!txt.value.trim()) señalEscribiendo(false);
   };
   txt.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } if (e.key === 'Escape') cerrarPaneles(); };
   txt.onpaste = (e) => { const f = [...(e.clipboardData?.files || [])][0]; if (f) { e.preventDefault(); subirAdjunto(/^image\//.test(f.type) ? 'foto' : 'archivo', f); } };
@@ -665,12 +739,15 @@ async function engancharCharla(otra) {
   form.onsubmit = async (e) => {
     e.preventDefault();
     const texto = txt.value.trim(); if (!texto) return;
-    txt.value = ''; txt.style.height = 'auto'; cerrarPaneles();
+    txt.value = ''; txt.style.height = 'auto'; cerrarPaneles(); try { localStorage.removeItem(borradorK(otra)); } catch {}
     try { await mandar({ tipo: 'texto', texto }); } catch { txt.value = texto; }
+    txt.focus();
   };
   $$('[data-adj]').forEach((i) => i.onchange = (e) => { subirAdjunto(i.dataset.adj, e.target.files[0]); e.target.value = ''; });
   $$('[data-panel]').forEach((b) => b.onclick = () => abrirPanel(b.dataset.panel, b));
   $('#ch-voz').onclick = () => notaDeVoz($('#ch-voz'));
+  caja.onscroll = () => { if (cercaDelFinal(caja)) { CH.sinLeer = 0; $('#ch-abajo').hidden = true; } };
+  $('#ch-abajo').onclick = () => { caja.scrollTop = caja.scrollHeight; };
   caja.onclick = async (e) => {
     const b = e.target.closest('[data-reac]');
     if (b) {
@@ -683,6 +760,16 @@ async function engancharCharla(otra) {
     if (!e.target.closest('.reac-bar')) $('.reac-bar', caja)?.remove();
   };
   $('#ch-compartir').onclick = abrirCompartir;
+  $('#ch-lado-btn').onclick = () => { $('#ch-rejilla').classList.toggle('lado-abierto'); };
+  const av = $('#ch-aviso');
+  const pintarAviso = () => { av.classList.toggle('on', 'Notification' in window && Notification.permission === 'granted'); av.title = av.classList.contains('on') ? 'Te avisaremos cuando te escriba' : 'Avisarme cuando escriba'; };
+  pintarAviso();
+  av.onclick = async () => { if (!('Notification' in window)) { avisar('Tu navegador no permite avisos aquí.'); return; } const p = await Notification.requestPermission(); pintarAviso(); avisar(p === 'granted' ? 'Listo: te avisaremos cuando te escriba, aunque estés en otra pestaña.' : 'Sin permiso de avisos.'); };
+}
+function avisarFuera(nombre, vista) {
+  CH.fuera = (CH.fuera || 0) + 1;
+  document.title = `(${CH.fuera}) ${document.title.replace(/^\(\d+\) /, '')}`;
+  if ('Notification' in window && Notification.permission === 'granted') { try { const n = new Notification(nombre, { body: vista, icon: '/favicon.svg', tag: 'cupido-' + CH.otra }); n.onclick = () => { window.focus(); n.close(); }; } catch {} }
 }
 async function verPerfilCompartido() {
   const cont2 = $('#ch-perfil'); cont2.innerHTML = '<p class="vacio">Cargando…</p>';

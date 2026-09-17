@@ -786,3 +786,52 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 .bv-colores button.on { box-shadow: 0 0 0 2px var(--rosa); transform: scale(1.15); }
 @media (max-width: 560px) { .bv-tablero { grid-template-columns: 1fr; } .bv-t-lat { grid-template-columns: repeat(2, 1fr); } .bv-dim { grid-template-columns: 110px 1fr 30px; font-size: 12.5px; } }
 /* fin bienvenida · RLR */
+
+/* ── Charla v3: en vivo, agrupada, ordenada · RLR ──────────────────────── */
+.ch-cabeza { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+.ch-volver { text-decoration: none; color: var(--tinta-2); font-size: 22px; width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+.ch-volver:hover { background: var(--blanco); }
+.ch-quien { flex: 1; min-width: 0; }
+.ch-quien b { display: block; font: 600 20px var(--serif); line-height: 1.1; }
+.ch-quien span { font-size: 12.5px; color: var(--gris); display: inline-flex; align-items: center; gap: 6px; }
+.pres { width: 8px; height: 8px; border-radius: 50%; background: #cfc6bf; display: inline-block; }
+.pres.on { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-suave); }
+.ch-cab-acc { display: flex; gap: 6px; align-items: center; }
+.ch-cab-acc .ch-h.on { background: var(--ok-suave); color: var(--ok); }
+#ch-lado-btn { display: none; }
+.charla { position: relative; }
+.ch-abajo { position: absolute; right: 16px; bottom: 132px; border: 1px solid var(--linea); background: var(--blanco); color: var(--rosa-osc); font: 600 13px var(--sans); border-radius: 999px; padding: 6px 12px; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.12); z-index: 4; }
+.ch-abajo span:empty { display: none; }
+.ch-seguro { margin: 0; padding: 6px 14px 10px; font-size: 11.5px; color: var(--gris); text-align: center; }
+.ch-mensajes { gap: 2px; }
+.msg { margin-top: 8px; }
+.msg.seguido { margin-top: 0; }
+.msg.suyo { padding-left: 38px; }
+.msg-av { position: absolute; left: 0; bottom: 18px; width: 30px; height: 30px; font-size: 13px; }
+.msg .cuando { display: none; }
+.msg.fin-grupo .cuando, .msg:hover .cuando, .msg.pendiente .cuando { display: block; }
+.msg.jumbo .globo { background: transparent !important; border: 0 !important; font-size: 44px; line-height: 1.15; padding: 2px 0; }
+.msg.mio .globo { background: linear-gradient(135deg, var(--rosa) 0%, var(--rosa-osc) 140%); }
+.msg.mio .globo a { color: #fff; text-decoration: underline; }
+.msg.suyo .globo a { color: var(--rosa-osc); }
+.msg.escribe .globo { display: inline-flex; gap: 4px; align-items: center; padding: 12px 14px; }
+.msg.escribe .globo span { width: 7px; height: 7px; border-radius: 50%; background: var(--gris); animation: punto 1.2s infinite; }
+.msg.escribe .globo span:nth-child(2) { animation-delay: .2s; } .msg.escribe .globo span:nth-child(3) { animation-delay: .4s; }
+.msg { animation: msgEntra .25s var(--ease); }
+@keyframes msgEntra { from { transform: translateY(6px); } to { transform: none; } }
+.ch-dia.nuevo span { background: var(--rosa-suave); color: var(--rosa-osc); font-weight: 600; }
+.ch-barra { display: inline-block; width: 90px; height: 4px; background: var(--rosa-suave); border-radius: 99px; overflow: hidden; vertical-align: middle; }
+.ch-barra i { display: block; width: 40%; height: 100%; background: var(--rosa); animation: barraVa 1s infinite linear; }
+@keyframes barraVa { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+.reacs span { animation: pop .3s var(--ease); }
+@keyframes pop { from { transform: scale(.4); } to { transform: none; } }
+@media (max-width: 860px) {
+  .contenido:has(.ch-cabeza) { padding-left: 12px; padding-right: 12px; padding-top: 10px; }
+  .ch-cabeza { margin-bottom: 8px; } .ch-quien b { font-size: 17px; }
+  #ch-compartir { display: none; } #ch-lado-btn { display: inline-flex; }
+  .charla-rejilla .ch-lado { display: none; } .charla-rejilla.lado-abierto .ch-lado { display: block; } .charla-rejilla.lado-abierto .charla { display: none; }
+  .charla { height: calc(100dvh - 190px); min-height: 380px; }
+  .ch-abajo { bottom: 150px; }
+  .msg { max-width: 88%; }
+}
+/* fin charla v3 · RLR */

@@ -17,6 +17,8 @@
   "vars": { "FROM_EMAIL": "Cupido Algorítmico <cupido@sumacoahuila.com>" },
   "rules": [{ "type": "Text", "globs": ["**/*.md"], "fallthrough": true }],
   "r2_buckets": [{ "binding": "MEDIOS", "bucket_name": "cupido-medios" }],
+  "durable_objects": { "bindings": [{ "name": "CHARLA_VIVA", "class_name": "CharlaViva" }] },
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CharlaViva"] }],
   "d1_databases": [
     { "binding": "DB", "database_name": "cupido-db", "database_id": "02afb8ad-7fca-4c16-ab28-66540173139d" }
   ]
