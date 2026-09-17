@@ -62,7 +62,7 @@ export default {
       if ((x = ruta.match(/^\/entrar\/([a-z0-9]{20,40})$/))) {
         const r = await canjearEnlace(env, x[1]);
         if (!r.ok) return irA(`/entrar?error=${r.motivo}`, url);
-        return irA(r.completo ? '/persona' : '/cuestionario', url, cookieSesion(r.sesion, url));
+        return irA(r.completo ? '/persona' : r.nueva ? '/bienvenida?luego=cuestionario' : '/cuestionario', url, cookieSesion(r.sesion, url));
       }
       if (ruta === '/persona' || ruta === '/cuestionario') {
         // Sin sesión no hay tablero ni cuestionario: a la puerta de entrada
@@ -131,7 +131,8 @@ async function api(req, env, ctx, url) {
     if (!yo) return sinSesion();
     const b = await leerJson(req, 2000);
     const COLORES = ['rosa', 'vino', 'azul', 'verde'], TIPOS = ['clasica', 'editorial', 'moderna', 'calida'];
-    const aj = { color: COLORES.includes(b.color) ? b.color : 'rosa', tipo: TIPOS.includes(b.tipo) ? b.tipo : 'clasica' };
+    let previo = {}; try { previo = JSON.parse(yo.P.ajustes || '{}'); } catch {}
+    const aj = { ...previo, color: COLORES.includes(b.color) ? b.color : previo.color || 'rosa', tipo: TIPOS.includes(b.tipo) ? b.tipo : previo.tipo || 'clasica', bienvenida: b.bienvenida === true || !!previo.bienvenida };
     if (!(yo.sesion.demo && yo.P.origen === 'demo')) await env.DB.prepare(`UPDATE personas SET ajustes = ? WHERE id = ?`).bind(JSON.stringify(aj), yo.P.id).run();
     return json({ ok: true, ajustes: aj });
   }

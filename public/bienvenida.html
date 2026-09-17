@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bienvenida · Cupido Algorítmico</title>
+<meta name="description" content="En dos minutos: cómo funciona Cupido Algorítmico y qué puedes hacer adentro.">
+<meta name="author" content="Ricardo López Reyero">
+<meta name="rev" content="181218">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/cupido.css">
+</head>
+<body data-author="RLR" class="bienvenida-body">
+<!-- Cupido Algorítmico · Bienvenida (onboarding) · RLR · Ricardo López Reyero -->
+<header class="barra"><div class="envoltura barra-in">
+  <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
+  <nav class="menu"><a href="/demo">Ver el demo</a><a href="/articulos">Artículos</a></nav>
+  <a class="enlace" id="saltar" href="/entrar" style="font-size:14px">Saltar</a>
+</div></header>
+
+<main class="bv">
+  <div class="bv-progreso"><div class="bv-relleno" id="bv-relleno"></div></div>
+  <div class="bv-lienzo" id="bv-lienzo" aria-live="polite">
+    <!-- los pasos se pintan aquí -->
+  </div>
+  <div class="bv-pie">
+    <button class="boton boton-fantasma" id="bv-atras">← Atrás</button>
+    <div class="bv-puntos" id="bv-puntos" role="tablist"></div>
+    <button class="boton" id="bv-sig">Siguiente →</button>
+  </div>
+</main>
+
+<script type="module">
+// RLR · bienvenida: seis pasos, cada uno con una mini-demo que se puede tocar
+import { $, $$, esc, api } from '/js/ui.js';
+const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
+const q = new URLSearchParams(location.search);
+const luego = q.get('luego');
+let sesion = null; // { demo, completo } o null si no hay cuenta
+try { const v = await api('/api/yo'); sesion = { demo: !!v.sesion?.demo, completo: !!v.persona?.completo, ficticia: v.persona?.origen === 'demo', nombre: v.persona?.nombreCorto || '' }; } catch {}
+const reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ── los seis pasos ─────────────────────────────────────────────────────── */
+const PASOS = [
+  { id: 'verdad', eyebrow: 'Paso 1 de 6 · Tu verdad', t: 'Respondes 43 preguntas <em>una sola vez</em>.', p: 'No hay perfiles que mirar ni fotos como moneda de cambio. Aquí no compites: te describes con ejemplos, no con adjetivos. Se guarda solo, sin contraseña, y puedes parar cuando quieras.',
+    demo: `<div class="bv-pregunta" id="bv-pregunta"><div class="bv-p-n">Pregunta <b>1</b> de 43</div><h3 id="bv-p-t"></h3><div class="bv-opciones" id="bv-p-o"></div><div class="bv-guardado">Guardado ✓</div></div>`,
+    nota: 'Toca cualquier opción. Así de rápido va el cuestionario.' },
+  { id: 'motor', eyebrow: 'Paso 2 de 6 · El motor', t: 'Te cruza en <em>las dos direcciones</em>.', p: 'Lo que tú necesitas contra lo que la otra persona da natural, y al revés. Diez dimensiones: visión de vida, familia, valores, conflicto, afecto, intimidad, fe, vida cotidiana, personalidad y lo que promete su carta. Si solo funciona para uno, se hunde.',
+    demo: `<div class="bv-motor"><div class="bv-av a">T</div><div class="bv-flechas"><span class="f1">→</span><span class="f2">←</span></div><div class="bv-av b">?</div></div>
+      <div class="bv-dims" id="bv-dims"></div>`,
+    nota: 'Cada barra es una dimensión. El total nunca compensa una dimensión hundida con otra alta.' },
+  { id: 'silencio', eyebrow: 'Paso 3 de 6 · El silencio', t: 'Solo te avisamos <em>arriba del 90 %</em>.', p: 'Abajo de eso, silencio. No es que fallaste: te estamos ahorrando años con las personas incorrectas. Cuando tu teléfono suene, va en serio, y le suena a la otra persona al mismo tiempo.',
+    demo: `<div class="bv-lista" id="bv-lista"></div>`,
+    nota: 'Solo una cruzó el umbral. Esa es la única que vas a ver.' },
+  { id: 'puerta', eyebrow: 'Paso 4 de 6 · La puerta', t: 'Se abre solo con <em>dos síes</em>.', p: 'Te avisamos que hay alguien, pero no te dejamos entrar. Tú dices sí o no; la otra persona también. Nadie se entera nunca de un no. Si los dos dicen que sí, la puerta se abre para ambos en el mismo instante.',
+    demo: `<div class="bv-puerta"><div class="puerta" id="bv-p"><div class="marco"></div><div class="luz"></div><div class="hoja"></div><span class="candado">🔒</span></div>
+      <div class="bv-sies"><button class="boton" id="bv-si-a">Tú: sí, quiero conocer</button><button class="boton boton-claro" id="bv-si-b" disabled>La otra persona: …</button></div><p class="bv-puerta-txt" id="bv-puerta-txt">Tu sí queda guardado. Nadie lo ve hasta que haya dos.</p></div>`,
+    nota: 'Toca "sí" y mira lo que pasa.' },
+  { id: 'confianza', eyebrow: 'Paso 5 de 6 · La confianza', t: 'Primero <em>quién es</em>, al final <em>cómo se ve</em>.', p: 'Cuando la puerta se abre nace una charla y el sistema manda el primer hola por los dos. Lo primero que conoces es su carta. Después, cada quien libera su perfil por elementos, a su ritmo. La foto, la voz y el video llegan al final.',
+    demo: `<div class="bv-chat" id="bv-chat"></div><div class="bv-elementos" id="bv-elementos"></div>`,
+    nota: 'Toca un candado para ver cómo se libera un elemento.' },
+  { id: 'tablero', eyebrow: 'Paso 6 de 6 · Tu tablero', t: 'Tu búsqueda, <em>a tu ritmo</em>.', p: 'Un tablero como el de un banco, pero tuyo: tu camino en cinco pasos, tus logros, cómo se ve tu vida hoy, y el control total: pausa cuando estés conociendo a alguien, elige color y tipografía, y sin contraseñas: tu correo es tu llave. Lo íntimo solo lo lee el motor.',
+    demo: `<div class="bv-tablero"><div class="bv-t-lat"><span>🏠 Inicio</span><span>💘 Coincidencias</span><span>🤝 Aceptaciones</span><span>💬 Charlas</span><span>🧭 Mi vida hoy</span><span>📷 Foto, voz y video</span><span>🎨 Mi estilo</span><span>🔒 Privacidad y pausa</span></div>
+      <div class="bv-t-cont"><div class="bv-camino" id="bv-camino"></div><div class="bv-colores" id="bv-colores"></div></div></div>`,
+    nota: 'Toca un color: el tablero es tuyo hasta en eso.' },
+];
+
+let i = 0, timers = [];
+const lienzo = $('#bv-lienzo');
+function limpiar() { timers.forEach(clearTimeout); timers = []; }
+const luegoDe = (ms, fn) => timers.push(setTimeout(fn, reducido ? 0 : ms));
+
+function pintar(dir = 1) {
+  limpiar();
+  const p = PASOS[i];
+  const final = i === PASOS.length - 1;
+  lienzo.innerHTML = `<section class="bv-paso ${dir > 0 ? 'entra' : 'entra-atras'}">
+    <div class="bv-texto"><p class="eyebrow">${p.eyebrow}</p><h1>${p.t}</h1><p class="lead">${p.p}</p>${final ? cta() : ''}</div>
+    <div class="bv-demo"><div class="bv-demo-in">${p.demo}</div><p class="bv-nota">${p.nota}</p></div>
+  </section>`;
+  $('#bv-relleno').style.width = ((i + 1) / PASOS.length * 100) + '%';
+  $('#bv-puntos').innerHTML = PASOS.map((x, k) => `<button class="${k === i ? 'on' : k < i ? 'hecho' : ''}" data-k="${k}" aria-label="Paso ${k + 1}"></button>`).join('');
+  $$('#bv-puntos button').forEach((b) => b.onclick = () => { const k = Number(b.dataset.k); dir = k > i ? 1 : -1; i = k; pintar(dir); });
+  $('#bv-atras').disabled = i === 0;
+  $('#bv-sig').textContent = final ? (sesion ? 'Ir a mi tablero →' : 'Empezar →') : 'Siguiente →';
+  $('#bv-sig').onclick = final ? irseAlFinal : () => { i++; pintar(1); };
+  document.title = `${p.eyebrow.split(' · ')[1]} · Bienvenida · Cupido Algorítmico`;
+  (DEMOS[p.id] || (() => {}))();
+  window.scrollTo(0, 0);
+}
+$('#bv-atras').onclick = () => { if (i > 0) { i--; pintar(-1); } };
+document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight') $('#bv-sig').click(); if (e.key === 'ArrowLeft') $('#bv-atras').click(); });
+let tx = null;
+lienzo.addEventListener('touchstart', (e) => { tx = e.touches[0].clientX; }, { passive: true });
+lienzo.addEventListener('touchend', (e) => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 60) (dx < 0 ? $('#bv-sig') : $('#bv-atras')).click(); tx = null; });
+
+function cta() {
+  if (sesion && !sesion.ficticia) return `<div class="bv-cta"><a class="boton" href="${sesion.completo ? '/persona' : '/cuestionario'}">${sesion.completo ? 'Ir a mi tablero →' : 'Empezar mi cuestionario →'}</a><span class="nota-entrar" style="margin:0;text-align:left">Se guarda solo. Puedes parar y volver cuando quieras.</span></div>`;
+  return `<div class="bv-cta"><a class="boton" href="/entrar">Crear mi cuenta con mi correo →</a><a class="boton boton-claro" href="/demo">Ver el demo primero</a></div>`;
+}
+async function irseAlFinal() {
+  if (sesion && !sesion.ficticia) { try { await api('/api/yo/ajustes', { bienvenida: true }); } catch {} location.href = luego === 'cuestionario' || !sesion.completo ? '/cuestionario' : '/persona'; }
+  else if (sesion) location.href = '/persona';
+  else location.href = '/entrar';
+}
+$('#saltar').onclick = (e) => { e.preventDefault(); irseAlFinal(); };
+
+/* ── las mini-demos ─────────────────────────────────────────────────────── */
+const DEMOS = {
+  verdad() {
+    const PREG = [
+      ['¿Cómo recargas energía?', ['Solo, en silencio', 'Depende del día', 'Con gente']],
+      ['Cuando algo te molesta de verdad, ¿qué haces?', ['Lo hablo con calma', 'Lo guardo y luego explota', 'Me alejo un rato']],
+      ['¿Cómo sientes con más fuerza que te aman?', ['Tiempo de calidad', 'Palabras', 'Contacto físico']],
+    ];
+    let n = 0;
+    const mostrar = () => {
+      const [t, o] = PREG[n % PREG.length];
+      $('#bv-p-t').textContent = t; $('#bv-pregunta .bv-p-n b').textContent = 14 + (n % PREG.length) * 5;
+      $('#bv-p-o').innerHTML = o.map((x) => `<button type="button">${esc(x)}</button>`).join('');
+      $('#bv-pregunta').classList.remove('guardado');
+      $$('#bv-p-o button').forEach((b) => b.onclick = () => { $$('#bv-p-o button').forEach((x) => x.classList.toggle('sel', x === b)); $('#bv-pregunta').classList.add('guardado'); luegoDe(900, () => { n++; mostrar(); }); });
+    };
+    mostrar();
+    luegoDe(2200, () => { const b = $('#bv-p-o button'); if (b && !$('#bv-pregunta').classList.contains('guardado')) b.click(); });
+  },
+  motor() {
+    const D = [['Visión de vida', 96], ['Valores', 92], ['Conflicto y reparación', 88], ['Afecto', 97], ['Intimidad', 90], ['Vida cotidiana', 94]];
+    $('#bv-dims').innerHTML = D.map(([n, v]) => `<div class="bv-dim"><span>${n}</span><div class="pista"><div class="relleno" data-w="${v}"></div></div><b>${v}</b></div>`).join('') + `<div class="bv-total">Los dos lados, juntos: <b id="bv-total">0</b> %</div>`;
+    luegoDe(150, () => $$('#bv-dims .relleno').forEach((r) => r.style.width = r.dataset.w + '%'));
+    let v = 0; const meta = 94;
+    const paso = () => { v = Math.min(meta, v + 3); $('#bv-total').textContent = v; if (v < meta) luegoDe(28, paso); };
+    luegoDe(400, paso);
+  },
+  silencio() {
+    const L = [['Alguien', 71], ['Alguien', 78], ['Alguien', 84], ['Alguien', 88], ['Alguien', 92], ['Alguien', 66]];
+    $('#bv-lista').innerHTML = L.map(([n, v], k) => `<div class="bv-par ${v >= 90 ? 'suena' : 'calla'}" style="animation-delay:${k * 140}ms"><span class="pct">${v} %</span><span>${v >= 90 ? '🔔 Te avisamos a ti y a esa persona, a la vez' : 'silencio'}</span></div>`).join('');
+  },
+  puerta() {
+    const A = $('#bv-si-a'), B = $('#bv-si-b'), P = $('#bv-p'), T = $('#bv-puerta-txt');
+    A.onclick = () => {
+      A.disabled = true; A.textContent = 'Tu sí está guardado 🤍'; T.textContent = 'Nadie lo ve todavía. La otra persona también está decidiendo…';
+      luegoDe(1400, () => { B.disabled = false; B.textContent = 'La otra persona: sí, quiero conocer'; B.classList.remove('boton-claro'); T.textContent = 'Toca su sí.'; });
+      B.onclick = () => { B.disabled = true; B.textContent = 'Sí 🤍'; P.classList.add('abierta'); T.innerHTML = '<b>Se abrió la puerta.</b> Para los dos, en el mismo instante. Y si alguien hubiera dicho que no, el otro jamás lo sabría.'; };
+    };
+  },
+  confianza() {
+    const chat = $('#bv-chat');
+    const burb = (mio, t, auto) => `<div class="bv-b ${mio ? 'mio' : 'suyo'}">${esc(t)}${auto ? '<small>saludo automático</small>' : ''}</div>`;
+    const guion = [[true, 'Hola, Mariana 👋', true], [false, 'Hola, Diego 👋', true], [false, 'Leí tu carta dos veces. ¿Cómo fue tu martes?', false]];
+    guion.forEach(([m, t, a], k) => luegoDe(500 + k * 900, () => { chat.insertAdjacentHTML('beforeend', burb(m, t, a)); chat.scrollTop = chat.scrollHeight; }));
+    const E = [['🧭', 'Quién soy', true], ['🌅', 'Visión de vida', true], ['⚡', 'Personalidad', true], ['🤍', 'Afecto', true], ['⚖️', 'Valores y dinero', false], ['🕯️', 'Fe e hijos', false], ['🔐', 'Intimidad', false], ['📷', 'Foto, voz y video', false]];
+    $('#bv-elementos').innerHTML = E.map(([i2, n, s], k) => `<button type="button" class="bv-el ${s ? '' : 'sensible'}" data-k="${k}"><span>🔒</span>${n}</button>`).join('');
+    $$('.bv-el').forEach((b) => b.onclick = () => { if (b.classList.contains('on')) return; b.classList.add('on'); b.querySelector('span').textContent = E[Number(b.dataset.k)][0]; chat.insertAdjacentHTML('beforeend', `<div class="bv-b sistema">Compartiste: ${E[Number(b.dataset.k)][1]}</div>`); chat.scrollTop = chat.scrollHeight; });
+    luegoDe(3400, () => $('.bv-el')?.click());
+  },
+  tablero() {
+    const C = [['📝', 'Responder'], ['⚙️', 'Matching'], ['💘', 'Coincidencia'], ['🤍', 'Tu sí'], ['🔓', 'Puerta abierta']];
+    $('#bv-camino').innerHTML = C.map(([i2, t], k) => `<div class="bv-c" style="animation-delay:${k * 260}ms"><div>${i2}</div><span>${t}</span></div>`).join('');
+    const COL = [['#d6455f', 'Rosa'], ['#8e2043', 'Vino'], ['#2f55c9', 'Azul'], ['#1f8a7a', 'Verde']];
+    $('#bv-colores').innerHTML = `<span>Tu estilo:</span>` + COL.map(([c, n]) => `<button type="button" style="background:${c}" title="${n}"></button>`).join('');
+    $$('#bv-colores button').forEach((b) => b.onclick = () => { document.documentElement.style.setProperty('--rosa', b.style.background); document.documentElement.style.setProperty('--rosa-osc', b.style.background); $$('#bv-colores button').forEach((x) => x.classList.toggle('on', x === b)); });
+  },
+};
+pintar(1);
+</script>
+</body>
+</html>
