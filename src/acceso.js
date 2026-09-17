@@ -7,6 +7,8 @@
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
 import { persona, anotar } from './datos.js';
+import { abrirCharla, borrarCharlasDe } from './charla.js';
+import { SUAVES, ELEMENTO } from '../public/js/elementos.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -96,6 +98,17 @@ async function limpiarDemo(env) {
     }
   }
   if (avisos.length) await env.DB.batch(avisos);
+  // la charla del demo: nace limpia, con los dos "hola"; Mariana ya compartió sus seis elementos suaves
+  await borrarCharlasDe(env, D);
+  for (const p of puertas) if (p.estado === 'abierta') {
+    await abrirCharla(env, p.a, p.b);
+    const otra = p.a === D ? p.b : p.a, O = await persona(env, otra);
+    await env.DB.batch([
+      ...SUAVES.map((e) => env.DB.prepare(`INSERT OR IGNORE INTO liberaciones (persona, otra, elemento) VALUES (?, ?, ?)`).bind(otra, D, e)),
+      env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(p.a, p.b, `${O.nombre.split(' ')[0]} compartió: ${SUAVES.map((e) => `${ELEMENTO[e].i} ${ELEMENTO[e].n}`).join(' · ')}`),
+      env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, ?, 'texto', ?)`).bind(p.a, p.b, otra, 'Leí tu carta dos veces. Lo de "el celular lejos cuando hablemos" me dio paz. ¿Cómo fue tu martes hoy?'),
+    ]);
+  }
 }
 
 /* ── enlace mágico ───────────────────────────────────────────────────────── */

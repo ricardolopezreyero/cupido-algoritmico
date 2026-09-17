@@ -56,6 +56,7 @@
 import { $, $$, esc, api, avisar, avatar, anillo, animarAnillos, hace, pronto } from '/js/ui.js';
 import { PREGUNTAS, BLOQUES, etiqueta, PARTE } from '/js/preguntas.js';
 import { AREAS_VIDA, leerVida } from '/js/vida.js';
+import { ELEMENTOS, ELEMENTO, SUAVES } from '/js/elementos.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
 /* ── sesión: cookie que puso el Worker (correo con enlace mágico, o demo) ── */
@@ -171,6 +172,7 @@ const MENU = [
   { s: 'inicio', i: '🏠', t: 'Inicio' },
   { s: 'coincidencias', i: '💘', t: 'Mis coincidencias', n: () => V.coincidencias.length },
   { s: 'aceptaciones', i: '🤝', t: 'Aceptaciones', n: (d) => d.esperanMi.length, alerta: true },
+  { s: 'charlas', i: '💬', t: 'Charlas', n: () => (V.charlas || []).reduce((s, c) => s + c.nuevos, 0), alerta: true },
   { s: 'avisos', i: '🔔', t: 'Avisos', n: (d) => d.nuevos, alerta: true },
   { sep: 'Mi perfil' },
   { s: 'pesos', i: '🧭', t: 'Lo que más pesa' },
@@ -203,8 +205,13 @@ $('#salir').onclick = async () => {
   setTimeout(() => salirA('/entrar'), 400);
 };
 
+let parametro = null;
 function ir(s) {
+  const [base, ...resto] = String(s || '').split('/');
+  parametro = resto.length ? resto.join('/') : null;
+  s = base;
   seccion = SECCIONES[s] ? s : 'inicio';
+  if (s !== 'charlas') detenerCharla();
   cerrarMenu();
   pintarLateral();
   cont.innerHTML = `<div class="seccion-admin">${SECCIONES[seccion]()}</div>`;
@@ -274,10 +281,18 @@ const SECCIONES = {
         `<button class="boton boton-chico" data-clave="${esc(c.clave)}" data-decision="si">Sí, quiero conocer</button><button class="boton boton-fantasma boton-chico" data-clave="${esc(c.clave)}" data-decision="no">Ahora no</button>`) +
       grupo('🤍 Dijiste que sí · esperando', 'gris', d.miSi, 'Aún no has dicho que sí a nadie.', (c) =>
         `<span class="chip gris">Tu sí está guardado</span><button class="enlace" data-clave="${esc(c.clave)}" data-decision="no">Cambiar de opinión</button>`) +
-      grupo('🔓 Puertas abiertas', 'ok', d.abiertas, 'Cuando haya dos síes, la puerta aparecerá aquí.', () =>
-        `<a class="boton boton-claro boton-chico" href="#coincidencias">Leer su carta</a>`) +
+      grupo('🔓 Puertas abiertas', 'ok', d.abiertas, 'Cuando haya dos síes, la puerta aparecerá aquí.', (c) =>
+        `<a class="boton boton-chico" href="#charlas/${esc(otraDe(c))}">💬 Abrir la charla</a><a class="boton boton-claro boton-chico" href="#coincidencias">Leer su carta</a>`) +
       grupo('🌙 Preferiste no abrir', 'gris', d.miNo, 'Nada por aquí.', (c) =>
         `<button class="boton boton-claro boton-chico" data-clave="${esc(c.clave)}" data-decision="si">Reconsiderar</button>`);
+  },
+
+  charlas() {
+    const lista = V.charlas || [];
+    if (parametro) return vistaCharla(parametro);
+    return cabeza('Charlas', 'Una charla por cada puerta abierta. Aquí nadie ve tu perfil hasta que tú lo compartes, elemento por elemento.') +
+      (lista.length ? `<section class="tarjeta" style="padding:6px 0"><div class="charlas-lista">${lista.map((c) => `<a class="charla-fila" href="#charlas/${esc(c.otra)}">${avatar(c.nombre, c.color)}<div><b>${esc(c.nombre)}</b><span>${c.ultimo ? `${c.ultimo.mio ? 'Tú: ' : ''}${esc(String(c.ultimo.texto || '').slice(0, 80))}` : 'Sin mensajes'}</span></div>${c.nuevos ? `<span class="cuenta-nav">${c.nuevos}</span>` : `<span class="cuando">${c.ultimo ? hace(c.ultimo.creado) : ''}</span>`}</a>`).join('')}</div></section>`
+        : `<section class="tarjeta"><div class="nivel"><div class="anillo" style="display:flex;align-items:center;justify-content:center;font-size:36px">💬</div><div><h3>Todavía no hay charlas</h3><p>Nacen solas cuando una puerta se abre: los dos dicen que sí y el sistema manda el primer hola de parte de cada uno.</p></div></div></section>`);
   },
 
   avisos() {
@@ -412,6 +427,7 @@ const SECCIONES = {
 };
 
 const DESPUES = {
+  charlas() { if (parametro) engancharCharla(parametro); },
   vida() {
     let t = null;
     $$('[data-vida]').forEach((s) => s.oninput = () => {
@@ -449,6 +465,140 @@ const DESPUES = {
     };
   },
 };
+
+/* ── la charla: mensajes, "está escribiendo", archivos y liberar el perfil ─ */
+const otraDe = (c) => { const [a, b] = c.clave.split('-'); return a === V.persona.id ? b : a; };
+let CH = { otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null };
+function detenerCharla() { clearInterval(CH.reloj); CH = { otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null }; }
+function vistaCharla(otra) {
+  const c = (V.charlas || []).find((x) => x.otra === otra);
+  if (!c) return cabeza('Charla', 'No hay una puerta abierta con esa persona.') + `<p><a class="enlace" href="#charlas">← Volver a las charlas</a></p>`;
+  return `<div class="cabeza-admin"><div><p style="margin:0 0 6px"><a class="enlace" href="#charlas">← Charlas</a></p><h1 style="display:flex;align-items:center;gap:12px">${avatar(c.nombre, c.color)}${esc(c.nombre)}</h1><p id="ch-estado">Puerta abierta · nada se borra</p></div><div class="acciones"><button class="boton boton-claro boton-chico" id="ch-compartir">🔓 Compartir mi perfil</button></div></div>
+    <div class="charla-rejilla">
+      <section class="tarjeta charla">
+        <div class="ch-mensajes" id="ch-mensajes"><p class="vacio">Cargando…</p></div>
+        <div class="ch-escribiendo" id="ch-escribiendo" hidden><span></span><span></span><span></span> ${esc(c.nombre)} está escribiendo</div>
+        <form class="ch-compositor" id="ch-form">
+          <label class="ch-adjuntar" title="Adjuntar archivo">📎<input type="file" id="ch-archivo" hidden></label>
+          <textarea id="ch-texto" rows="1" maxlength="2000" placeholder="Escribe…" autocomplete="off"></textarea>
+          <button class="boton boton-chico" type="submit">Enviar</button>
+        </form>
+      </section>
+      <aside class="tarjeta ch-lado" id="ch-lado"><p class="vacio">Cargando…</p></aside>
+    </div>`;
+}
+const filaMensaje = (m) => {
+  if (m.tipo === 'sistema') return `<div class="msg sistema"><span>${esc(m.texto)}</span></div>`;
+  const cuerpo = m.tipo === 'archivo'
+    ? (/^image\//.test(m.archivo?.mime || '') ? `<a href="/api/charla/${esc(CH.otra)}/archivo/${m.id}" target="_blank" rel="noopener"><img src="/api/charla/${esc(CH.otra)}/archivo/${m.id}" alt="${esc(m.archivo.nombre)}" loading="lazy"></a>`
+      : /^audio\//.test(m.archivo?.mime || '') ? `<audio controls preload="metadata" src="/api/charla/${esc(CH.otra)}/archivo/${m.id}"></audio>`
+      : /^video\//.test(m.archivo?.mime || '') ? `<video controls playsinline preload="metadata" src="/api/charla/${esc(CH.otra)}/archivo/${m.id}"></video>`
+      : `<a class="ch-doc" href="/api/charla/${esc(CH.otra)}/archivo/${m.id}">📄 ${esc(m.archivo?.nombre || 'archivo')} <small>${Math.round((m.archivo?.tamano || 0) / 1024)} KB</small></a>`)
+    : esc(m.texto);
+  return `<div class="msg ${m.mio ? 'mio' : 'suyo'}"><div class="globo">${cuerpo}</div><div class="cuando">${hace(m.creado)}${m.auto ? ' · saludo automático' : ''}</div></div>`;
+};
+async function engancharCharla(otra) {
+  detenerCharla(); CH.otra = otra;
+  const caja = $('#ch-mensajes');
+  const pintarLado = () => {
+    const d = CH.datos; if (!d) return;
+    const suyos = new Set(d.compartido.suyos), mios = new Set(d.compartido.mios);
+    $('#ch-lado').innerHTML = `<h3 style="margin:0 0 4px">Lo que ${esc(d.otra.nombre)} te compartió</h3><p class="sub" style="margin:0 0 10px">${suyos.size ? `${suyos.size} de ${ELEMENTOS.length} elementos.` : 'Todavía nada. Cada quien va a su ritmo.'}</p>
+      <div class="elementos">${ELEMENTOS.map((e) => `<div class="elemento ${suyos.has(e.id) ? 'on' : ''} ${e.suave ? '' : 'sensible'}"><span>${suyos.has(e.id) ? e.i : '🔒'}</span>${esc(e.n)}</div>`).join('')}</div>
+      ${suyos.size ? `<p style="margin:10px 0 0"><button class="boton boton-claro boton-chico" id="ch-ver">Leer sus respuestas</button></p>` : ''}
+      <h3 style="margin:18px 0 4px">Lo que tú compartes</h3><p class="sub" style="margin:0 0 10px">${mios.size ? `${mios.size} de ${ELEMENTOS.length}.` : 'Nada todavía.'} Se libera con tu confirmación; no se puede retirar.</p>
+      <div class="elementos">${ELEMENTOS.map((e) => `<div class="elemento ${mios.has(e.id) ? 'on' : ''} ${e.suave ? '' : 'sensible'}"><span>${mios.has(e.id) ? e.i : '🔒'}</span>${esc(e.n)}</div>`).join('')}</div>
+      <div id="ch-perfil"></div>`;
+    const v = $('#ch-ver'); if (v) v.onclick = verPerfilCompartido;
+  };
+  const traer = async () => {
+    try {
+      const d = await api(`/api/charla/${encodeURIComponent(otra)}?despues=${CH.ultimo}`);
+      if (CH.otra !== otra) return;
+      const primera = !CH.datos;
+      CH.datos = d;
+      if (primera) caja.innerHTML = '';
+      if (d.mensajes.length) {
+        const abajo = caja.scrollHeight - caja.scrollTop - caja.clientHeight < 80;
+        caja.insertAdjacentHTML('beforeend', d.mensajes.map(filaMensaje).join(''));
+        CH.ultimo = d.mensajes[d.mensajes.length - 1].id;
+        if (primera || abajo) caja.scrollTop = caja.scrollHeight;
+        const mia = (V.charlas || []).find((x) => x.otra === otra); if (mia) { mia.nuevos = 0; pintarLateral(); }
+      }
+      $('#ch-escribiendo').hidden = !d.otroEscribiendo;
+      if (primera || d.mensajes.some((m) => m.tipo === 'sistema')) pintarLado();
+    } catch (e) { if (e.status === 404) { caja.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; detenerCharla(); } }
+  };
+  await traer();
+  CH.reloj = setInterval(traer, 2500);
+  const txt = $('#ch-texto'), form = $('#ch-form');
+  txt.oninput = async () => {
+    txt.style.height = 'auto'; txt.style.height = Math.min(140, txt.scrollHeight) + 'px';
+    if (Date.now() - CH.tecleo > 2000 && txt.value.trim()) { CH.tecleo = Date.now(); try { await api(`/api/charla/${encodeURIComponent(otra)}/escribiendo`, {}); } catch {} }
+  };
+  txt.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } };
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const texto = txt.value.trim(); if (!texto) return;
+    txt.value = ''; txt.style.height = 'auto';
+    try { await api(`/api/charla/${encodeURIComponent(otra)}`, { texto }); await traer(); } catch (err) { txt.value = texto; avisar(err.message); }
+  };
+  $('#ch-archivo').onchange = async (e) => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.size > 15 * 1024 * 1024) { avisar('Máximo 15 MB.'); return; }
+    $('#ch-estado').textContent = `Mandando ${f.name}…`;
+    try { await api2('PUT', `/api/charla/${encodeURIComponent(otra)}/archivo?nombre=${encodeURIComponent(f.name)}`, f, f.type || 'application/octet-stream'); await traer(); }
+    catch (err) { avisar(err.message); }
+    $('#ch-estado').textContent = 'Puerta abierta · nada se borra'; e.target.value = '';
+  };
+  $('#ch-compartir').onclick = abrirCompartir;
+}
+async function verPerfilCompartido() {
+  const cont2 = $('#ch-perfil'); cont2.innerHTML = '<p class="vacio">Cargando…</p>';
+  try {
+    const p = await api(`/api/charla/${encodeURIComponent(CH.otra)}/perfil`);
+    const permitidas = new Set(p.elementos.flatMap((e) => ELEMENTO[e]?.q || []));
+    cont2.innerHTML = `<h3 style="margin:18px 0 6px">Las respuestas de ${esc(p.otra.nombre)}</h3>` + p.elementos.map((eid) => {
+      const e = ELEMENTO[eid];
+      return `<details class="tarjeta bloque-resp" style="padding:0 14px;margin:8px 0" open><summary><span class="n">${e.i}</span>${esc(e.n)}</summary>${renderRespuestas(p.respuestas, (q) => permitidas.has(q.n) && e.q.includes(q.n), false)}</details>`;
+    }).join('');
+  } catch (e) { cont2.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; }
+}
+function abrirCompartir() {
+  const d = CH.datos; if (!d) return;
+  const mios = new Set(d.compartido.mios);
+  const primeraVez = mios.size === 0;
+  const velo = document.createElement('div'); velo.className = 'modal-velo on'; velo.id = 'modal-compartir';
+  velo.innerHTML = `<div class="modal claro" role="dialog"><button class="cerrar" id="mc2-cerrar" aria-label="Cerrar">×</button>
+    <h2>Compartir mi perfil con ${esc(d.otra.nombre)}</h2>
+    <p class="sub">${primeraVez ? 'Te proponemos empezar por los seis elementos que casi nadie considera delicados. Los cuatro sensibles los liberas después, cuando ya haya confianza.' : 'Libera lo que quieras. Cada elemento se comparte una sola vez y no se puede retirar.'}</p>
+    <div class="elementos elegir">${ELEMENTOS.map((e) => `<label class="elemento ${mios.has(e.id) ? 'on ya' : ''} ${e.suave ? '' : 'sensible'}"><input type="checkbox" value="${e.id}" ${mios.has(e.id) ? 'checked disabled' : primeraVez && e.suave ? 'checked' : ''}><span>${e.i}</span>${esc(e.n)}${e.suave ? '' : ' <small>sensible</small>'}</label>`).join('')}</div>
+    <p class="nota-entrar" style="text-align:left">Solo ${esc(d.otra.nombre)} verá lo que liberes, y solo mientras la puerta siga abierta. Tus respuestas íntimas nunca las lee nadie más.</p>
+    <div class="acciones"><button class="boton" id="mc2-ok">Confirmar y compartir</button><button class="boton boton-fantasma" id="mc2-no">Todavía no</button></div></div>`;
+  document.body.appendChild(velo);
+  const cerrar = () => velo.remove();
+  $('#mc2-cerrar').onclick = cerrar; $('#mc2-no').onclick = cerrar; velo.onclick = (e) => { if (e.target === velo) cerrar(); };
+  $('#mc2-ok').onclick = async () => {
+    const elegidos = $$('#modal-compartir input:checked:not(:disabled)').map((i) => i.value);
+    if (!elegidos.length) { avisar('Elige al menos un elemento.'); return; }
+    const sensibles = elegidos.filter((e) => !ELEMENTO[e].suave);
+    if (sensibles.length && !confirm(`Vas a compartir ${sensibles.length} elemento(s) sensible(s): ${sensibles.map((e) => ELEMENTO[e].n).join(', ')}. No se puede retirar. ¿Seguro?`)) return;
+    try { await api(`/api/charla/${encodeURIComponent(CH.otra)}/liberar`, { elementos: elegidos }); cerrar(); avisar('Listo: ya lo puede ver.'); CH.datos = null; CH.ultimo = 0; $('#ch-mensajes').innerHTML = ''; engancharCharla(CH.otra); }
+    catch (e) { avisar(e.message); }
+  };
+}
+// Respuestas en formato de lectura (mías o las que me compartieron)
+function renderRespuestas(r, filtro = () => true, editable = false) {
+  const lleno = (v) => v != null && v !== '' && !(Array.isArray(v) && !v.length);
+  return PREGUNTAS.filter(filtro).map((p) => {
+    const vals = p.parts.flatMap((pt) => pt.k === 'grid' ? pt.rows.map(([rid, rl]) => ({ id: rid, l: rl })) : [pt]).filter((pt) => lleno(r[pt.id]));
+    return `<div class="preg"><b>${p.n}. ${esc(p.t)}</b>${vals.length ? vals.map((pt) => {
+      const v = r[pt.id], k = PARTE[pt.id]?.k;
+      const txt = k === 'range' ? `${v[0]} a ${v[1]} años` : k === 'text' ? esc(v) : esc(etiqueta(pt.id, v));
+      return `<div>${pt.l ? `<span style="color:var(--gris)">${esc(pt.l)}:</span> ` : ''}${txt}</div>`;
+    }).join('') : '<div class="vacio">Sin responder</div>'}${editable ? `<a class="enlace" style="font-size:13px" href="/cuestionario?p=${p.n}">Editar</a>` : ''}</div>`;
+  }).join('');
+}
 
 /* ── mi vida hoy: valores, rueda y lectura ───────────────────────────────── */
 function vidaActual() {
@@ -563,6 +713,7 @@ function tarjetaCoincidencia(c) {
       <div class="quien">${avatarDe(r, 'xl')}<div><h3>${esc(r.nombreCompleto)}</h3><div class="meta" style="color:var(--gris)">${esc(r.edad)} · ${esc(r.ciudad)}</div></div></div>
       ${r.carta ? `<div class="carta">${esc(r.carta)}</div>` : ''}
       ${r.malinterpretan ? `<p class="entender"><b>Lo que le gustaría que entendieras desde el día uno:</b> ${esc(r.malinterpretan)}</p>` : ''}
+      <p style="margin:14px 0 0"><a class="boton" href="#charlas/${esc(otraDe(c))}">💬 Abrir la charla</a></p>
       <div class="revelado-medios">
         ${r.medios?.audio ? `<div class="rm"><b>🎙️ Su voz</b><audio controls preload="metadata" src="${esc(r.medios.audio.url)}"></audio></div>` : ''}
         ${r.medios?.video ? `<div class="rm"><b>🎬 Su video</b><video controls playsinline preload="metadata" src="${esc(r.medios.video.url)}"></video></div>` : ''}

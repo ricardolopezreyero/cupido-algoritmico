@@ -606,3 +606,51 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 .vida-lectura span { font-size: 12px; color: var(--gris); }
 @media (max-width: 560px) { .vida-lectura { grid-template-columns: 1fr; } }
 /* fin vida · RLR */
+
+/* ── La charla · RLR ───────────────────────────────────────────────────── */
+.charlas-lista { display: grid; }
+.charla-fila { display: flex; gap: 12px; align-items: center; padding: 12px 18px; text-decoration: none; color: var(--tinta); border-bottom: 1px solid var(--linea); }
+.charla-fila:last-child { border-bottom: 0; }
+.charla-fila:hover { background: var(--crema); }
+.charla-fila > div { flex: 1; min-width: 0; }
+.charla-fila b { display: block; font-size: 15px; }
+.charla-fila span { display: block; color: var(--gris); font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.charla-fila .cuenta-nav, .charla-fila .cuando { display: inline-flex; flex: none; }
+.charla-fila .cuenta-nav { background: var(--rosa); color: #fff; font-size: 11.5px; font-weight: 700; border-radius: 999px; min-width: 20px; height: 20px; align-items: center; justify-content: center; padding: 0 6px; }
+.charla-rejilla { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 16px; align-items: start; }
+.charla { padding: 0; display: flex; flex-direction: column; height: min(68vh, 640px); min-height: 420px; }
+.ch-mensajes { flex: 1; overflow-y: auto; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.msg { display: flex; flex-direction: column; max-width: 78%; }
+.msg.mio { align-self: flex-end; align-items: flex-end; }
+.msg.suyo { align-self: flex-start; align-items: flex-start; }
+.msg .globo { padding: 10px 14px; border-radius: 16px; font-size: 15px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+.msg.mio .globo { background: var(--rosa); color: #fff; border-bottom-right-radius: 4px; }
+.msg.suyo .globo { background: var(--crema); border: 1px solid var(--linea); border-bottom-left-radius: 4px; }
+.msg .cuando { font-size: 11.5px; color: var(--gris); margin-top: 3px; }
+.msg.sistema { align-self: center; max-width: 92%; text-align: center; }
+.msg.sistema span { display: inline-block; font-size: 12.5px; color: var(--tinta-2); background: var(--rosa-suave); border-radius: 999px; padding: 6px 12px; }
+.msg .globo img { max-width: 260px; max-height: 320px; border-radius: 10px; display: block; }
+.msg .globo video { max-width: 300px; border-radius: 10px; display: block; background: #000; }
+.msg .globo audio { max-width: 260px; display: block; }
+.ch-doc { color: inherit; text-decoration: underline; }
+.ch-doc small { opacity: .75; }
+.ch-escribiendo { padding: 4px 18px; font-size: 12.5px; color: var(--gris); }
+.ch-escribiendo span { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--gris); margin-right: 2px; animation: punto 1.2s infinite; }
+.ch-escribiendo span:nth-child(2) { animation-delay: .2s; } .ch-escribiendo span:nth-child(3) { animation-delay: .4s; }
+@keyframes punto { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+.ch-compositor { display: flex; gap: 8px; align-items: flex-end; padding: 12px; border-top: 1px solid var(--linea); background: var(--blanco); border-radius: 0 0 var(--radio) var(--radio); }
+.ch-compositor textarea { flex: 1; resize: none; font: 15px/1.4 var(--sans); border: 1.5px solid var(--linea-2); border-radius: 12px; padding: 10px 12px; max-height: 140px; color: var(--tinta); }
+.ch-compositor textarea:focus { outline: none; border-color: var(--rosa); }
+.ch-adjuntar { cursor: pointer; font-size: 20px; padding: 8px 6px; }
+.ch-lado h3 { font-size: 17px; }
+.elementos { display: grid; gap: 6px; }
+.elemento { display: flex; gap: 8px; align-items: center; font-size: 13.5px; padding: 7px 10px; border-radius: 10px; border: 1px solid var(--linea); color: var(--gris); background: #faf8f6; }
+.elemento span { width: 22px; text-align: center; }
+.elemento.on { color: var(--tinta); background: var(--blanco); border-color: var(--rosa-linea); }
+.elemento.sensible:not(.on) { border-style: dashed; }
+.elementos.elegir .elemento { cursor: pointer; }
+.elementos.elegir .elemento.ya { opacity: .6; cursor: default; }
+.elementos.elegir input { accent-color: var(--rosa); }
+.elemento small { color: var(--ambar); font-weight: 600; margin-left: auto; }
+@media (max-width: 860px) { .charla-rejilla { grid-template-columns: 1fr; } .charla { height: 60vh; } }
+/* fin charla · RLR */

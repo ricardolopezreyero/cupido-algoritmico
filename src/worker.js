@@ -11,6 +11,7 @@ import { quien, entrarDemo, pedirEnlace, canjearEnlace, cerrarSesion, cookieSesi
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
+import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido } from './charla.js';
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
 import { personas } from './datos.js';
 import MANIFIESTO from '../MANIFIESTO.md';
@@ -141,6 +142,22 @@ async function api(req, env, ctx, url) {
     if (!(yo.sesion.demo && yo.P.origen === 'demo')) await env.DB.prepare(`UPDATE personas SET vida = ? WHERE id = ?`).bind(JSON.stringify(v), yo.P.id).run();
     return json({ ok: true, vida: v });
   }
+  /* ── La charla: solo entre dos con puerta abierta; nada se borra ───────── */
+  if (ruta === '/api/charla' && metodo === 'GET') { if (!yo) return sinSesion(); return json(await misCharlas(env, yo.P.id)); }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)$/))) {
+    if (!yo) return sinSesion();
+    if (metodo === 'GET') { const v = await verCharla(env, yo.P.id, x[1], Number(url.searchParams.get('despues') || 0)); return v ? json(v) : error('No hay una puerta abierta con esa persona', 404); }
+    if (metodo === 'POST') { const b = await leerJson(req, 10_000); const r = await enviar(env, yo.P.id, x[1], b.texto); return r.error ? error(r.error, r.status) : json(r); }
+  }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/escribiendo$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const r = await escribiendo(env, yo.P.id, x[1]); return r.error ? error(r.error, r.status) : json(r); }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/archivo$/)) && metodo === 'PUT') {
+    if (!yo) return sinSesion();
+    if (yo.sesion.demo && yo.P.origen === 'demo') return error('En la cuenta demo no se mandan archivos. Con tu cuenta sí.', 403);
+    const r = await adjuntar(env, req, yo.P.id, x[1], url.searchParams.get('nombre')); return r.error ? error(r.error, r.status) : json(r);
+  }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/archivo\/(\d+)$/)) && metodo === 'GET') { if (!yo) return new Response('Sin sesión', { status: 401 }); return await servirAdjunto(env, req, yo.P.id, x[1], Number(x[2])); }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/liberar$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 4000); const r = await liberar(env, yo.P.id, x[1], b.elementos); return r.error ? error(r.error, r.status) : json(r); }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/perfil$/)) && metodo === 'GET') { if (!yo) return sinSesion(); const r = await perfilCompartido(env, yo.P.id, x[1]); return r ? json(r) : error('No hay charla', 404); }
   /* ── Medios: foto, voz y video (solo con cuestionario completo; se ven solo con puerta abierta) ── */
   if ((x = m(/^\/api\/medio\/(foto|audio|video)$/)) && (metodo === 'PUT' || metodo === 'DELETE')) {
     if (!yo) return sinSesion();

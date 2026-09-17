@@ -10,6 +10,7 @@ import { PARTE, avance, etiqueta } from '../public/js/preguntas.js';
 import PERSONAS_DEMO from '../seed/personas.json';
 import ARTICULOS_BASE from '../seed/articulos.json';
 import { ESQUEMA_MEDIOS, mediosDe } from './medios.js';
+import { ESQUEMA_CHARLA, abrirCharla, misCharlas } from './charla.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -48,6 +49,7 @@ const ESQUEMA = [
   `CREATE INDEX IF NOT EXISTS idx_enlaces_correo ON enlaces(correo, creado)`,
   `CREATE INDEX IF NOT EXISTS idx_sesiones_persona ON sesiones(persona)`,
   ESQUEMA_MEDIOS,
+  ...ESQUEMA_CHARLA,
   `CREATE INDEX IF NOT EXISTS idx_pares_pct ON pares(pct)`,
   `CREATE INDEX IF NOT EXISTS idx_avisos_persona ON avisos(persona, leido)`,
   `CREATE INDEX IF NOT EXISTS idx_articulos_estado ON articulos(estado, creado)`,
@@ -104,7 +106,7 @@ async function sembrarDemo(env) {
     const abierta = da === 'si' && db === 'si';
     await env.DB.prepare(`UPDATE puertas SET decision_a = ?, decision_b = ?, estado = ?, abierta = CASE WHEN ? THEN datetime('now') ELSE NULL END WHERE a = ? AND b = ?`)
       .bind(da, db, abierta ? 'abierta' : 'cerrada', abierta ? 1 : 0, a, b).run();
-    if (abierta) await avisarApertura(env, a, b);
+    if (abierta) { await avisarApertura(env, a, b); await abrirCharla(env, a, b); }
   }
 }
 
@@ -124,6 +126,9 @@ export async function reiniciarDemo(env) {
     env.DB.prepare(`DELETE FROM puertas WHERE a NOT IN (SELECT id FROM personas) OR b NOT IN (SELECT id FROM personas)`),
     env.DB.prepare(`DELETE FROM avisos WHERE persona NOT IN (SELECT id FROM personas) OR (otra IS NOT NULL AND otra NOT IN (SELECT id FROM personas))`),
     env.DB.prepare(`DELETE FROM sesiones WHERE persona NOT IN (SELECT id FROM personas)`),
+    env.DB.prepare(`DELETE FROM mensajes WHERE a NOT IN (SELECT id FROM personas) OR b NOT IN (SELECT id FROM personas)`),
+    env.DB.prepare(`DELETE FROM charlas WHERE a NOT IN (SELECT id FROM personas) OR b NOT IN (SELECT id FROM personas)`),
+    env.DB.prepare(`DELETE FROM liberaciones WHERE persona NOT IN (SELECT id FROM personas) OR otra NOT IN (SELECT id FROM personas)`),
   ]);
   await sembrarDemo(env);
   await anotar(env, 'admin', 'Se reinició el demo', 'Personas ficticias, cruces, puertas y avisos de vuelta al estado inicial');
@@ -217,6 +222,7 @@ export async function decidir(env, yo, otra, decision) {
   if (da === 'si' && db === 'si') {
     await env.DB.prepare(`UPDATE puertas SET estado = 'abierta', abierta = datetime('now') WHERE a = ? AND b = ?`).bind(a, b).run();
     await avisarApertura(env, a, b);
+    await abrirCharla(env, a, b); // nace la charla, con el hola automático de cada uno
     await anotar(env, 'puerta', 'Se abrió una puerta', `${P.nombre} ↔ ${O.nombre} (${p.pct} %)`);
     return { estado: 'abierta' };
   }
@@ -299,6 +305,7 @@ export async function vistaPersona(env, P) {
     // lo suyo, para su propio tablero (nunca se envía nada de otra persona aquí)
     misRespuestas: P.r, rubrica: P.l?.rubrica || null,
     misMedios: await mediosDe(env, P.id),
+    charlas: await misCharlas(env, P.id),
     ajustes: (() => { try { return JSON.parse(P.ajustes || '{}'); } catch { return {}; } })(),
     vida: (() => { try { return JSON.parse(P.vida || 'null'); } catch { return null; } })(),
   };
