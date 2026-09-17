@@ -24,6 +24,9 @@ export const ESQUEMA_CHARLA = [
      tipo TEXT NOT NULL DEFAULT 'texto', texto TEXT, archivo TEXT, auto INTEGER NOT NULL DEFAULT 0,
      creado TEXT NOT NULL DEFAULT (datetime('now')))`,
   `CREATE INDEX IF NOT EXISTS idx_mensajes_charla ON mensajes(a, b, id)`,
+  `CREATE TABLE IF NOT EXISTS reacciones (
+     mensaje INTEGER NOT NULL, persona TEXT NOT NULL, emoji TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')),
+     PRIMARY KEY (mensaje, persona))`,
   `CREATE TABLE IF NOT EXISTS liberaciones (
      persona TEXT NOT NULL, otra TEXT NOT NULL, elemento TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')),
      PRIMARY KEY (persona, otra, elemento))`,
@@ -55,6 +58,7 @@ export async function borrarCharlasDe(env, id) {
     env.DB.prepare(`DELETE FROM mensajes WHERE a = ? OR b = ?`).bind(id, id),
     env.DB.prepare(`DELETE FROM charlas WHERE a = ? OR b = ?`).bind(id, id),
     env.DB.prepare(`DELETE FROM liberaciones WHERE persona = ? OR otra = ?`).bind(id, id),
+    env.DB.prepare(`DELETE FROM reacciones WHERE mensaje NOT IN (SELECT id FROM mensajes)`),
   ]);
 }
 
@@ -75,7 +79,7 @@ export async function misCharlas(env, yo) {
     const leido = c.a === yo ? c.leido_a : c.leido_b;
     const ult = await env.DB.prepare(`SELECT id, de, tipo, texto, creado FROM mensajes WHERE a = ? AND b = ? ORDER BY id DESC LIMIT 1`).bind(c.a, c.b).first();
     const nuevos = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND id > ? AND de != ?`).bind(c.a, c.b, leido, yo).first()).n;
-    lista.push({ otra: otraId, nombre: nom(O), color: O.color, nuevos, ultimo: ult ? { texto: ult.tipo === 'archivo' ? '📎 Archivo' : ult.texto, mio: ult.de === yo, creado: ult.creado } : null });
+    lista.push({ otra: otraId, nombre: nom(O), color: O.color, nuevos, ultimo: ult ? { texto: ult.tipo === 'archivo' ? '📎 ' + (ult.texto || 'Archivo') : ult.tipo === 'gif' ? '🎞️ GIF' : ult.texto, mio: ult.de === yo, creado: ult.creado } : null });
   }
   return lista;
 }
@@ -93,15 +97,25 @@ export async function verCharla(env, yo, otraId, despues = 0) {
   const otroEscribiendo = !!escribeOtro && (Date.now() - Date.parse(escribeOtro.replace(' ', 'T') + 'Z')) < 4500;
   const mios = (await env.DB.prepare(`SELECT elemento FROM liberaciones WHERE persona = ? AND otra = ?`).bind(yo, otraId).all()).results.map((r) => r.elemento);
   const suyos = (await env.DB.prepare(`SELECT elemento FROM liberaciones WHERE persona = ? AND otra = ?`).bind(otraId, yo).all()).results.map((r) => r.elemento);
-  return { otra: { id: otraId, nombre: nom(O), nombreCompleto: O.nombre, color: O.color }, mensajes: msgs, otroEscribiendo, compartido: { mios, suyos } };
+  // reacciones de toda la charla (cambian sobre mensajes viejos) y hasta dónde leyó el otro
+  const reac = {};
+  for (const r of (await env.DB.prepare(`SELECT r.mensaje, r.persona, r.emoji FROM reacciones r JOIN mensajes m ON m.id = r.mensaje WHERE m.a = ? AND m.b = ?`).bind(c.a, c.b).all()).results)
+    (reac[r.mensaje] = reac[r.mensaje] || []).push({ emoji: r.emoji, mia: r.persona === yo });
+  const vistoHasta = c.soyA ? c.leido_b : c.leido_a;
+  return { otra: { id: otraId, nombre: nom(O), nombreCompleto: O.nombre, color: O.color, carta: O.r.carta || '', martes: O.r.martes || '' }, mensajes: msgs, otroEscribiendo, compartido: { mios, suyos }, reacciones: reac, vistoHasta };
 }
 
-export async function enviar(env, yo, otraId, texto) {
+export async function enviar(env, yo, otraId, { texto, tipo = 'texto', gif } = {}) {
   const c = await charlaDe(env, yo, otraId);
   if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
-  const t = String(texto || '').trim().slice(0, MAX_TEXTO);
-  if (!t) return { error: 'Escribe algo', status: 400 };
-  const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, ?, 'texto', ?)`).bind(c.a, c.b, yo, t).run();
+  let t = String(texto || '').trim().slice(0, MAX_TEXTO), archivo = null;
+  if (tipo === 'sticker') { if (!/^\p{Extended_Pictographic}[\p{Extended_Pictographic}\u200d\ufe0f]{0,10}$/u.test(t)) return { error: 'Sticker inválido', status: 400 }; }
+  else if (tipo === 'gif') {
+    const url = String(gif?.url || ''), preview = String(gif?.preview || url);
+    if (!/^https:\/\/(media\.tenor\.com|c\.tenor\.com|media[0-9]*\.giphy\.com)\//.test(url)) return { error: 'GIF inválido', status: 400 };
+    archivo = JSON.stringify({ url, preview, ancho: Number(gif?.ancho) || null, alto: Number(gif?.alto) || null }); t = 'GIF';
+  } else { tipo = 'texto'; if (!t) return { error: 'Escribe algo', status: 400 }; }
+  const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo) VALUES (?, ?, ?, ?, ?, ?)`).bind(c.a, c.b, yo, tipo, t, archivo).run();
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'escribe_a' : 'escribe_b'} = NULL, ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
   return { ok: true, id: r.meta.last_row_id };
 }
@@ -111,6 +125,35 @@ export async function escribiendo(env, yo, otraId) {
   if (!c) return { error: 'No hay charla', status: 403 };
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'escribe_a' : 'escribe_b'} = datetime('now') WHERE a = ? AND b = ?`).bind(c.a, c.b).run();
   return { ok: true };
+}
+
+/* ── reacciones: una por persona y mensaje; el mismo emoji la quita ─────── */
+export async function reaccionar(env, yo, otraId, mensajeId, emoji) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return { error: 'No hay charla', status: 403 };
+  const m = await env.DB.prepare(`SELECT id FROM mensajes WHERE id = ? AND a = ? AND b = ? AND tipo != 'sistema'`).bind(Number(mensajeId), c.a, c.b).first();
+  if (!m) return { error: 'No existe ese mensaje', status: 404 };
+  const e = String(emoji || '').slice(0, 8);
+  const actual = await env.DB.prepare(`SELECT emoji FROM reacciones WHERE mensaje = ? AND persona = ?`).bind(m.id, yo).first();
+  if (!e || actual?.emoji === e) await env.DB.prepare(`DELETE FROM reacciones WHERE mensaje = ? AND persona = ?`).bind(m.id, yo).run();
+  else await env.DB.prepare(`INSERT INTO reacciones (mensaje, persona, emoji) VALUES (?, ?, ?) ON CONFLICT(mensaje, persona) DO UPDATE SET emoji = excluded.emoji, creado = datetime('now')`).bind(m.id, yo, e).run();
+  return { ok: true };
+}
+
+/* ── GIF: búsqueda vía Tenor (llave en secrets: TENOR_KEY) ──────────────── */
+export async function buscarGif(env, q) {
+  if (!env.TENOR_KEY) return { sinLlave: true, gifs: [] };
+  const base = q ? 'https://tenor.googleapis.com/v2/search' : 'https://tenor.googleapis.com/v2/featured';
+  const u = new URL(base);
+  u.searchParams.set('key', env.TENOR_KEY); u.searchParams.set('client_key', 'cupido'); u.searchParams.set('limit', '24');
+  u.searchParams.set('media_filter', 'tinygif,gif'); u.searchParams.set('locale', 'es_MX'); u.searchParams.set('contentfilter', 'medium');
+  if (q) u.searchParams.set('q', String(q).slice(0, 60));
+  try {
+    const r = await fetch(u, { signal: AbortSignal.timeout(6000), cf: { cacheTtl: 300 } });
+    if (!r.ok) return { gifs: [], error: 'Tenor no respondió' };
+    const j = await r.json();
+    return { gifs: (j.results || []).map((g) => ({ id: g.id, url: g.media_formats?.gif?.url, preview: g.media_formats?.tinygif?.url || g.media_formats?.gif?.url, ancho: g.media_formats?.tinygif?.dims?.[0], alto: g.media_formats?.tinygif?.dims?.[1] })).filter((g) => g.url) };
+  } catch (e) { return { gifs: [], error: e.message }; }
 }
 
 /* ── archivos adjuntos (R2, solo los dos) ───────────────────────────────── */

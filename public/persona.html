@@ -468,35 +468,143 @@ const DESPUES = {
 
 /* ── la charla: mensajes, "está escribiendo", archivos y liberar el perfil ─ */
 const otraDe = (c) => { const [a, b] = c.clave.split('-'); return a === V.persona.id ? b : a; };
-let CH = { otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null };
-function detenerCharla() { clearInterval(CH.reloj); CH = { otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null }; }
+let CH = { otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null, reac: {}, visto: 0, grabando: null };
+function detenerCharla() { clearInterval(CH.reloj); if (CH.grabando) { try { CH.grabando.stop(); } catch {} } CH = { otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null, reac: {}, visto: 0, grabando: null }; cerrarPaneles(); }
+const EMOJIS = {
+  'Caritas': '😀 😄 😁 😂 🤣 😊 😍 🥰 😘 😗 😚 😋 😜 🤪 😎 🤩 🥳 😏 😌 🤗 🤭 🤔 🤫 😶 🙄 😬 😴 🤤 😇 🥺 😢 😭 😤 😡 🤯 😱 😳 🥶 🥵 😈'.split(' '),
+  'Corazones': '❤️ 🧡 💛 💚 💙 💜 🖤 🤍 🤎 💕 💞 💓 💗 💖 💘 💝 💟 ❣️ 💌 💋 🌹 🌷 🌸 💐 ✨ ⭐ 🌟 💫 🔥 🎉'.split(' '),
+  'Gestos': '👋 🤚 ✋ 🖐️ 👌 🤌 ✌️ 🤞 🤟 🤘 👍 👎 👏 🙌 🤝 🙏 💪 👀 🫶 🫂'.split(' '),
+  'Cosas': '☕ 🍷 🍺 🍕 🌮 🍫 🎶 🎸 🎬 📚 ✈️ 🏖️ ⛰️ 🚴 ⚽ 🏀 🎾 🎮 🐶 🐱 🌙 ☀️ 🌈 ⛪ 🕯️ 🏡 💍 👶 🎁 🎂'.split(' '),
+};
+const STICKERS = '😍 🥰 😘 🤗 😂 🤣 😎 🥳 😴 🤔 😢 🙈 🙏 👏 💪 🫶 ❤️‍🔥 💘 💖 💐 🌹 ☕ 🍷 🌙 ☀️ 🔥 ✨ 🎉 🎶 💃 🕺 🫂'.split(' ');
+const REACCIONES = ['❤️', '😂', '😮', '😢', '👍', '🔥'];
+const ROMPEHIELOS = (nombre) => [`¿Cómo fue tu martes hoy, ${nombre}?`, 'Leí tu carta dos veces. ¿Qué te llevó a escribirla así?', '¿Qué es lo primero que haces un domingo?', 'Cuéntame algo que te haga reír de verdad.'];
+
 function vistaCharla(otra) {
   const c = (V.charlas || []).find((x) => x.otra === otra);
   if (!c) return cabeza('Charla', 'No hay una puerta abierta con esa persona.') + `<p><a class="enlace" href="#charlas">← Volver a las charlas</a></p>`;
   return `<div class="cabeza-admin"><div><p style="margin:0 0 6px"><a class="enlace" href="#charlas">← Charlas</a></p><h1 style="display:flex;align-items:center;gap:12px">${avatar(c.nombre, c.color)}${esc(c.nombre)}</h1><p id="ch-estado">Puerta abierta · nada se borra</p></div><div class="acciones"><button class="boton boton-claro boton-chico" id="ch-compartir">🔓 Compartir mi perfil</button></div></div>
     <div class="charla-rejilla">
-      <section class="tarjeta charla">
+      <section class="tarjeta charla" id="ch-zona">
         <div class="ch-mensajes" id="ch-mensajes"><p class="vacio">Cargando…</p></div>
+        <div class="ch-rompehielos" id="ch-rompehielos" hidden></div>
         <div class="ch-escribiendo" id="ch-escribiendo" hidden><span></span><span></span><span></span> ${esc(c.nombre)} está escribiendo</div>
+        <div class="ch-panel" id="ch-panel" hidden></div>
         <form class="ch-compositor" id="ch-form">
-          <label class="ch-adjuntar" title="Adjuntar archivo">📎<input type="file" id="ch-archivo" hidden></label>
-          <textarea id="ch-texto" rows="1" maxlength="2000" placeholder="Escribe…" autocomplete="off"></textarea>
-          <button class="boton boton-chico" type="submit">Enviar</button>
+          <div class="ch-herr">
+            <button type="button" class="ch-h" data-panel="emoji" title="Emojis y stickers">😊</button>
+            <button type="button" class="ch-h" data-panel="gif" title="GIF">GIF</button>
+            <label class="ch-h" title="Foto">📷<input type="file" accept="image/*" data-adj="foto" hidden></label>
+            <label class="ch-h" title="Video">🎬<input type="file" accept="video/*" capture="user" data-adj="video" hidden></label>
+            <button type="button" class="ch-h" id="ch-voz" title="Nota de voz">🎤</button>
+            <label class="ch-h" title="Archivo">📎<input type="file" data-adj="archivo" hidden></label>
+          </div>
+          <textarea id="ch-texto" rows="1" maxlength="2000" placeholder="Escribe…" autocomplete="off" enterkeyhint="send"></textarea>
+          <button class="boton boton-chico ch-enviar" type="submit" aria-label="Enviar">➤</button>
         </form>
       </section>
       <aside class="tarjeta ch-lado" id="ch-lado"><p class="vacio">Cargando…</p></aside>
     </div>`;
 }
-const filaMensaje = (m) => {
-  if (m.tipo === 'sistema') return `<div class="msg sistema"><span>${esc(m.texto)}</span></div>`;
-  const cuerpo = m.tipo === 'archivo'
-    ? (/^image\//.test(m.archivo?.mime || '') ? `<a href="/api/charla/${esc(CH.otra)}/archivo/${m.id}" target="_blank" rel="noopener"><img src="/api/charla/${esc(CH.otra)}/archivo/${m.id}" alt="${esc(m.archivo.nombre)}" loading="lazy"></a>`
-      : /^audio\//.test(m.archivo?.mime || '') ? `<audio controls preload="metadata" src="/api/charla/${esc(CH.otra)}/archivo/${m.id}"></audio>`
-      : /^video\//.test(m.archivo?.mime || '') ? `<video controls playsinline preload="metadata" src="/api/charla/${esc(CH.otra)}/archivo/${m.id}"></video>`
-      : `<a class="ch-doc" href="/api/charla/${esc(CH.otra)}/archivo/${m.id}">📄 ${esc(m.archivo?.nombre || 'archivo')} <small>${Math.round((m.archivo?.tamano || 0) / 1024)} KB</small></a>`)
-    : esc(m.texto);
-  return `<div class="msg ${m.mio ? 'mio' : 'suyo'}"><div class="globo">${cuerpo}</div><div class="cuando">${hace(m.creado)}${m.auto ? ' · saludo automático' : ''}</div></div>`;
-};
+const diaDe = (iso) => { const d = new Date(String(iso).replace(' ', 'T') + 'Z'), hoy = new Date(); const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1); const f = (x) => x.toDateString(); return f(d) === f(hoy) ? 'Hoy' : f(d) === f(ayer) ? 'Ayer' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }); };
+const horaDe = (iso) => new Date(String(iso).replace(' ', 'T') + 'Z').toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
+const reaccionesHtml = (id) => { const r = CH.reac[id] || []; return r.length ? `<div class="reacs">${r.map((x) => `<span class="${x.mia ? 'mia' : ''}">${esc(x.emoji)}</span>`).join('')}</div>` : ''; };
+function filaMensaje(m) {
+  if (m.tipo === 'sistema') return `<div class="msg sistema" data-id="${m.id}"><span>${esc(m.texto)}</span></div>`;
+  const ruta = `/api/charla/${esc(CH.otra)}/archivo/${m.id}`;
+  let cuerpo, clase = '';
+  if (m.tipo === 'sticker') { cuerpo = esc(m.texto); clase = 'sticker'; }
+  else if (m.tipo === 'gif') { cuerpo = `<img src="${esc(m.archivo?.preview || m.archivo?.url || '')}" alt="GIF" loading="lazy" ${m.archivo?.ancho ? `width="${m.archivo.ancho}" height="${m.archivo.alto}"` : ''}>`; clase = 'media'; }
+  else if (m.tipo === 'archivo') {
+    const mime = m.archivo?.mime || '';
+    if (/^image\//.test(mime)) { cuerpo = `<a href="${ruta}" target="_blank" rel="noopener"><img src="${ruta}" alt="${esc(m.archivo.nombre)}" loading="lazy"></a>`; clase = 'media'; }
+    else if (/^audio\//.test(mime)) { cuerpo = `<div class="voz">🎤 <audio controls preload="metadata" src="${ruta}"></audio></div>`; }
+    else if (/^video\//.test(mime)) { cuerpo = `<video controls playsinline preload="metadata" src="${ruta}"></video>`; clase = 'media'; }
+    else cuerpo = `<a class="ch-doc" href="${ruta}">📄 ${esc(m.archivo?.nombre || 'archivo')} <small>${Math.round((m.archivo?.tamano || 0) / 1024)} KB</small></a>`;
+  } else cuerpo = esc(m.texto);
+  return `<div class="msg ${m.mio ? 'mio' : 'suyo'} ${clase}" data-id="${m.id}"><div class="globo">${cuerpo}</div>${reaccionesHtml(m.id)}<div class="cuando">${horaDe(m.creado)}${m.auto ? ' · saludo automático' : ''}</div><button class="reac-btn" data-reac="${m.id}" title="Reaccionar">☺</button></div>`;
+}
+function repintarReacciones() {
+  $$('#ch-mensajes .msg[data-id]').forEach((el) => {
+    const id = Number(el.dataset.id), ya = el.querySelector('.reacs');
+    const nuevo = reaccionesHtml(id);
+    if (ya) { if (nuevo) ya.outerHTML = nuevo; else ya.remove(); } else if (nuevo) el.querySelector('.globo')?.insertAdjacentHTML('afterend', nuevo);
+  });
+}
+function repintarVisto() {
+  const mios = $$('#ch-mensajes .msg.mio[data-id]');
+  mios.forEach((el) => el.querySelector('.visto')?.remove());
+  const ultimo = [...mios].reverse().find((el) => Number(el.dataset.id) <= CH.visto && !el.textContent.includes('saludo automático'));
+  if (ultimo) ultimo.querySelector('.cuando')?.insertAdjacentHTML('beforeend', '<span class="visto"> · Visto ✓✓</span>');
+}
+function cerrarPaneles() { const p = $('#ch-panel'); if (p) { p.hidden = true; p.innerHTML = ''; } $$('.ch-h.on').forEach((b) => b.classList.remove('on')); }
+function abrirPanel(cual, boton) {
+  const p = $('#ch-panel');
+  if (!p.hidden && p.dataset.cual === cual) { cerrarPaneles(); return; }
+  cerrarPaneles(); boton.classList.add('on'); p.hidden = false; p.dataset.cual = cual;
+  if (cual === 'emoji') {
+    p.innerHTML = `<div class="ch-tabs"><button class="on" data-t="emojis">Emojis</button><button data-t="stickers">Stickers</button></div>
+      <div class="ch-emojis" id="ch-emojis">${Object.entries(EMOJIS).map(([g, l]) => `<div class="grupo">${g}</div><div class="fila-e">${l.map((e) => `<button type="button" data-e="${e}">${e}</button>`).join('')}</div>`).join('')}</div>
+      <div class="ch-emojis stickers" id="ch-stickers" hidden><div class="fila-e">${STICKERS.map((e) => `<button type="button" data-s="${e}">${e}</button>`).join('')}</div></div>`;
+    $$('.ch-tabs button', p).forEach((b) => b.onclick = () => { $$('.ch-tabs button', p).forEach((x) => x.classList.toggle('on', x === b)); $('#ch-emojis').hidden = b.dataset.t !== 'emojis'; $('#ch-stickers').hidden = b.dataset.t !== 'stickers'; });
+    $$('[data-e]', p).forEach((b) => b.onclick = () => { const t = $('#ch-texto'); const i = t.selectionStart ?? t.value.length; t.value = t.value.slice(0, i) + b.dataset.e + t.value.slice(i); t.focus(); t.selectionStart = t.selectionEnd = i + b.dataset.e.length; });
+    $$('[data-s]', p).forEach((b) => b.onclick = () => { mandar({ tipo: 'sticker', texto: b.dataset.s }); cerrarPaneles(); });
+  } else if (cual === 'gif') {
+    p.innerHTML = `<div class="ch-gif-busca"><input type="search" id="gif-q" placeholder="Busca un GIF… (risa, abrazo, café)" autocomplete="off"><span class="nota-entrar" style="margin:0">Tenor</span></div><div class="ch-gifs" id="ch-gifs"><p class="vacio">Cargando…</p></div>`;
+    const q = $('#gif-q'); let t = null;
+    const buscar = async () => {
+      try {
+        const r = await api(`/api/gif?q=${encodeURIComponent(q.value.trim())}`);
+        if (r.sinLlave) { $('#ch-gifs').innerHTML = '<p class="vacio" style="padding:10px">Los GIF se activan al poner la llave de Tenor en el servidor. Mientras, hay stickers 😊.</p>'; return; }
+        $('#ch-gifs').innerHTML = r.gifs.length ? r.gifs.map((g) => `<button type="button" data-gif='${esc(JSON.stringify(g))}'><img src="${esc(g.preview)}" alt="" loading="lazy"></button>`).join('') : `<p class="vacio" style="padding:10px">${esc(r.error || 'Sin resultados')}</p>`;
+        $$('[data-gif]', p).forEach((b) => b.onclick = () => { mandar({ tipo: 'gif', gif: JSON.parse(b.dataset.gif) }); cerrarPaneles(); });
+      } catch (e) { $('#ch-gifs').innerHTML = `<p class="vacio">${esc(e.message)}</p>`; }
+    };
+    q.oninput = () => { clearTimeout(t); t = setTimeout(buscar, 350); };
+    q.focus(); buscar();
+  }
+}
+async function mandar(cuerpo) {
+  const otra = CH.otra;
+  const caja = $('#ch-mensajes');
+  const temp = document.createElement('div'); temp.className = `msg mio pendiente ${cuerpo.tipo === 'sticker' ? 'sticker' : ''}`;
+  temp.innerHTML = `<div class="globo">${cuerpo.tipo === 'gif' ? '🎞️ GIF…' : esc(cuerpo.texto || '')}</div><div class="cuando">enviando…</div>`;
+  caja.appendChild(temp); caja.scrollTop = caja.scrollHeight;
+  try { await api(`/api/charla/${encodeURIComponent(otra)}`, cuerpo); await CH.traer(); }
+  catch (err) { temp.remove(); avisar(err.message); throw err; }
+}
+async function subirAdjunto(clase, archivo) {
+  const otra = CH.otra;
+  if (!archivo) return;
+  if (archivo.size > 15 * 1024 * 1024) { avisar('Máximo 15 MB.'); return; }
+  const est = $('#ch-estado'); est.textContent = `Mandando ${archivo.name || clase}…`;
+  try {
+    const esFoto = clase === 'foto' || /^image\/(jpeg|png|webp|heic)/.test(archivo.type);
+    const cuerpo = esFoto ? await reducirFoto(archivo) : archivo;
+    const mime = esFoto ? 'image/jpeg' : (archivo.type || 'application/octet-stream').split(';')[0];
+    const nombre = esFoto && !/\.jpe?g$/i.test(archivo.name || '') ? (archivo.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg' : (archivo.name || clase);
+    await api2('PUT', `/api/charla/${encodeURIComponent(otra)}/archivo?nombre=${encodeURIComponent(nombre)}`, cuerpo, mime);
+    await CH.traer();
+  } catch (err) { avisar(err.message); }
+  est.textContent = 'Puerta abierta · nada se borra';
+}
+async function notaDeVoz(boton) {
+  if (CH.grabando) { CH.grabando.stop(); return; }
+  if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { avisar('Tu navegador no puede grabar aquí.'); return; }
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { avisar('No se pudo usar el micrófono. Revisa los permisos.'); return; }
+  const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find((m) => MediaRecorder.isTypeSupported(m));
+  const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : {}); const partes = []; let seg = 0;
+  rec.ondataavailable = (e) => e.data.size && partes.push(e.data);
+  const reloj = setInterval(() => { seg++; boton.textContent = `⏹ ${seg}s`; if (seg >= 120) rec.stop(); }, 1000);
+  rec.onstop = () => {
+    clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); CH.grabando = null; boton.textContent = '🎤'; boton.classList.remove('grabando');
+    if (seg < 1) { avisar('Muy corta. Mantén un segundo al menos.'); return; }
+    const blob = new Blob(partes, { type: rec.mimeType || mime || 'audio/webm' });
+    subirAdjunto('voz', new File([blob], 'Nota de voz', { type: blob.type }));
+  };
+  CH.grabando = rec; boton.textContent = '⏹ 0s'; boton.classList.add('grabando'); rec.start(500);
+  avisar('Grabando… toca ⏹ para mandar.', 2500);
+}
 async function engancharCharla(otra) {
   detenerCharla(); CH.otra = otra;
   const caja = $('#ch-mensajes');
@@ -511,45 +619,67 @@ async function engancharCharla(otra) {
       <div id="ch-perfil"></div>`;
     const v = $('#ch-ver'); if (v) v.onclick = verPerfilCompartido;
   };
-  const traer = async () => {
+  let ultimoDia = null;
+  const traer = async (forzar = false) => {
+    if (document.hidden && !forzar) return; // en segundo plano no se sondea; las acciones propias sí traen
     try {
       const d = await api(`/api/charla/${encodeURIComponent(otra)}?despues=${CH.ultimo}`);
       if (CH.otra !== otra) return;
       const primera = !CH.datos;
-      CH.datos = d;
+      CH.datos = d; CH.reac = d.reacciones || {}; CH.visto = d.vistoHasta || 0;
       if (primera) caja.innerHTML = '';
+      $$('.msg.pendiente', caja).forEach((el) => el.remove());
       if (d.mensajes.length) {
-        const abajo = caja.scrollHeight - caja.scrollTop - caja.clientHeight < 80;
-        caja.insertAdjacentHTML('beforeend', d.mensajes.map(filaMensaje).join(''));
+        const abajo = caja.scrollHeight - caja.scrollTop - caja.clientHeight < 120;
+        let html = '';
+        for (const m of d.mensajes) { const dia = diaDe(m.creado); if (dia !== ultimoDia) { html += `<div class="ch-dia"><span>${dia}</span></div>`; ultimoDia = dia; } html += filaMensaje(m); }
+        caja.insertAdjacentHTML('beforeend', html);
         CH.ultimo = d.mensajes[d.mensajes.length - 1].id;
         if (primera || abajo) caja.scrollTop = caja.scrollHeight;
         const mia = (V.charlas || []).find((x) => x.otra === otra); if (mia) { mia.nuevos = 0; pintarLateral(); }
       }
+      repintarReacciones(); repintarVisto();
       $('#ch-escribiendo').hidden = !d.otroEscribiendo;
+      const soloAuto = $$('#ch-mensajes .msg:not(.sistema)').every((el) => el.textContent.includes('saludo automático'));
+      const rh = $('#ch-rompehielos'); rh.hidden = !soloAuto;
+      if (soloAuto && !rh.innerHTML) { rh.innerHTML = `<span>Para romper el hielo:</span>${ROMPEHIELOS(d.otra.nombre).map((t) => `<button type="button">${esc(t)}</button>`).join('')}`; $$('button', rh).forEach((b) => b.onclick = () => { const t = $('#ch-texto'); t.value = b.textContent; t.focus(); }); }
       if (primera || d.mensajes.some((m) => m.tipo === 'sistema')) pintarLado();
     } catch (e) { if (e.status === 404) { caja.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; detenerCharla(); } }
   };
-  await traer();
-  CH.reloj = setInterval(traer, 2500);
+  CH.traer = () => traer(true);
+  await traer(true);
+  CH.reloj = setInterval(() => traer(false), 1800);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden && CH.otra === otra) traer(true); });
   const txt = $('#ch-texto'), form = $('#ch-form');
   txt.oninput = async () => {
     txt.style.height = 'auto'; txt.style.height = Math.min(140, txt.scrollHeight) + 'px';
     if (Date.now() - CH.tecleo > 2000 && txt.value.trim()) { CH.tecleo = Date.now(); try { await api(`/api/charla/${encodeURIComponent(otra)}/escribiendo`, {}); } catch {} }
   };
-  txt.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } };
+  txt.onkeydown = (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } if (e.key === 'Escape') cerrarPaneles(); };
+  txt.onpaste = (e) => { const f = [...(e.clipboardData?.files || [])][0]; if (f) { e.preventDefault(); subirAdjunto(/^image\//.test(f.type) ? 'foto' : 'archivo', f); } };
+  const zona = $('#ch-zona');
+  zona.ondragover = (e) => { e.preventDefault(); zona.classList.add('arrastra'); };
+  zona.ondragleave = () => zona.classList.remove('arrastra');
+  zona.ondrop = (e) => { e.preventDefault(); zona.classList.remove('arrastra'); const f = e.dataTransfer?.files?.[0]; if (f) subirAdjunto(/^image\//.test(f.type) ? 'foto' : 'archivo', f); };
   form.onsubmit = async (e) => {
     e.preventDefault();
     const texto = txt.value.trim(); if (!texto) return;
-    txt.value = ''; txt.style.height = 'auto';
-    try { await api(`/api/charla/${encodeURIComponent(otra)}`, { texto }); await traer(); } catch (err) { txt.value = texto; avisar(err.message); }
+    txt.value = ''; txt.style.height = 'auto'; cerrarPaneles();
+    try { await mandar({ tipo: 'texto', texto }); } catch { txt.value = texto; }
   };
-  $('#ch-archivo').onchange = async (e) => {
-    const f = e.target.files[0]; if (!f) return;
-    if (f.size > 15 * 1024 * 1024) { avisar('Máximo 15 MB.'); return; }
-    $('#ch-estado').textContent = `Mandando ${f.name}…`;
-    try { await api2('PUT', `/api/charla/${encodeURIComponent(otra)}/archivo?nombre=${encodeURIComponent(f.name)}`, f, f.type || 'application/octet-stream'); await traer(); }
-    catch (err) { avisar(err.message); }
-    $('#ch-estado').textContent = 'Puerta abierta · nada se borra'; e.target.value = '';
+  $$('[data-adj]').forEach((i) => i.onchange = (e) => { subirAdjunto(i.dataset.adj, e.target.files[0]); e.target.value = ''; });
+  $$('[data-panel]').forEach((b) => b.onclick = () => abrirPanel(b.dataset.panel, b));
+  $('#ch-voz').onclick = () => notaDeVoz($('#ch-voz'));
+  caja.onclick = async (e) => {
+    const b = e.target.closest('[data-reac]');
+    if (b) {
+      const id = Number(b.dataset.reac), ya = $('.reac-bar', caja); if (ya) ya.remove();
+      const bar = document.createElement('div'); bar.className = 'reac-bar'; bar.innerHTML = REACCIONES.map((r) => `<button type="button" data-r="${r}">${r}</button>`).join('');
+      b.parentElement.appendChild(bar);
+      $$('[data-r]', bar).forEach((x) => x.onclick = async () => { bar.remove(); try { await api(`/api/charla/${encodeURIComponent(otra)}/reaccion`, { mensaje: id, emoji: x.dataset.r }); await traer(true); } catch (err) { avisar(err.message); } });
+      return;
+    }
+    if (!e.target.closest('.reac-bar')) $('.reac-bar', caja)?.remove();
   };
   $('#ch-compartir').onclick = abrirCompartir;
 }

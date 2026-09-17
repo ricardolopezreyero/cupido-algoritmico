@@ -11,7 +11,7 @@ import { quien, entrarDemo, pedirEnlace, canjearEnlace, cerrarSesion, cookieSesi
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
-import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido } from './charla.js';
+import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido, reaccionar, buscarGif } from './charla.js';
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
 import { personas } from './datos.js';
 import MANIFIESTO from '../MANIFIESTO.md';
@@ -147,8 +147,10 @@ async function api(req, env, ctx, url) {
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)$/))) {
     if (!yo) return sinSesion();
     if (metodo === 'GET') { const v = await verCharla(env, yo.P.id, x[1], Number(url.searchParams.get('despues') || 0)); return v ? json(v) : error('No hay una puerta abierta con esa persona', 404); }
-    if (metodo === 'POST') { const b = await leerJson(req, 10_000); const r = await enviar(env, yo.P.id, x[1], b.texto); return r.error ? error(r.error, r.status) : json(r); }
+    if (metodo === 'POST') { const b = await leerJson(req, 10_000); const r = await enviar(env, yo.P.id, x[1], b); return r.error ? error(r.error, r.status) : json(r); }
   }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/reaccion$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await reaccionar(env, yo.P.id, x[1], b.mensaje, b.emoji); return r.error ? error(r.error, r.status) : json(r); }
+  if (ruta === '/api/gif' && metodo === 'GET') { if (!yo) return sinSesion(); return json(await buscarGif(env, url.searchParams.get('q') || '')); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/escribiendo$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const r = await escribiendo(env, yo.P.id, x[1]); return r.error ? error(r.error, r.status) : json(r); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/archivo$/)) && metodo === 'PUT') {
     if (!yo) return sinSesion();
