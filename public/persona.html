@@ -58,6 +58,7 @@ import { PREGUNTAS, BLOQUES, etiqueta, PARTE } from '/js/preguntas.js';
 import { AREAS_VIDA, leerVida } from '/js/vida.js';
 import { ELEMENTOS, ELEMENTO, SUAVES } from '/js/elementos.js';
 import { dictable, puedeDictar } from '/js/dictar.js';
+import { tocar, precargar, panelSonido, ajustes as ajustesSonido } from '/js/sonido.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
 /* ── sesión: cookie que puso el Worker (correo con enlace mágico, o demo) ── */
@@ -80,6 +81,8 @@ async function tablero() {
   const ds = $('#demo-switch'); ds.hidden = !V.sesion.demo; ds.onclick = abrirModalCuenta;
   ir(location.hash.slice(1) || 'inicio');
   escucharCharlas();
+  precargar(); // todos los sonidos, decodificados y listos antes de que pase algo
+  sonarNovedades();
 }
 const DEMO = () => !!V?.sesion?.demo;
 
@@ -436,6 +439,7 @@ const SECCIONES = {
         ${DEMO() ? `<p class="sub">Esta es la <b>cuenta demo</b>: datos ficticios que cualquiera puede ver. Para tener tu propio tablero, crea tu cuenta con tu correo.</p><button class="boton" id="crear-cuenta">Crear mi cuenta</button>`
           : `<p class="sub">Sin contraseña. Cada vez que entres te mandamos un enlace a tu correo; vale 20 minutos y se usa una sola vez.</p><div class="acceso-correo"><span>✉️</span><b>${esc(V.sesion.correo || '')}</b></div>
           <label class="elemento" style="margin-top:12px;cursor:pointer;color:var(--tinta)"><input type="checkbox" id="avisos-correo" ${(V.ajustes || {}).avisos_correo === false ? '' : 'checked'} style="accent-color:var(--rosa)"> Avisarme por correo: coincidencias, puertas abiertas y mensajes cuando no esté aquí</label>`}</section>
+      <section class="tarjeta"><h2>Sonido</h2><p class="sub">Cupido suena suave y solo cuando pasa algo. Aquí eliges qué familias quieres oír y el volumen.</p><div id="son-priv"></div></section>
       <section class="tarjeta"><h2>Cerrar sesión</h2><p class="sub">Olvida tu sesión en este dispositivo. ${DEMO() ? 'El demo siempre está a un clic en la puerta de entrada.' : 'Para volver, pide un enlace nuevo con tu correo.'}</p>
         <button class="boton boton-oscuro" id="btn-salir">⏻ Cerrar sesión</button></section>`;
   },
@@ -456,8 +460,8 @@ const DESPUES = {
   },
   estilo() {
     TIPOS_UI.forEach(cargarFuente); // para que las muestras se vean con su propia letra
-    $$('[data-color]').forEach((b) => b.onclick = async () => { await guardarEstilo({ color: b.dataset.color }); ir('estilo'); });
-    $$('[data-tipo]').forEach((b) => b.onclick = async () => { await guardarEstilo({ tipo: b.dataset.tipo }); ir('estilo'); });
+    $$('[data-color]').forEach((b) => b.onclick = async () => { tocar('estilo'); await guardarEstilo({ color: b.dataset.color }); ir('estilo'); });
+    $$('[data-tipo]').forEach((b) => b.onclick = async () => { tocar('estilo'); await guardarEstilo({ tipo: b.dataset.tipo }); ir('estilo'); });
   },
   inicio() { const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta; },
   avisos: marcarLeidos,
@@ -470,6 +474,7 @@ const DESPUES = {
   },
   privacidad() {
     $('#btn-salir').onclick = () => $('#salir').click();
+    panelSonido($('#son-priv'));
     const ac = $('#avisos-correo'); if (ac) ac.onchange = async () => { try { const r = await api('/api/yo/ajustes', { avisos_correo: ac.checked }); V.ajustes = r.ajustes; avisar(ac.checked ? 'Te avisaremos por correo.' : 'Sin avisos por correo. Los enlaces para entrar sí llegan.'); } catch (e) { avisar(e.message); } };
     const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta;
     $('#btn-pausa').onclick = async (e) => {
@@ -550,13 +555,13 @@ function vistaCharla(otra) {
       <aside class="tarjeta ch-lado" id="ch-lado"><p class="vacio">Cargando…</p></aside>
     </div>`;
 }
-const sonidoOn = () => { try { return localStorage.getItem('cupido.sonido') !== 'no'; } catch { return true; } };
+const sonidoOn = () => ajustesSonido().on;
 let _ac = null;
 function campana(f = 1175, dur = 0.16, vol = 0.05, retraso = 0) { // tono suave por código, sin archivos (como en la Mina)
   if (!sonidoOn()) return;
   try { _ac = _ac || new (window.AudioContext || window.webkitAudioContext)(); const t = _ac.currentTime + retraso; const o = _ac.createOscillator(), g = _ac.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g).connect(_ac.destination); o.start(t); o.stop(t + dur + 0.02); } catch {}
 }
-const sonMensaje = () => { campana(1175, 0.16, 0.04); campana(1568, 0.24, 0.035, 0.07); };
+const sonMensaje = () => tocar('mensaje');
 const fechaDe = (iso) => new Date(String(iso).replace(' ', 'T') + 'Z');
 const diaDe = (iso) => { const d = fechaDe(iso), hoy = new Date(); const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1); const f = (x) => x.toDateString(); return f(d) === f(hoy) ? 'Hoy' : f(d) === f(ayer) ? 'Ayer' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }); };
 const horaDe = (iso) => fechaDe(iso).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
@@ -634,8 +639,8 @@ async function mandar(cuerpo) {
   caja.appendChild(temp); caja.scrollTop = caja.scrollHeight;
   señalEscribiendo(false);
   if (CH.citando) { cuerpo.respondeA = CH.citando.id; quitarCita(); }
-  try { await api(`/api/charla/${encodeURIComponent(otra)}`, cuerpo); await CH.traer(); }
-  catch (err) { temp.remove(); avisar(err.message); throw err; }
+  try { await api(`/api/charla/${encodeURIComponent(otra)}`, cuerpo); tocar(cuerpo.tipo === 'sticker' ? 'sticker' : 'enviado'); await CH.traer(); }
+  catch (err) { temp.remove(); tocar('error'); avisar(err.message); throw err; }
 }
 async function subirAdjunto(clase, archivo) {
   const otra = CH.otra;
@@ -662,12 +667,12 @@ async function notaDeVoz(boton) {
   rec.ondataavailable = (e) => e.data.size && partes.push(e.data);
   const reloj = setInterval(() => { seg++; boton.textContent = `⏹ ${seg}s`; if (seg >= 120) rec.stop(); }, 1000);
   rec.onstop = () => {
-    clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); CH.grabando = null; boton.textContent = '🎤'; boton.classList.remove('grabando');
+    clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); CH.grabando = null; boton.textContent = '🎤'; boton.classList.remove('grabando'); tocar('voz_fin');
     if (seg < 1) { avisar('Muy corta. Mantén un segundo al menos.'); return; }
     const blob = new Blob(partes, { type: rec.mimeType || mime || 'audio/webm' });
     subirAdjunto('voz', new File([blob], 'Nota de voz', { type: blob.type }));
   };
-  CH.grabando = rec; boton.textContent = '⏹ 0s'; boton.classList.add('grabando'); rec.start(500);
+  CH.grabando = rec; boton.textContent = '⏹ 0s'; boton.classList.add('grabando'); rec.start(500); tocar('voz_inicio');
   avisar('Grabando… toca ⏹ para mandar.', 2500);
 }
 function conectarVivo(otra) {
@@ -681,9 +686,9 @@ function conectarVivo(otra) {
     let ev; try { ev = JSON.parse(e.data); } catch { return; }
     if (ev.t === 'mensaje') { CH.traer?.(true, ev); }
     else if (ev.t === 'escribiendo') mostrarEscribiendo(!!ev.on);
-    else if (ev.t === 'reaccion') CH.traer?.(true);
+    else if (ev.t === 'reaccion') { tocar('reaccion', { fuerza: 0.7 }); CH.traer?.(true); }
     else if (ev.t === 'visto') { CH.visto = Math.max(CH.visto, ev.hasta || 0); repintarVisto(); }
-    else if (ev.t === 'presencia') { if (CH.datos) { CH.datos.otra.enLinea = !!ev.en; if (!ev.en) CH.datos.otra.ultimaVez = new Date().toISOString().replace('T', ' ').slice(0, 19); } pintarPresencia(); }
+    else if (ev.t === 'presencia') { if (ev.en) tocar('en_linea'); if (CH.datos) { CH.datos.otra.enLinea = !!ev.en; if (!ev.en) CH.datos.otra.ultimaVez = new Date().toISOString().replace('T', ' ').slice(0, 19); } pintarPresencia(); }
     else if (ev.t === 'quien') { if (CH.datos) CH.datos.otra.enLinea = (ev.en || []).includes(otra); pintarPresencia(); }
   };
   ws.onclose = () => { if (CH.otra !== otra) return; CH.vivo = false; clearInterval(CH.ping); clearInterval(CH.reloj); CH.reloj = setInterval(() => CH.traer?.(false), 2500); const espera = Math.min(15000, 1000 * 2 ** CH.reintento++); setTimeout(() => { if (CH.otra === otra && !CH.vivo) conectarVivo(otra); }, espera); };
@@ -739,6 +744,7 @@ async function engancharCharla(otra) {
         CH.ultimo = d.mensajes[d.mensajes.length - 1].id; CH.ultimoTsPintado = fechaDe(d.mensajes[d.mensajes.length - 1].creado).getTime();
         if (abajo) caja.scrollTop = caja.scrollHeight;
         else { const n = d.mensajes.filter((m) => !m.mio && m.tipo !== 'sistema').length; if (n) { CH.sinLeer += n; $('#ch-abajo-n').textContent = CH.sinLeer; $('#ch-abajo').hidden = false; } }
+        if (ev && ev.de === 'sistema' && d.mensajes.some((m) => m.tipo === 'sistema' && /⟨[a-z0-9]+⟩/.test(m.texto || ''))) tocar('hito');
         if (ev && ev.de && ev.de !== 'sistema' && ev.de !== V.persona.id) { sonMensaje(); if (document.hidden) avisarFuera(d.otra.nombre, ev.vista || 'Mensaje nuevo'); }
         const mia = (V.charlas || []).find((x) => x.otra === otra); if (mia) { mia.nuevos = 0; pintarLateral(); }
         if (d.mensajes.some((m) => !m.mio && m.tipo !== 'sistema')) mostrarEscribiendo(false);
@@ -811,7 +817,7 @@ async function engancharCharla(otra) {
       const id = Number(b.dataset.reac), ya = $('.reac-bar', caja); if (ya) ya.remove();
       const bar = document.createElement('div'); bar.className = 'reac-bar'; bar.innerHTML = REACCIONES.map((r) => `<button type="button" data-r="${r}">${r}</button>`).join('') + `<i></i><button type="button" class="txt" data-citar="${id}" title="Responder">↩︎</button><button type="button" class="txt" data-guardar="${id}" title="${CH.guardados.has(id) ? 'Quitar de guardados' : 'Guardar'}">${CH.guardados.has(id) ? '🔖' : '☆'}</button>`;
       b.parentElement.appendChild(bar);
-      $$('[data-r]', bar).forEach((x) => x.onclick = async () => { bar.remove(); try { await api(`/api/charla/${encodeURIComponent(otra)}/reaccion`, { mensaje: id, emoji: x.dataset.r }); await traer(true); } catch (err) { avisar(err.message); } });
+      $$('[data-r]', bar).forEach((x) => x.onclick = async () => { bar.remove(); tocar('reaccion'); try { await api(`/api/charla/${encodeURIComponent(otra)}/reaccion`, { mensaje: id, emoji: x.dataset.r }); await traer(true); } catch (err) { avisar(err.message); } });
       $('[data-citar]', bar).onclick = () => { bar.remove(); const el = caja.querySelector(`.msg[data-id="${id}"]`); ponerCita(id, el?.classList.contains('mio'), (el?.querySelector('.globo')?.textContent || '').replace(/^\s*(Tú|[^\n]{0,40})\n?/, '').trim().slice(0, 100)); };
       $('[data-guardar]', bar).onclick = async () => { bar.remove(); try { const r = await api(`/api/charla/${encodeURIComponent(otra)}/guardar`, { mensaje: id }); if (r.guardado) CH.guardados.add(id); else CH.guardados.delete(id); const el = caja.querySelector(`.msg[data-id="${id}"] .cuando`); el?.querySelector('.marca-guardado')?.remove(); if (r.guardado) el?.insertAdjacentHTML('beforeend', '<span class="marca-guardado" title="Guardado">🔖</span>'); avisar(r.guardado ? 'Guardado. Lo encuentras en 🔖.' : 'Quitado de guardados.'); } catch (err) { avisar(err.message); } };
       return;
@@ -822,7 +828,7 @@ async function engancharCharla(otra) {
   };
   $('#ch-compartir').onclick = abrirCompartir;
   $('#ch-carta').onclick = () => { const o = CH.datos?.otra; if (!o) return; abrirHoja(`La carta de ${esc(o.nombre)}`, `${o.carta ? `<div class="carta">${esc(o.carta)}</div>` : '<p class="vacio">Todavía no hay carta.</p>'}${o.malinterpretan ? `<p class="entender"><b>Lo que le gustaría que entendieras desde el día uno:</b> ${esc(o.malinterpretan)}</p>` : ''}${o.martes ? `<h3 style="margin:16px 0 6px">Su martes ideal dentro de 10 años</h3><p style="white-space:pre-line;color:var(--tinta-2)">${esc(o.martes)}</p>` : ''}`); };
-  $('#ch-sonido').onclick = () => { const on = !sonidoOn(); try { localStorage.setItem('cupido.sonido', on ? 'si' : 'no'); } catch {} $('#ch-sonido').textContent = on ? '🔈' : '🔇'; if (on) sonMensaje(); avisar(on ? 'Sonido encendido.' : 'Sonido apagado.'); };
+  $('#ch-sonido').onclick = () => abrirPanelSonido();
   $('#ch-buscar').onclick = () => abrirPanelCabeza('buscar');
   $('#ch-guardados').onclick = () => abrirPanelCabeza('guardados');
   $('#ch-lado-btn').onclick = () => { $('#ch-rejilla').classList.toggle('lado-abierto'); };
@@ -939,7 +945,7 @@ function abrirCompartir() {
     if (!elegidos.length) { avisar('Elige al menos un elemento.'); return; }
     const sensibles = elegidos.filter((e) => !ELEMENTO[e].suave);
     if (sensibles.length && !confirm(`Vas a compartir ${sensibles.length} elemento(s) sensible(s): ${sensibles.map((e) => ELEMENTO[e].n).join(', ')}. No se puede retirar. ¿Seguro?`)) return;
-    try { await api(`/api/charla/${encodeURIComponent(CH.otra)}/liberar`, { elementos: elegidos }); cerrar(); avisar('Listo: ya lo puede ver.'); CH.datos = null; CH.ultimo = 0; $('#ch-mensajes').innerHTML = ''; engancharCharla(CH.otra); }
+    try { await api(`/api/charla/${encodeURIComponent(CH.otra)}/liberar`, { elementos: elegidos }); cerrar(); tocar('guardado'); avisar('Listo: ya lo puede ver.'); CH.datos = null; CH.ultimo = 0; $('#ch-mensajes').innerHTML = ''; engancharCharla(CH.otra); }
     catch (e) { avisar(e.message); }
   };
 }
@@ -1016,7 +1022,31 @@ async function pintarPrograma() {
   const mf = $('#monto-fondo'); if (mf) mf.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); ir2('fondo', Number(mf.value)); } };
 }
 // al volver de Stripe
-(async () => { const sid = new URLSearchParams(location.search).get('apoyo'); if (!sid) return; history.replaceState(null, '', '/persona#apoyar'); try { const r = await api('/api/apoyar/confirmar', { sid }); avisar(r.tipo === 'socio' ? `✦ Gracias. Ya eres Socio fundador con ${pesos(r.monto)} al mes.` : `🤍 Gracias. Tus ${pesos(r.monto)} ya están en el Fondo de atracción.`, 6000); setTimeout(() => { if (seccion === 'apoyar') pintarPrograma(); }, 500); } catch (e) { avisar(e.message); } })();
+(async () => { const sid = new URLSearchParams(location.search).get('apoyo'); if (!sid) return; history.replaceState(null, '', '/persona#apoyar'); try { const r = await api('/api/apoyar/confirmar', { sid }); tocar('gracias'); avisar(r.tipo === 'socio' ? `✦ Gracias. Ya eres Socio fundador con ${pesos(r.monto)} al mes.` : `🤍 Gracias. Tus ${pesos(r.monto)} ya están en el Fondo de atracción.`, 6000); setTimeout(() => { if (seccion === 'apoyar') pintarPrograma(); }, 500); } catch (e) { avisar(e.message); } })();
+
+/* ── sonido: panel y novedades (coincidencias nuevas y logros recién ganados) ── */
+function abrirPanelSonido() {
+  const velo = document.createElement('div'); velo.className = 'modal-velo on';
+  velo.innerHTML = `<div class="modal claro" role="dialog"><button class="cerrar" aria-label="Cerrar">×</button><h2>Sonido</h2><p class="sub">Todo está precargado: del evento al sonido no hay espera. Apaga lo que no quieras.</p><div id="son-cont"></div></div>`;
+  document.body.appendChild(velo); panelSonido(velo.querySelector('#son-cont'));
+  const cerrar = () => { velo.remove(); const b = $('#ch-sonido'); if (b) b.textContent = ajustesSonido().on ? '🔈' : '🔇'; };
+  velo.querySelector('.cerrar').onclick = cerrar; velo.onclick = (e) => { if (e.target === velo) cerrar(); };
+}
+// Al abrir el tablero: si hay una coincidencia nueva sin leer, suena una vez; si ganaste un logro desde la última vez, también
+function sonarNovedades() {
+  try {
+    const k = 'cupido.novedades.' + V.persona.id, prev = JSON.parse(localStorage.getItem(k) || '{}');
+    const nuevos = V.avisos.filter((a) => !a.leido && a.tipo === 'coincidencia').map((a) => a.id);
+    const apert = V.avisos.filter((a) => !a.leido && a.tipo === 'apertura').map((a) => a.id);
+    const d = derivados(), ganados = d.logros.filter((l) => l.ok).length;
+    setTimeout(() => {
+      if (apert.some((id) => !(prev.avisos || []).includes(id))) tocar('puerta');
+      else if (nuevos.some((id) => !(prev.avisos || []).includes(id))) tocar('coincidencia');
+      else if (prev.logros != null && ganados > prev.logros) tocar('logro');
+    }, 900);
+    localStorage.setItem(k, JSON.stringify({ avisos: [...nuevos, ...apert], logros: ganados }));
+  } catch {}
+}
 
 /* ── mi vida hoy: valores, rueda y lectura ───────────────────────────────── */
 function vidaActual() {
@@ -1067,7 +1097,7 @@ async function subirMedio(tipo, archivo) {
     const cuerpo = tipo === 'foto' ? await reducirFoto(archivo) : archivo;
     const mime = tipo === 'foto' ? 'image/jpeg' : (archivo.type || (tipo === 'audio' ? 'audio/webm' : 'video/webm')).split(';')[0];
     const r = await api2('PUT', `/api/medio/${tipo}`, cuerpo, mime);
-    V.misMedios = r.medios; pintarLateral(); ir('medios');
+    V.misMedios = r.medios; pintarLateral(); ir('medios'); tocar('logro', { fuerza: 0.8 });
     avisar(tipo === 'foto' ? 'Tu foto quedó guardada.' : tipo === 'audio' ? 'Tu voz quedó guardada.' : 'Tu video quedó guardado.');
   } catch (e) { if (est) est.textContent = ''; avisar(e.message); }
 }
@@ -1156,8 +1186,8 @@ async function decidir(clave, decision, boton) {
         const pu = t?.querySelector('.puerta');
         if (pu && !document.hidden) { pu.classList.remove('abierta'); requestAnimationFrame(() => requestAnimationFrame(() => pu.classList.add('abierta'))); }
       }, 80);
-      avisar('💘 Los dos dijeron que sí. Se abrió la puerta.', 4200);
-    } else { ir(seccion); avisar(decision === 'si' ? 'Tu sí quedó guardado. Nadie lo verá hasta que haya dos.' : 'Listo. Nadie lo sabrá.'); }
+      tocar('puerta'); avisar('💘 Los dos dijeron que sí. Se abrió la puerta.', 4200);
+    } else { ir(seccion); tocar(decision === 'si' ? 'si' : 'guardado'); avisar(decision === 'si' ? 'Tu sí quedó guardado. Nadie lo verá hasta que haya dos.' : 'Listo. Nadie lo sabrá.'); }
   } catch (e) { boton.disabled = false; avisar(e.message); }
 }
 </script>

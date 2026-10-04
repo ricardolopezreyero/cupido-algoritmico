@@ -14,6 +14,7 @@ import { limpiarVida } from '../public/js/vida.js';
 import { mandarMuestra, correoA } from './correos.js';
 import { verPrograma, apoyar, confirmarApoyo, ajustarPrograma, aportesAdmin, distribucionPrecios } from './programa.js';
 import { limpiarPrecioJusto, REVISION_DIAS } from './precios.js';
+import { generarSonido, servirSonido, estadoSonidos } from './sonidos.js';
 import { avance } from '../public/js/preguntas.js';
 import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
@@ -60,9 +61,11 @@ export default {
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
     const ruta = url.pathname.replace(/\/$/, '') || '/';
+    let x;
     // Casa única: todo vive en cupido.capitaltorreon.com; la dirección vieja de workers.dev redirige
     if (url.hostname.endsWith('.workers.dev')) return Response.redirect(`https://cupido.capitaltorreon.com${url.pathname}${url.search}`, 301);
     try {
+      if ((x = ruta.match(/^\/sonidos\/([a-z_]+)\.mp3$/))) return await servirSonido(env, x[1]); // los sonidos, desde R2, cacheados un año
       if (ruta.startsWith('/docs/')) {
         const d = DOCS[ruta.slice(6)];
         return d ? new Response(d, { headers: { 'content-type': 'text/markdown; charset=utf-8' } }) : new Response('No existe', { status: 404 });
@@ -80,7 +83,6 @@ export default {
         try { return irA('/persona', url, cookieSesion(await entrarDemo(env, url.searchParams.get('id')), url)); }
         catch { return irA('/entrar', url); }
       }
-      let x;
       if ((x = ruta.match(/^\/i\/([a-z0-9]{5,12})$/))) {
         // invitación: se recuerda quién invitó y se va a la entrada
         return new Response(null, { status: 302, headers: { location: new URL('/bienvenida', url).href, 'set-cookie': `cupido_inv=${x[1]}; Path=/; Max-Age=2592000; SameSite=Lax${url.protocol === 'https:' ? '; Secure' : ''}` } });
@@ -216,6 +218,9 @@ async function api(req, env, ctx, url) {
 
   /* ── El programa: todo gratis hoy; apoyar es voluntario ─────────────────── */
   if (ruta === '/api/programa' && metodo === 'GET') return json(await verPrograma(env, yo && !yo.sesion.demo ? yo.P : null));
+  if (ruta === '/api/admin/sonidos' && metodo === 'GET') return json(await estadoSonidos(env));
+  if ((x = m(/^\/api\/admin\/sonidos\/([a-z_]+)\.mp3$/)) && metodo === 'GET') return await servirSonido(env, x[1]); // el original en R2, para bajarlo a public/sonidos
+  if (ruta === '/api/admin/sonidos/generar' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await generarSonido(env, String(b.id || '')); return r.error ? error(r.error, r.status) : json(r); }
   if (ruta === '/api/admin/precios' && metodo === 'GET') return json(await distribucionPrecios(env));
   if (ruta === '/api/apoyar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 4000); const r = await apoyar(env, url, yo.P, b); return r.error ? error(r.error, r.status) : json(r); }
   if (ruta === '/api/apoyar/confirmar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await confirmarApoyo(env, yo.P, b.sid); return r.error ? error(r.error, r.status) : json(r); }

@@ -27,6 +27,8 @@
 import { $, $$, esc, api, avisar } from '/js/ui.js';
 import { PREGUNTAS, BLOQUES, PARTES, avance } from '/js/preguntas.js';
 import { dictable } from '/js/dictar.js';
+import { tocar, precargar } from '/js/sonido.js';
+precargar(['toque', 'guardado', 'paso', 'logro', 'coincidencia', 'error']);
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const app = $('#app');
 const q = new URLSearchParams(location.search);
@@ -150,6 +152,7 @@ function pantallaDemo(previo) {
 
 function pintar() {
   app.dispatchEvent(new Event('dictar:parar'));
+  if (window.__cuestPintado) tocar('paso', { fuerza: 0.7 }); window.__cuestPintado = true;
   const c = cola[idx];
   progreso();
   window.scrollTo(0, 0);
@@ -266,6 +269,7 @@ async function fin() {
   const av = avance(R);
   const faltanEst = PARTES.filter((pt) => pt.k !== 'text' && !pt.opcional && !(pt.si && R[pt.si.id] !== pt.si.v) && !lleno(R[pt.id]));
   const hechas = PREGUNTAS.filter(contestada).length;
+  tocar(av.listo ? 'coincidencia' : 'logro');
   app.innerHTML = `<div class="intermedio">
     <div class="grande">${av.listo ? '💘' : '🌱'}</div>
     <h2>${av.listo ? 'Entraste al matching' : 'Así va tu cuestionario'}</h2>
@@ -315,6 +319,7 @@ async function azar() {
   setTimeout(() => location.href = '/persona', 1200);
 }
 
+app.addEventListener('click', (e) => { if (e.target.closest('.opcion')) tocar('toque'); });
 armarCola();
 // ?p=22 abre directo esa pregunta (desde el panel: "cuéntale más en la 22")
 const saltar = Number(q.get('p'));

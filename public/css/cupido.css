@@ -938,3 +938,13 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 .nota-pj { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--rosa-suave); font-size: 13.5px; color: var(--tinta-2); }
 .precio-justo.gratis .nota-pj { background: var(--ok-suave); color: var(--ok); font-weight: 600; }
 /* fin precio justo · RLR */
+
+/* ── Sonido: el panel · RLR ───────────────────────────────────────────── */
+.son-panel { display: grid; gap: 6px; }
+.son-fila { display: grid; grid-template-columns: 1fr auto auto; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--linea); border-radius: 12px; background: var(--blanco); cursor: pointer; }
+.son-fila.principal { background: var(--rosa-suave); border-color: var(--rosa-linea); }
+.son-fila b { display: block; font-size: 14px; } .son-fila small { display: block; color: var(--gris); font-size: 12px; }
+.son-fila input[type=checkbox] { width: 20px; height: 20px; accent-color: var(--rosa); }
+.son-fila input[type=range] { grid-column: 2 / 4; width: 160px; accent-color: var(--rosa); }
+.son-probar { border: 1px solid var(--linea-2); background: var(--blanco); border-radius: 50%; width: 30px; height: 30px; cursor: pointer; color: var(--rosa-osc); font-size: 12px; }
+/* fin sonido · RLR */

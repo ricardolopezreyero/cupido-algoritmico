@@ -15,6 +15,7 @@ export async function api(ruta, datos) {
 }
 
 export function avisar(txt, ms = 3200) {
+  try { if (/no se pudo|inválid|falló|error|no pudimos|sin permiso/i.test(txt)) import('/js/sonido.js').then((m) => m.tocar('error')); } catch {}
   let t = $('.toast');
   if (!t) { t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); document.body.appendChild(t); }
   t.textContent = txt;

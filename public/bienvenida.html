@@ -36,6 +36,8 @@
 <script type="module">
 // RLR · el recorrido: nueve pantallas; tres segundos mínimo en cada una; sin salida la primera vez; el avance se guarda
 import { $, $$, esc, api } from '/js/ui.js';
+import { tocar, precargar } from '/js/sonido.js';
+precargar(['paso', 'bienvenida', 'toque', 'puerta', 'si', 'coincidencia', 'mensaje', 'estilo']);
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const q = new URLSearchParams(location.search);
 const luego = q.get('luego');
@@ -117,10 +119,10 @@ function cuentaRegresiva(final) {
   requestAnimationFrame(() => { arco.style.transition = `stroke-dashoffset ${ESPERA}s linear`; arco.style.strokeDashoffset = String(2 * Math.PI * 15.5); });
   reloj = setInterval(() => {
     t--; seg.textContent = Math.max(0, t);
-    if (t <= 0) { clearInterval(reloj); sig.disabled = false; sig.classList.remove('esperando'); seg.textContent = '✓'; if (auto && !final) autoT = setTimeout(() => { if (auto) $('#bv-sig').click(); }, 350); }
+    if (t <= 0) { clearInterval(reloj); sig.disabled = false; sig.classList.remove('esperando'); seg.textContent = '✓'; tocar('toque', { fuerza: 0.6 }); if (auto && !final) autoT = setTimeout(() => { if (auto) $('#bv-sig').click(); }, 350); }
   }, 1000);
 }
-$('#bv-sig').onclick = () => { if ($('#bv-sig').disabled) return; clearTimeout(autoT); if (i === PASOS.length - 1) irseAlFinal(); else { i++; pintar(1); } };
+$('#bv-sig').onclick = () => { if ($('#bv-sig').disabled) return; clearTimeout(autoT); if (i === PASOS.length - 1) { tocar('bienvenida'); setTimeout(irseAlFinal, 900); } else { tocar('paso'); i++; pintar(1); } };
 $('#bv-atras').onclick = () => { if (i > 0) { clearTimeout(autoT); i--; pintar(-1); } };
 $('#bv-play').onclick = () => { auto = !auto; $('#bv-play').classList.toggle('on', auto); $('#bv-play').querySelector('span').textContent = auto ? 'En automático' : 'Automático'; if (auto && !$('#bv-sig').disabled && i < PASOS.length - 1) $('#bv-sig').click(); };
 document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'Enter') $('#bv-sig').click(); if (e.key === 'ArrowLeft') $('#bv-atras').click(); });
@@ -160,15 +162,15 @@ const DEMOS = {
   },
   puerta() {
     const A = $('#bv-si-a'), B = $('#bv-si-b'), P = $('#bv-p'), T = $('#bv-puerta-txt');
-    const suyo = () => { B.disabled = true; B.textContent = 'Sí 🤍'; P.classList.add('abierta'); T.innerHTML = '<b>Se abrió la puerta.</b> Para los dos, en el mismo instante. Y si alguien hubiera dicho que no, el otro jamás lo sabría.'; };
-    A.onclick = () => { A.disabled = true; A.textContent = 'Tu sí está guardado 🤍'; T.textContent = 'Nadie lo ve todavía. La otra persona también está decidiendo…'; luegoDe(1400, () => { B.disabled = false; B.textContent = 'La otra persona: sí, quiero conocer'; B.classList.remove('boton-claro'); T.textContent = 'Toca su sí.'; }); B.onclick = suyo; };
+    const suyo = () => { B.disabled = true; B.textContent = 'Sí 🤍'; P.classList.add('abierta'); tocar('puerta'); T.innerHTML = '<b>Se abrió la puerta.</b> Para los dos, en el mismo instante. Y si alguien hubiera dicho que no, el otro jamás lo sabría.'; };
+    A.onclick = () => { A.disabled = true; tocar('si'); A.textContent = 'Tu sí está guardado 🤍'; T.textContent = 'Nadie lo ve todavía. La otra persona también está decidiendo…'; luegoDe(1400, () => { B.disabled = false; B.textContent = 'La otra persona: sí, quiero conocer'; B.classList.remove('boton-claro'); T.textContent = 'Toca su sí.'; }); B.onclick = suyo; };
     luegoDe(2600, () => { if (!A.disabled) A.click(); luegoDe(2200, () => { if (!B.disabled) B.click(); }); });
   },
   charla() {
     const chat = $('#bv-chat'), esc2 = $('#bv-escribe');
     const burb = (mio, t, extra = '') => `<div class="bv-b ${mio ? 'mio' : 'suyo'}">${esc(t)}${extra}</div>`;
     const guion = [[true, 'Hola, Mariana 👋', '<small>saludo automático</small>'], [false, 'Hola, Diego 👋', '<small>saludo automático</small>'], [false, 'Leí tu carta dos veces. ¿Cómo fue tu martes?', ''], [true, 'Largo, pero bonito. Te cuento con una nota de voz 🎤', '<small>Visto ✓✓</small>']];
-    guion.forEach(([m, t, x], k) => luegoDe(400 + k * 1100, () => { if (k === 2) esc2.hidden = true; chat.insertAdjacentHTML('beforeend', burb(m, t, x)); chat.scrollTop = chat.scrollHeight; }));
+    guion.forEach(([m, t, x], k) => luegoDe(400 + k * 1100, () => { if (k === 2) esc2.hidden = true; if (!m) tocar('mensaje', { fuerza: 0.6 }); chat.insertAdjacentHTML('beforeend', burb(m, t, x)); chat.scrollTop = chat.scrollHeight; }));
     luegoDe(1700, () => { esc2.hidden = false; });
   },
   confianza() {
@@ -183,7 +185,7 @@ const DEMOS = {
     $('#bv-camino').innerHTML = C.map(([ic, t], k) => `<div class="bv-c" style="animation-delay:${k * 260}ms"><div>${ic}</div><span>${t}</span></div>`).join('');
     const COL = [['#d6455f', 'Rosa'], ['#8e2043', 'Vino'], ['#2f55c9', 'Azul'], ['#1f8a7a', 'Verde']];
     $('#bv-colores').innerHTML = `<span>Tu estilo:</span>` + COL.map(([c, n]) => `<button type="button" style="background:${c}" title="${n}"></button>`).join('');
-    $$('#bv-colores button').forEach((b) => b.onclick = () => { document.documentElement.style.setProperty('--rosa', b.style.background); document.documentElement.style.setProperty('--rosa-osc', b.style.background); $$('#bv-colores button').forEach((x) => x.classList.toggle('on', x === b)); });
+    $$('#bv-colores button').forEach((b) => b.onclick = () => { tocar('estilo'); document.documentElement.style.setProperty('--rosa', b.style.background); document.documentElement.style.setProperty('--rosa-osc', b.style.background); $$('#bv-colores button').forEach((x) => x.classList.toggle('on', x === b)); });
   },
 };
 pintar(1);
