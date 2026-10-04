@@ -50,15 +50,15 @@ export const PREGUNTAS = [
       { id: 'edad', k: 'num', l: 'Tu edad', min: 18, max: 99, filtro: true },
       { id: 'nacimiento', k: 'fecha', l: 'Fecha de nacimiento', opcional: true, nota: 'El año lo calculamos con tu edad; tú pones mes y día.' },
     ] },
-  { n: 2, b: 1, t: '¿En qué ciudad vives, y qué tan lejos llegarías por la persona correcta?',
+  { n: 2, b: 1, t: '¿En qué ciudad vives, y qué tan lejos te mudarías por la persona correcta?',
     help: { why: 'La distancia no mata coincidencias; la inflexibilidad mutua sí. No respondas lo romántico: responde lo real. ¿De verdad te irías?' },
     parts: [
       { id: 'ciudad', k: 'city', l: 'Tu ciudad', filtro: true, o: CIUDADES },
-      { id: 'mudanza', k: 'choice', l: '¿Qué tan lejos llegarías?', filtro: true, o: [
+      { id: 'mudanza', k: 'choice', l: 'Por la persona correcta, ¿te mudarías?', filtro: true, o: [
         ['no', 'No me movería de mi ciudad'], ['pais', 'Me movería dentro de mi país'],
         ['mundo', 'Me movería a otro país'], ['donde_sea', 'A donde sea, si es la persona correcta']] },
     ] },
-  { n: 3, b: 1, t: '¿Quieres hijos?',
+  { n: 3, b: 1, t: '¿Quieres tener hijos (o más hijos)?',
     help: { why: 'Es la pregunta que más parejas rompe. «Me inclino» es una respuesta perfectamente válida — no la conviertas en «seguro» para verte decidido.' },
     parts: [
       { id: 'hijos', k: 'choice', filtro: true, o: [
@@ -84,7 +84,7 @@ export const PREGUNTAS = [
         ['mi_fe', 'En mi fe'], ['acordada', 'En la fe que acordemos juntos'], ['elijan', 'Que ellos elijan cuando crezcan'],
         ['sin', 'Sin formación religiosa'], ['no_aplica', 'No aplica: no habrá hijos']] },
     ] },
-  { n: 5, b: 1, t: '¿Qué estás buscando exactamente?',
+  { n: 5, b: 1, t: '¿Qué tipo de relación estás buscando exactamente?',
     help: { why: 'No hay respuesta que te haga ver mejor. Hay respuesta que te empareja con quien quiere lo mismo — y al mismo ritmo.' },
     parts: [
       { id: 'relacion', k: 'choice', o: [
@@ -97,7 +97,7 @@ export const PREGUNTAS = [
     ] },
 
   /* ── Bloque 2 · Visión de vida ──────────────────────────────────────────── */
-  { n: 6, b: 2, t: 'Describe un martes normal de tu vida ideal dentro de 10 años.',
+  { n: 6, b: 2, t: 'Describe un martes cualquiera de tu vida ideal, dentro de 10 años.',
     note: 'No describas tus sueños: describe un martes. La vida en pareja es de martes, no de bodas.',
     help: { why: 'Comparamos escenarios reales: ciudad o campo, hijos presentes, ritmo, rol del trabajo.',
       start: '¿A qué hora despiertas? ¿Qué ves por la ventana? ¿Quién más está en la casa? ¿Qué haces a las 2 pm? ¿Y a las 9 de la noche?',
@@ -116,7 +116,7 @@ export const PREGUNTAS = [
         ['muy', 'Muy presente: los veo cada semana y su opinión cuenta'], ['limites', 'Presente, con límites claros'],
         ['distante', 'Distante o poco involucrada']] },
     ] },
-  { n: 8, b: 2, t: '¿Qué papel juega el trabajo y la ambición en tu vida — y qué esperas del trabajo y la ambición de tu pareja?',
+  { n: 8, b: 2, t: '¿Qué lugar ocupan el trabajo y la ambición en tu vida, y qué esperas del trabajo y la ambición de tu pareja?',
     note: 'Son dos preguntas: cómo eres tú, y qué buscas en el otro. Responde ambas.',
     parts: [
       { id: 'trabajo', k: 'text' },
@@ -125,7 +125,7 @@ export const PREGUNTAS = [
       { id: 'ambicion_pareja', k: 'choice', l: 'De tu pareja esperas:', nuevo: true, o: [
         ['fuerte', 'Que tenga su propia ambición fuerte'], ['equilibrio', 'Que tenga equilibrio'], ['igual', 'Me da igual, mientras sea feliz']] },
     ] },
-  { n: 9, b: 2, t: 'Para ti, ¿qué es una vida bien vivida?',
+  { n: 9, b: 2, t: 'Para ti, ¿qué es una vida bien vivida? ¿Qué no puede faltar?',
     help: { start: 'Imagina que tienes 80 años y miras atrás con paz. ¿Qué tuvo que haber pasado? ¿Qué habría hecho que sintieras que la desperdiciaste?' },
     parts: [
       { id: 'vida', k: 'text' },
@@ -150,13 +150,13 @@ export const PREGUNTAS = [
     help: { start: 'Piensa en: una renuncia, una devolución, una verdad que te costó decir, un favor que negaste, algo que pagaste sin que nadie viera. Vale un caso pequeño: importa el patrón, no la épica.',
       why: 'Si de verdad no encuentras ninguno, escríbelo — eso también es una respuesta.' },
     parts: [{ id: 'principios', k: 'text' }] },
-  { n: 12, b: 3, t: 'Sobre el dinero: ¿cómo eres tú, y cómo imaginas manejarlo en pareja?',
+  { n: 12, b: 3, t: 'Sobre el dinero: ¿cómo lo manejas tú hoy, y cómo imaginas manejarlo en pareja?',
     help: { why: 'El dinero es de las primeras causas de conflicto en pareja. No hay opción correcta: hay parejas alineadas y parejas en guerra.' },
     parts: [
       { id: 'dinero', k: 'choice', l: 'Tú eres…', o: [['ahorro', 'Ahorrador/a'], ['equilibrado', 'Equilibrado/a'], ['gasto', 'Disfruto gastar lo que gano']] },
       { id: 'dinero_pareja', k: 'choice', l: 'En pareja imaginas…', o: [['comun', 'Todo en común'], ['mixto', 'Una parte común y una individual'], ['separado', 'Cuentas separadas']] },
     ] },
-  { n: 13, b: 3, t: '¿Qué tan importante es que tu pareja coincida contigo en visión política y social?',
+  { n: 13, b: 3, t: '¿Qué tan importante es que tu pareja piense como tú en lo político y lo social?',
     help: { why: 'No te preguntamos por quién votas. Solo hacia dónde te inclinas y cuánto te importa coincidir. «Prefiero no decirlo» nunca te quita coincidencias.' },
     parts: [
       { id: 'politica', k: 'choice', filtro: true, o: [
@@ -167,12 +167,12 @@ export const PREGUNTAS = [
     ] },
 
   /* ── Bloque 4 · Personalidad ────────────────────────────────────────────── */
-  { n: 14, b: 4, t: '¿Cómo recargas energía, y cómo es tu viernes ideal?',
+  { n: 14, b: 4, t: '¿Cómo recargas energía después de una semana pesada, y cómo es tu viernes ideal?',
     parts: [
       { id: 'energia', k: 'choice', l: 'Recargo energía…', o: [['solo', 'Solo/a o con muy poca gente'], ['depende', 'Depende'], ['gente', 'Rodeado/a de gente']] },
       { id: 'viernes', k: 'choice', l: 'Mi viernes ideal…', o: [['casa', 'Casa y calma'], ['pequeno', 'Plan pequeño (cena, cine, amigos cercanos)'], ['fiesta', 'Fiesta o evento social grande']] },
     ] },
-  { n: 15, b: 4, t: '¿Cómo te llevas con el orden y los planes?',
+  { n: 15, b: 4, t: '¿Cómo te llevas con el orden, los horarios y los planes?',
     parts: [{ id: 'planes', k: 'choice', o: [
       ['planifico', 'Planifico casi todo y me gusta así'], ['flexible', 'Estructura flexible: plan general, improvisación en los detalles'],
       ['fluyo', 'Fluyo: los planes me estorban']] }] },
@@ -189,7 +189,7 @@ export const PREGUNTAS = [
         ['ingenio', 'Ingenio y juegos de palabras'], ['fisico', 'Tonterías y comedia física'], ['memes', 'Memes e internet']] },
       { id: 'humor_texto', k: 'text', l: 'Con ejemplos' },
     ] },
-  { n: 18, b: 4, t: 'Entre estabilidad y aventura, ¿dónde vives tú?',
+  { n: 18, b: 4, t: 'Entre la estabilidad y la aventura, ¿dónde te sientes en casa?',
     parts: [{ id: 'aventura', k: 'scale', lo: 'Amo mi rutina y mi base', hi: 'Necesito cambio constante' }] },
 
   /* ── Bloque 5 · Conflicto y reparación ──────────────────────────────────── */
@@ -199,7 +199,7 @@ export const PREGUNTAS = [
     parts: [{ id: 'conflicto', k: 'choice', o: [
       ['caliente', 'Lo digo en el momento, a veces en caliente'], ['calma', 'Espero a calmarme y lo hablo pronto'],
       ['acumulo', 'Me lo guardo, y a veces se acumula hasta que explota'], ['evito', 'Tiendo a evitar el tema esperando que pase']] }] },
-  { n: 20, b: 5, t: 'Describe tu última discusión importante con alguien que amas.',
+  { n: 20, b: 5, t: 'Describe tu última discusión importante con alguien que amas (pareja, familia o un amigo).',
     help: { why: 'Nadie va a leer esto más que el algoritmo. No busca culpables: busca cómo reparas.' },
     parts: [
       { id: 'discusion_por', k: 'text', l: '¿Por qué fue?', min: 80 },
@@ -217,7 +217,7 @@ export const PREGUNTAS = [
         ['gesto', 'Un gesto de cariño'], ['escuchar', 'Escuchar sin defenderme']] },
       { id: 'reparacion', k: 'text', l: 'En tus palabras' },
     ] },
-  { n: 22, b: 5, t: '¿Qué aprendiste de tu relación pasada más importante? ¿Qué harías diferente TÚ?',
+  { n: 22, b: 5, t: '¿Qué aprendiste de tu relación más importante hasta hoy, y qué harías diferente TÚ la próxima vez?',
     note: 'No qué debió hacer diferente la otra persona.',
     help: { why: 'No te pedimos revivir la historia ni contar qué hizo la otra persona. Solo una cosa: ¿qué harías diferente tú?' },
     parts: [{ id: 'aprendi', k: 'text' }] },
@@ -229,7 +229,7 @@ export const PREGUNTAS = [
       { id: 'amor_recibo', k: 'rank', l: 'Toca en orden: primero lo que MÁS te llega', o: LENGUAJES },
       { id: 'amor_doy', k: 'rank', l: 'Ahora: cómo demuestras amor tú (primero lo más natural)', o: LENGUAJES },
     ] },
-  { n: 24, b: 6, t: '¿Cuánta cercanía necesitas en pareja?',
+  { n: 24, b: 6, t: '¿Cuánta cercanía necesitas en pareja, y cuánto espacio propio?',
     help: { why: 'Ni la simbiosis ni la independencia son mejores: son incompatibles entre sí.' },
     parts: [{ id: 'cercania', k: 'choice', o: [
       ['todo', 'Compartirlo casi todo: planes, amigos, tiempo'], ['juntos', 'Muy juntos, pero cada quien con su mundo propio'],
@@ -253,7 +253,7 @@ export const PREGUNTAS = [
     ] },
 
   /* ── Bloque 7 · Vida cotidiana ──────────────────────────────────────────── */
-  { n: 27, b: 7, t: 'Hábitos: cómo eres tú, y qué aceptas en tu pareja.',
+  { n: 27, b: 7, t: 'Tus hábitos: cómo eres tú hoy, y hasta dónde los aceptas en tu pareja.',
     help: { why: 'La mitad de la fricción doméstica vive aquí. Un «no acepto» contra un hábito declarado es eliminatorio — por eso vale responder con verdad.' },
     parts: [
       { id: 'alcohol', k: 'choice', l: 'Alcohol — tú:', o: [['nada', 'Nada'], ['social', 'Social'], ['frecuente', 'Frecuente']] },
@@ -268,7 +268,7 @@ export const PREGUNTAS = [
       { id: 'mascotas', k: 'choice', l: 'Mascotas — tú:', o: [['familia', 'Tengo y son familia'], ['gustan', 'Me gustan'], ['sin', 'Prefiero sin mascotas']] },
       { id: 'mascotas_acepto', k: 'choice', l: 'Mascotas — en tu pareja aceptas:', filtro: true, o: [['si', 'Que tenga y sean familia'], ['gustan', 'Que le gusten, sin más'], ['no', 'Prefiero que no tenga (alergias cuentan)']] },
     ] },
-  { n: 28, b: 7, t: 'Tu ritmo y tu espacio.',
+  { n: 28, b: 7, t: 'Tu ritmo del día y el orden de tu casa.',
     help: { why: 'El conflicto no viene del desorden: viene de la brecha entre el desorden de uno y el umbral del otro.' },
     parts: [
       { id: 'cronotipo', k: 'choice', l: '¿Madrugas o trasnochas?', o: [['madrugador', 'Madrugador/a'], ['flexible', 'Flexible'], ['nocturno', 'Nocturno/a']] },
@@ -284,7 +284,7 @@ export const PREGUNTAS = [
         ['naturaleza', 'Naturaleza'], ['amigos', 'Amigos y reuniones'], ['cultura', 'Cultura: museos, cine, lectura'],
         ['fiesta', 'Salir de fiesta'], ['proyectos', 'Mis proyectos']] },
     ] },
-  { n: 30, b: 7, t: 'En la casa que compartan, ¿cómo imaginas la división de tareas y responsabilidades?',
+  { n: 30, b: 7, t: 'En la casa que compartan, ¿cómo imaginas repartir las tareas y las responsabilidades del hogar?',
     help: { why: 'No hay modelo correcto. Hay parejas donde los dos quieren lo mismo — y parejas condenadas a pelear cada carga de lavadora.' },
     parts: [
       { id: 'tareas', k: 'choice', o: [
@@ -320,7 +320,7 @@ export const PREGUNTAS = [
       { id: 'deseo', k: 'choice', l: '¿Cómo suele aparecer tu deseo?', nuevo: true, o: [
         ['espontaneo', 'Suele aparecer solo, de la nada'], ['responsivo', 'Aparece cuando ya empezó la cercanía'], ['ambos', 'Depende del momento']] },
     ] },
-  { n: 35, b: 9, t: 'Entre lo clásico y lo explorador, ¿dónde estás tú — y dónde necesitas que esté tu pareja?',
+  { n: 35, b: 9, t: 'En lo sexual, entre lo clásico y lo explorador, ¿dónde estás tú, y dónde necesitas que esté tu pareja?',
     parts: [
       { id: 'apertura', k: 'scale', l: 'Tú:', lo: 'Lo tradicional me llena', hi: 'Explorar es esencial' },
       { id: 'apertura_pareja', k: 'choice', l: 'Tu pareja:', o: [
@@ -340,7 +340,7 @@ export const PREGUNTAS = [
         ['descuido', 'Descuido personal'], ['comparaciones', 'Comparaciones']] },
       { id: 'deseado', k: 'text', l: 'En tus palabras', opcional: true },
     ] },
-  { n: 37, b: 9, t: 'En tus relaciones pasadas, cuando uno quería y el otro no — ¿cómo lo manejaste tú?',
+  { n: 37, b: 9, t: 'En tus relaciones pasadas, cuando uno tenía ganas y el otro no, ¿cómo lo manejaste tú?',
     note: '¿Con palabras, con distancia, con reclamo, con paciencia?',
     help: { why: 'Todas las parejas del mundo viven esto. No te descalifica haberlo manejado mal: descalifica no saber cómo lo manejas.' },
     parts: [{ id: 'desajuste', k: 'text' }] },
@@ -358,23 +358,23 @@ export const PREGUNTAS = [
       { id: 'innegociables', k: 'text', l: 'Algo más que sea innegociable para ti', opcional: true },
     ] },
 
-  { n: 39, b: 9, t: 'Cómo vives la intimidad en el día a día.',
+  { n: 39, b: 9, t: '¿Cómo vives la intimidad en el día a día: la cercanía, la iniciativa y el después?',
     note: 'No es técnica: es cómo te acercas, cómo te gusta que se acerquen y qué necesitas después.',
     help: { why: 'La mayoría de los desencuentros sexuales no son de práctica: son de ritmo, de quién inicia y de qué pasa después. Preguntarlo evita que uno se sienta rechazado y el otro presionado.' },
     parts: [
       { id: 'contacto_diario', k: 'scale', l: '¿Cuánto contacto físico no sexual necesitas a diario? (abrazos, caricias, dormir pegados)', nuevo: true, lo: 'Poco: necesito mi espacio', hi: 'Mucho: todo el tiempo' },
-      { id: 'iniciativa', k: 'choice', l: 'La iniciativa', nuevo: true, o: [['yo', 'Me gusta tomarla yo'], ['otro', 'Me gusta que la tomen'], ['ambos', 'Los dos, por igual']] },
-      { id: 'estilo', k: 'multi', max: 2, l: 'Tu forma natural (hasta 2)', nuevo: true, o: [
+      { id: 'iniciativa', k: 'choice', l: 'La iniciativa, en lo íntimo', nuevo: true, o: [['yo', 'Me gusta tomarla yo'], ['otro', 'Me gusta que la tomen'], ['ambos', 'Los dos, por igual']] },
+      { id: 'estilo', k: 'multi', max: 2, l: 'Tu forma natural de vivir la intimidad (hasta 2)', nuevo: true, o: [
         ['lento', 'Lento y sensual'], ['intenso', 'Intenso y apasionado'], ['jugueton', 'Juguetón, con risa'], ['tierno', 'Tierno y muy cercano'], ['aventurero', 'Aventurero, con novedad']] },
       { id: 'despues', k: 'choice', l: 'Después, lo que más necesitas es…', nuevo: true, o: [
         ['abrazo', 'Quedarnos abrazados un buen rato'], ['hablar', 'Hablar y reír'], ['dormir', 'Dormir enseguida, sin más'], ['depende', 'Depende del día']] },
     ] },
-  { n: 40, b: 9, t: 'Tu historia, tu cuerpo y cuando no hay ganas.',
+  { n: 40, b: 9, t: 'Tu historia sexual, y qué pasa cuando no hay ganas.',
     note: 'Nadie humano lee esto. Solo sirve para no cruzarte con quien te haría sentir juzgado/a o presionado/a.',
     help: { why: 'La experiencia previa importa menos de lo que la gente cree, pero importa mucho que los dos la vivan sin juicio. Y el "no tengo ganas" existe en todas las parejas: cómo se dice y cómo se recibe predice más que la frecuencia.' },
     parts: [
       { id: 'experiencia', k: 'choice', l: 'Tu experiencia sexual hasta hoy', nuevo: true, o: [['poca', 'Poca o ninguna'], ['algo', 'Algunas relaciones'], ['bastante', 'Bastante']] },
-      { id: 'experiencia_pareja', k: 'choice', l: 'La de tu pareja', nuevo: true, o: [['igual', 'Me da igual'], ['parecida', 'Prefiero que sea parecida a la mía'], ['poca', 'Prefiero que sea poca']] },
+      { id: 'experiencia_pareja', k: 'choice', l: 'Y la experiencia de tu pareja, ¿cómo prefieres que sea?', nuevo: true, o: [['igual', 'Me da igual'], ['parecida', 'Prefiero que sea parecida a la mía'], ['poca', 'Prefiero que sea poca']] },
       { id: 'sin_ganas', k: 'choice', l: 'Cuando no tienes ganas, ¿qué haces la mayoría de las veces?', nuevo: true, o: [
         ['directo', 'Lo digo directo y con cariño'], ['senal', 'Espero que se note'], ['cedo', 'A veces cedo aunque no quiera'], ['cuesta', 'Me cuesta decirlo y me alejo']] },
       { id: 'sin_ganas_pareja', k: 'choice', l: 'Cuando tu pareja no tiene ganas, tú…', nuevo: true, o: [
@@ -394,13 +394,13 @@ export const PREGUNTAS = [
         ['juntos', 'Me gustaría compartirlas juntos'], ['espacio', 'Necesito que respete mi espacio para ellas'], ['igual', 'Me da igual']] },
       { id: 'practicas_texto', k: 'text', l: 'Qué haces y cada cuánto' },
     ] },
-  { n: 42, b: 10, t: 'Sobre tu propio crecimiento: ¿dónde estás?',
+  { n: 42, b: 10, t: 'Sobre tu crecimiento personal: ¿en qué momento estás hoy?',
     help: { why: 'El desnivel de conciencia es la fuente silenciosa de «ya no hablamos el mismo idioma» a los cinco años.' },
     parts: [
       { id: 'crecimiento', k: 'choice', o: [
         ['paz', 'Estoy en paz con quien soy; no busco reinventarme'], ['cuando', 'Trabajo en mí cuando la vida lo exige'],
         ['central', 'El crecimiento constante (terapia, lectura, práctica) es central en mi vida']] },
-      { id: 'crecimiento_pareja', k: 'choice', l: '¿Y tu pareja?', o: [['conmigo', 'Necesito que crezca conmigo'], ['acompane', 'Basta con que me acompañe']] },
+      { id: 'crecimiento_pareja', k: 'choice', l: '¿Y qué necesitas de tu pareja en esto?', o: [['conmigo', 'Necesito que crezca conmigo'], ['acompane', 'Basta con que me acompañe']] },
     ] },
   { n: 43, b: 10, t: 'Cuéntame la última vez que cambiaste de opinión sobre algo importante de ti mismo/a. ¿Qué te lo mostró?',
     parts: [{ id: 'cambie', k: 'text' }] },
