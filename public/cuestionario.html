@@ -105,6 +105,7 @@ async function inicio() {
   const previo = await cargarSesion();
   if (!previo) return;
   $('#pildora').hidden = !sesion.demo;
+  if (sesion.demo) { let b = {}; try { b = JSON.parse(localStorage.getItem('cupido.bienvenida.demo') || '{}'); } catch {} if (!b.hecho) { location.replace('/bienvenida?luego=cuestionario'); return; } }
   if (ficticia) return pantallaDemo(previo);
   const hechas = PREGUNTAS.filter(contestada).length;
   const empezado = hechas > 0;

@@ -894,3 +894,40 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 .montos input { font: 15px var(--sans); border: 1.5px solid var(--linea-2); border-radius: 999px; padding: 9px 14px; }
 @media (max-width: 640px) { .accion { grid-template-columns: 80px 1fr; } .accion .precio { grid-column: 2; text-align: left; } }
 /* fin programa · RLR */
+
+/* ── El recorrido v2: reloj, automático, nueve pantallas · RLR ─────────── */
+.bv-centro { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+.bv-puntos span { width: 9px; height: 9px; border-radius: 50%; background: #e6ddd6; display: inline-block; transition: transform .2s, background .2s; }
+.bv-puntos span.on { background: var(--rosa); transform: scale(1.35); } .bv-puntos span.hecho { background: var(--rosa-linea); }
+.bv-play { border: 1px solid var(--linea-2); background: var(--blanco); color: var(--tinta-2); font: 600 12.5px var(--sans); border-radius: 999px; padding: 5px 12px; cursor: pointer; }
+.bv-play.on { background: var(--rosa-suave); color: var(--rosa-osc); border-color: var(--rosa-linea); }
+#bv-sig { display: inline-flex; align-items: center; gap: 10px; }
+#bv-sig.esperando { background: var(--noche-3); box-shadow: none; cursor: wait; opacity: 1; }
+.bv-reloj { position: relative; width: 30px; height: 30px; flex: none; }
+.bv-reloj svg { width: 30px; height: 30px; transform: rotate(-90deg); }
+.bv-reloj circle { fill: none; stroke-width: 3; }
+.bv-reloj .fondo { stroke: rgba(255,255,255,.25); }
+.bv-reloj .arco { stroke: #fff; stroke-dasharray: 97.4; stroke-dashoffset: 0; stroke-linecap: round; }
+.bv-reloj b { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; font: 700 12px var(--sans); color: #fff; }
+.bv-que { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.bv-no { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+.bv-no span { border: 1px solid var(--linea-2); border-radius: 999px; padding: 7px 12px; font-size: 13.5px; color: var(--tinta-2); transition: all .4s; position: relative; }
+.bv-no span.tachado { color: var(--gris); text-decoration: line-through; opacity: .6; }
+.bv-flecha-abajo { font-size: 22px; color: var(--rosa); }
+.bv-si { background: var(--rosa-suave); border: 1px solid var(--rosa-linea); border-radius: 14px; padding: 14px 18px; font-size: 15.5px; color: var(--tinta); opacity: .35; transform: translateY(6px); transition: all .5s var(--ease); }
+.bv-si.on { opacity: 1; transform: none; }
+.bv-herr { display: flex; gap: 8px; margin-top: 10px; }
+.bv-herr span { border: 1px solid var(--linea-2); border-radius: 999px; padding: 5px 11px; font-size: 12.5px; color: var(--tinta-2); }
+.bv-escribe { display: inline-flex; gap: 4px; padding: 10px 14px; background: var(--crema); border: 1px solid var(--linea); border-radius: 14px; border-bottom-left-radius: 4px; }
+.bv-escribe span { width: 7px; height: 7px; border-radius: 50%; background: var(--gris); animation: punto 1.2s infinite; }
+.bv-escribe span:nth-child(2) { animation-delay: .2s; } .bv-escribe span:nth-child(3) { animation-delay: .4s; }
+.bv-chat { max-height: 190px; }
+.bv-el small { color: var(--ambar); font-weight: 600; margin-left: auto; font-size: 11px; }
+.bv-rostro { display: grid; gap: 8px; }
+.paso-r { display: flex; gap: 12px; align-items: center; padding: 10px 14px; border: 1px solid var(--linea); border-radius: 12px; color: var(--gris); font-size: 14px; opacity: .45; transform: translateX(-8px); transition: all .45s var(--ease); }
+.paso-r span { font-size: 20px; width: 28px; text-align: center; }
+.paso-r.on { opacity: 1; transform: none; color: var(--tinta); border-color: var(--rosa-linea); background: var(--blanco); }
+.bv-gratis { margin: 12px 0 0; font-size: 12px; color: var(--tinta-2); }
+.lateral nav a.recorrido { background: #2a2130; color: #ffd0da; margin-bottom: 8px; }
+@media (max-width: 560px) { .bv-play span { display: none; } }
+/* fin recorrido v2 · RLR */

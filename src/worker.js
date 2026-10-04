@@ -88,8 +88,10 @@ export default {
         return irA(r.completo ? '/persona' : r.nueva ? '/bienvenida?luego=cuestionario' : '/cuestionario', url, cookieSesion(r.sesion, url));
       }
       if (ruta === '/persona' || ruta === '/cuestionario') {
-        // Sin sesión no hay tablero ni cuestionario: a la puerta de entrada
-        if (!(await quien(env, req))) return irA(`/entrar${ruta === '/cuestionario' ? '?luego=cuestionario' : ''}`, url);
+        // Sin sesión no hay tablero ni cuestionario: a la puerta de entrada. Y sin el recorrido completo, tampoco (no se puede saltar).
+        const q = await quien(env, req);
+        if (!q) return irA(`/entrar${ruta === '/cuestionario' ? '?luego=cuestionario' : ''}`, url);
+        if (!q.sesion.demo) { let aj = {}; try { aj = JSON.parse(q.P.ajustes || '{}'); } catch {} if (!aj.bienvenida) return irA(`/bienvenida${ruta === '/cuestionario' ? '?luego=cuestionario' : ''}`, url); }
       }
 
       if (ruta === '/articulos') return await paginaLista(env, url);
@@ -156,6 +158,8 @@ async function api(req, env, ctx, url) {
     const COLORES = ['rosa', 'vino', 'azul', 'verde'], TIPOS = ['clasica', 'editorial', 'moderna', 'calida'];
     let previo = {}; try { previo = JSON.parse(yo.P.ajustes || '{}'); } catch {}
     const aj = { ...previo, color: COLORES.includes(b.color) ? b.color : previo.color || 'rosa', tipo: TIPOS.includes(b.tipo) ? b.tipo : previo.tipo || 'clasica', bienvenida: b.bienvenida === true || !!previo.bienvenida, avisos_correo: typeof b.avisos_correo === 'boolean' ? b.avisos_correo : previo.avisos_correo !== false };
+    if (Number.isInteger(b.bienvenida_paso)) aj.bienvenida_paso = Math.max(0, Math.min(8, b.bienvenida_paso)); // dónde se quedó en el recorrido
+    if (b.bienvenida === true && !previo.bienvenida) aj.bienvenida_fecha = new Date().toISOString();
     if (!(yo.sesion.demo && yo.P.origen === 'demo')) await env.DB.prepare(`UPDATE personas SET ajustes = ? WHERE id = ?`).bind(JSON.stringify(aj), yo.P.id).run();
     return json({ ok: true, ajustes: aj });
   }

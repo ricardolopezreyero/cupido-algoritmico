@@ -73,6 +73,8 @@ const cont = $('#contenido');
 async function tablero() {
   try { V = await api('/api/yo'); }
   catch (e) { if (e.status === 401) salirA('/entrar'); else cont.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; return; }
+  // la cuenta demo también pasa por el recorrido la primera vez en este dispositivo (no se puede saltar)
+  if (V.sesion.demo) { let b = {}; try { b = JSON.parse(localStorage.getItem('cupido.bienvenida.demo') || '{}'); } catch {} if (!b.hecho) { salirA('/bienvenida'); return; } }
   document.title = `${V.persona.nombreCorto || 'Mi tablero'} · Cupido Algorítmico`;
   V.ajustes = aplicarEstilo(V.ajustes || (() => { try { return JSON.parse(localStorage.getItem('cupido.estilo') || '{}'); } catch { return {}; } })());
   const ds = $('#demo-switch'); ds.hidden = !V.sesion.demo; ds.onclick = abrirModalCuenta;
@@ -191,7 +193,10 @@ const MENU = [
 function pintarLateral() {
   const d = derivados(), P = V.persona;
   $('#quien-lat').innerHTML = `<a href="#medios" class="avatar-enlace" title="Cambiar mi foto">${miAvatar(P)}<span class="lapiz">✎</span></a><div><b>${esc(P.nombre === 'Sin nombre' ? 'Tu cuenta' : P.nombre)}</b><span>${P.edad ? esc(P.edad) + ' · ' : ''}${esc(P.ciudad || '')}</span></div>`;
-  $('#nav').innerHTML = MENU.map((m) => {
+  // "Volver al recorrido" vive en el menú durante una semana después de terminarlo
+  const fechaRec = (() => { if (!DEMO()) return V.ajustes?.bienvenida_fecha; try { return JSON.parse(localStorage.getItem('cupido.bienvenida.demo') || '{}').fecha; } catch { return null; } })();
+  const recorrido = fechaRec && (Date.now() - Date.parse(fechaRec)) < 7 * 86400000 ? `<a href="/bienvenida?repaso=1" class="recorrido"><span class="ico">🧭</span>Volver al recorrido<span class="cuenta-nav gris">7 días</span></a>` : '';
+  $('#nav').innerHTML = recorrido + MENU.map((m) => {
     if (m.sep) return `<div class="sep">${m.sep}</div>`;
     const n = m.n ? m.n(d) : 0;
     return `<a href="#${m.s}" data-s="${m.s}" class="${m.s === seccion ? 'on' : ''}"><span class="ico">${m.i}</span>${m.t}${n ? `<span class="cuenta-nav ${m.alerta ? '' : 'gris'}">${n}</span>` : ''}</a>`;
