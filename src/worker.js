@@ -12,7 +12,8 @@ import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './ar
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
 import { mandarMuestra, correoA } from './correos.js';
-import { verPrograma, apoyar, confirmarApoyo, ajustarPrograma, aportesAdmin } from './programa.js';
+import { verPrograma, apoyar, confirmarApoyo, ajustarPrograma, aportesAdmin, distribucionPrecios } from './programa.js';
+import { limpiarPrecioJusto, REVISION_DIAS } from './precios.js';
 import { avance } from '../public/js/preguntas.js';
 import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
@@ -52,6 +53,9 @@ export default {
       await correoA(env, P, 'recordatorio', { faltan: Math.max(1, faltan), pct: av.pct }, { cadaMinutos: 60 * 24 * 3650 });
     }
     await hitosDelDia(env); // aniversarios de las charlas
+    // precio justo: cada 180 días, ¿sigue igual tu situación? (junto con lo que cambia: ciudad, trabajo, hijos)
+    const reales = (await env.DB.prepare(`SELECT id FROM personas WHERE pool = 'real' AND correo IS NOT NULL AND completo = 1`).all()).results;
+    for (const f of reales) { const P = await persona(env, f.id); let aj = {}; try { aj = JSON.parse(P.ajustes || '{}'); } catch {} const rev = aj.precio_revisado ? Date.parse(aj.precio_revisado) : Date.parse(P.creada + 'Z'); if (Date.now() - rev >= REVISION_DIAS * 86400000) await correoA(env, P, 'revision', {}, { cadaMinutos: 60 * 24 * (REVISION_DIAS - 1) }); }
   },
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
@@ -159,6 +163,7 @@ async function api(req, env, ctx, url) {
     let previo = {}; try { previo = JSON.parse(yo.P.ajustes || '{}'); } catch {}
     const aj = { ...previo, color: COLORES.includes(b.color) ? b.color : previo.color || 'rosa', tipo: TIPOS.includes(b.tipo) ? b.tipo : previo.tipo || 'clasica', bienvenida: b.bienvenida === true || !!previo.bienvenida, avisos_correo: typeof b.avisos_correo === 'boolean' ? b.avisos_correo : previo.avisos_correo !== false };
     if (Number.isInteger(b.bienvenida_paso)) aj.bienvenida_paso = Math.max(0, Math.min(8, b.bienvenida_paso)); // dónde se quedó en el recorrido
+    const pj = limpiarPrecioJusto(b); if (Object.keys(pj).length) { Object.assign(aj, pj); aj.precio_revisado = new Date().toISOString(); await anotar(env, 'programa', 'Una persona actualizó su precio justo', `${aj.banda || 'sin rango'} · ${aj.situacion || 'bien'}`); }
     if (b.bienvenida === true && !previo.bienvenida) aj.bienvenida_fecha = new Date().toISOString();
     if (!(yo.sesion.demo && yo.P.origen === 'demo')) await env.DB.prepare(`UPDATE personas SET ajustes = ? WHERE id = ?`).bind(JSON.stringify(aj), yo.P.id).run();
     return json({ ok: true, ajustes: aj });
@@ -210,7 +215,8 @@ async function api(req, env, ctx, url) {
   }
 
   /* ── El programa: todo gratis hoy; apoyar es voluntario ─────────────────── */
-  if (ruta === '/api/programa' && metodo === 'GET') return json(await verPrograma(env));
+  if (ruta === '/api/programa' && metodo === 'GET') return json(await verPrograma(env, yo && !yo.sesion.demo ? yo.P : null));
+  if (ruta === '/api/admin/precios' && metodo === 'GET') return json(await distribucionPrecios(env));
   if (ruta === '/api/apoyar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 4000); const r = await apoyar(env, url, yo.P, b); return r.error ? error(r.error, r.status) : json(r); }
   if (ruta === '/api/apoyar/confirmar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await confirmarApoyo(env, yo.P, b.sid); return r.error ? error(r.error, r.status) : json(r); }
   if (ruta === '/api/admin/programa' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await ajustarPrograma(env, b); return r.error ? error(r.error, r.status) : json(r); }

@@ -81,10 +81,11 @@ const botonesMotor = `<button class="boton" data-accion="correr">⟳ Correr el m
 /* ═══ SECCIONES ═══════════════════════════════════════════════════════════ */
 const SECCIONES = {
   async programa() {
-    const [p, ap] = await Promise.all([api('/api/programa'), api('/api/admin/aportes')]);
+    const [p, ap, pr] = await Promise.all([api('/api/programa'), api('/api/admin/aportes'), api('/api/admin/precios')]);
     const pesos = (n) => '$' + Number(n || 0).toLocaleString('es-MX');
     return cabeza('Programa y apoyos', 'Confianza primero. Todo gratis en 2026 y 2027; aquí se decide cuándo se enciende cada cobro. Cualquier cambio se ve igual para todas las personas.') + `
       <div class="banda" style="grid-template-columns:repeat(4,1fr)"><div class="rosa"><b>${pesos(p.fondo.reunido)}</b><span>Fondo de atracción</span></div><div><b>${p.fondo.personas}</b><span>personas apoyan</span></div><div><b>${p.fondo.socios}</b><span>socios fundadores</span></div><div><b>${p.pagos ? 'Sí' : 'No'}</b><span>pagos activos (llave de Stripe)</span></div></div>
+      <section class="tarjeta"><h2>Precio justo</h2><p class="sub">Lo que las personas declaran (privado, nunca inferido). Cuentas reales: ${pr.total} · con rango declarado: ${pr.declarado}.</p><p style="margin:0;font-size:14px">Rangos: ${Object.entries(pr.bandas).map(([k, v]) => `${k.toUpperCase()}: ${v}`).join(' · ') || 'nadie aún'}<br>Situación: ${Object.entries(pr.situaciones).map(([k, v]) => `${k}: ${v}`).join(' · ') || '—'}</p></section>
       <section class="tarjeta"><h2>El mapa</h2><p class="sub">Para acelerar: cambia el año, o pon "cobrando". Para frenar: "gratis". Los precios son de referencia e iguales para todos.</p>
         <div style="overflow-x:auto"><table class="tabla"><thead><tr><th>Acción</th><th>Qué</th><th>Cuándo</th><th>Precio MXN</th><th>Estado</th><th></th></tr></thead><tbody>
         ${p.acciones.map((a) => `<tr><td><b>${esc(a.nombre)}</b></td><td style="font-size:13px;color:var(--tinta-2)">${esc(a.que)}<br><small>${esc(a.unidad)}</small></td><td><input data-cuando value="${esc(a.cuando)}" style="width:90px"></td><td><input data-precio type="number" value="${a.precio}" style="width:90px"></td><td><select data-estado><option value="gratis" ${a.estado === 'gratis' ? 'selected' : ''}>gratis</option><option value="cobrando" ${a.estado === 'cobrando' ? 'selected' : ''}>cobrando</option></select></td><td><button class="boton boton-chico" data-prog="${a.clave}">Guardar</button></td></tr>`).join('')}

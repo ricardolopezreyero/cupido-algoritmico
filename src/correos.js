@@ -145,6 +145,14 @@ export const CORREOS = {
       boton: { txt: 'Ver el programa', url: `${BASE(env)}/persona#apoyar` },
       nota: tipo === 'socio' ? 'Puedes cancelar cuando quieras desde Privacidad y pausa, sin preguntas. Devoluciones sin preguntas durante 15 días escribiendo a contacto@ingenieriadigital.mx.' : 'Devoluciones sin preguntas durante 15 días escribiendo a contacto@ingenieriadigital.mx.' },
   }),
+  // 10 · Revisión: ¿sigue igual tu situación? (cada 180 días)
+  revision: (env, { P }) => ({
+    asunto: '¿Sigue igual tu situación? Un minuto, cada seis meses',
+    contenido: { eyebrow: 'Revisión', titulo: '¿Sigue todo igual?', vista: 'Ciudad, trabajo, hijos, tu situación: lo que cambia en seis meses.',
+      parrafos: [`${hola(P)} Cada seis meses te preguntamos lo que sí cambia: tu ciudad, tu trabajo, si quieres hijos, y tu situación. Con eso el motor te lee mejor y tu precio justo se acomoda a ti.`, 'Si te quedaste sin trabajo, dilo ahí: Cupido se vuelve gratis en ese instante y sin preguntas.'],
+      boton: { txt: 'Revisar en un minuto', url: `${BASE(env)}/persona#apoyar` },
+      nota: 'Es un minuto. Si todo sigue igual, solo confirmas.' },
+  }),
   // 8 · Recordatorio: cuestionario sin terminar
   recordatorio: (env, { P, faltan, pct }) => ({
     asunto: `Te faltan ${faltan} preguntas para entrar al matching`,

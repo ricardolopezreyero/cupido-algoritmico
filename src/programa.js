@@ -11,6 +11,7 @@
 // RLR
 import { persona, anotar } from './datos.js';
 import { correoA } from './correos.js';
+import { precioPara, miPrecioJusto, BANDAS, SITUACIONES } from './precios.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -45,12 +46,14 @@ export async function sembrarPrograma(env) {
 async function secreto(v) { if (!v) return ''; if (typeof v === 'string') return v; try { return (await v.get()) || ''; } catch { return ''; } }
 
 /* ── lo público: el mapa y la transparencia ──────────────────────────────── */
-export async function verPrograma(env) {
+export async function verPrograma(env, P = null) {
   const acciones = (await env.DB.prepare(`SELECT clave, nombre, que, cuando, etapa, precio, unidad, estado FROM programa ORDER BY orden`).all()).results;
   const t = await env.DB.prepare(`SELECT COALESCE(SUM(monto), 0) AS reunido, COUNT(DISTINCT COALESCE(persona, correo)) AS personas, COALESCE(SUM(CASE WHEN tipo = 'socio' THEN 1 ELSE 0 END), 0) AS socios FROM aportes WHERE estado = 'confirmado'`).first();
   const ultimos = (await env.DB.prepare(`SELECT nombre_publico, tipo, monto, confirmado FROM aportes WHERE estado = 'confirmado' AND nombre_publico IS NOT NULL ORDER BY id DESC LIMIT 12`).all()).results;
   const pagos = !!(await secreto(env.STRIPE_SECRET_KEY));
-  return { gratisHasta: '2027', acciones, fondo: { reunido: t.reunido, personas: t.personas, socios: t.socios, ultimos }, pagos, minimo: PRECIO_MIN, tope: TOPE_MES, destino: 'El 100 % del Fondo de atracción se usa para traer a la siguiente persona seria: anuncios cuidados, contenido y verificación de identidad. Se publica cada año en qué se gastó.' };
+  let mio = null;
+  if (P) { let aj = {}; try { aj = JSON.parse(P.ajustes || '{}'); } catch {} mio = { ...miPrecioJusto(aj), acciones: Object.fromEntries(acciones.map((a) => [a.clave, precioPara(aj, a.precio)])), bandas: BANDAS, situaciones: SITUACIONES }; }
+  return { gratisHasta: '2027', mio, acciones, fondo: { reunido: t.reunido, personas: t.personas, socios: t.socios, ultimos }, pagos, minimo: PRECIO_MIN, tope: TOPE_MES, destino: 'El 100 % del Fondo de atracción se usa para traer a la siguiente persona seria: anuncios cuidados, contenido y verificación de identidad. Se publica cada año en qué se gastó.' };
 }
 
 /* ── apoyar: Fondo de atracción (una vez) o Socio fundador (cada mes) ────── */
@@ -112,6 +115,12 @@ export async function ajustarPrograma(env, { clave, estado, cuando, precio }) {
   await env.DB.prepare(`UPDATE programa SET estado = COALESCE(?, estado), cuando = COALESCE(?, cuando), precio = COALESCE(?, precio), actualizado = datetime('now') WHERE clave = ?`).bind(e, c, p, fila.clave).run();
   await anotar(env, 'admin', 'Se ajustó el programa', `${fila.clave}: ${e || ''} ${c || ''} ${p ?? ''}`.trim());
   return { ok: true };
+}
+export async function distribucionPrecios(env) {
+  const filas = (await env.DB.prepare(`SELECT ajustes FROM personas WHERE pool = 'real'`).all()).results;
+  const d = { bandas: {}, situaciones: {}, total: filas.length, declarado: 0 };
+  for (const f of filas) { let aj = {}; try { aj = JSON.parse(f.ajustes || '{}'); } catch {} if (aj.banda) { d.declarado++; d.bandas[aj.banda] = (d.bandas[aj.banda] || 0) + 1; } const s = aj.situacion || 'bien'; d.situaciones[s] = (d.situaciones[s] || 0) + 1; }
+  return d;
 }
 export async function aportesAdmin(env) {
   return (await env.DB.prepare(`SELECT id, persona, correo, tipo, monto, estado, nombre_publico, creado, confirmado FROM aportes ORDER BY id DESC LIMIT 100`).all()).results;

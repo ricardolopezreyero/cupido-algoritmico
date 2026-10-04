@@ -931,3 +931,10 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 .lateral nav a.recorrido { background: #2a2130; color: #ffd0da; margin-bottom: 8px; }
 @media (max-width: 560px) { .bv-play span { display: none; } }
 /* fin recorrido v2 · RLR */
+
+/* ── Precio justo · RLR ────────────────────────────────────────────────── */
+.precio-justo { margin-bottom: 16px; }
+.precio-justo.gratis { border-color: var(--ok); background: linear-gradient(135deg, #fff 0%, var(--ok-suave) 100%); }
+.nota-pj { margin: 10px 0 0; padding: 10px 12px; border-radius: 10px; background: var(--rosa-suave); font-size: 13.5px; color: var(--tinta-2); }
+.precio-justo.gratis .nota-pj { background: var(--ok-suave); color: var(--ok); font-weight: 600; }
+/* fin precio justo · RLR */
