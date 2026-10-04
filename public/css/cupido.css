@@ -835,3 +835,31 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
   .msg { max-width: 88%; }
 }
 /* fin charla v3 · RLR */
+
+/* ── Charla v4: citas, guardados, búsqueda, hitos, avisos en todo el tablero · RLR ── */
+.ch-resumen { color: var(--gris); font-size: 12px; }
+.cita { display: block; border-left: 3px solid rgba(255,255,255,.7); background: rgba(255,255,255,.14); border-radius: 8px; padding: 6px 10px; margin-bottom: 6px; font-size: 13px; color: inherit; text-decoration: none; opacity: .95; }
+.msg.suyo .cita { border-left-color: var(--rosa); background: var(--rosa-suave); color: var(--tinta-2); }
+.cita b { display: block; font-size: 11.5px; margin-bottom: 1px; }
+.ch-cita-en-curso { display: flex; align-items: center; gap: 10px; padding: 8px 14px; background: var(--rosa-suave); border-top: 1px solid var(--rosa-linea); font-size: 13px; color: var(--tinta-2); }
+.ch-cita-en-curso span { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch-cita-en-curso button { border: 0; background: transparent; font-size: 20px; cursor: pointer; color: var(--gris); }
+.reac-bar i { width: 1px; background: var(--linea); margin: 4px 2px; }
+.reac-bar button.txt { font-size: 16px; }
+.marca-guardado { margin-left: 6px; font-size: 11px; }
+.msg.resaltado .globo { box-shadow: 0 0 0 4px var(--rosa-suave), 0 0 0 6px var(--rosa); transition: box-shadow .3s; }
+.ch-resultados { display: grid; padding: 0 8px 10px; }
+.ch-resultados button { display: grid; grid-template-columns: 70px 1fr auto; gap: 8px; align-items: center; text-align: left; border: 0; border-bottom: 1px solid var(--linea); background: transparent; padding: 9px 6px; cursor: pointer; font: 13.5px var(--sans); color: var(--tinta); }
+.ch-resultados button:hover { background: var(--crema); }
+.ch-resultados button b { font-size: 12.5px; color: var(--gris); }
+.ch-resultados button span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch-resultados button small { color: var(--gris); font-size: 11.5px; white-space: nowrap; }
+.msg.sistema.hito span { background: linear-gradient(135deg, #fff3d6, #fde8ec); border: 1px solid #f0dcb8; color: var(--tinta); font-weight: 600; padding: 8px 14px; font-size: 13.5px; }
+#toasts { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); display: flex; flex-direction: column; gap: 8px; z-index: 95; width: min(420px, calc(100% - 32px)); pointer-events: none; }
+.toast-msg { pointer-events: auto; display: flex; gap: 10px; align-items: center; background: var(--noche); color: #fff; text-decoration: none; border-radius: 14px; padding: 10px 14px; box-shadow: 0 12px 34px rgba(0,0,0,.28); animation: toastEntra .35s var(--ease); transition: opacity .6s, transform .6s; }
+.toast-msg.va { opacity: 0; transform: translateY(10px); }
+.toast-msg b { display: block; font-size: 13px; color: #ffd0da; }
+.toast-msg span { display: block; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
+@keyframes toastEntra { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
+@media (max-width: 860px) { .ch-cab-acc .ch-h { width: 32px; height: 30px; font-size: 16px; } #ch-sonido { display: none; } }
+/* fin charla v4 · RLR */

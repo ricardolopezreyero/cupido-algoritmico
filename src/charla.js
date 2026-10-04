@@ -38,6 +38,8 @@ export const ESQUEMA_CHARLA = [
   `CREATE TABLE IF NOT EXISTS reacciones (
      mensaje INTEGER NOT NULL, persona TEXT NOT NULL, emoji TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')),
      PRIMARY KEY (mensaje, persona))`,
+  `CREATE TABLE IF NOT EXISTS guardados (
+     persona TEXT NOT NULL, mensaje INTEGER NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (persona, mensaje))`,
   `CREATE TABLE IF NOT EXISTS liberaciones (
      persona TEXT NOT NULL, otra TEXT NOT NULL, elemento TEXT NOT NULL, creado TEXT NOT NULL DEFAULT (datetime('now')),
      PRIMARY KEY (persona, otra, elemento))`,
@@ -46,6 +48,8 @@ export const ESQUEMA_CHARLA = [
 const clave = (x, y) => (x < y ? [x, y] : [y, x]);
 const nom = (P) => (P.nombre === 'Sin nombre' ? 'Alguien' : P.nombre.split(' ')[0]);
 const MAX_TEXTO = 2000;
+// Como en la Mina: el texto se escribe tal cual, sin caracteres de control ni marcas invisibles que voltean el texto; los emojis pasan enteros
+const limpiarTexto = (s) => Array.from(String(s ?? '').replace(/[\u0000-\u0009\u000b-\u001f\u007f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()).slice(0, MAX_TEXTO).join('');
 export const ARCHIVO = { max: 15 * 1024 * 1024, mimes: /^(image\/(jpeg|png|webp|gif|heic)|application\/pdf|audio\/|video\/(mp4|webm|quicktime)|text\/plain|application\/(msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)))/ };
 
 /* ── nace la charla (puerta abierta): "hola" del hombre y luego de la mujer ─ */
@@ -97,12 +101,27 @@ export async function misCharlas(env, yo) {
 }
 
 /* ── la charla completa (o solo lo nuevo) ────────────────────────────────── */
-export async function verCharla(env, yo, otraId, despues = 0) {
+const VENTANA = 80;
+const vistaDe = (m) => m.tipo === 'archivo' ? '📎 ' + (m.texto || 'Archivo') : m.tipo === 'gif' ? '🎞️ GIF' : String(m.texto || '').slice(0, 120);
+async function conCitas(env, c, msgs) {
+  const ids = [...new Set(msgs.map((m) => m.responde_a).filter(Boolean))];
+  if (!ids.length) return msgs;
+  const citas = new Map((await env.DB.prepare(`SELECT id, de, tipo, texto FROM mensajes WHERE a = ? AND b = ? AND id IN (${ids.map(() => '?').join(',')})`).bind(c.a, c.b, ...ids).all()).results.map((q) => [q.id, q]));
+  return msgs.map((m) => ({ ...m, cita: m.responde_a && citas.get(m.responde_a) ? { id: m.responde_a, de: citas.get(m.responde_a).de, vista: vistaDe(citas.get(m.responde_a)) } : null }));
+}
+export async function verCharla(env, yo, otraId, despues = 0, { antes = 0, todo = false } = {}) {
   const c = await charlaDe(env, yo, otraId);
   if (!c) return null;
   const O = await persona(env, otraId);
-  const msgs = (await env.DB.prepare(`SELECT id, de, tipo, texto, archivo, auto, creado FROM mensajes WHERE a = ? AND b = ? AND id > ? ORDER BY id ASC LIMIT 300`).bind(c.a, c.b, despues).all()).results
-    .map((m) => ({ ...m, archivo: m.archivo ? JSON.parse(m.archivo) : null, mio: m.de === yo }));
+  let msgs;
+  if (antes) { // historial hacia atrás, al subir hasta arriba
+    msgs = (await env.DB.prepare(`SELECT id, de, tipo, texto, archivo, auto, responde_a, creado FROM mensajes WHERE a = ? AND b = ? AND id < ? ORDER BY id DESC LIMIT ?`).bind(c.a, c.b, antes, VENTANA).all()).results.reverse();
+  } else if (!despues && !todo) { // primera carga: solo la ventana más reciente
+    msgs = (await env.DB.prepare(`SELECT id, de, tipo, texto, archivo, auto, responde_a, creado FROM mensajes WHERE a = ? AND b = ? ORDER BY id DESC LIMIT ?`).bind(c.a, c.b, VENTANA).all()).results.reverse();
+  } else msgs = (await env.DB.prepare(`SELECT id, de, tipo, texto, archivo, auto, responde_a, creado FROM mensajes WHERE a = ? AND b = ? AND id > ? ORDER BY id ASC LIMIT 3000`).bind(c.a, c.b, despues).all()).results;
+  msgs = await conCitas(env, c, msgs.map((m) => ({ ...m, archivo: m.archivo ? JSON.parse(m.archivo) : null, mio: m.de === yo })));
+  const hayMas = msgs.length ? !!(await env.DB.prepare(`SELECT 1 AS v FROM mensajes WHERE a = ? AND b = ? AND id < ? LIMIT 1`).bind(c.a, c.b, msgs[0].id).first()) : false;
+  if (antes) return { mensajes: msgs, hayMas };
   const miLeido = c.soyA ? c.leido_a : c.leido_b;
   // marca como leído hasta el último y registra la visita; avisa al otro que ya vi
   const ultimoId = msgs.length ? msgs[msgs.length - 1].id : 0;
@@ -119,13 +138,17 @@ export async function verCharla(env, yo, otraId, despues = 0) {
   const vistoHasta = c.soyA ? c.leido_b : c.leido_a;
   const enLinea = (await presenciaVivo(env, c.a, c.b)).includes(otraId);
   const ultimaVez = c.soyA ? c.visita_b : c.visita_a;
-  return { otra: { id: otraId, nombre: nom(O), nombreCompleto: O.nombre, color: O.color, carta: O.r.carta || '', martes: O.r.martes || '', enLinea, ultimaVez }, mensajes: msgs, otroEscribiendo, compartido: { mios, suyos }, reacciones: reac, vistoHasta, miLeido };
+  const guardados = (await env.DB.prepare(`SELECT g.mensaje FROM guardados g JOIN mensajes m ON m.id = g.mensaje WHERE g.persona = ? AND m.a = ? AND m.b = ?`).bind(yo, c.a, c.b).all()).results.map((g) => g.mensaje);
+  const total = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND tipo != 'sistema'`).bind(c.a, c.b).first()).n;
+  return { otra: { id: otraId, nombre: nom(O), nombreCompleto: O.nombre, color: O.color, carta: O.r.carta || '', martes: O.r.martes || '', malinterpretan: O.r.malinterpretan || '', enLinea, ultimaVez }, mensajes: msgs, hayMas, otroEscribiendo, compartido: { mios, suyos }, reacciones: reac, vistoHasta, miLeido, guardados, total, desde: c.creada };
 }
 
-export async function enviar(env, yo, otraId, { texto, tipo = 'texto', gif } = {}) {
+export async function enviar(env, yo, otraId, { texto, tipo = 'texto', gif, respondeA } = {}) {
   const c = await charlaDe(env, yo, otraId);
   if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
-  let t = String(texto || '').trim().slice(0, MAX_TEXTO), archivo = null;
+  let t = limpiarTexto(texto), archivo = null;
+  let cita = null;
+  if (respondeA) { cita = await env.DB.prepare(`SELECT id FROM mensajes WHERE id = ? AND a = ? AND b = ? AND tipo != 'sistema'`).bind(Number(respondeA), c.a, c.b).first(); if (!cita) return { error: 'Ese mensaje no está en esta charla', status: 400 }; }
   if (tipo === 'sticker') { if (!/^\p{Extended_Pictographic}[\p{Extended_Pictographic}\u200d\ufe0f]{0,10}$/u.test(t)) return { error: 'Sticker inválido', status: 400 }; }
   else if (tipo === 'gif') {
     const url = String(gif?.url || ''), preview = String(gif?.preview || url);
@@ -134,8 +157,9 @@ export async function enviar(env, yo, otraId, { texto, tipo = 'texto', gif } = {
   } else { tipo = 'texto'; if (!t) return { error: 'Escribe algo', status: 400 }; }
   const ritmo = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND de = ? AND creado > datetime('now', '-60 seconds')`).bind(c.a, c.b, yo).first()).n;
   if (ritmo >= 40) return { error: 'Vas muy rápido. Respira un segundo.', status: 429 };
-  const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo) VALUES (?, ?, ?, ?, ?, ?)`).bind(c.a, c.b, yo, tipo, t, archivo).run();
+  const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo, responde_a) VALUES (?, ?, ?, ?, ?, ?, ?)`).bind(c.a, c.b, yo, tipo, t, archivo, cita ? cita.id : null).run();
   await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo, vista: tipo === 'sticker' ? t : tipo === 'gif' ? '🎞️ GIF' : t.slice(0, 80), excepto: yo });
+  await hitoPorCantidad(env, c);
   await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: tipo === 'texto' ? t.slice(0, 140) : tipo === 'sticker' ? t : 'Te mandó un GIF' });
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'escribe_a' : 'escribe_b'} = NULL, ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
   return { ok: true, id: r.meta.last_row_id };
@@ -146,6 +170,61 @@ export async function escribiendo(env, yo, otraId) {
   if (!c) return { error: 'No hay charla', status: 403 };
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'escribe_a' : 'escribe_b'} = datetime('now') WHERE a = ? AND b = ?`).bind(c.a, c.b).run();
   return { ok: true };
+}
+
+/* ── guardados: cada quien marca lo que quiere volver a leer (privado) ──── */
+export async function guardar(env, yo, otraId, mensajeId) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return { error: 'No hay charla', status: 403 };
+  const m = await env.DB.prepare(`SELECT id FROM mensajes WHERE id = ? AND a = ? AND b = ? AND tipo != 'sistema'`).bind(Number(mensajeId), c.a, c.b).first();
+  if (!m) return { error: 'No existe ese mensaje', status: 404 };
+  const ya = await env.DB.prepare(`SELECT 1 AS v FROM guardados WHERE persona = ? AND mensaje = ?`).bind(yo, m.id).first();
+  if (ya) { await env.DB.prepare(`DELETE FROM guardados WHERE persona = ? AND mensaje = ?`).bind(yo, m.id).run(); return { ok: true, guardado: false }; }
+  await env.DB.prepare(`INSERT INTO guardados (persona, mensaje) VALUES (?, ?)`).bind(yo, m.id).run();
+  return { ok: true, guardado: true };
+}
+export async function losGuardados(env, yo, otraId) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return null;
+  const msgs = (await env.DB.prepare(`SELECT m.id, m.de, m.tipo, m.texto, m.archivo, m.auto, m.responde_a, m.creado FROM guardados g JOIN mensajes m ON m.id = g.mensaje WHERE g.persona = ? AND m.a = ? AND m.b = ? ORDER BY m.id ASC`).bind(yo, c.a, c.b).all()).results;
+  return msgs.map((m) => ({ ...m, archivo: m.archivo ? JSON.parse(m.archivo) : null, mio: m.de === yo, vista: vistaDe(m) }));
+}
+
+/* ── buscar dentro de la charla ──────────────────────────────────────────── */
+export async function buscarEnCharla(env, yo, otraId, q) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return null;
+  const t = limpiarTexto(q).slice(0, 80);
+  if (t.length < 2) return [];
+  const like = '%' + t.replace(/[%_]/g, (x) => '\\' + x) + '%';
+  return (await env.DB.prepare(`SELECT id, de, tipo, texto, creado FROM mensajes WHERE a = ? AND b = ? AND tipo IN ('texto','archivo') AND texto LIKE ? ESCAPE '\\' ORDER BY id DESC LIMIT 40`).bind(c.a, c.b, like).all()).results
+    .map((m) => ({ id: m.id, mio: m.de === yo, vista: vistaDe(m), creado: m.creado }));
+}
+
+/* ── hitos: el sistema deja una nota cuando la charla cruza algo que vale ── */
+async function hito(env, c, clave, texto) {
+  const ya = await env.DB.prepare(`SELECT 1 AS v FROM mensajes WHERE a = ? AND b = ? AND tipo = 'sistema' AND texto LIKE ?`).bind(c.a, c.b, `%⟨${clave}⟩%`).first();
+  if (ya) return false;
+  await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(c.a, c.b, `${texto} ⟨${clave}⟩`).run();
+  await avisarVivo(env, c.a, c.b, { t: 'mensaje', de: 'sistema', tipo: 'sistema' });
+  return true;
+}
+async function hitoPorCantidad(env, c) {
+  const n = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND tipo != 'sistema'`).bind(c.a, c.b).first()).n;
+  if (n === 50) await hito(env, c, 'm50', '🎉 Cincuenta mensajes. Esto ya es una conversación.');
+  else if (n === 200) await hito(env, c, 'm200', '🌟 Doscientos mensajes. Pocas charlas llegan hasta aquí.');
+  else if (n === 1000) await hito(env, c, 'm1000', '🏆 Mil mensajes. Esto ya no es una charla: es una historia.');
+}
+// Cada día (desde el cron): aniversarios de la puerta
+export async function hitosDelDia(env) {
+  const charlas = (await env.DB.prepare(`SELECT a, b, creada, CAST(julianday('now') - julianday(creada) AS INTEGER) AS dias FROM charlas`).all()).results;
+  let n = 0;
+  for (const c of charlas) {
+    if (c.dias === 7 && await hito(env, c, 'd7', '🗓️ Una semana desde que se abrió la puerta. Lo que han compartido se queda aquí, ordenado, para los dos.')) n++;
+    else if (c.dias === 30 && await hito(env, c, 'd30', '🌙 Un mes de charla. Nadie los apuró y nadie los vio: así se construye confianza.')) n++;
+    else if (c.dias === 100 && await hito(env, c, 'd100', '💯 Cien días. Si están leyendo esto, ya saben que valió la pena.')) n++;
+  }
+  return n;
 }
 
 /* ── reacciones: una por persona y mensaje; el mismo emoji la quita ─────── */

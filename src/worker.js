@@ -13,7 +13,7 @@ import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
 import { mandarMuestra, correoA } from './correos.js';
 import { avance } from '../public/js/preguntas.js';
-import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido, reaccionar, buscarGif, conectarVivo } from './charla.js';
+import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
 import { personas } from './datos.js';
@@ -50,6 +50,7 @@ export default {
       const faltan = av.estructuradasTotal - av.estructuradas + (av.textosTotal - av.textos);
       await correoA(env, P, 'recordatorio', { faltan: Math.max(1, faltan), pct: av.pct }, { cadaMinutos: 60 * 24 * 3650 });
     }
+    await hitosDelDia(env); // aniversarios de las charlas
   },
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
@@ -163,9 +164,12 @@ async function api(req, env, ctx, url) {
   if (ruta === '/api/charla' && metodo === 'GET') { if (!yo) return sinSesion(); return json(await misCharlas(env, yo.P.id)); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)$/))) {
     if (!yo) return sinSesion();
-    if (metodo === 'GET') { const v = await verCharla(env, yo.P.id, x[1], Number(url.searchParams.get('despues') || 0)); return v ? json(v) : error('No hay una puerta abierta con esa persona', 404); }
+    if (metodo === 'GET') { const v = await verCharla(env, yo.P.id, x[1], Number(url.searchParams.get('despues') || 0), { antes: Number(url.searchParams.get('antes') || 0), todo: url.searchParams.get('todo') === '1' }); return v ? json(v) : error('No hay una puerta abierta con esa persona', 404); }
     if (metodo === 'POST') { const b = await leerJson(req, 10_000); const r = await enviar(env, yo.P.id, x[1], b); return r.error ? error(r.error, r.status) : json(r); }
   }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/guardar$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await guardar(env, yo.P.id, x[1], b.mensaje); return r.error ? error(r.error, r.status) : json(r); }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/guardados$/)) && metodo === 'GET') { if (!yo) return sinSesion(); const r = await losGuardados(env, yo.P.id, x[1]); return r ? json(r) : error('No hay charla', 404); }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/buscar$/)) && metodo === 'GET') { if (!yo) return sinSesion(); const r = await buscarEnCharla(env, yo.P.id, x[1], url.searchParams.get('q') || ''); return r ? json(r) : error('No hay charla', 404); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/reaccion$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await reaccionar(env, yo.P.id, x[1], b.mensaje, b.emoji); return r.error ? error(r.error, r.status) : json(r); }
   if (ruta === '/api/gif' && metodo === 'GET') { if (!yo) return sinSesion(); return json(await buscarGif(env, url.searchParams.get('q') || '')); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/ws$/)) && metodo === 'GET') { if (!yo) return new Response('Sin sesión', { status: 401 }); return await conectarVivo(env, req, yo.P.id, x[1]); }

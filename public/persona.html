@@ -76,6 +76,7 @@ async function tablero() {
   V.ajustes = aplicarEstilo(V.ajustes || (() => { try { return JSON.parse(localStorage.getItem('cupido.estilo') || '{}'); } catch { return {}; } })());
   const ds = $('#demo-switch'); ds.hidden = !V.sesion.demo; ds.onclick = abrirModalCuenta;
   ir(location.hash.slice(1) || 'inicio');
+  escucharCharlas();
 }
 const DEMO = () => !!V?.sesion?.demo;
 
@@ -472,7 +473,7 @@ const DESPUES = {
 /* ── la charla: mensajes, "está escribiendo", archivos y liberar el perfil ─ */
 const otraDe = (c) => { const [a, b] = c.clave.split('-'); return a === V.persona.id ? b : a; };
 let CH = null;
-const CH0 = () => ({ otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null, reac: {}, visto: 0, grabando: null, ws: null, vivo: false, reintento: 0, ping: null, ultimoDe: null, ultimoTs: 0, ultimoDia: null, sinLeer: 0, escribiendoTimer: null, divisor: false, traer: null });
+const CH0 = () => ({ otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null, reac: {}, visto: 0, grabando: null, ws: null, vivo: false, reintento: 0, ping: null, ultimoDe: null, ultimoTs: 0, ultimoDia: null, sinLeer: 0, escribiendoTimer: null, divisor: false, traer: null, guardados: new Set(), citando: null, primero: 0, hayMas: false, cargandoAntes: false });
 CH = CH0();
 window.__cupidoVivo = () => ({ vivo: CH.vivo, otra: CH.otra, ultimo: CH.ultimo, escribiendo: !!CH.escribiendo }); // diagnóstico
 function detenerCharla() {
@@ -500,8 +501,12 @@ function vistaCharla(otra) {
   return `<div class="ch-cabeza">
       <a class="ch-volver" href="#charlas" aria-label="Volver">←</a>
       ${avatar(c.nombre, c.color)}
-      <div class="ch-quien"><b>${esc(c.nombre)}</b><span id="ch-presencia"><i class="pres"></i>conectando…</span></div>
+      <div class="ch-quien"><b>${esc(c.nombre)}</b><span id="ch-presencia"><i class="pres"></i>conectando…</span><span id="ch-resumen" class="ch-resumen"></span></div>
       <div class="ch-cab-acc">
+        <button class="ch-h" id="ch-carta" title="Su carta">✉️</button>
+        <button class="ch-h" id="ch-buscar" title="Buscar en la charla">🔍</button>
+        <button class="ch-h" id="ch-guardados" title="Mensajes guardados">🔖</button>
+        <button class="ch-h" id="ch-sonido" title="Sonido">${sonidoOn() ? '🔈' : '🔇'}</button>
         <button class="ch-h" id="ch-aviso" title="Avisarme cuando escriba">🔔</button>
         <button class="ch-h" id="ch-lado-btn" title="Perfil compartido">🔓</button>
         <button class="boton boton-claro boton-chico" id="ch-compartir">Compartir mi perfil</button>
@@ -513,6 +518,7 @@ function vistaCharla(otra) {
         <button class="ch-abajo" id="ch-abajo" hidden>↓ <span id="ch-abajo-n"></span></button>
         <div class="ch-rompehielos" id="ch-rompehielos" hidden></div>
         <div class="ch-panel" id="ch-panel" hidden></div>
+        <div class="ch-cita-en-curso" id="ch-citando" hidden></div>
         <form class="ch-compositor" id="ch-form">
           <div class="ch-herr">
             <button type="button" class="ch-h" data-panel="emoji" title="Emojis y stickers">😊</button>
@@ -530,12 +536,19 @@ function vistaCharla(otra) {
       <aside class="tarjeta ch-lado" id="ch-lado"><p class="vacio">Cargando…</p></aside>
     </div>`;
 }
+const sonidoOn = () => { try { return localStorage.getItem('cupido.sonido') !== 'no'; } catch { return true; } };
+let _ac = null;
+function campana(f = 1175, dur = 0.16, vol = 0.05, retraso = 0) { // tono suave por código, sin archivos (como en la Mina)
+  if (!sonidoOn()) return;
+  try { _ac = _ac || new (window.AudioContext || window.webkitAudioContext)(); const t = _ac.currentTime + retraso; const o = _ac.createOscillator(), g = _ac.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g).connect(_ac.destination); o.start(t); o.stop(t + dur + 0.02); } catch {}
+}
+const sonMensaje = () => { campana(1175, 0.16, 0.04); campana(1568, 0.24, 0.035, 0.07); };
 const fechaDe = (iso) => new Date(String(iso).replace(' ', 'T') + 'Z');
 const diaDe = (iso) => { const d = fechaDe(iso), hoy = new Date(); const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1); const f = (x) => x.toDateString(); return f(d) === f(hoy) ? 'Hoy' : f(d) === f(ayer) ? 'Ayer' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'long' }); };
 const horaDe = (iso) => fechaDe(iso).toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit' });
 const reaccionesHtml = (id) => { const r = CH.reac[id] || []; return r.length ? `<div class="reacs">${r.map((x) => `<span class="${x.mia ? 'mia' : ''}">${esc(x.emoji)}</span>`).join('')}</div>` : ''; };
 function filaMensaje(m, seguido) {
-  if (m.tipo === 'sistema') return `<div class="msg sistema" data-id="${m.id}"><span>${esc(m.texto)}</span></div>`;
+  if (m.tipo === 'sistema') { const hito = /⟨[a-z0-9]+⟩/.test(m.texto || ''); return `<div class="msg sistema ${hito ? 'hito' : ''}" data-id="${m.id}"><span>${esc(String(m.texto || '').replace(/\s*⟨[a-z0-9]+⟩/, ''))}</span></div>`; }
   const ruta = `/api/charla/${esc(CH.otra)}/archivo/${m.id}`;
   let cuerpo, clase = '';
   if (m.tipo === 'sticker') { cuerpo = esc(m.texto); clase = 'sticker'; }
@@ -549,7 +562,9 @@ function filaMensaje(m, seguido) {
   } else if (SOLO_EMOJI.test(m.texto || '')) { cuerpo = esc(m.texto); clase = 'jumbo'; }
   else cuerpo = linkear(esc(m.texto));
   const av = !m.mio && !seguido ? avatar(CH.datos?.otra?.nombre || '?', CH.datos?.otra?.color, 'sm msg-av') : '';
-  return `<div class="msg ${m.mio ? 'mio' : 'suyo'} ${clase} ${seguido ? 'seguido' : ''} fin-grupo" data-id="${m.id}">${av}<div class="globo">${cuerpo}</div>${reaccionesHtml(m.id)}<div class="cuando">${horaDe(m.creado)}${m.auto ? ' · saludo automático' : ''}</div><button class="reac-btn" data-reac="${m.id}" title="Reaccionar">☺</button></div>`;
+  const cita = m.cita ? `<a class="cita" href="#" data-ir="${m.cita.id}"><b>${m.cita.de === V.persona.id ? 'Tú' : esc(CH.datos?.otra?.nombre || '')}</b>${esc(m.cita.vista)}</a>` : '';
+  const guardado = CH.guardados.has(m.id) ? '<span class="marca-guardado" title="Guardado">🔖</span>' : '';
+  return `<div class="msg ${m.mio ? 'mio' : 'suyo'} ${clase} ${seguido ? 'seguido' : ''} fin-grupo" data-id="${m.id}">${av}<div class="globo">${cita}${cuerpo}</div>${reaccionesHtml(m.id)}<div class="cuando">${horaDe(m.creado)}${m.auto ? ' · saludo automático' : ''}${guardado}</div><button class="reac-btn" data-reac="${m.id}" title="Reaccionar, responder o guardar">☺</button></div>`;
 }
 function repintarReacciones() {
   $$('#ch-mensajes .msg[data-id]').forEach((el) => {
@@ -604,6 +619,7 @@ async function mandar(cuerpo) {
   temp.innerHTML = `<div class="globo">${esc(cuerpo.texto || '')}</div><div class="cuando">enviando…</div>`;
   caja.appendChild(temp); caja.scrollTop = caja.scrollHeight;
   señalEscribiendo(false);
+  if (CH.citando) { cuerpo.respondeA = CH.citando.id; quitarCita(); }
   try { await api(`/api/charla/${encodeURIComponent(otra)}`, cuerpo); await CH.traer(); }
   catch (err) { temp.remove(); avisar(err.message); throw err; }
 }
@@ -681,6 +697,9 @@ async function engancharCharla(otra) {
       const primera = !CH.datos;
       if (primera) { CH.datos = d; caja.innerHTML = ''; } else { d.otra.enLinea = CH.vivo ? CH.datos.otra.enLinea : d.otra.enLinea; CH.datos = d; }
       CH.reac = d.reacciones || {}; CH.visto = Math.max(CH.visto, d.vistoHasta || 0);
+      if (d.guardados) CH.guardados = new Set(d.guardados);
+      if (primera) { CH.hayMas = !!d.hayMas; CH.primero = d.mensajes[0]?.id || 0; }
+      if (d.total != null) { const r = $('#ch-resumen'); if (r) r.textContent = ` · ${d.total} mensajes · puerta abierta ${hace(d.desde)}`; }
       $$('.msg.pendiente', caja).forEach((el) => el.remove());
       if (d.mensajes.length) {
         const abajo = primera || cercaDelFinal(caja);
@@ -706,7 +725,7 @@ async function engancharCharla(otra) {
         CH.ultimo = d.mensajes[d.mensajes.length - 1].id; CH.ultimoTsPintado = fechaDe(d.mensajes[d.mensajes.length - 1].creado).getTime();
         if (abajo) caja.scrollTop = caja.scrollHeight;
         else { const n = d.mensajes.filter((m) => !m.mio && m.tipo !== 'sistema').length; if (n) { CH.sinLeer += n; $('#ch-abajo-n').textContent = CH.sinLeer; $('#ch-abajo').hidden = false; } }
-        if (ev && !ev.mio && ev.de !== 'sistema' && document.hidden) avisarFuera(d.otra.nombre, ev.vista || 'Mensaje nuevo');
+        if (ev && ev.de && ev.de !== 'sistema' && ev.de !== V.persona.id) { sonMensaje(); if (document.hidden) avisarFuera(d.otra.nombre, ev.vista || 'Mensaje nuevo'); }
         const mia = (V.charlas || []).find((x) => x.otra === otra); if (mia) { mia.nuevos = 0; pintarLateral(); }
         if (d.mensajes.some((m) => !m.mio && m.tipo !== 'sistema')) mostrarEscribiendo(false);
       }
@@ -748,25 +767,122 @@ async function engancharCharla(otra) {
   $$('[data-adj]').forEach((i) => i.onchange = (e) => { subirAdjunto(i.dataset.adj, e.target.files[0]); e.target.value = ''; });
   $$('[data-panel]').forEach((b) => b.onclick = () => abrirPanel(b.dataset.panel, b));
   $('#ch-voz').onclick = () => notaDeVoz($('#ch-voz'));
-  caja.onscroll = () => { if (cercaDelFinal(caja)) { CH.sinLeer = 0; $('#ch-abajo').hidden = true; } };
+  caja.onscroll = () => { if (cercaDelFinal(caja)) { CH.sinLeer = 0; $('#ch-abajo').hidden = true; } if (caja.scrollTop < 60 && CH.hayMas && !CH.cargandoAntes) cargarAntes(); };
+  async function cargarAntes() {
+    CH.cargandoAntes = true;
+    const tope = document.createElement('div'); tope.className = 'ch-dia'; tope.innerHTML = '<span>Cargando lo anterior…</span>'; caja.prepend(tope);
+    try {
+      const d = await api(`/api/charla/${encodeURIComponent(otra)}?antes=${CH.primero}`);
+      tope.remove();
+      if (!d.mensajes.length) { CH.hayMas = false; CH.cargandoAntes = false; return; }
+      const h0 = caja.scrollHeight;
+      const html = pintarBloque(d.mensajes);
+      const primerDia = caja.querySelector('.ch-dia:not(.nuevo)'); if (primerDia && primerDia.textContent === diaDe(d.mensajes[d.mensajes.length - 1].creado)) primerDia.remove();
+      caja.insertAdjacentHTML('afterbegin', html);
+      caja.scrollTop += caja.scrollHeight - h0;
+      CH.primero = d.mensajes[0].id; CH.hayMas = !!d.hayMas; repintarReacciones();
+    } catch (e) { tope.remove(); avisar(e.message); }
+    CH.cargandoAntes = false;
+  }
   $('#ch-abajo').onclick = () => { caja.scrollTop = caja.scrollHeight; };
   caja.onclick = async (e) => {
     const b = e.target.closest('[data-reac]');
     if (b) {
       const id = Number(b.dataset.reac), ya = $('.reac-bar', caja); if (ya) ya.remove();
-      const bar = document.createElement('div'); bar.className = 'reac-bar'; bar.innerHTML = REACCIONES.map((r) => `<button type="button" data-r="${r}">${r}</button>`).join('');
+      const bar = document.createElement('div'); bar.className = 'reac-bar'; bar.innerHTML = REACCIONES.map((r) => `<button type="button" data-r="${r}">${r}</button>`).join('') + `<i></i><button type="button" class="txt" data-citar="${id}" title="Responder">↩︎</button><button type="button" class="txt" data-guardar="${id}" title="${CH.guardados.has(id) ? 'Quitar de guardados' : 'Guardar'}">${CH.guardados.has(id) ? '🔖' : '☆'}</button>`;
       b.parentElement.appendChild(bar);
       $$('[data-r]', bar).forEach((x) => x.onclick = async () => { bar.remove(); try { await api(`/api/charla/${encodeURIComponent(otra)}/reaccion`, { mensaje: id, emoji: x.dataset.r }); await traer(true); } catch (err) { avisar(err.message); } });
+      $('[data-citar]', bar).onclick = () => { bar.remove(); const el = caja.querySelector(`.msg[data-id="${id}"]`); ponerCita(id, el?.classList.contains('mio'), (el?.querySelector('.globo')?.textContent || '').replace(/^\s*(Tú|[^\n]{0,40})\n?/, '').trim().slice(0, 100)); };
+      $('[data-guardar]', bar).onclick = async () => { bar.remove(); try { const r = await api(`/api/charla/${encodeURIComponent(otra)}/guardar`, { mensaje: id }); if (r.guardado) CH.guardados.add(id); else CH.guardados.delete(id); const el = caja.querySelector(`.msg[data-id="${id}"] .cuando`); el?.querySelector('.marca-guardado')?.remove(); if (r.guardado) el?.insertAdjacentHTML('beforeend', '<span class="marca-guardado" title="Guardado">🔖</span>'); avisar(r.guardado ? 'Guardado. Lo encuentras en 🔖.' : 'Quitado de guardados.'); } catch (err) { avisar(err.message); } };
       return;
     }
+    const ir2 = e.target.closest('[data-ir]');
+    if (ir2) { e.preventDefault(); irAMensaje(Number(ir2.dataset.ir)); return; }
     if (!e.target.closest('.reac-bar')) $('.reac-bar', caja)?.remove();
   };
   $('#ch-compartir').onclick = abrirCompartir;
+  $('#ch-carta').onclick = () => { const o = CH.datos?.otra; if (!o) return; abrirHoja(`La carta de ${esc(o.nombre)}`, `${o.carta ? `<div class="carta">${esc(o.carta)}</div>` : '<p class="vacio">Todavía no hay carta.</p>'}${o.malinterpretan ? `<p class="entender"><b>Lo que le gustaría que entendieras desde el día uno:</b> ${esc(o.malinterpretan)}</p>` : ''}${o.martes ? `<h3 style="margin:16px 0 6px">Su martes ideal dentro de 10 años</h3><p style="white-space:pre-line;color:var(--tinta-2)">${esc(o.martes)}</p>` : ''}`); };
+  $('#ch-sonido').onclick = () => { const on = !sonidoOn(); try { localStorage.setItem('cupido.sonido', on ? 'si' : 'no'); } catch {} $('#ch-sonido').textContent = on ? '🔈' : '🔇'; if (on) sonMensaje(); avisar(on ? 'Sonido encendido.' : 'Sonido apagado.'); };
+  $('#ch-buscar').onclick = () => abrirPanelCabeza('buscar');
+  $('#ch-guardados').onclick = () => abrirPanelCabeza('guardados');
   $('#ch-lado-btn').onclick = () => { $('#ch-rejilla').classList.toggle('lado-abierto'); };
   const av = $('#ch-aviso');
   const pintarAviso = () => { av.classList.toggle('on', 'Notification' in window && Notification.permission === 'granted'); av.title = av.classList.contains('on') ? 'Te avisaremos cuando te escriba' : 'Avisarme cuando escriba'; };
   pintarAviso();
   av.onclick = async () => { if (!('Notification' in window)) { avisar('Tu navegador no permite avisos aquí.'); return; } const p = await Notification.requestPermission(); pintarAviso(); avisar(p === 'granted' ? 'Listo: te avisaremos cuando te escriba, aunque estés en otra pestaña.' : 'Sin permiso de avisos.'); };
+}
+// Pinta una lista de mensajes (ya ordenados) con días y grupos, sin tocar el estado del hilo vivo
+function pintarBloque(lista) {
+  let html = '', de = null, ts = 0, dia = null;
+  for (const m of lista) { const dd = diaDe(m.creado); if (dd !== dia) { html += `<div class="ch-dia"><span>${dd}</span></div>`; dia = dd; de = null; } const t = fechaDe(m.creado).getTime(); const seg = m.tipo !== 'sistema' && de === m.de && t - ts < 180000; if (seg) { const k = html.lastIndexOf(' fin-grupo'); if (k >= 0) html = html.slice(0, k) + html.slice(k + 10); } html += filaMensaje(m, seg); de = m.tipo === 'sistema' ? null : m.de; ts = t; }
+  return html;
+}
+function ponerCita(id, mio, vista) {
+  CH.citando = { id, vista };
+  const c = $('#ch-citando'); c.hidden = false; c.innerHTML = `<span>↩︎ Respondiendo a <b>${mio ? 'ti' : esc(CH.datos?.otra?.nombre || '')}</b>: ${esc(vista)}</span><button type="button" id="ch-quitar-cita" aria-label="Quitar">×</button>`;
+  $('#ch-quitar-cita').onclick = quitarCita; $('#ch-texto').focus();
+}
+function quitarCita() { CH.citando = null; const c = $('#ch-citando'); if (c) { c.hidden = true; c.innerHTML = ''; } }
+async function irAMensaje(id) {
+  const caja = $('#ch-mensajes');
+  let el = caja.querySelector(`.msg[data-id="${id}"]`);
+  if (!el && CH.hayMas) { // está más atrás: trae todo el historial anterior de una vez
+    try { const d = await api(`/api/charla/${encodeURIComponent(CH.otra)}?todo=1`); const h0 = caja.scrollHeight; const ya = new Set($$('.msg[data-id]', caja).map((x) => Number(x.dataset.id))); const previos = []; for (const m of d.mensajes) { if (ya.has(m.id)) break; previos.push(m); }
+      if (previos.length) { caja.insertAdjacentHTML('afterbegin', pintarBloque(previos)); caja.scrollTop += caja.scrollHeight - h0; CH.primero = previos[0].id; repintarReacciones(); } CH.hayMas = false;
+    } catch (e) { avisar(e.message); }
+    el = caja.querySelector(`.msg[data-id="${id}"]`);
+  }
+  if (!el) { avisar('No encontré ese mensaje.'); return; }
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('resaltado'); setTimeout(() => el.classList.remove('resaltado'), 1800);
+}
+function abrirPanelCabeza(cual) {
+  const p = $('#ch-panel');
+  if (!p.hidden && p.dataset.cual === cual) { cerrarPaneles(); return; }
+  cerrarPaneles(); p.hidden = false; p.dataset.cual = cual;
+  const fila = (m) => `<button type="button" data-ir="${m.id}"><b>${m.mio ? 'Tú' : esc(CH.datos?.otra?.nombre || '')}</b><span>${esc(m.vista)}</span><small>${diaDe(m.creado)} · ${horaDe(m.creado)}</small></button>`;
+  const enganchar = () => $$('[data-ir]', p).forEach((b) => b.onclick = () => { cerrarPaneles(); irAMensaje(Number(b.dataset.ir)); });
+  if (cual === 'buscar') {
+    p.innerHTML = `<div class="ch-gif-busca"><input type="search" id="ch-q" placeholder="Buscar en esta charla…" autocomplete="off"><button type="button" class="enlace" id="ch-q-x">Cerrar</button></div><div class="ch-resultados" id="ch-res"><p class="vacio" style="padding:8px 12px">Escribe al menos dos letras.</p></div>`;
+    const q = $('#ch-q'); let t = null; q.focus(); $('#ch-q-x').onclick = cerrarPaneles;
+    q.oninput = () => { clearTimeout(t); t = setTimeout(async () => { if (q.value.trim().length < 2) return; try { const r = await api(`/api/charla/${encodeURIComponent(CH.otra)}/buscar?q=${encodeURIComponent(q.value.trim())}`); $('#ch-res').innerHTML = r.length ? r.map(fila).join('') : '<p class="vacio" style="padding:8px 12px">Nada con esas palabras.</p>'; enganchar(); } catch (e) { avisar(e.message); } }, 300); };
+  } else if (cual === 'guardados') {
+    p.innerHTML = `<div class="ch-gif-busca"><b style="font-size:14px">🔖 Guardados</b><span class="nota-entrar" style="margin:0 0 0 auto">Solo tú los ves</span><button type="button" class="enlace" id="ch-g-x">Cerrar</button></div><div class="ch-resultados" id="ch-res"><p class="vacio" style="padding:8px 12px">Cargando…</p></div>`;
+    $('#ch-g-x').onclick = cerrarPaneles;
+    api(`/api/charla/${encodeURIComponent(CH.otra)}/guardados`).then((r) => { $('#ch-res').innerHTML = r.length ? r.map(fila).join('') : '<p class="vacio" style="padding:8px 12px">Todavía no guardas nada. En cualquier mensaje: ☺ → ☆.</p>'; enganchar(); }).catch((e) => avisar(e.message));
+  }
+}
+function abrirHoja(titulo, html) {
+  const velo = document.createElement('div'); velo.className = 'modal-velo on';
+  velo.innerHTML = `<div class="modal claro" role="dialog"><button class="cerrar" aria-label="Cerrar">×</button><h2>${titulo}</h2>${html}</div>`;
+  document.body.appendChild(velo); const cerrar = () => velo.remove(); velo.querySelector('.cerrar').onclick = cerrar; velo.onclick = (e) => { if (e.target === velo) cerrar(); };
+}
+/* ── avisos en vivo en todo el tablero (de la Mina: el mensaje sale abajo un momento) ── */
+const ESCUCHA = new Map();
+function escucharCharlas() {
+  if (!('WebSocket' in window)) return;
+  for (const c of V.charlas || []) {
+    if (ESCUCHA.has(c.otra)) continue;
+    const abrir = () => {
+      let ws; try { ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/charla/${encodeURIComponent(c.otra)}/ws`); } catch { return; }
+      ESCUCHA.set(c.otra, ws);
+      ws.onmessage = (e) => {
+        let ev; try { ev = JSON.parse(e.data); } catch { return; }
+        if (ev.t !== 'mensaje' || ev.de === V.persona.id || ev.de === 'sistema') return;
+        if (CH.otra === c.otra && seccion === 'charlas') return; // esa charla ya está abierta: ella se encarga
+        const mia = (V.charlas || []).find((x) => x.otra === c.otra); if (mia) { mia.nuevos = (mia.nuevos || 0) + 1; mia.ultimo = { texto: ev.vista, mio: false, creado: new Date().toISOString() }; pintarLateral(); }
+        sonMensaje(); toastMensaje(c, ev.vista || 'Mensaje nuevo');
+        if (document.hidden) avisarFuera(c.nombre, ev.vista || 'Mensaje nuevo');
+      };
+      ws.onclose = () => { ESCUCHA.delete(c.otra); setTimeout(() => { if (!ESCUCHA.has(c.otra)) abrir(); }, 8000); };
+    };
+    abrir();
+  }
+}
+function toastMensaje(c, vista) {
+  let z = $('#toasts'); if (!z) { z = document.createElement('div'); z.id = 'toasts'; document.body.appendChild(z); }
+  const t = document.createElement('a'); t.href = `#charlas/${esc(c.otra)}`; t.className = 'toast-msg';
+  t.innerHTML = `${avatar(c.nombre, c.color, 'sm')}<div><b>${esc(c.nombre)}</b><span>${esc(String(vista).slice(0, 90))}</span></div>`;
+  z.appendChild(t); setTimeout(() => t.classList.add('va'), 7000); setTimeout(() => t.remove(), 7600);
 }
 function avisarFuera(nombre, vista) {
   CH.fuera = (CH.fuera || 0) + 1;

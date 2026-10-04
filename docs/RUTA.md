@@ -22,6 +22,7 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 - [x] **Artículos**: cualquiera publica sin cuenta, lectura cuidada y lista para compartir por WhatsApp, borrador local, anti-spam básico (trampa para robots, límite por IP, palabras sospechosas a revisión) y moderación desde el admin. 6 artículos iniciales.
 - [x] **Cuestionario conectado**: autoguardado, "lo pienso después" y motor automático al terminar; guarda en la cuenta de la persona.
 - [x] **Bienvenida** (16 sep 2026): onboarding de seis pasos en `/bienvenida` con mini-demos que se tocan (pregunta que se responde, motor en dos direcciones con barras y total, lista con una sola arriba del 90 %, puerta que se abre con dos síes, charla con hola automático y elementos que se liberan, tablero con camino y colores). Flechas, deslizar en celular, saltar, progreso. Las cuentas nuevas llegan aquí desde el enlace mágico; también desde la entrada, la landing y el tablero. Bandera `ajustes.bienvenida` al terminar.
+- [x] **Charla v4** (4 oct 2026, con lo aprendido del chat de la Mina): aviso abajo un momento cuando llega un mensaje y estás en otra sección del tablero (clicable, con sonido suave por código y apagable), responder citando (con salto al original), guardados privados (🔖), buscar dentro de la charla (🔍, salta y resalta), historial que se carga hacia atrás al subir (ventanas de 80), hitos automáticos (50/200/1000 mensajes; 7/30/100 días desde la puerta, por cron), su carta siempre a la mano (✉️), contador de mensajes y antigüedad de la puerta, y limpieza del texto (sin caracteres de control ni marcas invisibles).
 - [x] **Charla v3, en vivo de verdad** (16 sep 2026): Durable Object `CharlaViva` (uno por charla) con WebSockets: mensajes, reacciones, visto, "está escribiendo" y presencia llegan al instante; sondeo solo como respaldo (12 s conectado, 2.5 s si se cae) y reconexión con espera creciente. Presencia "en línea / última vez hace X". Mensajes agrupados por persona y minuto (avatar y hora solo al cierre del grupo), emojis grandes cuando van solos, enlaces clicables seguros, burbuja de "escribiendo" en el hilo, divisor "Mensajes nuevos", botón "↓ N" al estar arriba, borrador por charla, título "(1)" y avisos del navegador opcionales (🔔), barra de progreso al mandar archivos, límite de 40 mensajes por minuto, lista de charlas con no leídos primero, panel de perfil plegable en celular.
 - [x] **Charla v2** (16 sep 2026): emojis por grupos y stickers, GIF por Tenor listo pero apagado, foto (se reduce en el navegador), video, nota de voz grabada, archivo, pegar y arrastrar, reacciones (❤️😂😮😢👍🔥, una por persona), "Visto ✓✓", separadores por día, rompehielos cuando solo hay saludos automáticos, envío optimista, sondeo cada 1.8 s solo con la pestaña visible.
 - [x] **La charla** (16 sep 2026): nace sola al abrirse la puerta; el sistema manda el primer "hola" de parte del hombre y luego de la mujer; texto y archivos adjuntos (fotos, PDF, audio, video, documentos; 15 MB; en R2, solo para los dos); nada se borra; "está escribiendo" en tiempo real (sondeo cada 2.5 s); no leídos en el menú.
@@ -130,6 +131,19 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 - [ ] Detectar dimensiones que no predicen nada y quitarlas (menos preguntas, misma precisión).
 
 ---
+
+## Mientras esperan a Cupido (propuesta, 4 oct 2026)
+
+La misma tecnología de la charla (un objeto por sala, en vivo) sirve para que la plataforma tenga vida antes de la coincidencia. Regla que no se negocia: **nada de navegar perfiles**; aquí la gente se conoce por lo que dice, no por cómo se ve. En orden de valor:
+
+1. **Círculos** (lo más fiel al producto): el motor ya calcula compatibilidad con todos; con quienes estás entre 70 y 89 % hay afinidad real aunque no haya "pareja". Un círculo de 8 a 12 personas con esa afinidad (mezcla de géneros, sin romance explícito), con una sala propia y una pregunta semanal. La gente se queda, se conoce, y a veces el 89 % sube.
+2. **Salas por tema**: fe, hijos, cocina, deporte, lectura, dinero, duelo, volver a empezar. Abiertas, con nombre de pila y sin foto. Moderación mínima: reportar y silenciar (hoy no existe).
+3. **La pregunta de la semana**: una de las 43, abierta: quien quiera publica su respuesta (firmada con nombre de pila) y los demás reaccionan. Da material al motor (claridad) y conversación a la comunidad.
+4. **Diario guiado**: tres preguntas por semana que mejoran la claridad del perfil (y su Q) y se pueden liberar después a una charla como "lo que escribí entonces".
+5. **Artículos con conversación**: comentarios bajo cada artículo con la misma charla; autores invitados (terapeutas, sexólogos, acompañantes espirituales) con sesiones en vivo de preguntas.
+6. **Tu lectura con el tiempo**: cada mes el motor le muestra a la persona cómo cambió su rueda de la vida y su claridad, y qué dimensión le pide atención. Es el "mientras tanto" más honesto: trabajar en uno mismo.
+
+Decisión de Ricardo: cuál primero. Mi recomendación: Círculos, porque usa lo que ya tenemos (motor + charla) y es lo que nadie más puede ofrecer.
 
 ## 5 · Decisiones pendientes (tuyas)
 
