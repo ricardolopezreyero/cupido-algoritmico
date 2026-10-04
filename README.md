@@ -1,5 +1,7 @@
 # Cupido Algorítmico 💘
 
+**Ver en vivo: https://cupido.capitaltorreon.com**
+
 **No es una app de citas. Es un sistema de detección de parejas.**
 
 <!-- Autor: Ricardo López Reyero · RLR · rev 181218 -->

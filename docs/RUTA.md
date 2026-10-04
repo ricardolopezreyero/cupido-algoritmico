@@ -134,7 +134,7 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 ## 5 · Decisiones pendientes (tuyas)
 
 - [ ] ¿Hacer **privado** el repositorio?
-- [ ] **Dominio** y nombre final.
+- [x] **Dominio:** cupido.capitaltorreon.com (4 oct 2026); workers.dev redirige ahí.
 - [ ] **Remitente de correo** para enlaces mágicos y avisos.
 - [ ] **Proveedor y presupuesto de IA** para la lectura de respuestas abiertas.
 - [ ] ¿**Verificación de identidad obligatoria** para abrir una puerta?

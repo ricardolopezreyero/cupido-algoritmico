@@ -41,6 +41,8 @@ export default {
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
     const ruta = url.pathname.replace(/\/$/, '') || '/';
+    // Casa única: todo vive en cupido.capitaltorreon.com; la dirección vieja de workers.dev redirige
+    if (url.hostname.endsWith('.workers.dev')) return Response.redirect(`https://cupido.capitaltorreon.com${url.pathname}${url.search}`, 301);
     try {
       if (ruta.startsWith('/docs/')) {
         const d = DOCS[ruta.slice(6)];

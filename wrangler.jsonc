@@ -5,6 +5,7 @@
   "main": "src/worker.js",
   "compatibility_date": "2026-09-14",
   "workers_dev": true,
+  "routes": [{ "pattern": "cupido.capitaltorreon.com", "custom_domain": true }],
   "observability": { "enabled": true },
   "assets": {
     "directory": "./public",
