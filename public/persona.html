@@ -57,6 +57,7 @@ import { $, $$, esc, api, avisar, avatar, anillo, animarAnillos, hace, pronto } 
 import { PREGUNTAS, BLOQUES, etiqueta, PARTE } from '/js/preguntas.js';
 import { AREAS_VIDA, leerVida } from '/js/vida.js';
 import { ELEMENTOS, ELEMENTO, SUAVES } from '/js/elementos.js';
+import { dictable, puedeDictar } from '/js/dictar.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
 /* ── sesión: cookie que puso el Worker (correo con enlace mágico, o demo) ── */
@@ -526,6 +527,7 @@ function vistaCharla(otra) {
             <label class="ch-h" title="Foto">📷<input type="file" accept="image/*" data-adj="foto" hidden></label>
             <label class="ch-h" title="Video">🎬<input type="file" accept="video/*" capture="user" data-adj="video" hidden></label>
             <button type="button" class="ch-h" id="ch-voz" title="Nota de voz">🎤</button>
+            <button type="button" class="ch-h" id="ch-dictar" title="Dictar (se escribe lo que digas)">🗣️</button>
             <label class="ch-h" title="Archivo">📎<input type="file" data-adj="archivo" hidden></label>
           </div>
           <textarea id="ch-texto" rows="1" maxlength="2000" placeholder="Escribe…" autocomplete="off" enterkeyhint="send"></textarea>
@@ -767,6 +769,12 @@ async function engancharCharla(otra) {
   $$('[data-adj]').forEach((i) => i.onchange = (e) => { subirAdjunto(i.dataset.adj, e.target.files[0]); e.target.value = ''; });
   $$('[data-panel]').forEach((b) => b.onclick = () => abrirPanel(b.dataset.panel, b));
   $('#ch-voz').onclick = () => notaDeVoz($('#ch-voz'));
+  { // dictar en la charla: el texto aparece en la caja y se manda con Enter
+    const bd = $('#ch-dictar'); const ctl = dictable(txt, { pulir: false, api, avisar, alCambiar: () => txt.dispatchEvent(new Event('input')) });
+    const barra = txt.nextElementSibling; if (barra?.classList.contains('dictar-barra')) barra.hidden = true;
+    bd.onclick = () => { if (!puedeDictar()) { avisar('Tu navegador no tiene dictado. Prueba en Chrome, Edge o Safari.'); return; } barra?.querySelector('[data-d="mic"]')?.click(); bd.classList.toggle('on', !!barra?.querySelector('[data-d="mic"].on')); };
+    txt.addEventListener('input', () => bd.classList.toggle('on', !!barra?.querySelector('[data-d="mic"].on')));
+  }
   caja.onscroll = () => { if (cercaDelFinal(caja)) { CH.sinLeer = 0; $('#ch-abajo').hidden = true; } if (caja.scrollTop < 60 && CH.hayMas && !CH.cargandoAntes) cargarAntes(); };
   async function cargarAntes() {
     CH.cargandoAntes = true;

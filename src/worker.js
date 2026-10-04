@@ -199,6 +199,23 @@ async function api(req, env, ctx, url) {
     return json({ ok: true });
   }
 
+  /* ── Pulir: reacomoda un texto dictado sin cambiar lo que dijo la persona ── */
+  if (ruta === '/api/pulir' && metodo === 'POST') {
+    if (!yo) return sinSesion();
+    if (!env.AI) return error('El pincel no está disponible ahora.', 503);
+    const b = await leerJson(req, 20_000);
+    const texto = String(b.texto || '').trim().slice(0, 4000), contexto = String(b.contexto || '').slice(0, 200);
+    if (texto.length < 40) return error('Escribe o dicta un poco más.');
+    const sistema = `Eres un editor discreto de un cuestionario de pareja en español de México. Te dan un texto dictado por una persona. Tu única tarea: devolverlo reacomodado para que se lea claro y fluido, con puntuación y párrafos, QUITANDO muletillas y repeticiones del habla ("este", "o sea", "eh", "como que", frases repetidas). Reglas estrictas: conserva la primera persona, sus palabras, su tono, sus ejemplos y TODOS sus hechos; no agregues ideas, datos, adjetivos ni conclusiones; no resumas ni alargues (largo parecido, como mucho 10 % más corto); no uses tú ni consejos; no expliques nada. Responde solo con el texto final, sin comillas ni comentarios.`;
+    try {
+      const r = await env.AI.run('@cf/meta/llama-3.3-70b-instruct-fp8-fast', { messages: [{ role: 'system', content: sistema }, { role: 'user', content: `${contexto ? `Pregunta a la que responde: ${contexto}\n\n` : ''}Texto dictado:\n${texto}` }], max_tokens: 1200, temperature: 0.2 });
+      const salida = String(r?.response || '').trim().replace(/^["«]+|["»]+$/g, '');
+      if (!salida || salida.length < texto.length * 0.5 || salida.length > texto.length * 1.6) return json({ texto }); // si se pasó de listo, se deja tal cual
+      await anotar(env, 'persona', 'Se pulió un texto dictado', `${texto.length} → ${salida.length} caracteres`);
+      return json({ texto: salida });
+    } catch (e) { console.error('pulir', e.message); return error('No se pudo pulir ahora. Intenta de nuevo.', 502); }
+  }
+
   /* ── Cuestionario conectado ─────────────────────────────────────────────── */
   if (ruta === '/api/cuestionario' && metodo === 'GET') {
     if (!yo) return sinSesion();

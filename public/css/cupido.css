@@ -863,3 +863,19 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 @keyframes toastEntra { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
 @media (max-width: 860px) { .ch-cab-acc .ch-h { width: 32px; height: 30px; font-size: 16px; } #ch-sonido { display: none; } }
 /* fin charla v4 · RLR */
+
+/* ── Dictar y pulir · RLR ──────────────────────────────────────────────── */
+.dictar-barra { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin: 8px 0 4px; }
+.dictar-btn { border: 1px solid var(--linea-2); background: var(--blanco); color: var(--tinta-2); font: 600 13.5px var(--sans); border-radius: 999px; padding: 7px 13px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; transition: all .15s; }
+.dictar-btn:hover { border-color: var(--rosa-linea); color: var(--rosa-osc); }
+.dictar-btn.on { background: var(--rosa); color: #fff; border-color: var(--rosa-osc); animation: late 1.2s infinite; }
+.dictar-btn[disabled] { opacity: .6; cursor: wait; }
+@keyframes late { 0%, 100% { box-shadow: 0 0 0 0 rgba(214,69,95,.35); } 50% { box-shadow: 0 0 0 8px rgba(214,69,95,0); } }
+.dictar-estado { font-size: 12.5px; color: var(--gris); }
+.cuest textarea.dictando { border-color: var(--rosa); box-shadow: 0 0 0 4px rgba(214,69,95,.12); }
+.pulido { border: 1px solid var(--rosa-linea); background: var(--rosa-suave); border-radius: 14px; padding: 14px 16px; margin: 6px 0 10px; }
+.pulido-t { font-size: 12.5px; font-weight: 700; color: var(--rosa-osc); margin-bottom: 8px; }
+.pulido-txt { white-space: pre-line; font-size: 15.5px; line-height: 1.6; color: var(--tinta); }
+.pulido-acc { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.ch-h#ch-dictar.on { background: var(--rosa); color: #fff; animation: late 1.2s infinite; }
+/* fin dictar · RLR */

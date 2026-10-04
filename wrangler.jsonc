@@ -18,6 +18,7 @@
   "vars": { "FROM_EMAIL": "Cupido Algorítmico <cupido@capitaltorreon.com>", "BASE_URL": "https://cupido.capitaltorreon.com" },
   "triggers": { "crons": ["0 16 * * *"] },
   "rules": [{ "type": "Text", "globs": ["**/*.md"], "fallthrough": true }],
+  "ai": { "binding": "AI" },
   "r2_buckets": [{ "binding": "MEDIOS", "bucket_name": "cupido-medios" }],
   "durable_objects": { "bindings": [{ "name": "CHARLA_VIVA", "class_name": "CharlaViva" }] },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["CharlaViva"] }],

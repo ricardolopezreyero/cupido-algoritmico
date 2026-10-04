@@ -26,6 +26,7 @@
 // RLR · cuestionario
 import { $, $$, esc, api, avisar } from '/js/ui.js';
 import { PREGUNTAS, BLOQUES, PARTES, avance } from '/js/preguntas.js';
+import { dictable } from '/js/dictar.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const app = $('#app');
 const q = new URLSearchParams(location.search);
@@ -147,6 +148,7 @@ function pantallaDemo(previo) {
 }
 
 function pintar() {
+  app.dispatchEvent(new Event('dictar:parar'));
   const c = cola[idx];
   progreso();
   window.scrollTo(0, 0);
@@ -232,7 +234,7 @@ function enlazarPartes(p) {
     o = o.includes(b.dataset.v) ? o.filter((x) => x !== b.dataset.v) : [...o, b.dataset.v];
     poner(id, o); repintarPartes(p);
   });
-  $$('[data-txt]').forEach((t) => t.oninput = () => poner(t.dataset.txt, t.value, false));
+  $$('[data-txt]').forEach((t) => { t.oninput = () => poner(t.dataset.txt, t.value, false); dictable(t, { contexto: p.t, api, avisar, alCambiar: (v) => poner(t.dataset.txt, v, false) }); });
   $$('[data-num]').forEach((t) => t.oninput = () => poner(t.dataset.num, t.value === '' ? null : Number(t.value), false));
   $$('[data-fecha]').forEach((t) => t.oninput = () => {
     const id = t.dataset.fecha, g = (k) => $(`[data-fecha="${id}"][data-p="${k}"]`).value;
