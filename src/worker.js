@@ -12,6 +12,7 @@ import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './ar
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
 import { mandarMuestra, correoA } from './correos.js';
+import { verPrograma, apoyar, confirmarApoyo, ajustarPrograma, aportesAdmin } from './programa.js';
 import { avance } from '../public/js/preguntas.js';
 import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
@@ -76,8 +77,13 @@ export default {
         catch { return irA('/entrar', url); }
       }
       let x;
+      if ((x = ruta.match(/^\/i\/([a-z0-9]{5,12})$/))) {
+        // invitación: se recuerda quién invitó y se va a la entrada
+        return new Response(null, { status: 302, headers: { location: new URL('/bienvenida', url).href, 'set-cookie': `cupido_inv=${x[1]}; Path=/; Max-Age=2592000; SameSite=Lax${url.protocol === 'https:' ? '; Secure' : ''}` } });
+      }
       if ((x = ruta.match(/^\/entrar\/([a-z0-9]{20,40})$/))) {
-        const r = await canjearEnlace(env, x[1]);
+        const inv = (req.headers.get('cookie') || '').match(/(?:^|;\s*)cupido_inv=([a-z0-9]{5,12})/)?.[1] || null;
+        const r = await canjearEnlace(env, x[1], inv);
         if (!r.ok) return irA(`/entrar?error=${r.motivo}`, url);
         return irA(r.completo ? '/persona' : r.nueva ? '/bienvenida?luego=cuestionario' : '/cuestionario', url, cookieSesion(r.sesion, url));
       }
@@ -198,6 +204,13 @@ async function api(req, env, ctx, url) {
     await env.DB.prepare(`UPDATE avisos SET leido = 1 WHERE persona = ?`).bind(yo.P.id).run();
     return json({ ok: true });
   }
+
+  /* ── El programa: todo gratis hoy; apoyar es voluntario ─────────────────── */
+  if (ruta === '/api/programa' && metodo === 'GET') return json(await verPrograma(env));
+  if (ruta === '/api/apoyar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 4000); const r = await apoyar(env, url, yo.P, b); return r.error ? error(r.error, r.status) : json(r); }
+  if (ruta === '/api/apoyar/confirmar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await confirmarApoyo(env, yo.P, b.sid); return r.error ? error(r.error, r.status) : json(r); }
+  if (ruta === '/api/admin/programa' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await ajustarPrograma(env, b); return r.error ? error(r.error, r.status) : json(r); }
+  if (ruta === '/api/admin/aportes' && metodo === 'GET') return json(await aportesAdmin(env));
 
   /* ── Pulir: reacomoda un texto dictado sin cambiar lo que dijo la persona ── */
   if (ruta === '/api/pulir' && metodo === 'POST') {

@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>El programa · Cupido Algorítmico</title>
+<meta name="description" content="Todo Cupido es gratis durante 2026 y 2027. El mapa de lo que algún día tendrá precio, cuándo y cuánto, publicado desde hoy.">
+<meta name="author" content="Ricardo López Reyero">
+<meta name="rev" content="181218">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/cupido.css">
+</head>
+<body data-author="RLR">
+<!-- Cupido Algorítmico · El programa · RLR · Ricardo López Reyero -->
+<header class="barra"><div class="envoltura barra-in">
+  <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
+  <nav class="menu"><a href="/demo">Ver el demo</a><a href="/articulos">Artículos</a></nav>
+  <a class="boton boton-chico" href="/entrar">Ingresar</a>
+</div></header>
+
+<main class="envoltura entrar">
+  <section class="entrar-hero">
+    <p class="eyebrow">El programa</p>
+    <h1>Confianza primero. <em>El dinero, después.</em></h1>
+    <p class="lead">Todo Cupido es gratis durante 2026 y 2027: las 43 preguntas, el motor, las coincidencias, las puertas, la charla, tu foto, tu voz y tu video. Sin anuncios, sin letra chica y sin nada que compre una ventaja. Y desde hoy publicamos el mapa de lo que algún día tendrá precio, para que lo veas venir.</p>
+  </section>
+  <div id="programa" style="margin-top:28px"><p class="vacio">Cargando…</p></div>
+  <p class="nota-privada" style="max-width:720px;margin:26px auto 0">🔒 <span>Una app de citas gana mientras no encuentras pareja. Cupido gana cuando sí la encuentras. Por eso cada peso que algún día cobremos regresa a traer a la siguiente persona seria.</span></p>
+</main>
+
+<footer class="pie"><div class="envoltura"><span>💘 Cupido Algorítmico · proyecto abierto · <a href="https://github.com/ricardolopezreyero/cupido-algoritmico">GitHub</a></span><span><a href="/">Inicio</a> · <a href="/bienvenida">Cómo funciona</a> · <a href="/articulos">Artículos</a> · <a href="/admin">Admin</a></span></div></footer>
+
+<script type="module">
+// RLR · programa público
+import { $, esc, api } from '/js/ui.js';
+const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
+const pesos = (n) => '$' + Number(n || 0).toLocaleString('es-MX');
+try {
+  const d = await api('/api/programa');
+  $('#programa').innerHTML = `
+    <section class="tarjeta"><h2>El mapa</h2><p class="sub">Lo que algún día tendrá precio, cuándo y cuánto. Los precios son de referencia e iguales para todos; cualquier cambio se avisa con tiempo.</p>
+      <div class="mapa-programa">${d.acciones.map((a) => `<div class="accion ${a.estado === 'cobrando' ? 'cobrando' : ''}"><div class="cuando"><b>${esc(a.cuando)}</b><span>${esc(a.etapa)}</span></div><div class="que"><b>${esc(a.nombre)}</b><span>${esc(a.que)}</span></div><div class="precio">${a.estado === 'cobrando' ? `<b>${a.precio ? pesos(a.precio) : '—'}</b><span>${esc(a.unidad)}</span>` : `<b class="incluido">Incluido</b><span>${a.precio ? `después: ${pesos(a.precio)} ${esc(a.unidad)}` : esc(a.unidad)}</span>`}</div></div>`).join('')}</div></section>
+    <section class="tarjeta" style="margin-top:16px"><h2>Lo que no se negocia</h2>
+      <ul class="razones" style="padding:0">
+        <li><span class="i si">✓</span><span><b>El algoritmo no se compra.</b> Nadie sube en el cálculo por pagar. El 90 % es el 90 % para todos.</span></li>
+        <li><span class="i si">✓</span><span><b>Nadie paga por ser visto.</b> No existe "perfil destacado" ni "quién te vio". No hay perfiles que ver.</span></li>
+        <li><span class="i si">✓</span><span><b>Sin anuncios, nunca.</b> Tu atención no se vende a nadie.</span></li>
+        <li><span class="i si">✓</span><span><b>Lo íntimo no es producto.</b> Tus respuestas sensibles no se venden ni se comparten. Solo cifras agregadas, para investigación con nombre y propósito.</span></li>
+        <li><span class="i si">✓</span><span><b>Mismo precio para todos</b>, impuestos incluidos, devoluciones sin preguntas en 15 días, y salir siempre es un clic.</span></li>
+      </ul></section>
+    <section class="tarjeta" style="margin-top:16px"><h2>Si hoy quieres ayudar</h2><p class="sub">Dos cosas, las dos voluntarias y ninguna da ventaja: <b>compartir Cupido</b> con alguien que busque en serio (desde tu tablero tienes una liga tuya) y, si quieres, aportar al <b>Fondo de atracción</b> o ser <b>Socio fundador</b>. El 100 % se usa para traer a la siguiente persona seria, y cada año se publica en qué se gastó.</p>
+      <div class="banda" style="grid-template-columns:repeat(3,1fr);margin:10px 0 14px"><div class="rosa"><b>${pesos(d.fondo.reunido)}</b><span>reunidos en el Fondo</span></div><div><b>${d.fondo.personas}</b><span>${d.fondo.personas === 1 ? 'persona apoya' : 'personas apoyan'}</span></div><div><b>${d.fondo.socios}</b><span>${d.fondo.socios === 1 ? 'socio fundador' : 'socios fundadores'}</span></div></div>
+      <div class="acciones"><a class="boton" href="/entrar">Entrar a mi tablero</a><a class="boton boton-claro" href="/bienvenida">Ver cómo funciona</a></div></section>`;
+} catch (e) { $('#programa').innerHTML = `<p class="vacio">${esc(e.message)}</p>`; }
+</script>
+</body>
+</html>

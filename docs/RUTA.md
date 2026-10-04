@@ -160,8 +160,14 @@ Decisión de Ricardo: cuál primero. Mi recomendación: Círculos, porque usa lo
 - [ ] **Charla:** avisos por correo de mensaje nuevo cuando la persona no está; reportar y bloquear; moderación.
 - [ ] **¿Qué hace la persona adentro mientras no hay coincidencia?** (Ricardo, 16 sep 2026: "si en 5 años no encuentran a nadie, ¿qué tendrían que estar haciendo adentro?"). Ideas sobre la mesa: sala o chat de la comunidad; artículos y respuestas de especialistas; un "diario" guiado que mejora su claridad (y su Q); retos de pareja consigo mismo; ver cómo cambia su lectura con el tiempo. Regla que no se negocia: nada de navegar perfiles. Decisión pendiente de Ricardo.
 
-## Monetización (después — solo para no perderlo)
+## El programa: confianza primero, monetización después (4 oct 2026)
 
-Ahorita no: primero el máximo valor para la persona. Cuando toque, el momento de más valor es **la puerta**, y hay caminos que no rompen la promesa (cobrar la verificación de identidad, una membresía, pagar al abrir). Lo que nunca: cobrar por "ver quién te vio" o por subir en una lista — ese estado no existe en este sistema.
+Razonamiento completo en `docs/monetizacion/Cupido_Algoritmico_Monetizacion_v1_2026-10-04_1215.docx`. Lo construido:
+
+- **Todo gratis durante 2026 y 2027.** Sin anuncios, sin letra chica, nada compra ventaja. La persona lo ve en Inicio, al terminar el cuestionario, en Aceptaciones ("Abrir puertas: incluido") y en la página pública `/programa`.
+- **El mapa, publicado desde hoy** (tabla `programa`, editable en Admin → Programa y apoyos): entrada con seriedad (2028, 690), abrir una puerta (2028, 1,490, la primera siempre gratis), Mientras esperas (2029, 199/mes), acompañamiento (2029, comisión), comunidades propias (2030, 30,000/año), regalar Cupido (2028, 690). Cada acción tiene estado `gratis` o `cobrando`; Ricardo acelera o frena desde el admin y el cambio se ve igual para todos.
+- **Lo único que se puede pagar hoy, voluntario:** Fondo de atracción (una vez, desde 49) y Socio fundador (cada mes, cancelable), por Stripe Checkout con la llave de la bóveda `STRIPE_SECRET_KEY` (SuperLeads por ahora; se cambia a `STRIPE_CAPITALTORREON` cuando exista). Tope de cuidado 5,000/mes, devoluciones sin preguntas en 15 días, correo de gracias, lista de agradecimiento, transparencia pública (reunido, personas, socios).
+- **Compartir Cupido:** cada cuenta tiene liga propia `/i/<código>` (WhatsApp y copiar); quien llega por ahí queda registrado como invitado y el tablero muestra cuántos llegaron. Es el motor de crecimiento mientras nadie paga.
+- **Cuando Ricardo diga "acelera":** falta construir el cobro real de cada acción (entrada al terminar el cuestionario, puerta al doble sí, suscripción de Mientras esperas). La infraestructura de pago ya está probada con el Fondo; es cuestión de conectar cada punto con `apoyar()` y respetar las reglas de arriba.
 
 <!-- fin · RLR -->

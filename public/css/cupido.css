@@ -879,3 +879,18 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 .pulido-acc { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .ch-h#ch-dictar.on { background: var(--rosa); color: #fff; animation: late 1.2s infinite; }
 /* fin dictar · RLR */
+
+/* ── El programa (apoyar) · RLR ────────────────────────────────────────── */
+.gratis-linea { margin: -6px 0 14px; font-size: 13.5px; color: var(--tinta-2); }
+.gratis-linea a { color: var(--rosa-osc); }
+.programa-hoy { background: linear-gradient(135deg, #fff 0%, var(--rosa-suave) 100%); border-color: var(--rosa-linea); margin-bottom: 16px; }
+.mapa-programa { display: grid; gap: 8px; }
+.accion { display: grid; grid-template-columns: 110px 1fr 180px; gap: 14px; align-items: center; padding: 12px 14px; border: 1px solid var(--linea); border-radius: 14px; background: var(--blanco); }
+.accion .cuando b { display: block; font: 700 20px var(--serif); } .accion .cuando span { font-size: 11.5px; color: var(--gris); letter-spacing: .06em; text-transform: uppercase; }
+.accion .que b { display: block; font-size: 15px; } .accion .que span { font-size: 13px; color: var(--tinta-2); }
+.accion .precio { text-align: right; } .accion .precio b { display: block; font-size: 16px; } .accion .precio span { font-size: 12px; color: var(--gris); }
+.accion .precio .incluido { color: var(--ok); } .accion.cobrando { border-color: var(--rosa-linea); }
+.montos { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.montos input { font: 15px var(--sans); border: 1.5px solid var(--linea-2); border-radius: 999px; padding: 9px 14px; }
+@media (max-width: 640px) { .accion { grid-template-columns: 80px 1fr; } .accion .precio { grid-column: 2; text-align: left; } }
+/* fin programa · RLR */

@@ -138,7 +138,7 @@ export async function pedirEnlace(env, req, url, correoCrudo) {
   return { ok: true, correo };
 }
 
-export async function canjearEnlace(env, token) {
+export async function canjearEnlace(env, token, invitadoPor = null) {
   if (!/^[a-z0-9]{20,40}$/.test(String(token))) return { ok: false, motivo: 'inválido' };
   const e = await env.DB.prepare(`SELECT * FROM enlaces WHERE token = ?`).bind(token).first();
   if (!e) return { ok: false, motivo: 'inválido' };
@@ -152,8 +152,10 @@ export async function canjearEnlace(env, token) {
     nueva = true;
     const id = 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5);
     const COLORES = ['#d6455f', '#e07a4e', '#8a6bbf', '#2f8f83', '#1d4ed8', '#0891b2', '#be185d', '#15803d', '#a16207', '#6d28d9'];
-    await env.DB.prepare(`INSERT INTO personas (id, pool, nombre, correo, color, respuestas, origen, estado, completo) VALUES (?, 'real', 'Sin nombre', ?, ?, '{}', 'correo', 'activa', 0)`)
-      .bind(id, e.correo, COLORES[Math.floor(Math.random() * COLORES.length)]).run();
+    const quien = invitadoPor ? (await env.DB.prepare(`SELECT id FROM personas WHERE codigo = ?`).bind(invitadoPor).first())?.id || null : null;
+    await env.DB.prepare(`INSERT INTO personas (id, pool, nombre, correo, color, respuestas, origen, estado, completo, invitado_por) VALUES (?, 'real', 'Sin nombre', ?, ?, '{}', 'correo', 'activa', 0, ?)`)
+      .bind(id, e.correo, COLORES[Math.floor(Math.random() * COLORES.length)], quien).run();
+    if (quien) await anotar(env, 'programa', 'Una cuenta nueva llegó por invitación', quien);
     await anotar(env, 'acceso', 'Se creó una cuenta nueva', await hash(e.correo));
     P = await env.DB.prepare(`SELECT * FROM personas WHERE id = ?`).bind(id).first();
   } else await anotar(env, 'acceso', 'Alguien entró con su enlace', P.nombre);

@@ -185,6 +185,7 @@ const MENU = [
   { s: 'filtros', i: '🚧', t: 'Lo que me deja fuera', n: () => V.dejanFuera.length },
   { sep: 'Cuenta' },
   { s: 'estilo', i: '🎨', t: 'Mi estilo' },
+  { s: 'apoyar', i: '🤍', t: 'Apoyar a Cupido' },
   { s: 'privacidad', i: '🔒', t: 'Privacidad y pausa' },
 ];
 function pintarLateral() {
@@ -237,6 +238,7 @@ const SECCIONES = {
       d.esperanMi.length ? `<a class="boton" href="#aceptaciones">Responder ${d.esperanMi.length} ${d.esperanMi.length === 1 ? 'coincidencia' : 'coincidencias'}</a>` : !P.completo ? `<a class="boton" href="/cuestionario">Responder mi cuestionario</a>` : `<a class="boton boton-claro" href="#coincidencias">Ver coincidencias</a>`) +
       (!DEMO() && !P.completo ? `<div class="cinta-demo" style="background:var(--rosa-suave);border-color:var(--rosa-linea);color:var(--tinta-2)"><span>✨</span><span><b>Bienvenido${P.nombreCorto ? ', ' + esc(P.nombreCorto) : ''}.</b> Tu tablero se llena conforme respondes. Si quieres ver todo lo que puedes hacer aquí, el recorrido dura dos minutos.</span><a class="boton boton-claro boton-chico" href="/bienvenida">Ver el recorrido</a></div>` : '') +
       (DEMO() ? `<div class="cinta-demo"><span>🎛️</span><span><b>Estás en la cuenta demo</b>, viendo el tablero de ${esc(P.nombre)}, una persona ficticia. Todo lo que ves es real en el sistema: coincidencias, puertas, avisos. Así verías el tuyo.</span><button class="boton boton-chico" id="crear-cuenta">Quiero mi propia cuenta</button></div>` : '') + `
+      <p class="gratis-linea">🤍 Todo Cupido es gratis durante 2026 y 2027, sin anuncios y sin letra chica. <a href="#apoyar">Ver el programa</a></p>
       <div class="banda">
         <div class="rosa"><b>${c.length}</b><span>coincidencias<br>arriba del ${V.umbral} %</span></div>
         <div><b>${d.esperanMi.length}</b><span>esperan<br>tu respuesta</span></div>
@@ -279,7 +281,7 @@ const SECCIONES = {
       <div class="acciones">${acciones}</div></div>`;
     const grupo = (titulo, chip, lista, vacio, acc) => `<section class="tarjeta grupo-acept"><h3>${titulo} <span class="chip ${chip}">${lista.length}</span></h3>
       ${lista.length ? lista.map((c) => fila(c, acc(c))).join('') : `<p class="vacio" style="margin:0">${vacio}</p>`}</section>`;
-    return cabeza('Aceptaciones', 'Aquí decides. Tu respuesta nunca se le muestra a la otra persona: la puerta solo se abre con dos síes, y un no jamás se entera.') +
+    return cabeza('Aceptaciones', 'Aquí decides. Tu respuesta nunca se le muestra a la otra persona: la puerta solo se abre con dos síes, y un no jamás se entera.', `<span class="chip ok" title="Abrir una puerta no cuesta nada en 2026 y 2027">Abrir puertas: incluido</span>`) +
       grupo('⏳ Esperan tu respuesta', 'ambar', d.esperanMi, 'No tienes coincidencias pendientes de responder.', (c) =>
         `<button class="boton boton-chico" data-clave="${esc(c.clave)}" data-decision="si">Sí, quiero conocer</button><button class="boton boton-fantasma boton-chico" data-clave="${esc(c.clave)}" data-decision="no">Ahora no</button>`) +
       grupo('🤍 Dijiste que sí · esperando', 'gris', d.miSi, 'Aún no has dicho que sí a nadie.', (c) =>
@@ -398,6 +400,10 @@ const SECCIONES = {
       </section>`;
   },
 
+  apoyar() {
+    return cabeza('Apoyar a Cupido', 'Confianza primero. El dinero, después, y solo donde ya recibiste valor.') + `<div id="programa"><p class="vacio">Cargando el programa…</p></div>`;
+  },
+
   estilo() {
     const aj = V.ajustes || {};
     return cabeza('Mi estilo', 'Tu tablero, a tu gusto. Elige un color y una tipografía; se guardan en tu cuenta.') + `
@@ -432,6 +438,7 @@ const SECCIONES = {
 
 const DESPUES = {
   charlas() { if (parametro) engancharCharla(parametro); },
+  apoyar() { pintarPrograma(); },
   vida() {
     let t = null;
     $$('[data-vida]').forEach((s) => s.oninput = () => {
@@ -943,6 +950,60 @@ function renderRespuestas(r, filtro = () => true, editable = false) {
     }).join('') : '<div class="vacio">Sin responder</div>'}${editable ? `<a class="enlace" style="font-size:13px" href="/cuestionario?p=${p.n}">Editar</a>` : ''}</div>`;
   }).join('');
 }
+
+/* ── el programa: todo gratis hoy; apoyar es voluntario; compartir es el motor ── */
+const pesos = (n) => '$' + Number(n || 0).toLocaleString('es-MX');
+async function pintarPrograma() {
+  const z = $('#programa'); if (!z) return;
+  let d; try { d = await api('/api/programa'); } catch (e) { z.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; return; }
+  const real = !DEMO() || V.persona.origen !== 'demo';
+  const inv = V.invitacion || {};
+  const liga = `${location.origin}/i/${inv.codigo || ''}`;
+  const whats = `https://wa.me/?text=${encodeURIComponent('Te comparto Cupido Algorítmico. No es una app de citas: respondes 43 preguntas una sola vez y solo te avisa si alguien cruza el 90 % contigo. Es gratis. ' + liga)}`;
+  z.innerHTML = `
+    <section class="tarjeta programa-hoy"><div class="nivel"><div class="anillo" style="display:flex;align-items:center;justify-content:center;font-size:36px">🤍</div><div>
+      <h3>Todo es gratis durante 2026 y ${d.gratisHasta}.</h3>
+      <p>Las 43 preguntas, el motor, las coincidencias, las puertas, la charla, tu foto, tu voz, tu video, tu tablero. Sin anuncios, sin letra chica y sin nada que compre una ventaja. Primero tienes que confiar; el dinero viene después, y solo donde ya recibiste valor.</p></div></div></section>
+
+    <section class="tarjeta"><h2>El mapa, para que no haya sorpresas</h2><p class="sub">Esto es lo que algún día tendrá precio, cuándo y cuánto. Se publica desde hoy para que lo veas venir. Los precios son de referencia y son iguales para todos.</p>
+      <div class="mapa-programa">${d.acciones.map((a) => `<div class="accion ${a.estado === 'cobrando' ? 'cobrando' : ''}"><div class="cuando"><b>${esc(a.cuando)}</b><span>${esc(a.etapa)}</span></div><div class="que"><b>${esc(a.nombre)}</b><span>${esc(a.que)}</span></div><div class="precio">${a.estado === 'cobrando' ? `<b>${a.precio ? pesos(a.precio) : '—'}</b><span>${esc(a.unidad)}</span>` : `<b class="incluido">Incluido</b><span>${a.precio ? `después: ${pesos(a.precio)} ${esc(a.unidad)}` : esc(a.unidad)}</span>`}</div></div>`).join('')}</div>
+      <ul class="razones" style="padding:0;margin-top:14px">
+        <li><span class="i si">✓</span><span><b>El algoritmo no se compra.</b> Nadie sube en el cálculo por pagar. El 90 % es el 90 % para todos.</span></li>
+        <li><span class="i si">✓</span><span><b>Nadie paga por ser visto.</b> No existe "perfil destacado" ni "quién te vio". No hay perfiles que ver.</span></li>
+        <li><span class="i si">✓</span><span><b>Mismo precio para todos</b>, impuestos incluidos, devoluciones sin preguntas en 15 días, y salir siempre es un clic.</span></li>
+        <li><span class="i si">✓</span><span><b>Cada cambio de precio se avisa</b> a todos, con tiempo, aquí y por correo.</span></li>
+      </ul></section>
+
+    <section class="tarjeta"><h2>Compartir Cupido</h2><p class="sub">Lo que de verdad hace crecer tus probabilidades es que entre más gente seria. Si te gustó, compártelo. Esta liga es tuya.</p>
+      ${real ? `<div class="enlace-privado"><input id="liga-inv" readonly value="${esc(liga)}"><button class="boton boton-chico" id="copiar-inv">Copiar</button><a class="boton boton-claro boton-chico" href="${whats}" target="_blank" rel="noopener">WhatsApp</a></div>
+      <p class="seccion-sub" style="margin:10px 0 0">${inv.invitados ? `<b>${inv.invitados}</b> ${inv.invitados === 1 ? 'persona llegó' : 'personas llegaron'} por tu liga. Gracias.` : 'Aún nadie ha llegado por tu liga. La primera persona que entre por aquí también cuenta para ti: más gente, más cruces.'}</p>`
+      : `<p style="margin:0;color:var(--tinta-2)">Con tu propia cuenta tendrás una liga personal para compartir y verás cuántas personas llegaron por ti.</p>`}</section>
+
+    <div class="rejilla-2">
+      <section class="tarjeta"><h2>Fondo de atracción</h2><p class="sub">Si quieres, una vez. El 100 % se usa para traer a la siguiente persona seria: anuncios cuidados, contenido y verificación de identidad. No te da ninguna ventaja, y así debe ser.</p>
+        <div class="montos" data-tipo="fondo">${[99, 299, 999].map((m) => `<button type="button" class="boton boton-claro boton-chico" data-monto="${m}">${pesos(m)}</button>`).join('')}<input type="number" id="monto-fondo" min="${d.minimo}" max="100000" placeholder="otra cantidad" style="max-width:150px"></div>
+        <label class="campo" style="margin:10px 0 0"><small>¿Cómo quieres aparecer en la lista de agradecimiento? (opcional, solo tu nombre de pila)</small><input id="nombre-apoyo" maxlength="40" placeholder="${esc(V.persona.nombreCorto || 'Anónimo')}"></label>
+        <p class="nota-entrar" style="text-align:left">${d.pagos ? 'Pago seguro con tarjeta. Devoluciones sin preguntas en 15 días.' : 'Los pagos se activan pronto; mientras, lo que más ayuda es compartir.'}</p></section>
+      <section class="tarjeta" style="margin-top:0"><h2>Socio fundador</h2><p class="sub">Cada mes, lo que quieras, cancelable en un clic. Los socios fundadores aparecen con un ✦ en la lista de agradecimiento y reciben cada año el informe de en qué se gastó cada peso.</p>
+        <div class="montos" data-tipo="socio">${[99, 199, 499].map((m) => `<button type="button" class="boton boton-claro boton-chico" data-monto="${m}">${pesos(m)} al mes</button>`).join('')}</div>
+        <p class="nota-entrar" style="text-align:left">Tope de cuidado: ${pesos(d.tope)} al mes por persona. No queremos dinero que duela.</p></section>
+    </div>
+
+    <section class="tarjeta transparencia"><h2>Transparencia</h2>
+      <div class="banda" style="grid-template-columns:repeat(3,1fr);margin:10px 0 14px"><div class="rosa"><b>${pesos(d.fondo.reunido)}</b><span>reunidos en el Fondo</span></div><div><b>${d.fondo.personas}</b><span>${d.fondo.personas === 1 ? 'persona apoya' : 'personas apoyan'}</span></div><div><b>${d.fondo.socios}</b><span>${d.fondo.socios === 1 ? 'socio fundador' : 'socios fundadores'}</span></div></div>
+      <p class="seccion-sub">${esc(d.destino)}</p>
+      ${d.fondo.ultimos.length ? `<p class="seccion-sub" style="margin-top:8px"><b>Gracias a:</b> ${d.fondo.ultimos.map((u) => `${u.tipo === 'socio' ? '✦ ' : ''}${esc(u.nombre_publico)}`).join(' · ')}</p>` : ''}</section>`;
+  const cp = $('#copiar-inv'); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText($('#liga-inv').value); avisar('Liga copiada. Compártela con alguien que busque en serio.'); } catch { $('#liga-inv').select(); } };
+  const ir2 = async (tipo, monto) => {
+    if (!real) { abrirModalCuenta(); return; }
+    if (!d.pagos) { avisar('Los pagos se activan pronto. Gracias por querer apoyar.'); return; }
+    try { const r = await api('/api/apoyar', { tipo, monto, nombrePublico: $('#nombre-apoyo')?.value || '', volver: location.href }); location.href = r.url; } catch (e) { avisar(e.message); }
+  };
+  $$('.montos button').forEach((b) => b.onclick = () => ir2(b.closest('.montos').dataset.tipo, Number(b.dataset.monto)));
+  const mf = $('#monto-fondo'); if (mf) mf.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); ir2('fondo', Number(mf.value)); } };
+}
+// al volver de Stripe
+(async () => { const sid = new URLSearchParams(location.search).get('apoyo'); if (!sid) return; history.replaceState(null, '', '/persona#apoyar'); try { const r = await api('/api/apoyar/confirmar', { sid }); avisar(r.tipo === 'socio' ? `✦ Gracias. Ya eres Socio fundador con ${pesos(r.monto)} al mes.` : `🤍 Gracias. Tus ${pesos(r.monto)} ya están en el Fondo de atracción.`, 6000); setTimeout(() => { if (seccion === 'apoyar') pintarPrograma(); }, 500); } catch (e) { avisar(e.message); } })();
 
 /* ── mi vida hoy: valores, rueda y lectura ───────────────────────────────── */
 function vidaActual() {

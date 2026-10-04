@@ -31,6 +31,7 @@
       <div class="sep">Contenido</div>
       <a href="#articulos" data-s="articulos"><span class="ico">📝</span>Artículos</a>
       <a href="#bitacora" data-s="bitacora"><span class="ico">📜</span>Bitácora</a>
+      <a href="#programa" data-s="programa"><span class="ico">🤍</span>Programa y apoyos</a>
       <a href="#ruta" data-s="ruta"><span class="ico">🗺️</span>La lista completa</a>
     </nav>
     <div class="pie-lat">Demo con datos ficticios · admin abierto.<br><a href="/demo">Cuenta demo →</a> · <a href="/entrar">Entrar →</a></div>
@@ -79,6 +80,18 @@ const botonesMotor = `<button class="boton" data-accion="correr">⟳ Correr el m
 
 /* ═══ SECCIONES ═══════════════════════════════════════════════════════════ */
 const SECCIONES = {
+  async programa() {
+    const [p, ap] = await Promise.all([api('/api/programa'), api('/api/admin/aportes')]);
+    const pesos = (n) => '$' + Number(n || 0).toLocaleString('es-MX');
+    return cabeza('Programa y apoyos', 'Confianza primero. Todo gratis en 2026 y 2027; aquí se decide cuándo se enciende cada cobro. Cualquier cambio se ve igual para todas las personas.') + `
+      <div class="banda" style="grid-template-columns:repeat(4,1fr)"><div class="rosa"><b>${pesos(p.fondo.reunido)}</b><span>Fondo de atracción</span></div><div><b>${p.fondo.personas}</b><span>personas apoyan</span></div><div><b>${p.fondo.socios}</b><span>socios fundadores</span></div><div><b>${p.pagos ? 'Sí' : 'No'}</b><span>pagos activos (llave de Stripe)</span></div></div>
+      <section class="tarjeta"><h2>El mapa</h2><p class="sub">Para acelerar: cambia el año, o pon "cobrando". Para frenar: "gratis". Los precios son de referencia e iguales para todos.</p>
+        <div style="overflow-x:auto"><table class="tabla"><thead><tr><th>Acción</th><th>Qué</th><th>Cuándo</th><th>Precio MXN</th><th>Estado</th><th></th></tr></thead><tbody>
+        ${p.acciones.map((a) => `<tr><td><b>${esc(a.nombre)}</b></td><td style="font-size:13px;color:var(--tinta-2)">${esc(a.que)}<br><small>${esc(a.unidad)}</small></td><td><input data-cuando value="${esc(a.cuando)}" style="width:90px"></td><td><input data-precio type="number" value="${a.precio}" style="width:90px"></td><td><select data-estado><option value="gratis" ${a.estado === 'gratis' ? 'selected' : ''}>gratis</option><option value="cobrando" ${a.estado === 'cobrando' ? 'selected' : ''}>cobrando</option></select></td><td><button class="boton boton-chico" data-prog="${a.clave}">Guardar</button></td></tr>`).join('')}
+        </tbody></table></div>
+        <p class="seccion-sub" style="margin-top:10px">Lo que "cobrando" hace hoy: muestra el precio en el tablero de la persona y en la página pública. El cobro real de cada acción (entrada, puerta, Mientras esperas) se construye cuando Ricardo dé la señal; la infraestructura de pago ya está lista y probada con el Fondo.</p></section>
+      <section class="tarjeta"><h2>Apoyos</h2>${ap.length ? `<div style="overflow-x:auto"><table class="tabla"><thead><tr><th>Cuándo</th><th>Quién</th><th>Tipo</th><th>Monto</th><th>Estado</th></tr></thead><tbody>${ap.map((x) => `<tr><td>${esc(x.creado)}</td><td>${esc(x.nombre_publico || x.correo || x.persona || '')}</td><td>${x.tipo === 'socio' ? '✦ Socio' : 'Fondo'}</td><td>${pesos(x.monto)}</td><td>${esc(x.estado)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vacio">Todavía no hay apoyos.</p>'}</section>`;
+  },
   async resumen() {
     const c = D.cifras, max = Math.max(1, ...D.histograma);
     const tiposVeto = Object.entries(D.vetosPorTipo).sort((a, b) => b[1] - a[1]);
@@ -214,6 +227,12 @@ const SECCIONES = {
 };
 
 const DESPUES = {
+  programa() {
+    $$('[data-prog]').forEach((b) => b.onclick = async () => {
+      const fila = b.closest('tr'), clave = b.dataset.prog;
+      try { await api('/api/admin/programa', { clave, estado: fila.querySelector('[data-estado]').value, cuando: fila.querySelector('[data-cuando]').value, precio: Number(fila.querySelector('[data-precio]').value) }); avisar('Programa actualizado. Se ve igual para todos.'); ir('programa'); } catch (e) { avisar(e.message); }
+    });
+  },
   resumen() { animarBarras(); vivir(); },
   personas() { $$('[data-persona]').forEach((a) => a.onclick = (e) => { e.preventDefault(); verPersona(a.dataset.persona); }); },
   laboratorio: laboratorio,

@@ -137,6 +137,14 @@ export const CORREOS = {
       parrafos: [`${hola(P)} Liberó para ti: <b>${esc(elementos.join(' · '))}</b>. Solo tú puedes leerlo, y solo mientras la puerta siga abierta.`],
       boton: { txt: 'Leer sus respuestas', url: `${BASE(env)}/persona#charlas/${O?.id || ''}` } },
   }),
+  // 9 · Gracias por apoyar
+  gracias: (env, { P, tipo, monto }) => ({
+    asunto: tipo === 'socio' ? 'Gracias por ser Socio fundador de Cupido' : 'Gracias por tu aporte al Fondo de atracción',
+    contenido: { eyebrow: 'Gracias', titulo: tipo === 'socio' ? 'Eres Socio fundador de Cupido.' : 'Tu aporte ya está en el Fondo de atracción.', vista: 'Cada peso se usa para traer a la siguiente persona seria.',
+      parrafos: [`${hola(P)} ${tipo === 'socio' ? `Cada mes, ${monto} pesos tuyos` : `Tus ${monto} pesos`} se van íntegros a traer a la siguiente persona seria a Cupido: más personas, más cruces, más coincidencias arriba del 90 %, también para ti.`, 'No te da ninguna ventaja en el algoritmo, y así debe ser. Te da algo mejor: una comunidad más grande y nuestro agradecimiento. Cada año publicamos en qué se gastó.'],
+      boton: { txt: 'Ver el programa', url: `${BASE(env)}/persona#apoyar` },
+      nota: tipo === 'socio' ? 'Puedes cancelar cuando quieras desde Privacidad y pausa, sin preguntas. Devoluciones sin preguntas durante 15 días escribiendo a contacto@ingenieriadigital.mx.' : 'Devoluciones sin preguntas durante 15 días escribiendo a contacto@ingenieriadigital.mx.' },
+  }),
   // 8 · Recordatorio: cuestionario sin terminar
   recordatorio: (env, { P, faltan, pct }) => ({
     asunto: `Te faltan ${faltan} preguntas para entrar al matching`,
@@ -150,7 +158,7 @@ export const CORREOS = {
 // Envía uno de los correos de arriba a una persona (respeta sus avisos salvo acceso)
 export async function correoA(env, P, tipo, datos = {}, { clave = null, cadaMinutos = 0, forzar = false } = {}) {
   if (!P?.correo) return null;
-  if (!forzar && !['enlace', 'bienvenida'].includes(tipo) && !quiereAvisos(P)) return 'sin_avisos';
+  if (!forzar && !['enlace', 'bienvenida', 'gracias'].includes(tipo) && !quiereAvisos(P)) return 'sin_avisos';
   const c = CORREOS[tipo](env, { P, ...datos });
   return mandar(env, { persona: P.id, para: P.correo, tipo, clave, asunto: c.asunto, contenido: c.contenido, cadaMinutos });
 }

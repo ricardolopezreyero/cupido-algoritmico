@@ -271,7 +271,8 @@ async function fin() {
     <p>Respondiste <b>${hechas} de 43</b> preguntas.</p>
     ${av.listo
       ? `<p>El motor ya te cruzó con todo el demo${r?.cruce ? `: <b>${r.cruce.pares}</b> ${r.cruce.pares === 1 ? 'par evaluado' : 'pares evaluados'}${r.cruce.nuevas ? ` y <b>${r.cruce.nuevas}</b> ${r.cruce.nuevas === 1 ? 'coincidencia' : 'coincidencias'} arriba del 90 %` : ''}` : ''}. Y luego: silencio — hasta que alguien supere el 90 %.</p>
-         <a class="boton" href="/persona">Ver mi tablero →</a>`
+         <a class="boton" href="/persona">Ver mi tablero →</a>
+         <p class="nota-entrar">Tu entrada al matching está incluida: todo Cupido es gratis durante 2026 y 2027.</p>`
       : `<p>Para entrar al matching faltan <b>${faltanEst.length}</b> respuestas de opción${lleno(R.carta) ? '' : ' y tu carta (P33)'}. Las abiertas pueden esperar, pero cuentan: sin ellas el algoritmo te conoce menos.</p>`}
     ${av.listo ? '' : `<p><a class="boton boton-claro" href="/persona">Ir a mi tablero</a></p>`}
     <p style="font-size:14px;color:var(--gris)">Toca cualquier pregunta para revisarla o editarla:</p>

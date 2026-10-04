@@ -12,6 +12,7 @@ import ARTICULOS_BASE from '../seed/articulos.json';
 import { ESQUEMA_MEDIOS, mediosDe } from './medios.js';
 import { ESQUEMA_CHARLA, abrirCharla, misCharlas } from './charla.js';
 import { ESQUEMA_CORREOS, correoA } from './correos.js';
+import { ESQUEMA_PROGRAMA, sembrarPrograma } from './programa.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -52,6 +53,7 @@ const ESQUEMA = [
   ESQUEMA_MEDIOS,
   ...ESQUEMA_CHARLA,
   ...ESQUEMA_CORREOS,
+  ...ESQUEMA_PROGRAMA,
   `CREATE INDEX IF NOT EXISTS idx_pares_pct ON pares(pct)`,
   `CREATE INDEX IF NOT EXISTS idx_avisos_persona ON avisos(persona, leido)`,
   `CREATE INDEX IF NOT EXISTS idx_articulos_estado ON articulos(estado, creado)`,
@@ -67,6 +69,8 @@ export async function asegurar(env) {
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN vida TEXT`).run(); } catch { /* ya existe */ }
   try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN visita_a TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN visita_b TEXT`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE mensajes ADD COLUMN responde_a INTEGER`).run(); } catch { /* ya existe */ }
+  try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN codigo TEXT`).run(); await env.DB.prepare(`ALTER TABLE personas ADD COLUMN invitado_por TEXT`).run(); } catch { /* ya existen */ }
+  await sembrarPrograma(env);
   await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_personas_correo ON personas(correo)`).run();
   const n = await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas`).first();
   if (!n.n) await sembrarDemo(env);
@@ -317,8 +321,17 @@ export async function vistaPersona(env, P) {
     misMedios: await mediosDe(env, P.id),
     charlas: await misCharlas(env, P.id),
     ajustes: (() => { try { return JSON.parse(P.ajustes || '{}'); } catch { return {}; } })(),
+    invitacion: { codigo: await codigoDe(env, P), invitados: (await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas WHERE invitado_por = ?`).bind(P.id).first()).n },
     vida: (() => { try { return JSON.parse(P.vida || 'null'); } catch { return null; } })(),
   };
+}
+
+// Código corto para compartir Cupido (se crea la primera vez que se pide)
+export async function codigoDe(env, P) {
+  if (P.codigo) return P.codigo;
+  const c = [...crypto.getRandomValues(new Uint8Array(5))].map((b) => 'abcdefghjkmnpqrstuvwxyz23456789'[b % 31]).join('');
+  await env.DB.prepare(`UPDATE personas SET codigo = ? WHERE id = ? AND codigo IS NULL`).bind(c, P.id).run();
+  return (await persona(env, P.id)).codigo || c;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
