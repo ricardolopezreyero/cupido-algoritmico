@@ -11,6 +11,15 @@ import { persona, anotar } from './datos.js';
 import { PREGUNTAS } from '../public/js/preguntas.js';
 import { ELEMENTOS, ELEMENTO } from '../public/js/elementos.js';
 import { avisarVivo, presenciaVivo } from './viva.js';
+import { correoA } from './correos.js';
+
+// Si la otra persona no está en el tablero, avísale por correo (máximo uno por hora por charla)
+async function correoSiAusente(env, c, yo, otraId, tipo, datos) {
+  const O = await persona(env, otraId); if (!O?.correo) return;
+  const en = await presenciaVivo(env, c.a, c.b); if (en.includes(otraId)) return;
+  const Yo = await persona(env, yo);
+  await correoA(env, O, tipo, { O: { id: yo, nombre: Yo.nombre }, ...datos }, { clave: yo, cadaMinutos: 60 });
+}
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -127,6 +136,7 @@ export async function enviar(env, yo, otraId, { texto, tipo = 'texto', gif } = {
   if (ritmo >= 40) return { error: 'Vas muy rápido. Respira un segundo.', status: 429 };
   const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo) VALUES (?, ?, ?, ?, ?, ?)`).bind(c.a, c.b, yo, tipo, t, archivo).run();
   await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo, vista: tipo === 'sticker' ? t : tipo === 'gif' ? '🎞️ GIF' : t.slice(0, 80), excepto: yo });
+  await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: tipo === 'texto' ? t.slice(0, 140) : tipo === 'sticker' ? t : 'Te mandó un GIF' });
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'escribe_a' : 'escribe_b'} = NULL, ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
   return { ok: true, id: r.meta.last_row_id };
 }
@@ -192,6 +202,7 @@ export async function adjuntar(env, req, yo, otraId, nombre) {
   const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo) VALUES (?, ?, ?, 'archivo', ?, ?)`).bind(c.a, c.b, yo, limpio, JSON.stringify(archivo)).run();
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
   await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo: 'archivo', vista: /^image\//.test(mime) ? '📷 Foto' : /^audio\//.test(mime) ? '🎤 Nota de voz' : /^video\//.test(mime) ? '🎬 Video' : '📎 ' + limpio, excepto: yo });
+  await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: /^image\//.test(mime) ? 'Te mandó una foto 📷' : /^audio\//.test(mime) ? 'Te mandó una nota de voz 🎤' : /^video\//.test(mime) ? 'Te mandó un video 🎬' : 'Te mandó un archivo 📎' });
   await anotar(env, 'charla', 'Se mandó un archivo en una charla', `${Math.round(cuerpo.byteLength / 1024)} KB · ${mime}`);
   return { ok: true, id: r.meta.last_row_id };
 }
@@ -230,6 +241,7 @@ export async function liberar(env, yo, otraId, elementos) {
     ]);
     await anotar(env, 'charla', 'Una persona liberó parte de su perfil', `${nuevos.length} elemento(s)`);
     await avisarVivo(env, c.a, c.b, { t: 'mensaje', de: 'sistema', tipo: 'sistema', excepto: yo });
+    await correoSiAusente(env, c, yo, otraId, 'compartio', { elementos: nuevos.map((e) => `${ELEMENTO[e].i} ${ELEMENTO[e].n}`) });
   }
   const mios = [...ya, ...nuevos];
   return { ok: true, mios };

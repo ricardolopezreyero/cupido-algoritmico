@@ -15,7 +15,8 @@
     "run_worker_first": ["/api/*", "/articulos", "/articulos/*", "/docs/*", "/demo", "/demo.html", "/entrar/*", "/persona", "/cuestionario"]
   },
   // Correo: FROM_EMAIL aquí; la llave va en secrets (wrangler secret put RESEND_KEY)
-  "vars": { "FROM_EMAIL": "Cupido Algorítmico <cupido@sumacoahuila.com>" },
+  "vars": { "FROM_EMAIL": "Cupido Algorítmico <cupido@capitaltorreon.com>", "BASE_URL": "https://cupido.capitaltorreon.com" },
+  "triggers": { "crons": ["0 16 * * *"] },
   "rules": [{ "type": "Text", "globs": ["**/*.md"], "fallthrough": true }],
   "r2_buckets": [{ "binding": "MEDIOS", "bucket_name": "cupido-medios" }],
   "durable_objects": { "bindings": [{ "name": "CHARLA_VIVA", "class_name": "CharlaViva" }] },

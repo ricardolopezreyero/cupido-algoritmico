@@ -39,7 +39,7 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 
 ### Acceso sin contraseñas
 - [x] **Enlace mágico por correo** (hecho; ver arriba).
-- [ ] **Remitente:** hoy sale de `cupido@sumacoahuila.com` (dominio ya verificado, temporal). El definitivo es `cupido@capitaltorreon.com`: los 4 registros DNS ya están en Cloudflare y solo falta que Resend lo marque verificado; entonces se cambia `FROM_EMAIL` en `wrangler.jsonc` y se despliega. Plantillas pendientes: aviso de coincidencia y puerta abierta por correo.
+- [x] **Correos (4 oct 2026):** remitente `cupido@capitaltorreon.com` (dominio verificado en Resend). Plantilla única en `src/correos.js` y ocho correos: enlace para entrar, bienvenida, entraste al matching, coincidencia nueva, puerta abierta, mensaje nuevo (solo si no está en línea, máximo uno por hora por charla), te compartió parte de su perfil, recordatorio de cuestionario a los 2 días (cron diario 16:00 UTC, una sola vez). Registro en tabla `correos`; la persona puede apagar los avisos en Privacidad y pausa (los de acceso siempre llegan). Admin: `POST /api/admin/correos/muestra {para}` manda la serie completa.
 - [ ] **Proteger el admin** con Cloudflare Access (código al correo, sin escribir login) y roles: operación del matching ≠ moderación de artículos.
 - [ ] **Separar el pool demo del real.** Las cuentas reales ya nacen en `pool = real` y "Reiniciar demo" las respeta, pero el motor todavía las cruza con las 20 personas ficticias (útil para probar; hay que apagarlo antes de abrir).
 

@@ -11,6 +11,7 @@ import PERSONAS_DEMO from '../seed/personas.json';
 import ARTICULOS_BASE from '../seed/articulos.json';
 import { ESQUEMA_MEDIOS, mediosDe } from './medios.js';
 import { ESQUEMA_CHARLA, abrirCharla, misCharlas } from './charla.js';
+import { ESQUEMA_CORREOS, correoA } from './correos.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -50,6 +51,7 @@ const ESQUEMA = [
   `CREATE INDEX IF NOT EXISTS idx_sesiones_persona ON sesiones(persona)`,
   ESQUEMA_MEDIOS,
   ...ESQUEMA_CHARLA,
+  ...ESQUEMA_CORREOS,
   `CREATE INDEX IF NOT EXISTS idx_pares_pct ON pares(pct)`,
   `CREATE INDEX IF NOT EXISTS idx_avisos_persona ON avisos(persona, leido)`,
   `CREATE INDEX IF NOT EXISTS idx_articulos_estado ON articulos(estado, creado)`,
@@ -194,6 +196,10 @@ export async function publicarPuertas(env, lista, { soloId = null } = {}) {
   }
   for (let i = 0; i < stmts.length; i += 50) await env.DB.batch(stmts.slice(i, i + 50));
   if (nuevas) await anotar(env, 'motor', 'Se avisaron coincidencias nuevas', `${nuevas} pareja(s) cruzaron el ${UMBRAL} %`);
+  // por correo, a quien tenga correo (las personas reales): a los dos, al mismo tiempo
+  for (const p of lista) if (p.pct >= UMBRAL && !existentes.has(p.a + '|' + p.b)) for (const [yo, otra] of [[p.a, p.b], [p.b, p.a]]) {
+    const P = await persona(env, yo); if (P?.correo) await correoA(env, P, 'coincidencia', { pct: p.pct }, { clave: otra, cadaMinutos: 60 * 24 * 30 });
+  }
   return { nuevas, retiradas, actualizadas };
 }
 
@@ -207,6 +213,8 @@ async function avisarApertura(env, a, b) {
     aviso(a, b, `Se abrió la puerta con ${nom(B)}. Los dos dijeron que sí.`),
     aviso(b, a, `Se abrió la puerta con ${nom(A)}. Los dos dijeron que sí.`),
   ]);
+  if (A.correo) await correoA(env, A, 'puerta', { O: B }, { clave: b, cadaMinutos: 60 * 24 * 30 });
+  if (B.correo) await correoA(env, B, 'puerta', { O: A }, { clave: a, cadaMinutos: 60 * 24 * 30 });
 }
 
 /* ── La puerta: avisar sí, dejar entrar no (hasta que los dos digan que sí) ── */
@@ -507,6 +515,7 @@ export async function guardarCuestionario(env, ctx, P, { nombre, respuestas }) {
     if (!eraCompleto) await anotar(env, 'persona', 'Un perfil entró al matching', `${P.nombre} (cuestionario)`);
     const r = await recalcularTodo(env, { soloId: P.id, avisar: true, motivo: 'cuestionario' });
     cruce = { pares: r.pares, arriba: r.arriba, nuevas: r.nuevas };
+    if (!eraCompleto && P.correo) await correoA(env, await persona(env, P.id), 'matching', { pares: r.pares, nuevas: r.arriba }, { cadaMinutos: 60 * 24 * 365 });
   } else if (P.completo) {
     // borró algo obligatorio: sale del matching hasta completarlo; sus puertas abiertas se respetan
     await env.DB.batch([

@@ -421,7 +421,8 @@ const SECCIONES = {
         </ul></section>
       <section class="tarjeta"><h2>Tu acceso</h2>
         ${DEMO() ? `<p class="sub">Esta es la <b>cuenta demo</b>: datos ficticios que cualquiera puede ver. Para tener tu propio tablero, crea tu cuenta con tu correo.</p><button class="boton" id="crear-cuenta">Crear mi cuenta</button>`
-          : `<p class="sub">Sin contraseña. Cada vez que entres te mandamos un enlace a tu correo; vale 20 minutos y se usa una sola vez.</p><div class="acceso-correo"><span>✉️</span><b>${esc(V.sesion.correo || '')}</b></div>`}</section>
+          : `<p class="sub">Sin contraseña. Cada vez que entres te mandamos un enlace a tu correo; vale 20 minutos y se usa una sola vez.</p><div class="acceso-correo"><span>✉️</span><b>${esc(V.sesion.correo || '')}</b></div>
+          <label class="elemento" style="margin-top:12px;cursor:pointer;color:var(--tinta)"><input type="checkbox" id="avisos-correo" ${(V.ajustes || {}).avisos_correo === false ? '' : 'checked'} style="accent-color:var(--rosa)"> Avisarme por correo: coincidencias, puertas abiertas y mensajes cuando no esté aquí</label>`}</section>
       <section class="tarjeta"><h2>Cerrar sesión</h2><p class="sub">Olvida tu sesión en este dispositivo. ${DEMO() ? 'El demo siempre está a un clic en la puerta de entrada.' : 'Para volver, pide un enlace nuevo con tu correo.'}</p>
         <button class="boton boton-oscuro" id="btn-salir">⏻ Cerrar sesión</button></section>`;
   },
@@ -455,6 +456,7 @@ const DESPUES = {
   },
   privacidad() {
     $('#btn-salir').onclick = () => $('#salir').click();
+    const ac = $('#avisos-correo'); if (ac) ac.onchange = async () => { try { const r = await api('/api/yo/ajustes', { avisos_correo: ac.checked }); V.ajustes = r.ajustes; avisar(ac.checked ? 'Te avisaremos por correo.' : 'Sin avisos por correo. Los enlaces para entrar sí llegan.'); } catch (e) { avisar(e.message); } };
     const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta;
     $('#btn-pausa').onclick = async (e) => {
       e.target.disabled = true;

@@ -11,6 +11,8 @@ import { quien, entrarDemo, pedirEnlace, canjearEnlace, cerrarSesion, cookieSesi
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
+import { mandarMuestra, correoA } from './correos.js';
+import { avance } from '../public/js/preguntas.js';
 import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido, reaccionar, buscarGif, conectarVivo } from './charla.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
@@ -38,6 +40,17 @@ async function leerJson(req, max = 250_000) {
 }
 
 export default {
+  // Cada día: recordar el cuestionario a quien lo dejó a medias hace 2 días o más (una sola vez)
+  async scheduled(ev, env, ctx) {
+    await asegurar(env);
+    const lista = (await env.DB.prepare(`SELECT * FROM personas WHERE pool = 'real' AND completo = 0 AND correo IS NOT NULL AND creada < datetime('now', '-2 days')`).all()).results;
+    for (const fila of lista) {
+      const P = await persona(env, fila.id);
+      const av = avance(P.r);
+      const faltan = av.estructuradasTotal - av.estructuradas + (av.textosTotal - av.textos);
+      await correoA(env, P, 'recordatorio', { faltan: Math.max(1, faltan), pct: av.pct }, { cadaMinutos: 60 * 24 * 3650 });
+    }
+  },
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
     const ruta = url.pathname.replace(/\/$/, '') || '/';
@@ -135,7 +148,7 @@ async function api(req, env, ctx, url) {
     const b = await leerJson(req, 2000);
     const COLORES = ['rosa', 'vino', 'azul', 'verde'], TIPOS = ['clasica', 'editorial', 'moderna', 'calida'];
     let previo = {}; try { previo = JSON.parse(yo.P.ajustes || '{}'); } catch {}
-    const aj = { ...previo, color: COLORES.includes(b.color) ? b.color : previo.color || 'rosa', tipo: TIPOS.includes(b.tipo) ? b.tipo : previo.tipo || 'clasica', bienvenida: b.bienvenida === true || !!previo.bienvenida };
+    const aj = { ...previo, color: COLORES.includes(b.color) ? b.color : previo.color || 'rosa', tipo: TIPOS.includes(b.tipo) ? b.tipo : previo.tipo || 'clasica', bienvenida: b.bienvenida === true || !!previo.bienvenida, avisos_correo: typeof b.avisos_correo === 'boolean' ? b.avisos_correo : previo.avisos_correo !== false };
     if (!(yo.sesion.demo && yo.P.origen === 'demo')) await env.DB.prepare(`UPDATE personas SET ajustes = ? WHERE id = ?`).bind(JSON.stringify(aj), yo.P.id).run();
     return json({ ok: true, ajustes: aj });
   }
@@ -212,6 +225,8 @@ async function api(req, env, ctx, url) {
   if ((x = m(/^\/api\/admin\/persona\/([a-z0-9]+)$/))) { const d = await detallePersona(env, x[1]); return d ? json(d) : error('No existe', 404); }
   if (ruta === '/api/admin/correr' && metodo === 'POST') { const b = await leerJson(req); return json(await correrFase(env, Number(b.fase))); }
   if (ruta === '/api/admin/reiniciar' && metodo === 'POST') { await reiniciarDemo(env); return json({ ok: true }); }
+  if (ruta === '/api/admin/correos/muestra' && metodo === 'POST') { const b = await leerJson(req, 2000); if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(String(b.para || ''))) return error('Correo inválido'); return json(await mandarMuestra(env, String(b.para).toLowerCase())); }
+  if (ruta === '/api/admin/correos' && metodo === 'GET') return json((await env.DB.prepare(`SELECT id, persona, tipo, asunto, estado, creado FROM correos ORDER BY id DESC LIMIT 60`).all()).results);
   if (ruta === '/api/admin/bitacora') {
     const despues = Number(url.searchParams.get('despues') || 0);
     return json((await env.DB.prepare(`SELECT * FROM bitacora WHERE id > ? ORDER BY id DESC LIMIT 30`).bind(despues).all()).results);

@@ -7,6 +7,7 @@
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
 import { persona, anotar } from './datos.js';
+import { mandar, CORREOS } from './correos.js';
 import { abrirCharla, borrarCharlasDe } from './charla.js';
 import { SUAVES, ELEMENTO } from '../public/js/elementos.js';
 
@@ -125,7 +126,8 @@ export async function pedirEnlace(env, req, url, correoCrudo) {
   await env.DB.prepare(`INSERT INTO enlaces (token, correo, ip_hash) VALUES (?, ?, ?)`).bind(token, correo, ipHash).run();
   const enlace = new URL(`/entrar/${token}`, url).href;
   const existe = await env.DB.prepare(`SELECT id FROM personas WHERE correo = ?`).bind(correo).first();
-  const mandado = await mandarCorreo(env, correo, existe ? 'Tu enlace para entrar a Cupido Algorítmico' : 'Tu cuenta en Cupido Algorítmico', correoEnlace(enlace, !existe));
+  const c = CORREOS[existe ? 'enlace' : 'bienvenida'](env, { enlace, minutos: MIN_ENLACE });
+  const mandado = await mandar(env, { persona: existe?.id || null, para: correo, tipo: existe ? 'enlace' : 'bienvenida', asunto: c.asunto, contenido: c.contenido });
   await anotar(env, 'acceso', existe ? 'Alguien pidió su enlace para entrar' : 'Alguien pidió crear su cuenta', await hash(correo));
   if (mandado === 'sin_remitente') {
     // Solo en desarrollo local se enseña el enlace en pantalla; en producción sin llave no se entra por correo
@@ -159,32 +161,5 @@ export async function canjearEnlace(env, token) {
   return { ok: true, sesion, nueva, completo: !!P.completo };
 }
 
-/* ── correo (Resend) ─────────────────────────────────────────────────────── */
-function correoEnlace(enlace, nueva) {
-  const t = (s) => s.replace(/[<>&]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;' }[c]));
-  return {
-    html: `<div style="font-family:Inter,Helvetica,Arial,sans-serif;max-width:520px;margin:0 auto;padding:28px 20px;color:#211d24">
-      <p style="font-size:22px;margin:0 0 6px">💘 <b>Cupido Algorítmico</b></p>
-      <h1 style="font-family:Georgia,serif;font-weight:600;font-size:26px;margin:18px 0 10px">${nueva ? 'Tu cuenta está lista' : 'Tu enlace para entrar'}</h1>
-      <p style="font-size:16px;line-height:1.6;margin:0 0 20px">${nueva ? 'No hay contraseña que recordar: tu correo es tu cuenta. Abre este enlace para empezar tu cuestionario.' : 'Abre este enlace y entras directo a tu tablero. Sin contraseña.'}</p>
-      <p style="margin:0 0 22px"><a href="${t(enlace)}" style="display:inline-block;background:#d6455f;color:#fff;text-decoration:none;font-weight:600;padding:14px 24px;border-radius:999px">Entrar a mi tablero →</a></p>
-      <p style="font-size:13.5px;color:#75707c;line-height:1.6;margin:0">El enlace vale ${MIN_ENLACE} minutos y se usa una sola vez. Si tú no lo pediste, ignora este correo: nadie puede entrar sin él.</p>
-      <p style="font-size:12px;color:#a09aa6;margin:22px 0 0;word-break:break-all">Si el botón no abre: ${t(enlace)}</p></div>`,
-    text: `${nueva ? 'Tu cuenta en Cupido Algorítmico está lista.' : 'Tu enlace para entrar a Cupido Algorítmico.'}\n\nAbre este enlace (vale ${MIN_ENLACE} minutos, se usa una sola vez):\n${enlace}\n\nSi tú no lo pediste, ignora este correo.`,
-  };
-}
-
-async function mandarCorreo(env, para, asunto, { html, text }) {
-  if (!env.RESEND_KEY || !env.FROM_EMAIL) { console.warn('Sin RESEND_KEY/FROM_EMAIL: el enlace se muestra en pantalla (solo desarrollo)'); return 'sin_remitente'; }
-  try {
-    const r = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${env.RESEND_KEY}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ from: env.FROM_EMAIL, to: [para], subject: asunto, html, text }),
-      signal: AbortSignal.timeout(15000),
-    });
-    if (!r.ok) { console.error('Resend', r.status, await r.text()); await anotar(env, 'sistema', 'No salió un correo', `${asunto} · ${r.status}`); return null; }
-    return (await r.json())?.id || true;
-  } catch (e) { console.error('Resend falló', e.message); await anotar(env, 'sistema', 'No salió un correo', e.message); return null; }
-}
+/* el correo vive en src/correos.js */
 // fin · RLR
