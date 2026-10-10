@@ -16,6 +16,7 @@ export const FAMILIAS = {
   logros: { n: 'Logros e hitos', d: 'Cuando desbloqueas algo o la charla cruza una marca' },
   interfaz: { n: 'Interfaz', d: 'Toques, guardado, cambios de estilo y avisos' },
   recorrido: { n: 'El recorrido', d: 'Cada paso y la entrada a Cupido' },
+  llamadas: { n: 'Llamadas', d: 'El timbre cuando te llaman, el tono mientras llamas y el final de la llamada' },
 };
 export const SONIDOS = {
   mensaje:      { f: 'charla',        v: 0.9,  tono: [1175, 1568] },
@@ -25,6 +26,9 @@ export const SONIDOS = {
   voz_inicio:   { f: 'charla',        v: 0.6,  tono: [660, 880] },
   voz_fin:      { f: 'charla',        v: 0.6,  tono: [880, 660] },
   en_linea:     { f: 'charla',        v: 0.4,  tono: [1047] },
+  timbre:       { f: 'llamadas',      v: 1,    tono: [784, 988, 784, 988, 1175] },
+  marcando:     { f: 'llamadas',      v: 0.6,  tono: [659, 659] },
+  colgar:       { f: 'llamadas',      v: 0.6,  tono: [784, 587] },
   detalle:      { f: 'charla',        v: 0.85, tono: [1047, 1319, 1568, 2093] },
   carta:        { f: 'charla',        v: 0.7,  tono: [880, 1175, 1480] },
   tono:         { f: 'coincidencias', v: 0.95, tono: [659, 880, 1109, 1319, 1760] },
@@ -82,7 +86,8 @@ export async function precargar(ids = Object.keys(SONIDOS)) {
     if (buffers.has(id) || cargando.has(id)) return cargando.get(id);
     const p = (async () => {
       try {
-        const r = await fetch(`/sonidos/${id}.mp3`, { cache: 'force-cache' });
+        let r = await fetch(`/sonidos/${id}.mp3`, { cache: 'force-cache' });
+        if (!r.ok) r = await fetch(`/sonidos/${id}.mp3`, { cache: 'reload' }); // un "no existe" guardado de antes no debe dejar mudo un sonido que ya existe
         if (!r.ok) throw new Error(r.status);
         const datos = await r.arrayBuffer();
         const b = await new Promise((res, rej) => { const q = c.decodeAudioData(datos, res, rej); if (q && q.then) q.then(res, rej); });

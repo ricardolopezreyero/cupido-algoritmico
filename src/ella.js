@@ -74,7 +74,8 @@ export async function esAdmin(env, yo) {
 /* ── controles por charla: lo que cada quien permite frente a la otra persona ── */
 // recibir_medios: ¿puede mandarme fotos, video, voz y archivos? · mis_medios: ¿puede ver mi foto, mi voz y mi video?
 // Frente a un hombre, los de ella nacen apagados: ella los enciende cuando quiere.
-const CONTROLES = ['recibir_medios', 'mis_medios'];
+// llamadas: ¿puede llamarme por voz? La llamada solo existe cuando ella lo autoriza; ella sí puede llamarle cuando quiera.
+const CONTROLES = ['recibir_medios', 'mis_medios', 'llamadas'];
 export async function control(env, P, O, k) {
   const f = await env.DB.prepare(`SELECT v FROM controles WHERE persona = ? AND otra = ? AND k = ?`).bind(P.id, O.id, k).first();
   return f ? !!f.v : !manda(P, O);
@@ -90,7 +91,9 @@ export async function ponerControl(env, P, otraId, k, v) {
   const c = O && await env.DB.prepare(`SELECT 1 AS v FROM charlas WHERE a = ? AND b = ? AND cerrada IS NULL`).bind(a, b).first();
   if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
   await env.DB.prepare(`INSERT INTO controles (persona, otra, k, v) VALUES (?, ?, ?, ?) ON CONFLICT(persona, otra, k) DO UPDATE SET v = excluded.v`).bind(P.id, otraId, k, v ? 1 : 0).run();
-  const txt = k === 'recibir_medios'
+  const txt = k === 'llamadas'
+    ? (v ? `📞 ${nom(P)} ya recibe llamadas de voz en esta charla.` : `${nom(P)} dejó de recibir llamadas de voz en esta charla.`)
+    : k === 'recibir_medios'
     ? (v ? `${nom(P)} ya recibe fotos, videos, notas de voz y archivos en esta charla.` : `${nom(P)} dejó de recibir fotos, videos, notas de voz y archivos en esta charla.`)
     : (v ? `${nom(P)} decidió enseñar su foto, su voz y su video.` : `${nom(P)} guardó su foto, su voz y su video.`);
   await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(a, b, txt).run();
@@ -103,10 +106,12 @@ export async function sinRespuesta(env, c, yo, otraId) {
   return (await env.DB.prepare(
     `SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND de = ? AND auto = 0
      AND id > COALESCE((SELECT MAX(id) FROM mensajes WHERE a = ? AND b = ? AND de = ? AND auto = 0), 0)
+     AND id > COALESCE((SELECT MAX(id) FROM mensajes WHERE a = ? AND b = ? AND tipo = 'llamada' AND json_extract(archivo, '$.estado') = 'hecha'), 0)
+     AND NOT (tipo = 'llamada' AND json_extract(archivo, '$.estado') = 'hecha')
      AND creado > COALESCE((SELECT MAX(r.creado) FROM respuestas r JOIN mensajes m ON m.id = r.mensaje WHERE m.a = ? AND m.b = ? AND r.persona = ?), '')
      AND creado > COALESCE((SELECT MAX(r.creado) FROM reacciones r JOIN mensajes m ON m.id = r.mensaje WHERE m.a = ? AND m.b = ? AND r.persona = ?), '')`)
-    // contestar una carta o reaccionar también es responder: ella ya dio señal
-    .bind(c.a, c.b, yo, c.a, c.b, otraId, c.a, c.b, otraId, c.a, c.b, otraId).first()).n;
+    // contestar una carta, reaccionar o haber hablado por voz también es responder: ella ya dio señal
+    .bind(c.a, c.b, yo, c.a, c.b, otraId, c.a, c.b, c.a, c.b, otraId, c.a, c.b, otraId).first()).n;
 }
 
 /* ── el filtro del motor: pares que nunca se cruzan (bloqueos y «no cruzarme con») ── */

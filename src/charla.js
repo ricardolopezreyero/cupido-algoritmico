@@ -12,7 +12,7 @@
 import { persona, anotar } from './datos.js';
 import { PREGUNTAS } from '../public/js/preguntas.js';
 import { ELEMENTOS, ELEMENTO } from '../public/js/elementos.js';
-import { avisarVivo, presenciaVivo } from './viva.js';
+import { avisarVivo, presenciaVivo, llamadaVivo } from './viva.js';
 import { correoA } from './correos.js';
 import { manda, esHombre, ajustesDe, control, controlesDe, sinRespuesta, INSISTENCIA } from './ella.js';
 import { TIPOS_CHISPA, tonoDe, ponerTono, prepararChispa, trasEnviarChispa, responder, juegoDe, album } from './chispa.js';
@@ -118,7 +118,7 @@ export async function misCharlas(env, yo) {
 const VENTANA = 80;
 function vistaDe(m) {
   const t = String(m.texto || '').slice(0, 120);
-  return m.tipo === 'archivo' ? '📎 ' + (m.texto || 'Archivo') : m.tipo === 'gif' ? '🎞️ GIF' : m.tipo === 'carta' ? '🎴 ' + t : m.tipo === 'detalle' ? '🎁 ' + t : m.tipo === 'cita' ? '📅 ' + t : m.tipo === 'borrado' ? 'Mensaje borrado' : t;
+  return m.tipo === 'archivo' ? '📎 ' + (m.texto || 'Archivo') : m.tipo === 'gif' ? '🎞️ GIF' : m.tipo === 'carta' ? '🎴 ' + t : m.tipo === 'detalle' ? '🎁 ' + t : m.tipo === 'cita' ? '📅 ' + t : m.tipo === 'llamada' ? '📞 ' + t : m.tipo === 'borrado' ? 'Mensaje borrado' : t;
 }
 async function conCitas(env, c, msgs) {
   const ids = [...new Set(msgs.map((m) => m.responde_a).filter(Boolean))];
@@ -163,6 +163,7 @@ export async function verCharla(env, yo, otraId, despues = 0, { antes = 0, todo 
     mando: manda(Yo, O), meMandan, puedeTodo: !esHombre(Yo), discreta: esDiscreta,
     controles: await controlesDe(env, Yo, O),
     puedoMedios: await control(env, O, Yo, 'recibir_medios'),
+    puedoLlamar: await control(env, O, Yo, 'llamadas'), // la llamada de voz solo existe si la otra persona la autorizó
     veMisMedios: await control(env, Yo, O, 'mis_medios'),
     insistencia: meMandan ? { van: await sinRespuesta(env, c, yo, otraId), tope: topeInsistencia(O) } : null,
   };
@@ -215,6 +216,30 @@ async function candadoDeElla(env, c, yo, otraId, esArchivo) {
   if (manda(O, Yo) && (await sinRespuesta(env, c, yo, otraId)) >= topeInsistencia(O))
     return { error: `Ya le escribiste ${topeInsistencia(O)} veces sin respuesta. Ahora le toca a ${nom(O)}: aquí nadie insiste.`, status: 429 };
   return null;
+}
+
+/* ── la llamada de voz: dentro de Cupido, sin número y sin que nadie vea desde dónde se conecta el otro ── */
+// Llamar pide que la otra persona lo haya autorizado (frente a un hombre, ella lo enciende cuando quiere).
+// Para quien llama, suena igual esté o no en línea la otra persona: así una llamada no delata quién está conectada.
+export async function llamada(env, yo, otraId, accion) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
+  if (!['llamar', 'contestar', 'rechazar', 'colgar'].includes(accion)) return { error: 'Acción inválida', status: 400 };
+  if (accion === 'llamar') {
+    const [Yo, O] = [await persona(env, yo), await persona(env, otraId)];
+    if (!(await control(env, O, Yo, 'llamadas'))) return { error: `${nom(O)} todavía no recibe llamadas en esta charla. Eso lo decide ${nom(O)}.`, status: 403 };
+    const candado = await candadoDeElla(env, c, yo, otraId, false); if (candado) return candado;
+  }
+  const r = await llamadaVivo(env, c.a, c.b, { accion, persona: yo });
+  if (accion === 'llamar' && r.ok && !r.enLinea) await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: 'Te llamó por voz 📞. No estabas en Cupido en ese momento.' });
+  delete r.enLinea;
+  return r;
+}
+// El canal del audio: el Worker valida la puerta; el objeto de la charla valida que haya una llamada contestada
+export async function conectarVoz(env, req, yo, otraId) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return new Response('No hay una puerta abierta con esa persona', { status: 403 });
+  return env.CHARLA_VIVA.get(env.CHARLA_VIVA.idFromName(`${c.a}|${c.b}`)).fetch('https://viva/voz', { headers: { upgrade: 'websocket', 'x-persona': yo } });
 }
 
 /* ── la chispa: el tono, responder cartas e invitaciones, y el álbum ─────── */

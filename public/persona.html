@@ -60,6 +60,7 @@ import { ELEMENTOS, ELEMENTO, SUAVES } from '/js/elementos.js';
 import { dictable, puedeDictar } from '/js/dictar.js';
 import { tocar, precargar, panelSonido, ajustes as ajustesSonido } from '/js/sonido.js';
 import { TONOS, TONO, MAZOS, MAZO, CARTA, DETALLES, DETALLE, PLANES, PLAN, RESPUESTAS_CITA, RESPUESTA_CITA, RESPUESTA_MAX, NOTA_MAX, subidoDeTono } from '/js/chispa.js';
+import { montarVoz, vozLlamar, vozEvento } from '/js/llamada.js';
 import { subirPorPartes, prepararFoto, cartelDeVideo, duracionDeAudio, sinUbicacion, grabadora, MICROFONO, CAMARA, legible, duracionTxt } from '/js/subir.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
@@ -83,6 +84,8 @@ async function tablero() {
   const ds = $('#demo-switch'); ds.hidden = !V.sesion.demo; ds.onclick = abrirModalCuenta;
   ir(location.hash.slice(1) || 'inicio');
   escucharCharlas();
+  // la llamada de voz vive encima de todo el tablero: suena y sigue aunque cambies de sección
+  montarVoz({ yoId: V.persona.id, api, avisar, quien: (otra) => (V.charlas || []).find((c) => c.otra === otra), alTerminar: (otra) => { if (CH.otra === otra) CH.traer?.(true); } });
   precargar(); // todos los sonidos, decodificados y listos antes de que pase algo
   sonarNovedades();
   reglasUnaVez();
@@ -538,6 +541,7 @@ function vistaCharla(otra) {
       ${avatar(c.nombre, c.color)}
       <div class="ch-quien"><b>${esc(c.nombre)}</b><span id="ch-presencia"><i class="pres"></i>conectando…</span><span id="ch-resumen" class="ch-resumen"></span></div>
       <div class="ch-cab-acc">
+        <button class="ch-h" id="ch-llamar" title="Llamada de voz, dentro de Cupido">📞</button>
         <button class="ch-h" id="ch-carta" title="Su carta">✉️</button>
         <button class="ch-h" id="ch-buscar" title="Buscar en la charla">🔍</button>
         <button class="ch-h" id="ch-guardados" title="Mensajes guardados">🔖</button>
@@ -593,6 +597,10 @@ function filaMensaje(m, seguido) {
   if (m.tipo === 'sistema') { const hito = /⟨[a-z0-9]+⟩/.test(m.texto || ''); return `<div class="msg sistema ${hito ? 'hito' : ''}" data-id="${m.id}"><span>${esc(String(m.texto || '').replace(/\s*⟨[a-z0-9]+⟩/, ''))}</span></div>`; }
   const ruta = `/api/charla/${esc(CH.otra)}/archivo/${m.id}`;
   let cuerpo, clase = '';
+  if (m.tipo === 'llamada') { // el renglón que deja cada llamada de voz
+    const hecha = m.archivo?.estado === 'hecha', n = esc(CH.datos?.otra?.nombre || '');
+    return `<div class="msg sistema llamada ${hecha ? 'hecha' : ''}" data-id="${m.id}"><span>📞 ${hecha ? `Llamada de voz · ${duracionTxt(m.archivo.duracion || 0)}` : m.mio ? `Llamaste a ${n} · no contestó` : `Llamada perdida de ${n}`}</span></div>`;
+  }
   if (m.tipo === 'carta' || m.tipo === 'detalle' || m.tipo === 'cita') { // la chispa: tarjetas que viven en medio de la charla
     CH.chispas.set(m.id, m);
     return `<div class="msg chispa t-${m.tipo} ${m.mio ? 'mio' : 'suyo'} fin-grupo" data-id="${m.id}" data-firma='${esc(JSON.stringify(CH.juego[m.id] || {}))}'><div class="globo">${htmlChispa(m)}</div>${reaccionesHtml(m.id)}<div class="cuando">${horaDe(m.creado)}</div><button class="reac-btn" data-reac="${m.id}" title="Reaccionar o guardar">☺</button></div>`;
@@ -731,6 +739,7 @@ function conectarVivo(otra) {
     else if (ev.t === 'presencia') { if (ev.en) tocar('en_linea'); if (CH.datos) { CH.datos.otra.enLinea = !!ev.en; if (!ev.en) CH.datos.otra.ultimaVez = new Date().toISOString().replace('T', ' ').slice(0, 19); } pintarPresencia(); }
     else if (ev.t === 'quien') { if (CH.datos) CH.datos.otra.enLinea = (ev.en || []).includes(otra); pintarPresencia(); }
     else if (ev.t === 'cerrada') puertaCerrada(otra);
+    else if (ev.t === 'llamada') vozEvento(otra, ev);
     else if (ev.t === 'juego') { if (ev.de !== V.persona.id && !ev.listo) tocar('reaccion', { fuerza: 0.8 }); CH.traer?.(true); }
   };
   ws.onclose = () => { if (CH.otra !== otra) return; CH.vivo = false; clearInterval(CH.ping); clearInterval(CH.reloj); CH.reloj = setInterval(() => CH.traer?.(false), 2500); const espera = Math.min(15000, 1000 * 2 ** CH.reintento++); setTimeout(() => { if (CH.otra === otra && !CH.vivo) conectarVivo(otra); }, espera); };
@@ -910,6 +919,11 @@ async function engancharCharla(otra) {
   $('#ch-compartir').onclick = abrirCompartir;
   $('#ch-mando').onclick = abrirMando;
   $('#ch-album').onclick = abrirAlbum;
+  $('#ch-llamar').onclick = () => {
+    const e = CH.datos?.ella; if (!e) return;
+    if (!e.puedoLlamar) { avisar(`${CH.datos.otra.nombre} todavía no recibe llamadas en esta charla. Eso lo decide ${e.meMandan ? 'ella' : CH.datos.otra.nombre}.`, 4600); return; }
+    vozLlamar(otra);
+  };
   $('#ch-carta').onclick = abrirSuCarta;
   $('#ch-sonido').onclick = () => abrirPanelSonido();
   $('#ch-buscar').onclick = () => abrirPanelCabeza('buscar');
@@ -985,8 +999,10 @@ function escucharCharlas() {
       ESCUCHA.set(c.otra, ws);
       ws.onmessage = (e) => {
         let ev; try { ev = JSON.parse(e.data); } catch { return; }
+        if (ev.t === 'llamada') { vozEvento(c.otra, ev); return; } // una llamada suena en todo el tablero, no solo dentro de su charla
         if (ev.t === 'cerrada') { ws.onclose = null; ESCUCHA.delete(c.otra); if (!(CH.otra === c.otra && seccion === 'charlas')) refrescarVista(); return; }
         if (ev.t !== 'mensaje' || ev.de === V.persona.id || ev.de === 'sistema') return;
+        if (ev.tipo === 'llamada' && !/sin contestar/.test(ev.vista || '')) return; // una llamada que sí se habló no es una novedad sin leer
         if (CH.otra === c.otra && seccion === 'charlas') return; // esa charla ya está abierta: ella se encarga
         const mia = (V.charlas || []).find((x) => x.otra === c.otra); if (mia) { mia.nuevos = (mia.nuevos || 0) + 1; mia.ultimo = { texto: ev.vista, mio: false, creado: new Date().toISOString() }; pintarLateral(); }
         sonMensaje(); toastMensaje(c, ev.vista || 'Mensaje nuevo');
@@ -1405,6 +1421,7 @@ const avisoK = () => `cupido.mando.visto.${V.persona.id}.${CH.otra}`, visto = (k
 function pintarCandados() {
   const d = CH.datos, e = d?.ella, t = $('#ch-turno'); if (!e || !t) return;
   $$('label.ch-h:has([data-adj]), #ch-voz').forEach((b) => b.classList.toggle('candado', !e.puedoMedios));
+  $('#ch-llamar')?.classList.toggle('candado', !e.puedoLlamar);
   let html = '';
   if (e.insistencia && e.insistencia.van >= e.insistencia.tope) html = `<span>✋ Le toca a <b>${esc(d.otra.nombre)}</b>. Ya le escribiste ${e.insistencia.tope} veces sin respuesta, y aquí nadie insiste.</span>`;
   else if (e.insistencia && e.insistencia.van === e.insistencia.tope - 1) html = `<span>Te queda <b>un mensaje</b> antes de que le toque a ${esc(d.otra.nombre)}. Aquí nadie insiste.</span>`;
@@ -1423,6 +1440,7 @@ function abrirMando() {
     <div class="son-panel" id="mando-ctl">
       ${fila('recibir_medios', e.controles.recibir_medios, `${n} puede mandarme fotos, videos, voz y archivos`, e.mando ? 'Nace apagado. Mientras esté apagado, ni siquiera puede elegir un archivo.' : 'Si lo apagas, solo llega texto.')}
       ${fila('mis_medios', e.controles.mis_medios, `${n} puede ver mi foto, mi voz y mi video`, e.mando ? 'Abrir la puerta no los entrega. Los enciendes tú, y los guardas de nuevo cuando quieras.' : 'Los puedes guardar de nuevo cuando quieras.')}
+      ${fila('llamadas', e.controles.llamadas, `${n} puede llamarme por voz`, e.mando ? 'Nace apagado. Es voz dentro de Cupido: no ve tu número ni desde dónde te conectas, y cada llamada la contestas solo si quieres. Tú sí puedes llamarle cuando quieras.' : 'Voz dentro de Cupido, sin dar tu número. Cada llamada la contestas solo si quieres.')}
     </div>
     <h3 style="margin:18px 0 8px;font-size:16px">Si ya no quieres seguir</h3>
     <div class="mando-salidas" id="mando-salidas">
@@ -1436,7 +1454,7 @@ function abrirMando() {
   $('#mando-reglas', h.cuerpo).onclick = () => h.cerrar();
   $$('[data-ctl]', h.cuerpo).forEach((i) => i.onchange = async () => {
     i.disabled = true;
-    try { const r = await api(`/api/charla/${encodeURIComponent(otra)}/control`, { k: i.dataset.ctl, v: i.checked }); CH.datos.ella.controles = r.controles; tocar('guardado'); avisar(i.dataset.ctl === 'recibir_medios' ? (i.checked ? `Listo: ${o.nombre} ya puede mandarte archivos.` : `Listo: de ${o.nombre} solo llega texto.`) : (i.checked ? `Listo: ${o.nombre} ya puede ver tu foto, tu voz y tu video.` : 'Listo: tu foto, tu voz y tu video quedaron guardados.')); pintarCandados(); CH.traer?.(true); }
+    try { const r = await api(`/api/charla/${encodeURIComponent(otra)}/control`, { k: i.dataset.ctl, v: i.checked }); CH.datos.ella.controles = r.controles; tocar('guardado'); avisar(i.dataset.ctl === 'llamadas' ? (i.checked ? `Listo: ${o.nombre} ya puede llamarte por voz. Tú decides si contestas.` : `Listo: ${o.nombre} ya no puede llamarte.`) : i.dataset.ctl === 'recibir_medios' ? (i.checked ? `Listo: ${o.nombre} ya puede mandarte archivos.` : `Listo: de ${o.nombre} solo llega texto.`) : (i.checked ? `Listo: ${o.nombre} ya puede ver tu foto, tu voz y tu video.` : 'Listo: tu foto, tu voz y tu video quedaron guardados.')); pintarCandados(); CH.traer?.(true); }
     catch (err) { i.checked = !i.checked; avisar(err.message); }
     i.disabled = false;
   });
@@ -1523,6 +1541,7 @@ function seccionElla() {
         <li><span class="i si">✓</span><span><b>Qué recibes.</b> Él no puede mandarte fotos, videos, notas de voz ni archivos hasta que lo permites.</span></li>
         <li><span class="i si">✓</span><span><b>Qué enseñas.</b> Tu foto, tu voz y tu video los enciendes tú. Abrir la puerta no los entrega.</span></li>
         <li><span class="i si">✓</span><span><b>Él no insiste.</b> Después de ${L.insistencia} mensajes seguidos sin respuesta, el sistema no le deja mandar otro.</span></li>
+        <li><span class="i si">✓</span><span><b>La llamada de voz, solo si tú la enciendes.</b> Es voz dentro de Cupido: no ve tu número ni desde dónde te conectas. Tú le puedes llamar cuando quieras; él a ti, solo cuando lo autorizas, y cada llamada la contestas si quieres.</span></li>
         <li><span class="i si">✓</span><span><b>El tono lo pones tú también.</b> Amistad, conocernos o coqueteo: la charla toma el más tranquilo de los dos, y lo coqueto se enciende solo si tú lo eliges.</span></li>
         <li><span class="i si">✓</span><span><b>Lo que compartes, lo puedes guardar de nuevo.</b> Cada elemento de tu perfil tiene su ✕.</span></li>
         <li><span class="i si">✓</span><span><b>Cuatro salidas:</b> cerrar la puerta (sin castigo), borrar la charla, bloquear y reportar. Él recibe el mismo aviso en las cuatro.</span></li>
@@ -1536,6 +1555,7 @@ function seccionElla() {
     <div class="rejilla-2"><section class="tarjeta"><h2>Lo que aceptas</h2><ul class="razones" style="padding:0">
         <li><span class="i ojo">!</span><span>Ella decide el ritmo. Después de ${L.insistencia} mensajes sin respuesta, te toca esperar.</span></li>
         <li><span class="i ojo">!</span><span>No mandas fotos, videos, voz ni archivos hasta que ella lo permite.</span></li>
+        <li><span class="i ojo">!</span><span>No puedes llamarle por voz hasta que ella lo autoriza. Ella sí puede llamarte.</span></li>
         <li><span class="i ojo">!</span><span>Su foto, su voz y su video los enseña ella cuando quiere.</span></li>
         <li><span class="i ojo">!</span><span>Puede cerrar la puerta cuando quiera, y no te debe una razón.</span></li></ul></section>
       <section class="tarjeta" style="margin-top:0"><h2>Lo que también es tuyo</h2><ul class="razones" style="padding:0">

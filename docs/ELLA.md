@@ -22,6 +22,8 @@ Cupido Algorítmico está hecho para que una mujer encuentre a la persona correc
 
 **Lo que compartes, lo puedes retirar.** Tu perfil se libera por elementos y con tu confirmación. Si cambias de opinión, lo guardas de nuevo y él deja de verlo.
 
+**La llamada de voz, solo si tú la enciendes.** Dentro de la charla se puede hablar por voz sin dar el número: el audio pasa por Cupido, así que él no ve tu teléfono ni desde dónde te conectas. Nace apagada. Tú le puedes llamar cuando quieras; él a ti, solo cuando lo autorizas en esa charla, y aun así cada llamada la contestas si quieres. Si no contestas, él solo ve «no contestó»: nunca sabe si no estabas o si preferiste no contestar.
+
 **El coqueteo también se abre con dos síes.** Cada charla tiene un tono: amistad, conocernos o coqueteo. Tú eliges el tuyo en privado y la charla toma el más tranquilo de los dos. Él no ve lo que elegiste, y lo coqueto no se enciende hasta que tú también lo eliges. Lo bajas cuando quieras, sin dar explicaciones. Y si terminan siendo amigos, también es un buen final.
 
 **Modo discreta.** Él no ve si estás en línea, cuándo entraste por última vez, si ya leíste ni si estás escribiendo.
@@ -58,6 +60,7 @@ Lo que aceptas al entrar:
 
 - Ella decide el ritmo. Si no contesta, no insistes; el sistema tampoco te deja.
 - No mandas fotos, videos, voz ni archivos hasta que ella lo permite.
+- No puedes llamarle por voz hasta que ella lo autoriza. Ella sí puede llamarte.
 - Ella puede cerrar la puerta cuando quiera y no te debe una razón. Tú también puedes cerrarla.
 - Si te bloquea, se acabó. Si diez mujeres distintas te bloquean, tu cuenta se retira para siempre.
 
