@@ -1,10 +1,12 @@
 /* ─────────────────────────────────────────────────────────────────────────────
    Cupido Algorítmico · La charla: nace cuando los dos dijeron que sí
    Autor: Ricardo López Reyero
-   Reglas: solo existe entre dos personas con puerta abierta; nada se borra;
-   el sistema manda el primer "hola" de parte de cada uno; se ve cuando el
-   otro está escribiendo; los archivos viven en R2 y solo los dos los ven.
-   El perfil se libera por elementos (ver public/js/elementos.js).
+   Reglas: solo existe entre dos personas con puerta abierta; el sistema manda
+   el primer "hola" de parte de cada uno; se ve cuando el otro está escribiendo;
+   los archivos viven en R2 y solo los dos los ven. El perfil se libera por
+   elementos (ver public/js/elementos.js). Y aquí manda ella (src/ella.js):
+   él no insiste, no manda archivos hasta que ella lo permite, y cualquiera
+   puede cerrar la puerta: entonces la charla deja de existir para los dos.
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
 import { persona, anotar } from './datos.js';
@@ -12,6 +14,7 @@ import { PREGUNTAS } from '../public/js/preguntas.js';
 import { ELEMENTOS, ELEMENTO } from '../public/js/elementos.js';
 import { avisarVivo, presenciaVivo } from './viva.js';
 import { correoA } from './correos.js';
+import { manda, esHombre, ajustesDe, control, controlesDe, sinRespuesta, INSISTENCIA } from './ella.js';
 
 // Si la otra persona no está en el tablero, avísale por correo (máximo uno por hora por charla)
 async function correoSiAusente(env, c, yo, otraId, tipo, datos) {
@@ -55,7 +58,14 @@ export const ARCHIVO = { max: 15 * 1024 * 1024, mimes: /^(image\/(jpeg|png|webp|
 /* ── nace la charla (puerta abierta): "hola" del hombre y luego de la mujer ─ */
 export async function abrirCharla(env, x, y) {
   const [a, b] = clave(x, y);
-  const ya = await env.DB.prepare(`SELECT 1 AS v FROM charlas WHERE a = ? AND b = ?`).bind(a, b).first();
+  const ya = await env.DB.prepare(`SELECT cerrada FROM charlas WHERE a = ? AND b = ?`).bind(a, b).first();
+  if (ya?.cerrada) { // la puerta se había cerrado y los dos volvieron a decir que sí
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE charlas SET cerrada = NULL, cerro = NULL WHERE a = ? AND b = ?`).bind(a, b),
+      env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(a, b, 'La puerta volvió a abrirse: los dos dijeron que sí otra vez. Lo que cada quien había compartido de su perfil se guardó; se comparte de nuevo cuando quieran.'),
+    ]);
+    return true;
+  }
   if (ya) return false;
   await env.DB.prepare(`INSERT OR IGNORE INTO charlas (a, b) VALUES (?, ?)`).bind(a, b).run();
   const [A, B] = [await persona(env, a), await persona(env, b)];
@@ -64,7 +74,7 @@ export async function abrirCharla(env, x, y) {
   await env.DB.batch([
     env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, auto) VALUES (?, ?, ?, 'texto', ?, 1)`).bind(a, b, primero.id, `Hola, ${nom(segundo)} 👋`),
     env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, auto) VALUES (?, ?, ?, 'texto', ?, 1)`).bind(a, b, segundo.id, `Hola, ${nom(primero)} 👋`),
-    env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(a, b, 'Se abrió la puerta: los dos dijeron que sí. Aquí nadie ve su perfil todavía: cada quien decide qué compartir y cuándo.'),
+    env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(a, b, 'Se abrió la puerta: los dos dijeron que sí. Aquí nadie ve su perfil todavía: cada quien decide qué compartir y cuándo. Y cualquiera de los dos puede cerrar la puerta cuando quiera, sin dar explicaciones.'),
   ]);
   return true;
 }
@@ -74,6 +84,7 @@ export async function borrarCharlasDe(env, id) {
     env.DB.prepare(`DELETE FROM charlas WHERE a = ? OR b = ?`).bind(id, id),
     env.DB.prepare(`DELETE FROM liberaciones WHERE persona = ? OR otra = ?`).bind(id, id),
     env.DB.prepare(`DELETE FROM reacciones WHERE mensaje NOT IN (SELECT id FROM mensajes)`),
+    env.DB.prepare(`DELETE FROM controles WHERE persona = ? OR otra = ?`).bind(id, id),
   ]);
 }
 
@@ -81,12 +92,12 @@ export async function borrarCharlasDe(env, id) {
 async function charlaDe(env, yo, otra) {
   const [a, b] = clave(yo, otra);
   const c = await env.DB.prepare(`SELECT * FROM charlas WHERE a = ? AND b = ?`).bind(a, b).first();
-  return c ? { ...c, soyA: yo === a } : null;
+  return c && !c.cerrada ? { ...c, soyA: yo === a } : null; // una charla cerrada ya no existe para nadie
 }
 
 /* ── lista de charlas para el tablero ────────────────────────────────────── */
 export async function misCharlas(env, yo) {
-  const filas = (await env.DB.prepare(`SELECT * FROM charlas WHERE a = ? OR b = ? ORDER BY creada DESC`).bind(yo, yo).all()).results;
+  const filas = (await env.DB.prepare(`SELECT * FROM charlas WHERE (a = ? OR b = ?) AND cerrada IS NULL ORDER BY creada DESC`).bind(yo, yo).all()).results;
   const lista = [];
   for (const c of filas) {
     const otraId = c.a === yo ? c.b : c.a, O = await persona(env, otraId);
@@ -126,21 +137,32 @@ export async function verCharla(env, yo, otraId, despues = 0, { antes = 0, todo 
   // marca como leído hasta el último y registra la visita; avisa al otro que ya vi
   const ultimoId = msgs.length ? msgs[msgs.length - 1].id : 0;
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'leido_a' : 'leido_b'} = MAX(${c.soyA ? 'leido_a' : 'leido_b'}, ?), ${c.soyA ? 'visita_a' : 'visita_b'} = datetime('now') WHERE a = ? AND b = ?`).bind(ultimoId, c.a, c.b).run();
-  if (ultimoId > miLeido && msgs.some((m) => !m.mio)) await avisarVivo(env, c.a, c.b, { t: 'visto', persona: yo, hasta: ultimoId, excepto: yo });
+  const Yo = await persona(env, yo);
+  const soyDiscreta = !esHombre(Yo) && !!ajustesDe(Yo).discreta, esDiscreta = !esHombre(O) && !!ajustesDe(O).discreta; // modo discreta: no se ve si está, si leyó ni si escribe
+  if (ultimoId > miLeido && msgs.some((m) => !m.mio) && !soyDiscreta) await avisarVivo(env, c.a, c.b, { t: 'visto', persona: yo, hasta: ultimoId, excepto: yo });
   const escribeOtro = c.soyA ? c.escribe_b : c.escribe_a;
-  const otroEscribiendo = !!escribeOtro && (Date.now() - Date.parse(escribeOtro.replace(' ', 'T') + 'Z')) < 4500;
+  const otroEscribiendo = !esDiscreta && !!escribeOtro && (Date.now() - Date.parse(escribeOtro.replace(' ', 'T') + 'Z')) < 4500;
   const mios = (await env.DB.prepare(`SELECT elemento FROM liberaciones WHERE persona = ? AND otra = ?`).bind(yo, otraId).all()).results.map((r) => r.elemento);
   const suyos = (await env.DB.prepare(`SELECT elemento FROM liberaciones WHERE persona = ? AND otra = ?`).bind(otraId, yo).all()).results.map((r) => r.elemento);
   // reacciones de toda la charla (cambian sobre mensajes viejos) y hasta dónde leyó el otro
   const reac = {};
   for (const r of (await env.DB.prepare(`SELECT r.mensaje, r.persona, r.emoji FROM reacciones r JOIN mensajes m ON m.id = r.mensaje WHERE m.a = ? AND m.b = ?`).bind(c.a, c.b).all()).results)
     (reac[r.mensaje] = reac[r.mensaje] || []).push({ emoji: r.emoji, mia: r.persona === yo });
-  const vistoHasta = c.soyA ? c.leido_b : c.leido_a;
-  const enLinea = (await presenciaVivo(env, c.a, c.b)).includes(otraId);
-  const ultimaVez = c.soyA ? c.visita_b : c.visita_a;
+  const vistoHasta = esDiscreta ? 0 : c.soyA ? c.leido_b : c.leido_a;
+  const enLinea = !esDiscreta && (await presenciaVivo(env, c.a, c.b)).includes(otraId);
+  const ultimaVez = esDiscreta ? null : c.soyA ? c.visita_b : c.visita_a;
+  // aquí manda ella: qué puede hacer cada quien en esta charla
+  const meMandan = manda(O, Yo);
+  const ella = {
+    mando: manda(Yo, O), meMandan, puedeTodo: !esHombre(Yo), discreta: esDiscreta,
+    controles: await controlesDe(env, Yo, O),
+    puedoMedios: await control(env, O, Yo, 'recibir_medios'),
+    veMisMedios: await control(env, Yo, O, 'mis_medios'),
+    insistencia: meMandan ? { van: await sinRespuesta(env, c, yo, otraId), tope: INSISTENCIA } : null,
+  };
   const guardados = (await env.DB.prepare(`SELECT g.mensaje FROM guardados g JOIN mensajes m ON m.id = g.mensaje WHERE g.persona = ? AND m.a = ? AND m.b = ?`).bind(yo, c.a, c.b).all()).results.map((g) => g.mensaje);
   const total = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND tipo != 'sistema'`).bind(c.a, c.b).first()).n;
-  return { otra: { id: otraId, nombre: nom(O), nombreCompleto: O.nombre, color: O.color, carta: O.r.carta || '', martes: O.r.martes || '', malinterpretan: O.r.malinterpretan || '', enLinea, ultimaVez }, mensajes: msgs, hayMas, otroEscribiendo, compartido: { mios, suyos }, reacciones: reac, vistoHasta, miLeido, guardados, total, desde: c.creada };
+  return { otra: { id: otraId, nombre: nom(O), nombreCompleto: O.nombre, color: O.color, carta: O.r.carta || '', martes: O.r.martes || '', malinterpretan: O.r.malinterpretan || '', enLinea, ultimaVez }, mensajes: msgs, hayMas, otroEscribiendo, compartido: { mios, suyos }, reacciones: reac, vistoHasta, miLeido, guardados, total, desde: c.creada, ella };
 }
 
 export async function enviar(env, yo, otraId, { texto, tipo = 'texto', gif, respondeA } = {}) {
@@ -157,12 +179,23 @@ export async function enviar(env, yo, otraId, { texto, tipo = 'texto', gif, resp
   } else { tipo = 'texto'; if (!t) return { error: 'Escribe algo', status: 400 }; }
   const ritmo = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND de = ? AND creado > datetime('now', '-60 seconds')`).bind(c.a, c.b, yo).first()).n;
   if (ritmo >= 40) return { error: 'Vas muy rápido. Respira un segundo.', status: 429 };
+  const candado = await candadoDeElla(env, c, yo, otraId, false); if (candado) return candado;
   const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo, responde_a) VALUES (?, ?, ?, ?, ?, ?, ?)`).bind(c.a, c.b, yo, tipo, t, archivo, cita ? cita.id : null).run();
   await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo, vista: tipo === 'sticker' ? t : tipo === 'gif' ? '🎞️ GIF' : t.slice(0, 80), excepto: yo });
   await hitoPorCantidad(env, c);
   await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: tipo === 'texto' ? t.slice(0, 140) : tipo === 'sticker' ? t : 'Te mandó un GIF' });
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'escribe_a' : 'escribe_b'} = NULL, ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
   return { ok: true, id: r.meta.last_row_id };
+}
+
+// Aquí manda ella: frente a ella, él no insiste ni manda archivos sin permiso
+async function candadoDeElla(env, c, yo, otraId, esArchivo) {
+  const [Yo, O] = [await persona(env, yo), await persona(env, otraId)];
+  if (esArchivo && !(await control(env, O, Yo, 'recibir_medios')))
+    return { error: `${nom(O)} todavía no recibe fotos, videos, notas de voz ni archivos en esta charla. Eso lo decide ${nom(O)}.`, status: 403 };
+  if (manda(O, Yo) && (await sinRespuesta(env, c, yo, otraId)) >= INSISTENCIA)
+    return { error: `Ya le escribiste ${INSISTENCIA} veces sin respuesta. Ahora le toca a ${nom(O)}: aquí nadie insiste.`, status: 429 };
+  return null;
 }
 
 export async function escribiendo(env, yo, otraId) {
@@ -217,7 +250,7 @@ async function hitoPorCantidad(env, c) {
 }
 // Cada día (desde el cron): aniversarios de la puerta
 export async function hitosDelDia(env) {
-  const charlas = (await env.DB.prepare(`SELECT a, b, creada, CAST(julianday('now') - julianday(creada) AS INTEGER) AS dias FROM charlas`).all()).results;
+  const charlas = (await env.DB.prepare(`SELECT a, b, creada, CAST(julianday('now') - julianday(creada) AS INTEGER) AS dias FROM charlas WHERE cerrada IS NULL`).all()).results;
   let n = 0;
   for (const c of charlas) {
     if (c.dias === 7 && await hito(env, c, 'd7', '🗓️ Una semana desde que se abrió la puerta. Lo que han compartido se queda aquí, ordenado, para los dos.')) n++;
@@ -262,7 +295,8 @@ export async function conectarVivo(env, req, yo, otraId) {
   const c = await charlaDe(env, yo, otraId);
   if (!c) return new Response('No hay una puerta abierta con esa persona', { status: 403 });
   const obj = env.CHARLA_VIVA.get(env.CHARLA_VIVA.idFromName(`${c.a}|${c.b}`));
-  return obj.fetch('https://viva/ws', { headers: { upgrade: 'websocket', 'x-persona': yo } });
+  const Yo = await persona(env, yo);
+  return obj.fetch('https://viva/ws', { headers: { upgrade: 'websocket', 'x-persona': yo, 'x-discreta': !esHombre(Yo) && ajustesDe(Yo).discreta ? '1' : '0' } });
 }
 
 /* ── archivos adjuntos (R2, solo los dos) ───────────────────────────────── */
@@ -270,6 +304,7 @@ export async function adjuntar(env, req, yo, otraId, nombre) {
   const c = await charlaDe(env, yo, otraId);
   if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
   const mime = (req.headers.get('content-type') || 'application/octet-stream').split(';')[0].trim().toLowerCase();
+  const candado = await candadoDeElla(env, c, yo, otraId, true); if (candado) return candado;
   if (!ARCHIVO.mimes.test(mime)) return { error: 'Ese tipo de archivo no se puede mandar aquí (fotos, PDF, audio, video o documentos).', status: 415 };
   const cuerpo = await req.arrayBuffer();
   if (!cuerpo.byteLength) return { error: 'Archivo vacío', status: 400 };
@@ -324,6 +359,25 @@ export async function liberar(env, yo, otraId, elementos) {
   }
   const mios = [...ya, ...nuevos];
   return { ok: true, mios };
+}
+
+// Retirar lo compartido: una decisión de ella. Lo que él ya leyó, lo leyó; desde ahora deja de verlo.
+export async function retirar(env, yo, otraId, elementos) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
+  const Yo = await persona(env, yo);
+  if (esHombre(Yo)) return { error: 'Retirar lo compartido es una decisión de ella.', status: 403 };
+  const pedidos = [...new Set((Array.isArray(elementos) ? elementos : []).filter((e) => ELEMENTO[e]))];
+  const ya = new Set((await env.DB.prepare(`SELECT elemento FROM liberaciones WHERE persona = ? AND otra = ?`).bind(yo, otraId).all()).results.map((r) => r.elemento));
+  const fuera = pedidos.filter((e) => ya.has(e));
+  if (!fuera.length) return { error: 'Eso no estaba compartido', status: 400 };
+  await env.DB.batch([
+    ...fuera.map((e) => env.DB.prepare(`DELETE FROM liberaciones WHERE persona = ? AND otra = ? AND elemento = ?`).bind(yo, otraId, e)),
+    env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(c.a, c.b, `${nom(Yo)} guardó de nuevo: ${fuera.map((e) => `${ELEMENTO[e].i} ${ELEMENTO[e].n}`).join(' · ')}`),
+  ]);
+  await anotar(env, 'ella', 'Ella retiró parte de lo que había compartido', `${fuera.length} elemento(s)`);
+  await avisarVivo(env, c.a, c.b, { t: 'mensaje', de: 'sistema', tipo: 'sistema', excepto: yo });
+  return { ok: true, mios: [...ya].filter((e) => !fuera.includes(e)) };
 }
 
 // Solo las respuestas de los elementos que la otra persona me liberó

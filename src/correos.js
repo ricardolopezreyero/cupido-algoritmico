@@ -153,6 +153,16 @@ export const CORREOS = {
       boton: { txt: 'Revisar en un minuto', url: `${BASE(env)}/persona#apoyar` },
       nota: 'Es un minuto. Si todo sigue igual, solo confirmas.' },
   }),
+  // 9 · Cuenta retirada para siempre (diez mujeres lo bloquearon, o una decisión del equipo tras un reporte)
+  retirada: (env, { P }) => ({
+    asunto: 'Tu cuenta de Cupido Algorítmico fue retirada',
+    contenido: { eyebrow: 'Las reglas de la casa', titulo: 'Tu cuenta fue retirada.', vista: 'Tu cuenta ya no está en Cupido. Es una decisión definitiva.',
+      parrafos: [`${hola(P)} Tu cuenta ya no está en Cupido Algorítmico y no puede volver a entrar.`,
+        'Al entrar aceptaste la regla de la casa: aquí manda ella. Cuando diez mujeres distintas bloquean a la misma persona, o cuando un reporte lo amerita, esa cuenta queda fuera para siempre. Bloquear no es lo mismo que dejar de hablar: es lo que alguien hace cuando la hicieron sentir incómoda.',
+        'No vamos a decirte quién ni cuándo: eso las protege a ellas. Tus puertas se cerraron y tus respuestas dejaron de cruzarse con nadie.'],
+      nota: 'Si quieres que borremos tus datos por completo, responde a este correo y lo hacemos.', bajas: false,
+      pie: 'Cupido Algorítmico existe para que ella encuentre a la persona correcta, segura y en control.' },
+  }),
   // 8 · Recordatorio: cuestionario sin terminar
   recordatorio: (env, { P, faltan, pct }) => ({
     asunto: `Te faltan ${faltan} preguntas para entrar al matching`,

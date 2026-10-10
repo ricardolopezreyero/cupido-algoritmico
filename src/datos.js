@@ -13,6 +13,7 @@ import { ESQUEMA_MEDIOS, mediosDe } from './medios.js';
 import { ESQUEMA_CHARLA, abrirCharla, misCharlas } from './charla.js';
 import { ESQUEMA_CORREOS, correoA } from './correos.js';
 import { ESQUEMA_PROGRAMA, sembrarPrograma } from './programa.js';
+import { ESQUEMA_ELLA, filtroElla, ajustesDe, manda, control, senalesPara, vistaElla } from './ella.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -54,6 +55,7 @@ const ESQUEMA = [
   ...ESQUEMA_CHARLA,
   ...ESQUEMA_CORREOS,
   ...ESQUEMA_PROGRAMA,
+  ...ESQUEMA_ELLA,
   `CREATE INDEX IF NOT EXISTS idx_pares_pct ON pares(pct)`,
   `CREATE INDEX IF NOT EXISTS idx_avisos_persona ON avisos(persona, leido)`,
   `CREATE INDEX IF NOT EXISTS idx_articulos_estado ON articulos(estado, creado)`,
@@ -70,6 +72,9 @@ export async function asegurar(env) {
   try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN visita_a TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN visita_b TEXT`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE mensajes ADD COLUMN responde_a INTEGER`).run(); } catch { /* ya existe */ }
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN codigo TEXT`).run(); await env.DB.prepare(`ALTER TABLE personas ADD COLUMN invitado_por TEXT`).run(); } catch { /* ya existen */ }
+  // Aquí manda ella: las puertas y las charlas se pueden cerrar (y quién las cerró)
+  try { await env.DB.prepare(`ALTER TABLE puertas ADD COLUMN cerro TEXT`).run(); await env.DB.prepare(`ALTER TABLE puertas ADD COLUMN cerrada TEXT`).run(); } catch { /* ya existen */ }
+  try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN cerrada TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN cerro TEXT`).run(); } catch { /* ya existen */ }
   await sembrarPrograma(env);
   await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_personas_correo ON personas(correo)`).run();
   const n = await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas`).first();
@@ -137,6 +142,9 @@ export async function reiniciarDemo(env) {
     env.DB.prepare(`DELETE FROM mensajes WHERE a NOT IN (SELECT id FROM personas) OR b NOT IN (SELECT id FROM personas)`),
     env.DB.prepare(`DELETE FROM charlas WHERE a NOT IN (SELECT id FROM personas) OR b NOT IN (SELECT id FROM personas)`),
     env.DB.prepare(`DELETE FROM liberaciones WHERE persona NOT IN (SELECT id FROM personas) OR otra NOT IN (SELECT id FROM personas)`),
+    env.DB.prepare(`DELETE FROM bloqueos WHERE de NOT IN (SELECT id FROM personas) OR a NOT IN (SELECT id FROM personas)`),
+    env.DB.prepare(`DELETE FROM controles WHERE persona NOT IN (SELECT id FROM personas) OR otra NOT IN (SELECT id FROM personas)`),
+    env.DB.prepare(`DELETE FROM evitar WHERE persona NOT IN (SELECT id FROM personas)`),
   ]);
   await sembrarDemo(env);
   await anotar(env, 'admin', 'Se reinició el demo', 'Personas ficticias, cruces, puertas y avisos de vuelta al estado inicial');
@@ -156,12 +164,14 @@ async function guardarPares(env, lista) {
 // Cruza todo lo que corresponda. Si `soloId`, solo los pares de esa persona.
 export async function recalcularTodo(env, { soloId = null, avisar = true, motivo = 'cambio' } = {}) {
   const todas = await personas(env, { soloActivas: true });
+  const fuera = await filtroElla(env, todas); // bloqueos y «no cruzarme con»: esos pares no existen
   const lista = [];
   for (let i = 0; i < todas.length; i++)
     for (let j = i + 1; j < todas.length; j++) {
       const [A, B] = todas[i].id < todas[j].id ? [todas[i], todas[j]] : [todas[j], todas[i]];
       if (soloId && A.id !== soloId && B.id !== soloId) continue;
       if (!esCandidato(A, B)) continue;
+      if (fuera(A, B)) continue;
       lista.push(cruzar(A, B));
     }
   if (soloId) await env.DB.prepare(`DELETE FROM pares WHERE a = ? OR b = ?`).bind(soloId, soloId).run();
@@ -176,6 +186,9 @@ export async function publicarPuertas(env, lista, { soloId = null } = {}) {
   const existentes = new Map((await env.DB.prepare(`SELECT * FROM puertas`).all()).results.map((p) => [p.a + '|' + p.b, p]));
   let nuevas = 0, retiradas = 0, actualizadas = 0;
   const stmts = [];
+  // «Que nadie sepa de mí hasta que yo diga sí»: a él no se le avisa hasta que ella decide
+  const gente = new Map((await personas(env)).map((x) => [x.id, x]));
+  const callado = (yo, otra) => { const Y = gente.get(yo), O = gente.get(otra); return !!(Y && O && manda(O, Y) && ajustesDe(O).primero); };
   for (const p of lista) {
     const k = p.a + '|' + p.b, ya = existentes.get(k);
     if (p.pct >= UMBRAL) {
@@ -184,6 +197,7 @@ export async function publicarPuertas(env, lista, { soloId = null } = {}) {
         // idempotente: si dos cruces corren a la vez, no se duplican puertas ni avisos
         stmts.push(env.DB.prepare(`INSERT OR IGNORE INTO puertas (a, b, pct) VALUES (?, ?, ?)`).bind(p.a, p.b, p.pct));
         for (const [yo, otra] of [[p.a, p.b], [p.b, p.a]]) {
+          if (callado(yo, otra)) continue;
           stmts.push(env.DB.prepare(
             `INSERT INTO avisos (persona, tipo, texto, otra, pct)
              SELECT ?, 'coincidencia', ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM avisos WHERE persona = ? AND otra = ? AND tipo = 'coincidencia')`)
@@ -203,6 +217,7 @@ export async function publicarPuertas(env, lista, { soloId = null } = {}) {
   if (nuevas) await anotar(env, 'motor', 'Se avisaron coincidencias nuevas', `${nuevas} pareja(s) cruzaron el ${UMBRAL} %`);
   // por correo, a quien tenga correo (las personas reales): a los dos, al mismo tiempo
   for (const p of lista) if (p.pct >= UMBRAL && !existentes.has(p.a + '|' + p.b)) for (const [yo, otra] of [[p.a, p.b], [p.b, p.a]]) {
+    if (callado(yo, otra)) continue;
     const P = await persona(env, yo); if (P?.correo) await correoA(env, P, 'coincidencia', { pct: p.pct }, { clave: otra, cadaMinutos: 60 * 24 * 30 });
   }
   return { nuevas, retiradas, actualizadas };
@@ -230,9 +245,27 @@ export async function decidir(env, yo, otra, decision) {
   if (!p) throw new Error('Esa coincidencia ya no existe');
   if (p.estado === 'abierta') return { estado: 'abierta' };
   const col = yo === a ? 'decision_a' : 'decision_b';
+  const [P, O] = [await persona(env, yo), await persona(env, otra)];
+  if (p.estado === 'retirada') {
+    // Solo quien cerró la puerta puede volver a tocarla; a la otra persona se le pregunta de nuevo
+    if (p.cerro !== yo) throw new Error('Esa coincidencia ya no existe');
+    if (decision !== 'si') return { estado: 'retirada' };
+    await env.DB.batch([
+      env.DB.prepare(`UPDATE puertas SET estado = 'cerrada', cerro = NULL, cerrada = NULL, decision_a = ?, decision_b = ? WHERE a = ? AND b = ?`).bind(yo === a ? 'si' : null, yo === b ? 'si' : null, a, b),
+      env.DB.prepare(`INSERT INTO avisos (persona, tipo, texto, otra, pct) VALUES (?, 'coincidencia', ?, ?, ?)`).bind(otra, 'Alguien con quien ya habías hablado quiere volver a abrir la puerta. Tú decides, igual que la primera vez.', yo, p.pct),
+    ]);
+    await anotar(env, 'ella', 'Alguien quiso volver a abrir una puerta que cerró', '');
+    return { estado: 'cerrada', miDecision: 'si' };
+  }
   await env.DB.prepare(`UPDATE puertas SET ${col} = ? WHERE a = ? AND b = ?`).bind(decision, a, b).run();
   const da = yo === a ? decision : p.decision_a, db = yo === b ? decision : p.decision_b;
-  const [P, O] = [await persona(env, yo), await persona(env, otra)];
+  // Ella decidía primero y dijo que sí: hasta ahora se le avisa a él
+  if (decision === 'si' && manda(P, O) && ajustesDe(P).primero && !(da === 'si' && db === 'si')) {
+    const r = await env.DB.prepare(`INSERT INTO avisos (persona, tipo, texto, otra, pct)
+      SELECT ?, 'coincidencia', ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM avisos WHERE persona = ? AND otra = ? AND tipo = 'coincidencia')`)
+      .bind(otra, `Apareció alguien al ${p.pct} % contigo. La puerta está cerrada hasta que los dos digan que sí.`, yo, p.pct, otra, yo).run();
+    if (r.meta.changes && O.correo) await correoA(env, O, 'coincidencia', { pct: p.pct }, { clave: yo, cadaMinutos: 60 * 24 * 30 });
+  }
   if (da === 'si' && db === 'si') {
     await env.DB.prepare(`UPDATE puertas SET estado = 'abierta', abierta = datetime('now') WHERE a = ? AND b = ?`).bind(a, b).run();
     await avisarApertura(env, a, b);
@@ -261,6 +294,7 @@ export async function vistaPersona(env, P) {
   const pares = (await env.DB.prepare(`SELECT a, b, pct, sin_veto, veto, detalle FROM pares WHERE a = ? OR b = ?`).bind(P.id, P.id).all()).results;
   const puertas = new Map((await env.DB.prepare(`SELECT * FROM puertas WHERE a = ? OR b = ?`).bind(P.id, P.id).all()).results.map((x) => [x.a + '|' + x.b, x]));
   const demo = P.pool === 'demo';
+  const senales = await senalesPara(env, P, pares.map((fx) => porId.get(fx.a === P.id ? fx.b : fx.a)).filter(Boolean));
 
   const coincidencias = [];
   let masCerca = null;
@@ -274,14 +308,22 @@ export async function vistaPersona(env, P) {
       const soyA = fx.a === P.id;
       const mia = pu ? (soyA ? pu.decision_a : pu.decision_b) : null;
       const abierta = pu?.estado === 'abierta';
+      const retirada = pu?.estado === 'retirada';
+      if (retirada && pu.cerro !== P.id) continue; // la cerró la otra persona: para mí ya no existe
+      // ella decide primero: él no sabe que existe hasta que ella dice que sí
+      if (!abierta && manda(O, P) && ajustesDe(O).primero && (soyA ? pu?.decision_b : pu?.decision_a) !== 'si') continue;
+      const veMedios = abierta ? await control(env, O, P, 'mis_medios') : false;
       coincidencias.push({
         pct: fx.pct,
         clave: `${fx.a}-${fx.b}`,
         demoId: demo ? otraId : undefined,
         genero: O.genero,
         ...razonesPersona(det, P.id),
-        puerta: { estado: abierta ? 'abierta' : 'cerrada', miDecision: mia, avisada: pu?.avisada || null },
-        revelado: abierta ? REVELA(O, await mediosDe(env, O.id)) : null,
+        puerta: { estado: abierta ? 'abierta' : retirada ? 'retirada' : 'cerrada', miDecision: mia, avisada: pu?.avisada || null },
+        revelado: abierta ? REVELA(O, veMedios ? await mediosDe(env, O.id) : {}) : null,
+        mediosGuardados: abierta && !veMedios, // decide cuándo enseñar su foto, su voz y su video
+        cerradaCon: retirada ? O.nombre.split(' ')[0] : undefined,
+        mando: manda(P, O), senales: senales.get(otraId) || null,
       });
     } else if (!fx.veto) {
       if (!masCerca || fx.pct > masCerca) masCerca = fx.pct;
@@ -323,6 +365,7 @@ export async function vistaPersona(env, P) {
     ajustes: (() => { try { return JSON.parse(P.ajustes || '{}'); } catch { return {}; } })(),
     invitacion: { codigo: await codigoDe(env, P), invitados: (await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas WHERE invitado_por = ?`).bind(P.id).first()).n },
     vida: (() => { try { return JSON.parse(P.vida || 'null'); } catch { return null; } })(),
+    ella: await vistaElla(env, P),
   };
 }
 

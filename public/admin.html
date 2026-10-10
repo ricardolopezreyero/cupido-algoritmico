@@ -25,6 +25,7 @@
       <a href="#coincidencias" data-s="coincidencias"><span class="ico">💘</span>Coincidencias</a>
       <a href="#personas" data-s="personas"><span class="ico">👥</span>Personas</a>
       <a href="#puertas" data-s="puertas"><span class="ico">🚪</span>Puertas</a>
+      <a href="#seguridad" data-s="seguridad"><span class="ico">👑</span>Aquí manda ella</a>
       <div class="sep">Motor</div>
       <a href="#laboratorio" data-s="laboratorio"><span class="ico">🧪</span>Laboratorio de pesos</a>
       <a href="#motor" data-s="motor"><span class="ico">⚙️</span>Cómo decide</a>
@@ -228,6 +229,32 @@ const SECCIONES = {
 };
 
 const DESPUES = {
+  seguridad() {
+    $$('[data-seg]').forEach((b) => b.onclick = async () => {
+      if (b.dataset.seg === 'vetar' && b.dataset.seguro !== '1') { b.dataset.seguro = '1'; b.textContent = '¿Para siempre? Toca otra vez'; setTimeout(() => { if (b.isConnected) { b.dataset.seguro = ''; b.textContent = 'Retirar para siempre'; } }, 4000); return; }
+      b.disabled = true;
+      try { await api('/api/admin/seguridad', { accion: b.dataset.seg, persona: b.dataset.persona, clave: b.dataset.clave }); avisar('Listo'); ir('seguridad'); } catch (e) { b.disabled = false; avisar(e.message); }
+    });
+  },
+  // Aquí manda ella: bloqueos, reportes, cuentas en revisión y cuentas retiradas
+  async seguridad() {
+    const S = await api('/api/admin/seguridad'), L = S.limites;
+    const estado = (e) => e === 'vetada' ? '<span class="chip noche">Fuera para siempre</span>' : e === 'revision' ? '<span class="chip ambar">En revisión</span>' : e === 'pausada' ? '<span class="chip gris">En pausa</span>' : '<span class="chip ok">Activa</span>';
+    return cabeza('Aquí manda ella', `Si ella bloquea, queda bloqueado. ${L.veto} mujeres distintas → fuera para siempre. ${L.revision} reportes → sale del matching hasta que alguien lo revise. ${L.insistencia} mensajes sin respuesta → a él le toca esperar.`, `<a class="boton boton-claro" href="/ella" target="_blank">Ver las reglas públicas</a>`) + `
+      ${S.admin ? '' : `<div class="cinta-demo"><span>🔐</span><span><b>Estás viendo solo las cifras.</b> Quién reportó, qué escribió y la evidencia, y los botones para retirar o regresar a alguien, piden entrar con una cuenta administradora (tu correo, con enlace mágico).</span><a class="boton boton-chico" href="/entrar">Entrar</a></div>`}
+      <div class="banda"><div class="rosa"><b>${S.cifras.bloqueos}</b><span>bloqueos<br>vigentes</span></div><div><b>${S.cifras.reportes}</b><span>reportes</span></div><div><b>${S.cifras.sinAtender}</b><span>reportes<br>sin atender</span></div><div><b>${S.cifras.enRevision}</b><span>cuentas<br>en revisión</span></div><div><b>${S.cifras.vetadas}</b><span>fuera<br>para siempre</span></div></div>
+      <section class="tarjeta"><h2>Reportes</h2><p class="sub">Un reporte necesita ojos humanos. Aquí está lo que ella escribió y lo último que se dijo en esa charla.</p>
+        ${S.reportes.length ? S.reportes.map((r) => `<details class="tarjeta bloque-resp" style="padding:0 14px;margin:8px 0" ${r.atendido ? '' : 'open'}><summary><span class="n">🚩</span>${esc(r.nombreA || r.a)} · ${esc(r.motivo)} <span class="chip ${r.atendido ? 'gris' : 'ambar'}" style="margin-left:8px">${r.atendido ? 'Atendido' : 'Sin atender'}</span><span style="margin-left:auto;color:var(--gris);font-size:13px">${hace(r.creado)}</span></summary>
+          ${S.admin ? `<div class="preg"><b>Reporta</b><div>${esc(r.de || '—')}</div></div>
+            ${r.detalle?.texto ? `<div class="preg"><b>Lo que escribió</b><div style="white-space:pre-line">${esc(r.detalle.texto)}</div></div>` : ''}
+            <div class="preg"><b>Lo último que se dijo</b>${(r.detalle?.evidencia || []).map((m) => `<div><span style="color:${m.de === 'reportado' ? 'var(--rosa-osc)' : 'var(--gris)'};font-weight:600">${m.de === 'reportado' ? 'Él/ella' : 'Quien reporta'}:</span> ${m.tipo === 'archivo' ? '📎 ' : ''}${esc(m.texto || (m.tipo === 'borrado' ? '(borrado)' : ''))}</div>`).join('') || '<div class="vacio">Sin mensajes.</div>'}</div>
+            <div class="acciones" style="padding:0 0 14px"><button class="boton boton-chico" data-seg="vetar" data-persona="${esc(r.a)}">Retirar para siempre</button>${r.atendido ? '' : `<button class="boton boton-claro boton-chico" data-seg="atender" data-clave="${esc(r.clave)}">Marcar como atendido</button>`}</div>` : '<p class="vacio">El detalle se ve con una cuenta administradora.</p>'}
+        </details>`).join('') : '<p class="vacio" style="margin:0">Sin reportes. Ojalá siga así.</p>'}</section>
+      <section class="tarjeta"><h2>Quién acumula bloqueos</h2><p class="sub">Solo cuentan los bloqueos de mujeres con las que la puerta sí se abrió. Los del demo no cuentan contra cuentas reales.</p>
+        ${S.personas.length ? `<div style="overflow-x:auto"><table class="tabla"><thead><tr><th>Persona</th><th>De mujeres</th><th>Reportes</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>${S.personas.map((p) => `<tr><td>${esc(p.nombre)} <small style="color:var(--gris)">${esc(p.genero || '')}${p.pool === 'demo' ? ' · ficticia' : ''}</small></td><td><b>${p.deMujeres}</b> de ${L.veto}</td><td>${p.reportes}</td><td>${p.bloqueos}</td><td>${estado(p.estado)}</td><td>${S.admin && p.estado === 'revision' ? `<button class="boton boton-claro boton-chico" data-seg="regresar" data-persona="${esc(p.id)}">Regresar al matching</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vacio" style="margin:0">Nadie ha sido bloqueado.</p>'}</section>
+      ${S.vetadas.length ? `<section class="tarjeta"><h2>Fuera para siempre</h2><p class="sub">Su cuenta no puede entrar y su correo no vuelve a registrarse.</p><p style="margin:0">${S.vetadas.map((p) => `<span class="chip noche" style="margin:0 6px 6px 0">${esc(p.nombre)}</span>`).join('')}</p></section>` : ''}`;
+  },
+
   programa() {
     $$('[data-prog]').forEach((b) => b.onclick = async () => {
       const fila = b.closest('tr'), clave = b.dataset.prog;

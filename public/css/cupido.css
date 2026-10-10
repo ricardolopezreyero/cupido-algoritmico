@@ -948,3 +948,66 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 .son-fila input[type=range] { grid-column: 2 / 4; width: 160px; accent-color: var(--rosa); }
 .son-probar { border: 1px solid var(--linea-2); background: var(--blanco); border-radius: 50%; width: 30px; height: 30px; cursor: pointer; color: var(--rosa-osc); font-size: 12px; }
 /* fin sonido · RLR */
+
+/* ═══ Aquí manda ella · RLR ═══════════════════════════════════════════════ */
+.tarjeta.corona { border-color: var(--rosa-linea); background: linear-gradient(180deg, var(--rosa-suave), var(--blanco) 70%); }
+.regla { margin: 0; padding-left: 22px; display: grid; gap: 8px; font-size: 15.5px; line-height: 1.5; color: var(--tinta-2); }
+.regla b { color: var(--tinta); }
+.regla li::marker { color: var(--rosa); font-weight: 700; }
+.senales { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin: 12px 0 0; padding: 10px 12px; border: 1px dashed var(--rosa-linea); border-radius: 12px; background: var(--rosa-suave); font-size: 13.5px; }
+.senales b { width: 100%; font-size: 12px; letter-spacing: .04em; text-transform: uppercase; color: var(--rosa-osc); }
+.senales span { background: var(--blanco); border: 1px solid var(--linea); border-radius: 999px; padding: 4px 10px; color: var(--tinta-2); }
+.senales span.bien { color: var(--ok); border-color: var(--ok-suave); }
+.senales span.ojo { color: #8a5a12; background: var(--ambar-suave); border-color: #f0dcb8; font-weight: 600; }
+.ch-h.corona { background: var(--rosa-suave); }
+.ch-h.candado { opacity: .38; position: relative; }
+.ch-h.candado::after { content: '🔒'; position: absolute; right: -2px; bottom: -3px; font-size: 10px; opacity: 1; }
+.ch-turno { display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; margin: 0 10px 6px; padding: 8px 12px; border-radius: 10px; background: var(--rosa-suave); border: 1px solid var(--rosa-linea); font-size: 13px; color: var(--tinta-2); }
+.ch-turno.alto { background: var(--ambar-suave); border-color: #f0dcb8; color: #6b4710; }
+.ch-turno[hidden] { display: none; }
+.msg.borrado .globo { opacity: .55; }
+.quitar-el { margin-left: auto; border: 0; background: transparent; color: var(--gris); cursor: pointer; font: 600 12px/1 var(--sans); padding: 4px 6px; border-radius: 6px; }
+.quitar-el:hover, .quitar-el.seguro { background: var(--rosa-suave); color: var(--rosa-osc); }
+.mando-salidas { display: grid; gap: 8px; }
+.mando-salida { display: flex; gap: 12px; align-items: flex-start; text-align: left; width: 100%; padding: 12px 14px; border: 1px solid var(--linea); border-radius: 12px; background: var(--blanco); cursor: pointer; font: inherit; color: var(--tinta); }
+.mando-salida:hover { border-color: var(--rosa-linea); background: var(--rosa-suave); }
+.mando-salida > span { font-size: 20px; line-height: 1.2; }
+.mando-salida b { display: block; font-size: 14.5px; } .mando-salida small { display: block; color: var(--gris); font-size: 12.5px; line-height: 1.45; margin-top: 2px; }
+.mando-salida.fuerte b { color: var(--rosa-osc); }
+.mando-confirma { margin-top: 12px; padding: 14px; border-radius: 12px; background: var(--ambar-suave); border: 1px solid #f0dcb8; }
+.mando-confirma p { margin: 4px 0 12px; font-size: 13.5px; color: var(--tinta-2); }
+.mando-motivos { display: grid; gap: 6px; }
+.mando-motivos label { display: flex; gap: 10px; align-items: center; padding: 9px 12px; border: 1px solid var(--linea); border-radius: 10px; font-size: 14px; cursor: pointer; color: var(--tinta); }
+.mando-motivos label:has(input:checked) { border-color: var(--rosa); background: var(--rosa-suave); }
+.mando-motivos input { accent-color: var(--rosa); }
+.modal textarea { border: 1px solid var(--linea); border-radius: 10px; padding: 10px 12px; font: 14.5px/1.5 var(--sans); color: var(--tinta); background: var(--blanco); resize: vertical; }
+.evitar-form { display: flex; gap: 8px; flex-wrap: wrap; }
+.evitar-form input { flex: 1; min-width: 200px; border: 1px solid var(--linea); border-radius: 10px; padding: 10px 12px; font: 15px/1.3 var(--sans); background: var(--blanco); color: var(--tinta); }
+.evitar-lista { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.evitar-lista .chip button { border: 0; background: transparent; cursor: pointer; font-size: 15px; line-height: 1; color: var(--gris); padding: 0 0 0 4px; }
+.consejos { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.consejos li { display: flex; gap: 10px; align-items: flex-start; font-size: 14.5px; color: var(--tinta-2); line-height: 1.45; }
+.consejos li span { width: 24px; text-align: center; flex: none; }
+.cita-aviso { margin-top: 16px; padding: 14px; border: 1px solid var(--linea); border-radius: 14px; background: #faf8f6; }
+.cita-campos { display: grid; grid-template-columns: 1fr 1.3fr 1.2fr; gap: 8px; margin: 10px 0; }
+.cita-campos select, .cita-campos input { border: 1px solid var(--linea); border-radius: 10px; padding: 9px 10px; font: 14px/1.3 var(--sans); background: var(--blanco); color: var(--tinta); min-width: 0; }
+.cita-texto { margin: 0 0 12px; padding: 12px 14px; border-left: 3px solid var(--rosa); background: var(--blanco); border-radius: 0 10px 10px 0; font-size: 14.5px; line-height: 1.55; color: var(--tinta); }
+@media (max-width: 720px) { .cita-campos { grid-template-columns: 1fr; } }
+/* la página pública /ella */
+.ella-rejilla { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 14px; margin-top: 18px; }
+.ella-rejilla .tarjeta { margin: 0; }
+.ella-rejilla .tarjeta h3 { margin: 6px 0 6px; font-size: 18px; }
+.ella-rejilla .tarjeta p { margin: 0; color: var(--tinta-2); font-size: 14.5px; line-height: 1.55; }
+.ella-rejilla .ico-g { font-size: 26px; }
+.ella-salidas { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin-top: 14px; }
+.ella-salidas div { border: 1px solid var(--linea); border-radius: 14px; padding: 14px; background: var(--blanco); }
+.ella-salidas b { display: block; margin-bottom: 4px; } .ella-salidas span { color: var(--tinta-2); font-size: 14px; line-height: 1.5; }
+.ella-contador { display: flex; gap: 6px; flex-wrap: wrap; margin: 14px 0 4px; }
+.ella-contador i { width: 26px; height: 26px; border-radius: 50%; border: 2px solid var(--rosa-linea); display: inline-flex; align-items: center; justify-content: center; font-style: normal; font-size: 12px; color: var(--gris); transition: transform .25s, background .25s; }
+.ella-contador i.on { background: var(--rosa); border-color: var(--rosa); color: #fff; transform: scale(1.08); }
+.ella-contador.fuera i.on { background: var(--tinta); border-color: var(--tinta); }
+/* el recorrido: la pantalla «Aquí manda ella» */
+.bv-ella { display: grid; gap: 10px; }
+.bv-ella .bv-poder { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--linea); border-radius: 12px; background: var(--blanco); font-size: 14px; opacity: 0; transform: translateY(8px); transition: opacity .4s, transform .4s; }
+.bv-ella .bv-poder.on { opacity: 1; transform: none; }
+.bv-ella .bv-poder span { font-size: 18px; }

@@ -6,10 +6,11 @@
    ficticia, con el interruptor "cuenta demo" siempre encendido.
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
-import { persona, anotar } from './datos.js';
+import { persona, anotar, recalcularTodo } from './datos.js';
 import { mandar, CORREOS } from './correos.js';
 import { abrirCharla, borrarCharlasDe } from './charla.js';
 import { SUAVES, ELEMENTO } from '../public/js/elementos.js';
+import { estaVetado, limpiarEllaDe } from './ella.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -40,7 +41,7 @@ export async function quien(env, req) {
   const s = await env.DB.prepare(`SELECT * FROM sesiones WHERE id = ?`).bind(id).first();
   if (!s) return null;
   const P = await persona(env, s.persona);
-  if (!P) { await env.DB.prepare(`DELETE FROM sesiones WHERE id = ?`).bind(id).run(); return null; }
+  if (!P || P.estado === 'vetada') { await env.DB.prepare(`DELETE FROM sesiones WHERE id = ?`).bind(id).run(); return null; } // una cuenta retirada no vuelve a entrar
   if (Math.random() < 0.1) await env.DB.prepare(`UPDATE sesiones SET usada = datetime('now') WHERE id = ?`).bind(id).run();
   return { P, sesion: { id, demo: !!s.demo || P.pool === 'demo', correo: s.demo ? null : P.correo || null } };
 }
@@ -73,9 +74,11 @@ export async function entrarDemo(env, personaId = DEMO_ID) {
 }
 async function limpiarDemo(env) {
   const D = DEMO_ID;
+  // si en una visita anterior alguien bloqueó o cerró algo como la persona demo, todo vuelve a su lugar
+  if (await limpiarEllaDe(env, D)) await recalcularTodo(env, { soloId: D, avisar: true, motivo: 'demo' });
   const stmts = [
     env.DB.prepare(`UPDATE personas SET estado = 'activa' WHERE id = ?`).bind(D),
-    env.DB.prepare(`UPDATE puertas SET decision_a = NULL, decision_b = NULL, estado = 'cerrada', abierta = NULL WHERE a = ? OR b = ?`).bind(D, D),
+    env.DB.prepare(`UPDATE puertas SET decision_a = NULL, decision_b = NULL, estado = 'cerrada', abierta = NULL, cerro = NULL, cerrada = NULL WHERE a = ? OR b = ?`).bind(D, D),
     env.DB.prepare(`DELETE FROM avisos WHERE persona = ? OR otra = ?`).bind(D, D),
   ];
   for (const [a, b, da, db] of PUERTAS_DEMO) {
@@ -122,6 +125,8 @@ export async function pedirEnlace(env, req, url, correoCrudo) {
       (SELECT COUNT(*) FROM enlaces WHERE correo = ? AND creado > datetime('now', '-1 hour')) AS porCorreo,
       (SELECT COUNT(*) FROM enlaces WHERE ip_hash = ? AND creado > datetime('now', '-1 hour')) AS porIp`).bind(correo, ipHash).first();
   if (n.porCorreo >= 4 || n.porIp >= 12) return { ok: false, error: 'Ya te mandamos varios enlaces. Revisa tu correo (y el spam) o espera un rato.' };
+  // Una cuenta retirada para siempre no recibe enlace. La respuesta es la misma de siempre: nadie averigua aquí quién fue retirado.
+  if (await estaVetado(env, correo)) { await anotar(env, 'acceso', 'Una cuenta retirada intentó entrar', await hash(correo)); return { ok: true, correo }; }
   const token = aleatorio(28);
   await env.DB.prepare(`INSERT INTO enlaces (token, correo, ip_hash) VALUES (?, ?, ?)`).bind(token, correo, ipHash).run();
   const enlace = new URL(`/entrar/${token}`, url).href;
@@ -146,6 +151,7 @@ export async function canjearEnlace(env, token, invitadoPor = null) {
   const vivo = await env.DB.prepare(`SELECT 1 AS v FROM enlaces WHERE token = ? AND creado > datetime('now', ?)`).bind(token, `-${MIN_ENLACE} minutes`).first();
   if (!vivo) return { ok: false, motivo: 'vencido' };
   await env.DB.prepare(`UPDATE enlaces SET usado = datetime('now') WHERE token = ?`).bind(token).run();
+  if (await estaVetado(env, e.correo)) return { ok: false, motivo: 'inválido' };
   let P = await env.DB.prepare(`SELECT * FROM personas WHERE correo = ?`).bind(e.correo).first();
   let nueva = false;
   if (!P) {

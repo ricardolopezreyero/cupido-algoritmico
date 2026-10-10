@@ -6,7 +6,8 @@
    Se guardan en R2 (MEDIOS) y se sirven por el Worker con esa verificación.
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
-import { anotar } from './datos.js';
+import { anotar, persona } from './datos.js';
+import { control } from './ella.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -53,17 +54,20 @@ export async function borrarMedio(env, P, tipo) {
   return { ok: true, medios: await mediosDe(env, P.id) };
 }
 
-// ¿Puede `yo` ver los medios de `otra`? Solo si soy yo, o si hay una puerta abierta entre los dos.
+// ¿Puede `yo` ver los medios de `otra`? Solo si soy yo, o si hay una puerta abierta entre los dos
+// y la otra persona decidió enseñarlos (frente a un hombre, ella los enciende cuando quiere).
 export async function puedeVer(env, yoId, otraId) {
   if (yoId === otraId) return true;
   const [a, b] = yoId < otraId ? [yoId, otraId] : [otraId, yoId];
   const p = await env.DB.prepare(`SELECT estado FROM puertas WHERE a = ? AND b = ?`).bind(a, b).first();
-  return p?.estado === 'abierta';
+  if (p?.estado !== 'abierta') return false;
+  const [Yo, O] = [await persona(env, yoId), await persona(env, otraId)];
+  return !!Yo && !!O && await control(env, O, Yo, 'mis_medios');
 }
 
 export async function servirMedio(env, req, yoId, otraId, tipo) {
   if (!TIPOS[tipo]) return new Response('No existe', { status: 404 });
-  if (!(await puedeVer(env, yoId, otraId))) return new Response('La puerta no está abierta', { status: 403 });
+  if (!(await puedeVer(env, yoId, otraId))) return new Response('Todavía no se puede ver', { status: 403 });
   const obj = await env.MEDIOS.get(`${otraId}/${tipo}`, { range: req.headers, onlyIf: req.headers });
   if (!obj) return new Response('No existe', { status: 404 });
   const h = new Headers();

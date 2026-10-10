@@ -8,6 +8,8 @@
 
 Te registras, respondes 43 preguntas una sola vez, y no pasa nada más. No hay swipes, no hay fotos como moneda de cambio, no hay conversaciones forzadas. Si algún día el algoritmo encuentra a alguien con quien tu compatibilidad supera el **90 %**, les avisamos a los dos al mismo tiempo — pero **la puerta no se abre hasta que los dos digan que sí**. Si nunca pasa, nunca te molestamos.
 
+**La regla de la casa: aquí manda ella.** Cupido está hecho para que una mujer encuentre a la persona correcta, segura y en control. Si ella bloquea, queda bloqueado; si diez mujeres distintas bloquean al mismo hombre, queda fuera para siempre. Completa en [docs/ELLA.md](docs/ELLA.md) y en [cupido.capitaltorreon.com/ella](https://cupido.capitaltorreon.com/ella).
+
 ## El demo
 
 | | |

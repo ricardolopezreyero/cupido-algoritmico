@@ -20,13 +20,15 @@ export class CharlaViva {
       const par = new WebSocketPair();
       const [cliente, servidor] = Object.values(par);
       this.state.acceptWebSocket(servidor, [persona]);
-      servidor.serializeAttachment({ persona, desde: Date.now() });
-      this.difundir({ t: 'presencia', persona, en: true }, persona);
+      const discreta = req.headers.get('x-discreta') === '1'; // modo discreta: no se anuncia que llegó, que se fue ni que escribe
+      servidor.serializeAttachment({ persona, discreta, desde: Date.now() });
+      if (!discreta) this.difundir({ t: 'presencia', persona, en: true }, persona);
       return new Response(null, { status: 101, webSocket: cliente });
     }
     if (url.pathname === '/evento' && req.method === 'POST') {
       const ev = await req.json();
       this.difundir(ev, ev.excepto || null);
+      if (ev.t === 'cerrada') for (const ws of this.state.getWebSockets()) { try { ws.close(1000, 'cerrada'); } catch {} } // la puerta se cerró: nadie se queda escuchando
       return new Response('ok');
     }
     if (url.pathname === '/presencia') {
@@ -38,18 +40,18 @@ export class CharlaViva {
 
   webSocketMessage(ws, msg) {
     let ev; try { ev = JSON.parse(msg); } catch { return; }
-    const { persona } = ws.deserializeAttachment() || {};
+    const { persona, discreta } = ws.deserializeAttachment() || {};
     if (!persona) return;
     if (ev.t === 'ping') { try { ws.send('{"t":"pong"}'); } catch {} return; }
-    if (ev.t === 'escribiendo') this.difundir({ t: 'escribiendo', persona, on: !!ev.on }, persona);
-    if (ev.t === 'quien') { const en = [...new Set(this.state.getWebSockets().map((w) => w.deserializeAttachment()?.persona).filter(Boolean))]; try { ws.send(JSON.stringify({ t: 'quien', en })); } catch {} }
+    if (ev.t === 'escribiendo' && !discreta) this.difundir({ t: 'escribiendo', persona, on: !!ev.on }, persona);
+    if (ev.t === 'quien') { const en = [...new Set(this.state.getWebSockets().map((w) => w.deserializeAttachment()).filter((x) => x?.persona && (!x.discreta || x.persona === persona)).map((x) => x.persona))]; try { ws.send(JSON.stringify({ t: 'quien', en })); } catch {} }
   }
   webSocketClose(ws) { this.despedir(ws); }
   webSocketError(ws) { this.despedir(ws); }
   despedir(ws) {
-    const { persona } = ws.deserializeAttachment() || {};
+    const { persona, discreta } = ws.deserializeAttachment() || {};
     try { ws.close(); } catch {}
-    if (!persona) return;
+    if (!persona || discreta) return;
     // sigue "en línea" si tiene otra pestaña abierta
     const sigue = this.state.getWebSockets().some((w) => w !== ws && w.deserializeAttachment()?.persona === persona);
     if (!sigue) this.difundir({ t: 'presencia', persona, en: false }, persona);

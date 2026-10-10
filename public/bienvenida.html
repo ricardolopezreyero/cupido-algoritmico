@@ -34,7 +34,7 @@
 </main>
 
 <script type="module">
-// RLR · el recorrido: nueve pantallas; tres segundos mínimo en cada una; sin salida la primera vez; el avance se guarda
+// RLR · el recorrido: diez pantallas; tres segundos mínimo en cada una; sin salida la primera vez; el avance se guarda
 import { $, $$, esc, api } from '/js/ui.js';
 import { tocar, precargar } from '/js/sonido.js';
 precargar(['paso', 'bienvenida', 'toque', 'puerta', 'si', 'coincidencia', 'mensaje', 'estilo']);
@@ -54,7 +54,7 @@ const reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
 if (repaso || yaHecho) { $('#pildora-repaso').hidden = false; $('#volver-tablero').hidden = !sesion; }
 else { $('#marca').removeAttribute('href'); $('#marca').style.cursor = 'default'; } // la primera vez no hay salida: ni la marca lleva a otro lado
 
-/* ── las nueve pantallas ────────────────────────────────────────────────── */
+/* ── las diez pantallas ────────────────────────────────────────────────── */
 const PASOS = [
   { id: 'que', eyebrow: 'Qué es Cupido', t: 'No es una app de citas. Es un sistema de <em>detección</em> de parejas.', p: 'No vas a ver perfiles, ni fotos, ni a deslizar a nadie. Respondes con la verdad una sola vez y un motor busca, entre todas las personas que buscan lo mismo que tú, a quien de verdad embona contigo. Solo te avisa cuando vale la pena. Lo demás es silencio, y el silencio también es servicio.',
     demo: `<div class="bv-que"><div class="bv-no"><span>📱 Deslizar</span><span>🖼️ Perfiles</span><span>📣 Anuncios</span><span>⏳ Perder el tiempo</span></div><div class="bv-flecha-abajo">↓</div><div class="bv-si"><b>Tu verdad + un motor + silencio hasta el 90 %</b></div></div>`,
@@ -71,15 +71,18 @@ const PASOS = [
   { id: 'puerta', eyebrow: 'La puerta', t: 'Se abre solo con <em>dos síes</em>.', p: 'Te avisamos que hay alguien al 90 % o más, pero no te dejamos entrar. Tú dices sí o no; la otra persona también. <b>Nadie se entera nunca de un no.</b> Si los dos dicen que sí, la puerta se abre para ambos en el mismo momento. Y abrir una puerta está incluido: todo Cupido es gratis durante 2026 y 2027.',
     demo: `<div class="bv-puerta"><div class="puerta" id="bv-p"><div class="marco"></div><div class="luz"></div><div class="hoja"></div><span class="candado">🔒</span></div><div class="bv-sies"><button class="boton" id="bv-si-a">Tú: sí, quiero conocer</button><button class="boton boton-claro" id="bv-si-b" disabled>La otra persona: …</button></div><p class="bv-puerta-txt" id="bv-puerta-txt">Tu sí queda guardado. Nadie lo ve hasta que haya dos.</p></div>`,
     nota: 'Toca tu sí y luego el suyo. Mira lo que pasa.' },
-  { id: 'charla', eyebrow: 'La charla', t: 'Nace sola, y el primer <em>hola</em> ya está dicho.', p: 'Cuando la puerta se abre, el sistema manda un hola de parte de cada uno para que nadie tenga que dar el primer paso. La charla es en vivo: ves cuando la otra persona escribe, si está en línea, y "visto". Texto, emojis, fotos, video, notas de voz, responder citando, guardar y buscar. Nada se borra. Sin anuncios. Solo ustedes dos.',
+  { id: 'charla', eyebrow: 'La charla', t: 'Nace sola, y el primer <em>hola</em> ya está dicho.', p: 'Cuando la puerta se abre, el sistema manda un hola de parte de cada uno para que nadie tenga que dar el primer paso. La charla es en vivo: ves cuando la otra persona escribe, si está en línea, y "visto". Texto, emojis, fotos, video, notas de voz, responder citando, guardar y buscar. Sin anuncios. Solo ustedes dos.',
     demo: `<div class="bv-chat" id="bv-chat"></div><div class="bv-escribe" id="bv-escribe" hidden><span></span><span></span><span></span></div>`,
     nota: 'Lo primero que conoces de la otra persona es su carta, no su foto.' },
-  { id: 'confianza', eyebrow: 'La confianza', t: 'Cada quien libera su perfil <em>a su ritmo</em>.', p: 'Nadie ve tus respuestas por abrir una puerta. Las compartes por elementos, con tu confirmación: seis suaves que se proponen de entrada (quién eres, visión de vida, personalidad, afecto, vida cotidiana, profundidad) y cuatro sensibles que liberas después, uno por uno: fe e hijos, valores y dinero, conflicto, intimidad. Lo que liberas no se puede retirar, por eso se pregunta dos veces.',
+  { id: 'confianza', eyebrow: 'La confianza', t: 'Cada quien libera su perfil <em>a su ritmo</em>.', p: 'Nadie ve tus respuestas por abrir una puerta. Las compartes por elementos, con tu confirmación: seis suaves que se proponen de entrada (quién eres, visión de vida, personalidad, afecto, vida cotidiana, profundidad) y cuatro sensibles que liberas después, uno por uno: fe e hijos, valores y dinero, conflicto, intimidad. Lo sensible se pregunta dos veces, y ella puede guardar de nuevo lo que compartió cuando quiera.',
     demo: `<div class="bv-elementos" id="bv-elementos"></div>`,
     nota: 'Toca un candado para ver cómo se libera un elemento.' },
-  { id: 'rostro', eyebrow: 'Al final, cómo te ves', t: 'Tu foto, tu voz y tu video llegan <em>al final</em>.', p: 'Se suben solo cuando tu cuestionario está al 100 %, y la otra persona los ve únicamente si hay una puerta abierta entre ustedes. Primero quién eres, al final cómo te ves. El servidor lo verifica cada vez: tus archivos no aparecen en ninguna lista, nunca.',
+  { id: 'rostro', eyebrow: 'Al final, cómo te ves', t: 'Tu foto, tu voz y tu video llegan <em>al final</em>.', p: 'Se suben solo cuando tu cuestionario está al 100 %, y la otra persona los ve únicamente si hay una puerta abierta entre ustedes; ella, además, decide en qué momento los enseña. Primero quién eres, al final cómo te ves. El servidor lo verifica cada vez: tus archivos no aparecen en ninguna lista, nunca.',
     demo: `<div class="bv-rostro" id="bv-rostro"><div class="paso-r" data-k="0"><span>📝</span>Cuestionario al 100 %</div><div class="paso-r" data-k="1"><span>🔓</span>Puerta abierta</div><div class="paso-r" data-k="2"><span>🎙️</span>Su voz</div><div class="paso-r" data-k="3"><span>🎬</span>Su video</div><div class="paso-r" data-k="4"><span>📷</span>Su foto</div></div>`,
     nota: 'En ese orden, siempre. Nadie elige a nadie por una foto.' },
+  { id: 'ella', eyebrow: 'La regla de la casa', t: 'Aquí <em>manda ella</em>.', p: 'Cupido está hecho para que una mujer encuentre a la persona correcta: segura, cómoda y en control. <b>Si ella bloquea, queda bloqueado. Si diez mujeres distintas bloquean al mismo hombre, queda fuera para siempre.</b> Ella decide qué recibe y cuándo enseña su foto; él no puede insistir. Y cualquiera de los dos puede cerrar la puerta cuando quiera, sin dar explicaciones y sin castigo: cerrar no es bloquear. Al seguir, aceptas esta regla.',
+    demo: `<div class="bv-ella" id="bv-ella"><div class="bv-poder"><span>🖼️</span>Su foto, su voz y su video: los enseña ella</div><div class="bv-poder"><span>📎</span>Él no manda archivos hasta que ella lo permite</div><div class="bv-poder"><span>✋</span>Cinco mensajes sin respuesta, y a él le toca esperar</div><div class="bv-poder"><span>🚪</span>Cerrar la puerta: sin motivo y sin castigo</div><div class="bv-poder"><span>⛔</span>Bloquear: nunca se vuelven a cruzar</div><div class="ella-contador" id="bv-diez"></div><p class="bv-puerta-txt" id="bv-diez-txt">Diez mujeres distintas.</p></div>`,
+    nota: 'Un lugar donde ellas se sienten seguras es el único donde una mujer seria contesta en serio.' },
   { id: 'tablero', eyebrow: 'Tu tablero y tu palabra', t: 'Tu búsqueda, <em>a tu ritmo</em>. Y todo gratis.', p: 'Tu camino en cinco pasos, tus logros, cómo se ve tu vida hoy, tu estilo, pausa cuando estés conociendo a alguien. Sin contraseña: tu correo es tu llave. Lo íntimo solo lo lee el motor. Y <b>todo Cupido es gratis durante 2026 y 2027</b>, sin anuncios. Lo que más ayuda es que compartas Cupido con alguien que busque en serio.',
     demo: `<div class="bv-tablero"><div class="bv-t-lat"><span>🏠 Inicio</span><span>💘 Coincidencias</span><span>🤝 Aceptaciones</span><span>💬 Charlas</span><span>🧭 Mi vida hoy</span><span>📷 Foto, voz y video</span><span>🎨 Mi estilo</span><span>🤍 Apoyar a Cupido</span></div><div class="bv-t-cont"><div class="bv-camino" id="bv-camino"></div><div class="bv-colores" id="bv-colores"></div><p class="bv-gratis">🤍 Gratis en 2026 y 2027 · sin anuncios · sin letra chica</p></div></div>`,
     nota: 'Toca un color: el tablero es tuyo hasta en eso.' },
@@ -136,7 +139,7 @@ function cta() {
   return `<div class="bv-cta"><a class="boton boton-claro" href="/entrar">Crear mi cuenta con mi correo</a><a class="boton boton-claro" href="/demo">Ver el demo primero</a></div>`;
 }
 async function irseAlFinal() {
-  if (real) { try { await api('/api/yo/ajustes', { bienvenida: true }); } catch {} location.href = luego === 'cuestionario' || !sesion.completo ? '/cuestionario' : '/persona'; }
+  if (real) { try { await api('/api/yo/ajustes', { bienvenida: true, reglas: true }); } catch {} location.href = luego === 'cuestionario' || !sesion.completo ? '/cuestionario' : '/persona'; }
   else if (sesion) { guardarDemo({ hecho: true, fecha: new Date().toISOString() }); location.href = '/persona'; }
   else { guardarDemo({ hecho: true, fecha: new Date().toISOString() }); location.href = '/entrar'; }
 }
@@ -178,6 +181,11 @@ const DEMOS = {
     $('#bv-elementos').innerHTML = E.map(([ic, n, s], k) => `<button type="button" class="bv-el ${s ? '' : 'sensible'}" data-k="${k}"><span>🔒</span>${n}${s ? '' : ' <small>sensible</small>'}</button>`).join('');
     $$('.bv-el').forEach((b) => b.onclick = () => { if (b.classList.contains('on')) return; b.classList.add('on'); b.querySelector('span').textContent = E[Number(b.dataset.k)][0]; });
     [0, 1, 2].forEach((k, j) => luegoDe(900 + j * 500, () => $$('.bv-el')[k]?.click()));
+  },
+  ella() {
+    $$('#bv-ella .bv-poder').forEach((el, k) => luegoDe(250 + k * 380, () => el.classList.add('on')));
+    const c = $('#bv-diez'), t = $('#bv-diez-txt'); c.innerHTML = Array.from({ length: 10 }, (_, k) => `<i>${k + 1}</i>`).join('');
+    $$('i', c).forEach((el, k) => luegoDe(2300 + k * 170, () => { el.classList.add('on'); if (k === 9) { c.classList.add('fuera'); t.innerHTML = '<b>Fuera para siempre.</b> Nadie bloquea a un desconocido: solo cuenta quien cruzó el 90 % con él y abrió la puerta.'; } }));
   },
   rostro() { $$('.paso-r').forEach((el, k) => luegoDe(400 + k * 550, () => el.classList.add('on'))); },
   tablero() {

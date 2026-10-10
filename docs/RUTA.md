@@ -39,6 +39,8 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 
 ---
 
+- [x] **Aquí manda ella** (9 oct 2026): la regla de la casa, completa en [ELLA.md](ELLA.md) y en la página `/ella`. Si ella bloquea, queda bloqueado; **diez mujeres distintas → fuera para siempre** (la cuenta se retira y su correo no vuelve a entrar); tres reportes → sale del matching hasta que una persona lo revise. **Cerrar no es bloquear**: cerrar la puerta no castiga a nadie y se puede volver a abrir. Candados en la charla: él no manda fotos, video, voz ni archivos hasta que ella lo permite; cinco mensajes sin respuesta y le toca esperar; la foto, la voz y el video de ella los enseña ella, no la puerta; lo compartido del perfil se puede guardar de nuevo; borrar la charla. Además: modo discreta, «que nadie sepa de mí hasta que yo diga sí», «no cruzarme con» (por correo, guardado como huella), lo que ella ve de él antes de decidir (días aquí, charlas abiertas, bloqueos), la guía de primera cita con el aviso para alguien de confianza, pantalla nueva en el recorrido (10 pantallas) y panel «Aquí manda ella» en el admin. Lo básico (cerrar, bloquear, reportar, evitar) lo tiene cualquier persona. Código en `src/ella.js`.
+
 ## 1 · Antes de abrirlo a personas reales (bloquea el lanzamiento)
 
 ### Acceso sin contraseñas
@@ -58,8 +60,12 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 ### Seguridad de las personas
 - [ ] **Verificación de identidad antes de abrir una puerta** (selfie + identificación con un proveedor de verificación). Protege contra perfiles falsos y estafas románticas.
 - [ ] **Verificación de mayoría de edad.**
-- [ ] **Reportar y bloquear** desde la puerta abierta, con protocolo de respuesta y bitácora.
-- [ ] **Guía de primera cita segura** al abrir la puerta (lugar público, avisar a alguien, no enviar dinero).
+- [x] **Reportar y bloquear** desde la puerta abierta, con bitácora, evidencia y panel (9 oct 2026). Falta el **protocolo de respuesta**: quién lee un reporte, en cuánto tiempo y qué se le contesta a ella.
+- [x] **Guía de primera cita segura** (9 oct 2026): seis consejos y el aviso para alguien de confianza, en «Aquí mando yo».
+- [ ] **El buzón de `cupido@capitaltorreon.com` debe recibir respuestas** (o poner una dirección de respuesta): el correo de «cuenta retirada» ofrece borrar los datos respondiendo a ese correo.
+- [ ] **Revisión legal de la regla.** Dar derechos distintos por género puede leerse como trato desigual; hoy se declara de frente y se acepta al entrar, pero los términos los debe revisar un abogado.
+- [ ] Una cuenta retirada puede volver con otro correo: se cierra con la verificación de identidad.
+- [ ] El detalle de los reportes y los botones de retirar piden una cuenta administradora (`ADMINES`), pero el resto del admin sigue abierto.
 - [ ] Detección de patrones de estafa (pedir dinero, sacar la conversación rápido, enlaces).
 - [ ] Declaración de estado civil real y botón de pausa ("estoy conociendo a alguien").
 - [ ] Protocolo de crisis: qué hacer si una respuesta revela violencia o riesgo (sin romper la promesa de privacidad: definirlo con especialistas).

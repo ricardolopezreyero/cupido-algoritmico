@@ -16,7 +16,8 @@ import { verPrograma, apoyar, confirmarApoyo, ajustarPrograma, aportesAdmin, dis
 import { limpiarPrecioJusto, REVISION_DIAS } from './precios.js';
 import { generarSonido, servirSonido, estadoSonidos } from './sonidos.js';
 import { avance } from '../public/js/preguntas.js';
-import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
+import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, retirar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
+import { esHombre, esAdmin, ponerControl, cerrarPuerta, bloquear, desbloquear, agregarEvitar, quitarEvitar, seguridadAdmin, accionAdmin } from './ella.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
 import { personas } from './datos.js';
@@ -26,11 +27,12 @@ import PREGUNTAS from '../PREGUNTAS.md';
 import MODELO from '../MODELO.md';
 import EXPERIENCIA from '../EXPERIENCIA.md';
 import RUTA from '../docs/RUTA.md';
+import ELLA from '../docs/ELLA.md';
 
 const _RLR = 'Ricardo López Reyero'; // sin export: el módulo principal solo puede exportar manejadores
 const _k = 'EYE', _rev = 181218;
 
-const DOCS = { 'MANIFIESTO.md': MANIFIESTO, 'README.md': README, 'PREGUNTAS.md': PREGUNTAS, 'MODELO.md': MODELO, 'EXPERIENCIA.md': EXPERIENCIA, 'RUTA.md': RUTA };
+const DOCS = { 'MANIFIESTO.md': MANIFIESTO, 'README.md': README, 'PREGUNTAS.md': PREGUNTAS, 'MODELO.md': MODELO, 'EXPERIENCIA.md': EXPERIENCIA, 'RUTA.md': RUTA, 'ELLA.md': ELLA };
 
 const json = (data, status = 200, extra = {}) => new Response(JSON.stringify(data), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store', ...extra } });
 const error = (msg, status = 400) => json({ error: msg }, status);
@@ -144,7 +146,7 @@ async function api(req, env, ctx, url) {
   if (ruta === '/api/puerta' && metodo === 'POST') {
     if (!yo) return sinSesion();
     const b = await leerJson(req);
-    const r = await decidir(env, yo.P.id, String(b.otra || ''), b.decision);
+    let r; try { r = await decidir(env, yo.P.id, String(b.otra || ''), b.decision); } catch (e) { return error(e.message, 404); }
     return json({ ok: true, ...r, vista: await vistaPersona(env, yo.P) });
   }
   if (ruta === '/api/yo/estado' && metodo === 'POST') {
@@ -152,6 +154,7 @@ async function api(req, env, ctx, url) {
     if (!yo) return sinSesion();
     const b = await leerJson(req);
     if (!['activa', 'pausada'].includes(b.estado)) return error('Estado inválido');
+    if (!['activa', 'pausada'].includes(yo.P.estado)) return error('Tu cuenta está en revisión. Te avisamos en cuanto alguien del equipo la vea.', 403);
     await env.DB.prepare(`UPDATE personas SET estado = ? WHERE id = ?`).bind(b.estado, yo.P.id).run();
     await anotar(env, 'persona', b.estado === 'pausada' ? 'Una persona pausó su perfil' : 'Una persona reactivó su perfil', yo.P.nombre);
     await recalcularTodo(env, { avisar: true, motivo: 'estado' });
@@ -164,7 +167,10 @@ async function api(req, env, ctx, url) {
     const COLORES = ['rosa', 'vino', 'azul', 'verde'], TIPOS = ['clasica', 'editorial', 'moderna', 'calida'];
     let previo = {}; try { previo = JSON.parse(yo.P.ajustes || '{}'); } catch {}
     const aj = { ...previo, color: COLORES.includes(b.color) ? b.color : previo.color || 'rosa', tipo: TIPOS.includes(b.tipo) ? b.tipo : previo.tipo || 'clasica', bienvenida: b.bienvenida === true || !!previo.bienvenida, avisos_correo: typeof b.avisos_correo === 'boolean' ? b.avisos_correo : previo.avisos_correo !== false };
-    if (Number.isInteger(b.bienvenida_paso)) aj.bienvenida_paso = Math.max(0, Math.min(8, b.bienvenida_paso)); // dónde se quedó en el recorrido
+    if (Number.isInteger(b.bienvenida_paso)) aj.bienvenida_paso = Math.max(0, Math.min(9, b.bienvenida_paso)); // dónde se quedó en el recorrido
+    // Aquí manda ella: las reglas de la casa se aceptan una vez; el modo discreta y «decido primero» son de ella
+    if (b.reglas === true && !previo.reglas) { aj.reglas = new Date().toISOString(); await anotar(env, 'ella', esHombre(yo.P) ? 'Un hombre aceptó las reglas de la casa' : 'Alguien leyó las reglas de la casa', ''); }
+    if (!esHombre(yo.P)) { if (typeof b.discreta === 'boolean') aj.discreta = b.discreta; if (typeof b.primero === 'boolean') aj.primero = b.primero; }
     const pj = limpiarPrecioJusto(b); if (Object.keys(pj).length) { Object.assign(aj, pj); aj.precio_revisado = new Date().toISOString(); await anotar(env, 'programa', 'Una persona actualizó su precio justo', `${aj.banda || 'sin rango'} · ${aj.situacion || 'bien'}`); }
     if (b.bienvenida === true && !previo.bienvenida) aj.bienvenida_fecha = new Date().toISOString();
     if (!(yo.sesion.demo && yo.P.origen === 'demo')) await env.DB.prepare(`UPDATE personas SET ajustes = ? WHERE id = ?`).bind(JSON.stringify(aj), yo.P.id).run();
@@ -199,6 +205,25 @@ async function api(req, env, ctx, url) {
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/archivo\/(\d+)$/)) && metodo === 'GET') { if (!yo) return new Response('Sin sesión', { status: 401 }); return await servirAdjunto(env, req, yo.P.id, x[1], Number(x[2])); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/liberar$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 4000); const r = await liberar(env, yo.P.id, x[1], b.elementos); return r.error ? error(r.error, r.status) : json(r); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/perfil$/)) && metodo === 'GET') { if (!yo) return sinSesion(); const r = await perfilCompartido(env, yo.P.id, x[1]); return r ? json(r) : error('No hay charla', 404); }
+  /* ── Aquí manda ella: controles de la charla, cerrar, bloquear, reportar y «no cruzarme con» ── */
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/control$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await ponerControl(env, yo.P, x[1], String(b.k || ''), !!b.v); return r.error ? error(r.error, r.status) : json(r); }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/retirar$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 4000); const r = await retirar(env, yo.P.id, x[1], b.elementos); return r.error ? error(r.error, r.status) : json(r); }
+  if (ruta === '/api/ella/cerrar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await cerrarPuerta(env, yo.P, String(b.otra || ''), { borrar: b.borrar === true }); return r.error ? error(r.error, r.status) : json({ ...r, vista: await vistaPersona(env, await persona(env, yo.P.id)) }); }
+  if (ruta === '/api/ella/bloquear' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 6000); const r = await bloquear(env, yo.P, String(b.otra || ''), { reporte: b.reporte === true, motivo: b.motivo ? String(b.motivo) : null, detalle: String(b.detalle || ''), borrar: b.borrar === true }); return r.error ? error(r.error, r.status) : json({ ok: true, vista: await vistaPersona(env, await persona(env, yo.P.id)) }); }
+  if (ruta === '/api/ella/desbloquear' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await desbloquear(env, yo.P, String(b.otra || '')); return r.error ? error(r.error, r.status) : json({ ...r, vista: await vistaPersona(env, await persona(env, yo.P.id)) }); }
+  if ((ruta === '/api/ella/evitar' || ruta === '/api/ella/evitar/quitar') && metodo === 'POST') {
+    if (!yo) return sinSesion();
+    if (yo.sesion.demo) return error('En la cuenta demo esta lista no se guarda. Con tu cuenta sí.', 403);
+    const b = await leerJson(req, 2000);
+    const r = ruta.endsWith('/quitar') ? await quitarEvitar(env, yo.P, b.huella) : await agregarEvitar(env, yo.P, b.correo);
+    return r.error ? error(r.error, r.status) : json(r);
+  }
+  if (ruta === '/api/admin/seguridad' && metodo === 'GET') return json(await seguridadAdmin(env, await esAdmin(env, yo)));
+  if (ruta === '/api/admin/seguridad' && metodo === 'POST') {
+    // retirar para siempre o regresar al matching: solo una cuenta administradora (con su enlace mágico)
+    if (!(await esAdmin(env, yo))) return error('Esta acción pide entrar con una cuenta administradora.', 403);
+    const r = await accionAdmin(env, await leerJson(req, 2000)); return r.error ? error(r.error, r.status) : json(r);
+  }
   /* ── Medios: foto, voz y video (solo con cuestionario completo; se ven solo con puerta abierta) ── */
   if ((x = m(/^\/api\/medio\/(foto|audio|video)$/)) && (metodo === 'PUT' || metodo === 'DELETE')) {
     if (!yo) return sinSesion();
@@ -299,6 +324,8 @@ async function api(req, env, ctx, url) {
   if ((x = m(/^\/api\/admin\/persona\/([a-z0-9]+)\/estado$/)) && metodo === 'POST') {
     const b = await leerJson(req);
     if (!['activa', 'pausada'].includes(b.estado)) return error('Estado inválido');
+    const actual = await persona(env, x[1]);
+    if (!actual || !['activa', 'pausada'].includes(actual.estado)) return error('Esa cuenta está retirada o en revisión: se atiende desde Seguridad.', 403);
     await env.DB.prepare(`UPDATE personas SET estado = ? WHERE id = ?`).bind(b.estado, x[1]).run();
     await anotar(env, 'admin', b.estado === 'pausada' ? 'Se pausó un perfil' : 'Se reactivó un perfil', x[1]);
     await recalcularTodo(env, { avisar: true, motivo: 'estado' });

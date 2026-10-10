@@ -77,14 +77,17 @@ async function tablero() {
   // la cuenta demo también pasa por el recorrido la primera vez en este dispositivo (no se puede saltar)
   if (V.sesion.demo) { let b = {}; try { b = JSON.parse(localStorage.getItem('cupido.bienvenida.demo') || '{}'); } catch {} if (!b.hecho) { salirA('/bienvenida'); return; } }
   document.title = `${V.persona.nombreCorto || 'Mi tablero'} · Cupido Algorítmico`;
-  V.ajustes = aplicarEstilo(V.ajustes || (() => { try { return JSON.parse(localStorage.getItem('cupido.estilo') || '{}'); } catch { return {}; } })());
+  V.ajustes = { ...(V.ajustes || {}), ...aplicarEstilo(V.ajustes || (() => { try { return JSON.parse(localStorage.getItem('cupido.estilo') || '{}'); } catch { return {}; } })()) };
   const ds = $('#demo-switch'); ds.hidden = !V.sesion.demo; ds.onclick = abrirModalCuenta;
   ir(location.hash.slice(1) || 'inicio');
   escucharCharlas();
   precargar(); // todos los sonidos, decodificados y listos antes de que pase algo
   sonarNovedades();
+  reglasUnaVez();
 }
 const DEMO = () => !!V?.sesion?.demo;
+const COIN = () => V.coincidencias.filter((c) => c.puerta.estado !== 'retirada'); // las vivas (una puerta que cerré ya no es coincidencia)
+const MANDO = () => !!V?.ella?.mando && !!V?.persona?.genero; // aquí manda ella
 
 /* ── Mi estilo: 4 colores y 4 tipografías ───────────────────────────────── */
 const COLORES_UI = [
@@ -113,8 +116,8 @@ function aplicarEstilo(aj = {}) {
   return { color, tipo };
 }
 async function guardarEstilo(cambio) {
-  V.ajustes = aplicarEstilo({ ...(V.ajustes || {}), ...cambio });
-  try { const r = await api('/api/yo/ajustes', V.ajustes); V.ajustes = r.ajustes; } catch (e) { avisar(e.message); }
+  V.ajustes = { ...(V.ajustes || {}), ...aplicarEstilo({ ...(V.ajustes || {}), ...cambio }) };
+  try { const r = await api('/api/yo/ajustes', { color: V.ajustes.color, tipo: V.ajustes.tipo }); V.ajustes = r.ajustes; } catch (e) { avisar(e.message); }
 }
 /* ── el interruptor no se apaga: se cambia por una cuenta propia ─────────── */
 function abrirModalCuenta() {
@@ -144,11 +147,12 @@ window.addEventListener('hashchange', () => V && ir(location.hash.slice(1)));
 
 /* ── derivados: aceptaciones, logros y camino ────────────────────────────── */
 function derivados() {
-  const c = V.coincidencias, P = V.persona, r = V.misRespuestas || {};
-  const esperanMi = c.filter((x) => x.puerta.estado !== 'abierta' && !x.puerta.miDecision);
-  const miSi = c.filter((x) => x.puerta.estado !== 'abierta' && x.puerta.miDecision === 'si');
+  const c = COIN(), P = V.persona, r = V.misRespuestas || {};
+  const esperanMi = c.filter((x) => x.puerta.estado === 'cerrada' && !x.puerta.miDecision);
+  const miSi = c.filter((x) => x.puerta.estado === 'cerrada' && x.puerta.miDecision === 'si');
   const abiertas = c.filter((x) => x.puerta.estado === 'abierta');
-  const miNo = c.filter((x) => x.puerta.estado !== 'abierta' && x.puerta.miDecision === 'no');
+  const miNo = c.filter((x) => x.puerta.estado === 'cerrada' && x.puerta.miDecision === 'no');
+  const cerradas = V.coincidencias.filter((x) => x.puerta.estado === 'retirada'); // las que yo cerré: puedo volver a abrirlas
   const logros = [
     { m: '📝', t: 'Cuestionario completo', d: 'Las 43 preguntas', ok: P.avance.listo },
     { m: '🔐', t: 'Módulo profundo', d: 'Intimidad y vida interior', ok: !!(r.deseo && r.sx_esperar && (r.practicas || []).length) },
@@ -167,7 +171,7 @@ function derivados() {
     { i: '🤍', t: 'Tu sí', d: 'decides conocer', ok: miSi.length + abiertas.length > 0 },
     { i: '🔓', t: 'Puerta abierta', d: 'se conocen', ok: abiertas.length > 0 },
   ];
-  return { esperanMi, miSi, abiertas, miNo, logros, pasos, nuevos: V.avisos.filter((a) => !a.leido).length };
+  return { esperanMi, miSi, abiertas, miNo, cerradas, logros, pasos, nuevos: V.avisos.filter((a) => !a.leido).length };
 }
 
 const miAvatar = (P, clase = '') => V.misMedios?.foto ? `<img class="avatar foto ${clase}" src="${esc(V.misMedios.foto.url)}" alt="">` : avatar(P.nombre === 'Sin nombre' ? '♥' : P.nombre, P.color, clase);
@@ -177,7 +181,7 @@ const avatarDe = (r, clase = '') => r.medios?.foto ? `<img class="avatar foto ${
 const MENU = [
   { sep: 'Mi búsqueda' },
   { s: 'inicio', i: '🏠', t: 'Inicio' },
-  { s: 'coincidencias', i: '💘', t: 'Mis coincidencias', n: () => V.coincidencias.length },
+  { s: 'coincidencias', i: '💘', t: 'Mis coincidencias', n: () => COIN().length },
   { s: 'aceptaciones', i: '🤝', t: 'Aceptaciones', n: (d) => d.esperanMi.length, alerta: true },
   { s: 'charlas', i: '💬', t: 'Charlas', n: () => (V.charlas || []).reduce((s, c) => s + c.nuevos, 0), alerta: true },
   { s: 'avisos', i: '🔔', t: 'Avisos', n: (d) => d.nuevos, alerta: true },
@@ -189,6 +193,7 @@ const MENU = [
   { s: 'claridad', i: '🔎', t: 'Qué tan bien me conoce' },
   { s: 'filtros', i: '🚧', t: 'Lo que me deja fuera', n: () => V.dejanFuera.length },
   { sep: 'Cuenta' },
+  { s: 'ella', i: () => (MANDO() ? '👑' : '🛡️'), t: () => (MANDO() ? 'Aquí mando yo' : 'Las reglas de la casa') },
   { s: 'estilo', i: '🎨', t: 'Mi estilo' },
   { s: 'apoyar', i: '🤍', t: 'Apoyar a Cupido' },
   { s: 'privacidad', i: '🔒', t: 'Privacidad y pausa' },
@@ -202,7 +207,8 @@ function pintarLateral() {
   $('#nav').innerHTML = recorrido + MENU.map((m) => {
     if (m.sep) return `<div class="sep">${m.sep}</div>`;
     const n = m.n ? m.n(d) : 0;
-    return `<a href="#${m.s}" data-s="${m.s}" class="${m.s === seccion ? 'on' : ''}"><span class="ico">${m.i}</span>${m.t}${n ? `<span class="cuenta-nav ${m.alerta ? '' : 'gris'}">${n}</span>` : ''}</a>`;
+    const val = (x) => (typeof x === 'function' ? x() : x);
+    return `<a href="#${m.s}" data-s="${m.s}" class="${m.s === seccion ? 'on' : ''}"><span class="ico">${val(m.i)}</span>${val(m.t)}${n ? `<span class="cuenta-nav ${m.alerta ? '' : 'gris'}">${n}</span>` : ''}</a>`;
   }).join('');
   $('#pie-lat').innerHTML = DEMO() ? 'Demo con datos ficticios.<br><a href="/admin">Ver el panel admin →</a>' : `Sin contraseña: entras con tu correo.${V.sesion.correo ? `<br><span style="word-break:break-all">${esc(V.sesion.correo)}</span>` : ''}`;
 }
@@ -236,7 +242,7 @@ const cabeza = (t, sub, acc = '') => `<div class="cabeza-admin"><div><h1>${t}</h
 /* ═══ SECCIONES (en el orden del menú) ══════════════════════════════════ */
 const SECCIONES = {
   inicio() {
-    const d = derivados(), P = V.persona, c = V.coincidencias;
+    const d = derivados(), P = V.persona, c = COIN();
     const ganados = d.logros.filter((l) => l.ok).length;
     const actual = d.pasos.findIndex((p) => !p.ok);
     const siguiente = d.logros.find((l) => !l.ok);
@@ -245,6 +251,7 @@ const SECCIONES = {
     return cabeza(`Hola${P.nombreCorto ? ', ' + esc(P.nombreCorto) : ''}.`, `<span class="chip ${estado[0]}">${estado[1]}</span> &nbsp;Tu búsqueda, en una sola pantalla.`,
       d.esperanMi.length ? `<a class="boton" href="#aceptaciones">Responder ${d.esperanMi.length} ${d.esperanMi.length === 1 ? 'coincidencia' : 'coincidencias'}</a>` : !P.completo ? `<a class="boton" href="/cuestionario">Responder mi cuestionario</a>` : `<a class="boton boton-claro" href="#coincidencias">Ver coincidencias</a>`) +
       (!DEMO() && !P.completo ? `<div class="cinta-demo" style="background:var(--rosa-suave);border-color:var(--rosa-linea);color:var(--tinta-2)"><span>✨</span><span><b>Bienvenido${P.nombreCorto ? ', ' + esc(P.nombreCorto) : ''}.</b> Tu tablero se llena conforme respondes. Si quieres ver todo lo que puedes hacer aquí, el recorrido dura dos minutos.</span><a class="boton boton-claro boton-chico" href="/bienvenida">Ver el recorrido</a></div>` : '') +
+      (P.estado === 'revision' ? `<div class="cinta-demo"><span>🛡️</span><span><b>Tu cuenta está en revisión.</b> Recibimos reportes sobre ti. Mientras una persona del equipo los revisa, sales del matching: no aparecen coincidencias nuevas. Tus charlas abiertas siguen.</span><a class="boton boton-claro boton-chico" href="#ella">Las reglas de la casa</a></div>` : '') +
       (DEMO() ? `<div class="cinta-demo"><span>🎛️</span><span><b>Estás en la cuenta demo</b>, viendo el tablero de ${esc(P.nombre)}, una persona ficticia. Todo lo que ves es real en el sistema: coincidencias, puertas, avisos. Así verías el tuyo.</span><button class="boton boton-chico" id="crear-cuenta">Quiero mi propia cuenta</button></div>` : '') + `
       <p class="gratis-linea">🤍 Todo Cupido es gratis durante 2026 y 2027, sin anuncios y sin letra chica. <a href="#apoyar">Ver el programa</a></p>
       <div class="banda">
@@ -279,7 +286,7 @@ const SECCIONES = {
 
   coincidencias() {
     return cabeza('Mis coincidencias', `Solo de ${V.umbral} % hacia arriba, ordenadas. Nadie ve tu perfil y la identidad de la otra persona está protegida hasta que los dos digan que sí.`) +
-      (V.coincidencias.length ? V.coincidencias.map(tarjetaCoincidencia).join('') : silencio());
+      (COIN().length ? COIN().map(tarjetaCoincidencia).join('') : silencio());
   },
 
   aceptaciones() {
@@ -297,7 +304,9 @@ const SECCIONES = {
       grupo('🔓 Puertas abiertas', 'ok', d.abiertas, 'Cuando haya dos síes, la puerta aparecerá aquí.', (c) =>
         `<a class="boton boton-chico" href="#charlas/${esc(otraDe(c))}">💬 Abrir la charla</a><a class="boton boton-claro boton-chico" href="#coincidencias">Leer su carta</a>`) +
       grupo('🌙 Preferiste no abrir', 'gris', d.miNo, 'Nada por aquí.', (c) =>
-        `<button class="boton boton-claro boton-chico" data-clave="${esc(c.clave)}" data-decision="si">Reconsiderar</button>`);
+        `<button class="boton boton-claro boton-chico" data-clave="${esc(c.clave)}" data-decision="si">Reconsiderar</button>`) +
+      (d.cerradas.length ? `<section class="tarjeta grupo-acept"><h3>🚪 Puertas que cerraste <span class="chip gris">${d.cerradas.length}</span></h3><p class="sub" style="margin:-4px 0 10px">Cerrar no castiga a nadie. Si cambias de opinión, puedes volver a abrirla: a la otra persona se le pregunta de nuevo.</p>
+        ${d.cerradas.map((c) => `<div class="fila-acept"><span class="pct">${c.pct} %</span><div class="que"><b>${esc(c.cerradaCon || 'Alguien')}</b><span>La cerraste tú</span></div><div class="acciones"><button class="boton boton-claro boton-chico" data-clave="${esc(c.clave)}" data-decision="si">Volver a abrir</button><button class="enlace" data-bloquear="${esc(otraDe(c))}" data-nombre="${esc(c.cerradaCon || 'esta persona')}">Bloquear</button></div></div>`).join('')}</section>` : '');
   },
 
   charlas() {
@@ -408,6 +417,8 @@ const SECCIONES = {
       </section>`;
   },
 
+  ella() { return seccionElla(); },
+
   apoyar() {
     return cabeza('Apoyar a Cupido', 'Confianza primero. El dinero, después, y solo donde ya recibiste valor.') + `<div id="programa"><p class="vacio">Cargando el programa…</p></div>`;
   },
@@ -434,7 +445,8 @@ const SECCIONES = {
           <li><span class="i si">✓</span><span>Tus respuestas íntimas solo las lee el motor, nunca una persona.</span></li>
           <li><span class="i si">✓</span><span>Nadie se entera si dijiste que no — ni de que dijiste que sí, hasta que haya dos.</span></li>
           <li><span class="i si">✓</span><span>Lo primero que alguien conoce de ti es tu carta, no tu foto.</span></li>
-        </ul></section>
+          <li><span class="i si">✓</span><span>Cualquiera puede cerrar una puerta cuando quiera. Y aquí manda ella: si bloquea, queda bloqueado.</span></li>
+        </ul><p style="margin:12px 0 0"><a class="boton boton-claro boton-chico" href="#ella">${MANDO() ? '👑 Todo lo que yo decido' : '🛡️ Las reglas de la casa'}</a></p></section>
       <section class="tarjeta"><h2>Tu acceso</h2>
         ${DEMO() ? `<p class="sub">Esta es la <b>cuenta demo</b>: datos ficticios que cualquiera puede ver. Para tener tu propio tablero, crea tu cuenta con tu correo.</p><button class="boton" id="crear-cuenta">Crear mi cuenta</button>`
           : `<p class="sub">Sin contraseña. Cada vez que entres te mandamos un enlace a tu correo; vale 20 minutos y se usa una sola vez.</p><div class="acceso-correo"><span>✉️</span><b>${esc(V.sesion.correo || '')}</b></div>
@@ -446,7 +458,7 @@ const SECCIONES = {
 };
 
 const DESPUES = {
-  charlas() { if (parametro) engancharCharla(parametro); },
+  charlas() { if (parametro && $('#ch-mensajes')) engancharCharla(parametro); },
   apoyar() { pintarPrograma(); },
   vida() {
     let t = null;
@@ -458,6 +470,8 @@ const DESPUES = {
       clearTimeout(t); t = setTimeout(async () => { try { await api('/api/yo/vida', v); } catch (e) { avisar(e.message); } }, 700);
     });
   },
+  aceptaciones() { $$('[data-bloquear]').forEach((b) => b.onclick = () => abrirBloqueo(b.dataset.bloquear, b.dataset.nombre, { mando: MANDO() })); },
+  ella() { engancharElla(); },
   estilo() {
     TIPOS_UI.forEach(cargarFuente); // para que las muestras se vean con su propia letra
     $$('[data-color]').forEach((b) => b.onclick = async () => { tocar('estilo'); await guardarEstilo({ color: b.dataset.color }); ir('estilo'); });
@@ -482,7 +496,7 @@ const DESPUES = {
       const estado = V.persona.estado === 'pausada' ? 'activa' : 'pausada';
       try {
         const r = await api('/api/yo/estado', { estado });
-        V = r.vista; avisar(estado === 'pausada' ? 'Perfil en pausa' : 'Perfil reactivado: el motor ya te cruzó'); ir('privacidad');
+        ponerVista(r.vista); avisar(estado === 'pausada' ? 'Perfil en pausa' : 'Perfil reactivado: el motor ya te cruzó'); ir('privacidad');
       } catch (err) { e.target.disabled = false; avisar(err.message); }
     };
   },
@@ -527,6 +541,7 @@ function vistaCharla(otra) {
         <button class="ch-h" id="ch-sonido" title="Sonido">${sonidoOn() ? '🔈' : '🔇'}</button>
         <button class="ch-h" id="ch-aviso" title="Avisarme cuando escriba">🔔</button>
         <button class="ch-h" id="ch-lado-btn" title="Perfil compartido">🔓</button>
+        <button class="ch-h corona" id="ch-mando" title="${MANDO() ? 'Aquí mando yo: permisos, cerrar, bloquear, reportar' : 'Cerrar la puerta, bloquear o reportar'}">${MANDO() ? '👑' : '🛡️'}</button>
         <button class="boton boton-claro boton-chico" id="ch-compartir">Compartir mi perfil</button>
       </div>
     </div>
@@ -537,6 +552,7 @@ function vistaCharla(otra) {
         <div class="ch-rompehielos" id="ch-rompehielos" hidden></div>
         <div class="ch-panel" id="ch-panel" hidden></div>
         <div class="ch-cita-en-curso" id="ch-citando" hidden></div>
+        <div class="ch-turno" id="ch-turno" hidden></div>
         <form class="ch-compositor" id="ch-form">
           <div class="ch-herr">
             <button type="button" class="ch-h" data-panel="emoji" title="Emojis y stickers">😊</button>
@@ -550,7 +566,7 @@ function vistaCharla(otra) {
           <textarea id="ch-texto" rows="1" maxlength="2000" placeholder="Escribe…" autocomplete="off" enterkeyhint="send"></textarea>
           <button class="boton boton-chico ch-enviar" type="submit" aria-label="Enviar">➤</button>
         </form>
-        <p class="ch-seguro">🔒 Solo ustedes dos leen esto. Nada se borra. Sin perfiles públicos.</p>
+        <p class="ch-seguro">🔒 Solo ustedes dos leen esto. Sin perfiles públicos. Cualquiera de los dos puede cerrar la puerta cuando quiera.</p>
       </section>
       <aside class="tarjeta ch-lado" id="ch-lado"><p class="vacio">Cargando…</p></aside>
     </div>`;
@@ -570,7 +586,8 @@ function filaMensaje(m, seguido) {
   if (m.tipo === 'sistema') { const hito = /⟨[a-z0-9]+⟩/.test(m.texto || ''); return `<div class="msg sistema ${hito ? 'hito' : ''}" data-id="${m.id}"><span>${esc(String(m.texto || '').replace(/\s*⟨[a-z0-9]+⟩/, ''))}</span></div>`; }
   const ruta = `/api/charla/${esc(CH.otra)}/archivo/${m.id}`;
   let cuerpo, clase = '';
-  if (m.tipo === 'sticker') { cuerpo = esc(m.texto); clase = 'sticker'; }
+  if (m.tipo === 'borrado') { cuerpo = '<i>Mensaje borrado</i>'; clase = 'borrado'; }
+  else if (m.tipo === 'sticker') { cuerpo = esc(m.texto); clase = 'sticker'; }
   else if (m.tipo === 'gif') { cuerpo = `<img src="${esc(m.archivo?.preview || m.archivo?.url || '')}" alt="GIF" loading="lazy">`; clase = 'media'; }
   else if (m.tipo === 'archivo') {
     const mime = m.archivo?.mime || '';
@@ -602,6 +619,7 @@ function pintarPresencia() {
   const o = CH.datos.otra;
   if (CH.escribiendo) p.innerHTML = `<i class="pres on"></i>escribiendo…`;
   else if (o.enLinea) p.innerHTML = `<i class="pres on"></i>en línea`;
+  else if (CH.datos.ella?.discreta) p.innerHTML = `<i class="pres"></i>responde cuando quiere`;
   else p.innerHTML = `<i class="pres"></i>${o.ultimaVez ? 'última vez ' + hace(o.ultimaVez) : 'sin conexión'}`;
 }
 function mostrarEscribiendo(on) {
@@ -690,6 +708,7 @@ function conectarVivo(otra) {
     else if (ev.t === 'visto') { CH.visto = Math.max(CH.visto, ev.hasta || 0); repintarVisto(); }
     else if (ev.t === 'presencia') { if (ev.en) tocar('en_linea'); if (CH.datos) { CH.datos.otra.enLinea = !!ev.en; if (!ev.en) CH.datos.otra.ultimaVez = new Date().toISOString().replace('T', ' ').slice(0, 19); } pintarPresencia(); }
     else if (ev.t === 'quien') { if (CH.datos) CH.datos.otra.enLinea = (ev.en || []).includes(otra); pintarPresencia(); }
+    else if (ev.t === 'cerrada') puertaCerrada(otra);
   };
   ws.onclose = () => { if (CH.otra !== otra) return; CH.vivo = false; clearInterval(CH.ping); clearInterval(CH.reloj); CH.reloj = setInterval(() => CH.traer?.(false), 2500); const espera = Math.min(15000, 1000 * 2 ** CH.reintento++); setTimeout(() => { if (CH.otra === otra && !CH.vivo) conectarVivo(otra); }, espera); };
   ws.onerror = () => { try { ws.close(); } catch {} };
@@ -703,10 +722,14 @@ async function engancharCharla(otra) {
     $('#ch-lado').innerHTML = `<h3 style="margin:0 0 4px">Lo que ${esc(d.otra.nombre)} te compartió</h3><p class="sub" style="margin:0 0 10px">${suyos.size ? `${suyos.size} de ${ELEMENTOS.length} elementos.` : 'Todavía nada. Cada quien va a su ritmo.'}</p>
       <div class="elementos">${ELEMENTOS.map((e) => `<div class="elemento ${suyos.has(e.id) ? 'on' : ''} ${e.suave ? '' : 'sensible'}"><span>${suyos.has(e.id) ? e.i : '🔒'}</span>${esc(e.n)}</div>`).join('')}</div>
       ${suyos.size ? `<p style="margin:10px 0 0"><button class="boton boton-claro boton-chico" id="ch-ver">Leer sus respuestas</button></p>` : ''}
-      <h3 style="margin:18px 0 4px">Lo que tú compartes</h3><p class="sub" style="margin:0 0 10px">${mios.size ? `${mios.size} de ${ELEMENTOS.length}.` : 'Nada todavía.'} Se libera con tu confirmación; no se puede retirar.</p>
-      <div class="elementos">${ELEMENTOS.map((e) => `<div class="elemento ${mios.has(e.id) ? 'on' : ''} ${e.suave ? '' : 'sensible'}"><span>${mios.has(e.id) ? e.i : '🔒'}</span>${esc(e.n)}</div>`).join('')}</div>
+      <h3 style="margin:18px 0 4px">Lo que tú compartes</h3><p class="sub" style="margin:0 0 10px">${mios.size ? `${mios.size} de ${ELEMENTOS.length}.` : 'Nada todavía.'} ${d.ella?.puedeTodo ? 'Se libera con tu confirmación, y lo puedes guardar de nuevo cuando quieras: toca la ✕.' : 'Se libera con tu confirmación.'}</p>
+      <div class="elementos">${ELEMENTOS.map((e) => `<div class="elemento ${mios.has(e.id) ? 'on' : ''} ${e.suave ? '' : 'sensible'}"><span>${mios.has(e.id) ? e.i : '🔒'}</span>${esc(e.n)}${mios.has(e.id) && d.ella?.puedeTodo ? `<button type="button" class="quitar-el" data-retirar="${e.id}" title="Guardarlo de nuevo: deja de verlo">✕</button>` : ''}</div>`).join('')}</div>
       <div id="ch-perfil"></div>`;
     const v = $('#ch-ver'); if (v) v.onclick = verPerfilCompartido;
+    $$('[data-retirar]').forEach((b) => b.onclick = async () => {
+      const e = ELEMENTO[b.dataset.retirar]; if (b.dataset.seguro !== '1') { b.dataset.seguro = '1'; b.textContent = '¿Guardar?'; b.classList.add('seguro'); setTimeout(() => { if (b.isConnected) { b.dataset.seguro = ''; b.textContent = '✕'; b.classList.remove('seguro'); } }, 3500); return; }
+      try { const r = await api(`/api/charla/${encodeURIComponent(otra)}/retirar`, { elementos: [e.id] }); CH.datos.compartido.mios = r.mios; pintarLado(); tocar('guardado'); avisar(`Listo: ${d.otra.nombre} ya no ve «${e.n}».`); CH.traer?.(true); } catch (err) { avisar(err.message); }
+    });
   };
   const traer = async (forzar = false, ev = null) => {
     if (document.hidden && !forzar) return;
@@ -756,7 +779,8 @@ async function engancharCharla(otra) {
       const rh = $('#ch-rompehielos'); rh.hidden = !soloAuto;
       if (soloAuto && !rh.innerHTML) { rh.innerHTML = `<span>Para romper el hielo:</span>${ROMPEHIELOS(d.otra.nombre).map((t) => `<button type="button">${esc(t)}</button>`).join('')}`; $$('button', rh).forEach((b) => b.onclick = () => { const t = $('#ch-texto'); t.value = b.textContent; t.focus(); t.dispatchEvent(new Event('input')); }); }
       if (primera || d.mensajes.some((m) => m.tipo === 'sistema')) pintarLado();
-    } catch (e) { if (e.status === 404) { caja.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; detenerCharla(); } }
+      pintarCandados();
+    } catch (e) { if (e.status === 404) puertaCerrada(otra); }
   };
   CH.traer = (forzar = true, ev = null) => traer(forzar, ev);
   await traer(true);
@@ -785,8 +809,10 @@ async function engancharCharla(otra) {
     txt.focus();
   };
   $$('[data-adj]').forEach((i) => i.onchange = (e) => { subirAdjunto(i.dataset.adj, e.target.files[0]); e.target.value = ''; });
+  // aquí manda ella: sin su permiso no se abre ni el selector de archivos
+  $$('label.ch-h:has([data-adj])').forEach((l) => l.addEventListener('click', (e) => { if (CH.datos?.ella && !CH.datos.ella.puedoMedios) { e.preventDefault(); avisarCandado(); } }));
   $$('[data-panel]').forEach((b) => b.onclick = () => abrirPanel(b.dataset.panel, b));
-  $('#ch-voz').onclick = () => notaDeVoz($('#ch-voz'));
+  $('#ch-voz').onclick = () => { if (CH.datos?.ella && !CH.datos.ella.puedoMedios) { avisarCandado(); return; } notaDeVoz($('#ch-voz')); };
   { // dictar en la charla: el texto aparece en la caja y se manda con Enter
     const bd = $('#ch-dictar'); const ctl = dictable(txt, { pulir: false, api, avisar, alCambiar: () => txt.dispatchEvent(new Event('input')) });
     const barra = txt.nextElementSibling; if (barra?.classList.contains('dictar-barra')) barra.hidden = true;
@@ -827,6 +853,7 @@ async function engancharCharla(otra) {
     if (!e.target.closest('.reac-bar')) $('.reac-bar', caja)?.remove();
   };
   $('#ch-compartir').onclick = abrirCompartir;
+  $('#ch-mando').onclick = abrirMando;
   $('#ch-carta').onclick = () => { const o = CH.datos?.otra; if (!o) return; abrirHoja(`La carta de ${esc(o.nombre)}`, `${o.carta ? `<div class="carta">${esc(o.carta)}</div>` : '<p class="vacio">Todavía no hay carta.</p>'}${o.malinterpretan ? `<p class="entender"><b>Lo que le gustaría que entendieras desde el día uno:</b> ${esc(o.malinterpretan)}</p>` : ''}${o.martes ? `<h3 style="margin:16px 0 6px">Su martes ideal dentro de 10 años</h3><p style="white-space:pre-line;color:var(--tinta-2)">${esc(o.martes)}</p>` : ''}`); };
   $('#ch-sonido').onclick = () => abrirPanelSonido();
   $('#ch-buscar').onclick = () => abrirPanelCabeza('buscar');
@@ -881,6 +908,7 @@ function abrirHoja(titulo, html) {
   const velo = document.createElement('div'); velo.className = 'modal-velo on';
   velo.innerHTML = `<div class="modal claro" role="dialog"><button class="cerrar" aria-label="Cerrar">×</button><h2>${titulo}</h2>${html}</div>`;
   document.body.appendChild(velo); const cerrar = () => velo.remove(); velo.querySelector('.cerrar').onclick = cerrar; velo.onclick = (e) => { if (e.target === velo) cerrar(); };
+  return { velo, cerrar, cuerpo: velo.querySelector('.modal') };
 }
 /* ── avisos en vivo en todo el tablero (de la Mina: el mensaje sale abajo un momento) ── */
 const ESCUCHA = new Map();
@@ -893,6 +921,7 @@ function escucharCharlas() {
       ESCUCHA.set(c.otra, ws);
       ws.onmessage = (e) => {
         let ev; try { ev = JSON.parse(e.data); } catch { return; }
+        if (ev.t === 'cerrada') { ws.onclose = null; ESCUCHA.delete(c.otra); if (!(CH.otra === c.otra && seccion === 'charlas')) refrescarVista(); return; }
         if (ev.t !== 'mensaje' || ev.de === V.persona.id || ev.de === 'sistema') return;
         if (CH.otra === c.otra && seccion === 'charlas') return; // esa charla ya está abierta: ella se encarga
         const mia = (V.charlas || []).find((x) => x.otra === c.otra); if (mia) { mia.nuevos = (mia.nuevos || 0) + 1; mia.ultimo = { texto: ev.vista, mio: false, creado: new Date().toISOString() }; pintarLateral(); }
@@ -933,7 +962,7 @@ function abrirCompartir() {
   const velo = document.createElement('div'); velo.className = 'modal-velo on'; velo.id = 'modal-compartir';
   velo.innerHTML = `<div class="modal claro" role="dialog"><button class="cerrar" id="mc2-cerrar" aria-label="Cerrar">×</button>
     <h2>Compartir mi perfil con ${esc(d.otra.nombre)}</h2>
-    <p class="sub">${primeraVez ? 'Te proponemos empezar por los seis elementos que casi nadie considera delicados. Los cuatro sensibles los liberas después, cuando ya haya confianza.' : 'Libera lo que quieras. Cada elemento se comparte una sola vez y no se puede retirar.'}</p>
+    <p class="sub">${primeraVez ? 'Te proponemos empezar por los seis elementos que casi nadie considera delicados. Los cuatro sensibles los liberas después, cuando ya haya confianza.' : (d.ella?.puedeTodo ? 'Libera lo que quieras. Lo que compartas lo puedes guardar de nuevo cuando quieras.' : 'Libera lo que quieras, a tu ritmo.')}</p>
     <div class="elementos elegir">${ELEMENTOS.map((e) => `<label class="elemento ${mios.has(e.id) ? 'on ya' : ''} ${e.suave ? '' : 'sensible'}"><input type="checkbox" value="${e.id}" ${mios.has(e.id) ? 'checked disabled' : primeraVez && e.suave ? 'checked' : ''}><span>${e.i}</span>${esc(e.n)}${e.suave ? '' : ' <small>sensible</small>'}</label>`).join('')}</div>
     <p class="nota-entrar" style="text-align:left">Solo ${esc(d.otra.nombre)} verá lo que liberes, y solo mientras la puerta siga abierta. Tus respuestas íntimas nunca las lee nadie más.</p>
     <div class="acciones"><button class="boton" id="mc2-ok">Confirmar y compartir</button><button class="boton boton-fantasma" id="mc2-no">Todavía no</button></div></div>`;
@@ -944,7 +973,7 @@ function abrirCompartir() {
     const elegidos = $$('#modal-compartir input:checked:not(:disabled)').map((i) => i.value);
     if (!elegidos.length) { avisar('Elige al menos un elemento.'); return; }
     const sensibles = elegidos.filter((e) => !ELEMENTO[e].suave);
-    if (sensibles.length && !confirm(`Vas a compartir ${sensibles.length} elemento(s) sensible(s): ${sensibles.map((e) => ELEMENTO[e].n).join(', ')}. No se puede retirar. ¿Seguro?`)) return;
+    if (sensibles.length && !confirm(`Vas a compartir ${sensibles.length} elemento(s) sensible(s): ${sensibles.map((e) => ELEMENTO[e].n).join(', ')}. ${d.ella?.puedeTodo ? 'Podrás guardarlo de nuevo, pero lo que ya leyó, lo leyó.' : 'Lo que lea, ya lo leyó.'} ¿Seguro?`)) return;
     try { await api(`/api/charla/${encodeURIComponent(CH.otra)}/liberar`, { elementos: elegidos }); cerrar(); tocar('guardado'); avisar('Listo: ya lo puede ver.'); CH.datos = null; CH.ultimo = 0; $('#ch-mensajes').innerHTML = ''; engancharCharla(CH.otra); }
     catch (e) { avisar(e.message); }
   };
@@ -1126,8 +1155,199 @@ async function grabar(tipo, boton) {
   rec.start(1000);
 }
 
+/* ═══ AQUÍ MANDA ELLA ═════════════════════════════════════════════════════
+   Lo que ella decide (y lo básico que tiene cualquier persona): permisos de
+   la charla, cerrar, borrar, bloquear, reportar, modo discreta, «decido
+   primero», «no cruzarme con» y el aviso antes de verse. Ver src/ella.js. */
+function ponerVista(v) { const sesion = V?.sesion; V = { ...v, sesion: v.sesion || sesion }; V.ajustes = { ...(V.ajustes || {}), ...aplicarEstilo(V.ajustes || {}) }; }
+async function refrescarVista() { try { ponerVista(await api('/api/yo')); if (seccion === 'charlas' && parametro) pintarLateral(); else ir(seccion); } catch {} }
+function puertaCerrada(otra) {
+  if (CH.otra !== otra) return;
+  detenerCharla(); V.charlas = (V.charlas || []).filter((c) => c.otra !== otra);
+  cont.innerHTML = `<div class="seccion-admin">${cabeza('Esta puerta se cerró', 'Aquí cualquiera de los dos puede cerrarla cuando quiera, sin dar explicaciones.')}<section class="tarjeta"><div class="nivel"><div class="anillo" style="display:flex;align-items:center;justify-content:center;font-size:36px">🚪</div><div><h3>La charla ya no existe para ninguno de los dos</h3><p>Lo que se compartieron del perfil dejó de verse. No hay nada que hacer ni que explicar: tu búsqueda sigue, y el motor sigue cruzándote.</p><p style="margin-top:10px"><a class="boton boton-claro" href="#charlas">Volver a mis charlas</a></p></div></div></section></div>`;
+  refrescarVista();
+}
+const avisarCandado = () => avisar(`${CH.datos?.otra?.nombre || 'Esta persona'} todavía no recibe fotos, videos, notas de voz ni archivos aquí. Eso lo decide ${CH.datos?.ella?.meMandan ? 'ella' : CH.datos?.otra?.nombre || 'esa persona'}.`, 4200);
+// Los candados de la charla, a la vista: qué no se puede todavía y de quién es el turno
+function pintarCandados() {
+  const d = CH.datos, e = d?.ella, t = $('#ch-turno'); if (!e || !t) return;
+  $$('label.ch-h:has([data-adj]), #ch-voz').forEach((b) => b.classList.toggle('candado', !e.puedoMedios));
+  let html = '';
+  if (e.insistencia && e.insistencia.van >= e.insistencia.tope) html = `<span>✋ Le toca a <b>${esc(d.otra.nombre)}</b>. Ya le escribiste ${e.insistencia.tope} veces sin respuesta, y aquí nadie insiste.</span>`;
+  else if (e.insistencia && e.insistencia.van === e.insistencia.tope - 1) html = `<span>Te queda <b>un mensaje</b> antes de que le toque a ${esc(d.otra.nombre)}. Aquí nadie insiste.</span>`;
+  else if (e.mando && (!e.controles.recibir_medios || !e.controles.mis_medios)) html = `<span>👑 Tú decides: ${[!e.controles.recibir_medios ? `${esc(d.otra.nombre)} no puede mandarte fotos ni archivos` : '', !e.controles.mis_medios ? 'tu foto, tu voz y tu video siguen guardados' : ''].filter(Boolean).join(' · ')}.</span><button type="button" class="enlace" id="ch-turno-abrir">Cambiar</button>`;
+  t.hidden = !html; t.innerHTML = html; t.classList.toggle('alto', !!(e.insistencia && e.insistencia.van >= e.insistencia.tope));
+  const a = $('#ch-turno-abrir'); if (a) a.onclick = abrirMando;
+}
+// El menú 👑 de la charla: permisos y las cuatro salidas
+function abrirMando() {
+  const d = CH.datos; if (!d) return; const e = d.ella, o = d.otra, n = esc(o.nombre), otra = CH.otra;
+  const fila = (k, on, t, sub) => `<label class="son-fila"><span><b>${t}</b><small>${sub}</small></span><input type="checkbox" data-ctl="${k}" ${on ? 'checked' : ''}></label>`;
+  const salida = (k, ico, t, sub, clase = '') => `<button type="button" class="mando-salida ${clase}" data-salida="${k}"><span>${ico}</span><div><b>${t}</b><small>${sub}</small></div></button>`;
+  const h = abrirHoja(e.mando ? `👑 Aquí mandas tú` : 'Esta charla, a tu manera', `
+    <p class="sub">${e.mando ? `Con ${n}, todo esto lo decides tú, cuando quieras y sin dar explicaciones.` : e.meMandan ? `Aquí manda ella. Y lo básico también es tuyo: puedes cerrar la puerta, bloquear o reportar cuando lo necesites.` : `Tú decides qué recibes y qué enseñas en esta charla.`}</p>
+    <div class="son-panel" id="mando-ctl">
+      ${fila('recibir_medios', e.controles.recibir_medios, `${n} puede mandarme fotos, videos, voz y archivos`, e.mando ? 'Nace apagado. Mientras esté apagado, ni siquiera puede elegir un archivo.' : 'Si lo apagas, solo llega texto.')}
+      ${fila('mis_medios', e.controles.mis_medios, `${n} puede ver mi foto, mi voz y mi video`, e.mando ? 'Abrir la puerta no los entrega. Los enciendes tú, y los guardas de nuevo cuando quieras.' : 'Los puedes guardar de nuevo cuando quieras.')}
+    </div>
+    <h3 style="margin:18px 0 8px;font-size:16px">Si ya no quieres seguir</h3>
+    <div class="mando-salidas" id="mando-salidas">
+      ${salida('cerrar', '🚪', 'Cerrar la puerta', `Simplemente no fue. La charla deja de existir para los dos y nadie sale castigado. Puedes volver a abrirla.`)}
+      ${e.puedeTodo ? salida('borrar', '🧹', 'Borrar la charla', 'Cierra la puerta y elimina todo lo que tú mandaste: mensajes, fotos y notas de voz.') : ''}
+      ${salida('bloquear', '⛔', `Bloquear a ${n}`, e.mando ? 'Te hizo sentir incómoda. No se vuelven a cruzar nunca, y cuenta para la regla de diez.' : 'No se vuelven a cruzar nunca.', 'fuerte')}
+      ${salida('reportar', '🚩', `Reportar a ${n}`, 'Bloquea y nos cuentas qué pasó. Lo lee una persona del equipo, con lo último que se dijo aquí.', 'fuerte')}
+    </div>
+    <p class="nota-entrar" style="text-align:left;margin-top:12px">${e.mando ? `En los cuatro casos ${n} recibe el mismo aviso: «Se cerró la puerta». Nunca sabe cuál elegiste.` : 'La otra persona recibe un solo aviso: «Se cerró la puerta».'} <a href="#ella" id="mando-reglas">Ver las reglas</a></p>
+    <div id="mando-paso"></div>`);
+  $('#mando-reglas', h.cuerpo).onclick = () => h.cerrar();
+  $$('[data-ctl]', h.cuerpo).forEach((i) => i.onchange = async () => {
+    i.disabled = true;
+    try { const r = await api(`/api/charla/${encodeURIComponent(otra)}/control`, { k: i.dataset.ctl, v: i.checked }); CH.datos.ella.controles = r.controles; tocar('guardado'); avisar(i.dataset.ctl === 'recibir_medios' ? (i.checked ? `Listo: ${o.nombre} ya puede mandarte archivos.` : `Listo: de ${o.nombre} solo llega texto.`) : (i.checked ? `Listo: ${o.nombre} ya puede ver tu foto, tu voz y tu video.` : 'Listo: tu foto, tu voz y tu video quedaron guardados.')); pintarCandados(); CH.traer?.(true); }
+    catch (err) { i.checked = !i.checked; avisar(err.message); }
+    i.disabled = false;
+  });
+  $$('[data-salida]', h.cuerpo).forEach((b) => b.onclick = () => {
+    const k = b.dataset.salida;
+    if (k === 'bloquear' || k === 'reportar') { h.cerrar(); abrirBloqueo(otra, o.nombre, { reporte: k === 'reportar', mando: e.mando, puedeBorrar: e.puedeTodo, alTerminar: () => { detenerCharla(); location.hash = 'charlas'; } }); return; }
+    const borrar = k === 'borrar';
+    $('#mando-paso', h.cuerpo).innerHTML = `<div class="mando-confirma"><b>${borrar ? `¿Borrar la charla con ${n}?` : `¿Cerrar la puerta con ${n}?`}</b><p>${borrar ? 'Se elimina todo lo que tú mandaste y la charla deja de existir para los dos. Esto no se puede deshacer.' : 'La charla deja de existir para los dos y deja de ver lo que le compartiste. Nadie sale castigado.'}</p><div class="acciones"><button class="boton" id="mando-si">${borrar ? 'Sí, borrar y cerrar' : 'Sí, cerrar la puerta'}</button><button class="boton boton-fantasma" id="mando-no">Todavía no</button></div></div>`;
+    $('#mando-paso', h.cuerpo).scrollIntoView({ block: 'nearest' });
+    $('#mando-no').onclick = () => { $('#mando-paso', h.cuerpo).innerHTML = ''; };
+    $('#mando-si').onclick = async (ev) => {
+      ev.target.disabled = true;
+      try { const r = await api('/api/ella/cerrar', { otra, borrar }); h.cerrar(); detenerCharla(); ponerVista(r.vista); tocar('guardado'); avisar(borrar ? 'Listo. Se borró lo tuyo y la puerta quedó cerrada.' : 'Listo. La puerta quedó cerrada.', 4200); if (location.hash === '#charlas') ir('charlas'); else location.hash = 'charlas'; }
+      catch (err) { ev.target.disabled = false; avisar(err.message); }
+    };
+  });
+}
+// Bloquear o reportar: se confirma en dos pasos y nunca con un clic accidental
+function abrirBloqueo(otra, nombre, { reporte = false, mando = false, puedeBorrar = false, alTerminar = null } = {}) {
+  const n = esc(nombre), motivos = V.ella?.motivos || [], L = V.ella?.limites || { veto: 10 };
+  const h = abrirHoja(reporte ? `🚩 Reportar a ${n}` : `⛔ Bloquear a ${n}`, `
+    <p class="sub">${reporte ? 'Cuéntanos qué pasó. Lo lee una persona del equipo, no una máquina, y recibe también lo último que se dijo en la charla.' : mando ? `Bloquear es para cuando alguien te hizo sentir incómoda. Si solo no hubo química, mejor <b>cierra la puerta</b>: eso no castiga a nadie.` : 'No se vuelven a cruzar nunca. Si solo no hubo química, basta con cerrar la puerta.'}</p>
+    ${reporte ? `<div class="mando-motivos">${motivos.map((m) => `<label><input type="radio" name="motivo" value="${esc(m.id)}"> ${esc(m.n)}</label>`).join('')}</div>
+      <textarea id="rep-detalle" rows="3" maxlength="1500" placeholder="Si quieres, cuéntanos más. Con tus palabras." style="width:100%;margin-top:10px"></textarea>` : ''}
+    <ul class="razones" style="padding:0;margin:12px 0 0">
+      <li><span class="i si">✓</span><span>${n} deja de verte y no puede volver a escribirte. La charla deja de existir.</span></li>
+      <li><span class="i si">✓</span><span>El motor no los vuelve a cruzar nunca.</span></li>
+      ${mando ? `<li><span class="i si">✓</span><span>Cuenta para la regla: si ${L.veto} mujeres distintas lo bloquean, queda fuera para siempre.</span></li>` : ''}
+      <li><span class="i si">✓</span><span>No se entera de que fue un bloqueo${reporte ? ' ni de que lo reportaste' : ''}: solo ve «Se cerró la puerta».</span></li>
+    </ul>
+    ${puedeBorrar ? `<label class="elemento" style="margin-top:12px;cursor:pointer;color:var(--tinta)"><input type="checkbox" id="blq-borrar" style="accent-color:var(--rosa)"> Borrar también todo lo que yo mandé</label>` : ''}
+    <div class="acciones" style="margin-top:16px"><button class="boton" id="blq-si">${reporte ? 'Reportar y bloquear' : `Sí, bloquear a ${n}`}</button><button class="boton boton-fantasma" id="blq-no">Todavía no</button></div>`);
+  $('#blq-no', h.cuerpo).onclick = h.cerrar;
+  $('#blq-si', h.cuerpo).onclick = async (ev) => {
+    const motivo = reporte ? $('input[name=motivo]:checked', h.cuerpo)?.value : null;
+    if (reporte && !motivo) { avisar('Elige qué pasó.'); return; }
+    ev.target.disabled = true;
+    try {
+      const r = await api('/api/ella/bloquear', { otra, reporte, motivo, detalle: reporte ? $('#rep-detalle', h.cuerpo).value : '', borrar: !!$('#blq-borrar', h.cuerpo)?.checked });
+      h.cerrar(); ponerVista(r.vista); tocar('guardado');
+      avisar(reporte ? 'Gracias por decirlo. Ya no lo vas a volver a ver, y una persona del equipo lo va a leer.' : `Listo. ${nombre} quedó bloqueado y no se vuelven a cruzar.`, 5200);
+      if (alTerminar) alTerminar(); else ir(seccion);
+    } catch (err) { ev.target.disabled = false; avisar(err.message); }
+  };
+}
+const CONSEJOS_CITA = [
+  ['☀️', 'La primera vez, en un lugar público y de día.'],
+  ['🚗', 'Llega y vete por tu cuenta.'],
+  ['📲', 'Avísale a alguien de confianza con quién, dónde y a qué hora.'],
+  ['🏠', 'No des tu dirección ni dónde trabajas hasta que tú quieras.'],
+  ['💸', 'Nadie que valga la pena te pide dinero, un préstamo o que inviertas en algo.'],
+  ['🚪', 'Si algo no se siente bien, te vas. No le debes una explicación a nadie.'],
+];
+function seccionElla() {
+  const E = V.ella || {}, L = E.limites || { veto: 10, revision: 3, insistencia: 5 }, mando = MANDO(), abiertas = (V.charlas || []);
+  const sw = (id, on, t, sub) => `<label class="son-fila"><span><b>${t}</b><small>${sub}</small></span><input type="checkbox" id="${id}" ${on ? 'checked' : ''}></label>`;
+  const evitar = `<section class="tarjeta"><h2>No cruzarme con</h2><p class="sub">El correo de las personas con las que no quieres coincidir nunca: un ex, alguien del trabajo, un familiar. El motor no los cruza contigo. No guardamos el correo, solo su huella, y nadie se entera de que lo pusiste aquí. Tampoco te decimos si esa persona está en Cupido.</p>
+      <form class="evitar-form" id="evitar-form"><input type="email" id="evitar-correo" placeholder="correo@de-esa-persona.com" autocomplete="off" maxlength="254"><button class="boton boton-chico" type="submit">Agregar</button></form>
+      <div class="evitar-lista" id="evitar-lista">${(E.evitar || []).map((x) => `<span class="chip gris">${esc(x.pista)} <button type="button" data-quitar="${esc(x.huella)}" aria-label="Quitar">×</button></span>`).join('') || '<span class="vacio" style="margin:0">Nadie todavía.</span>'}</div></section>`;
+  const bloqueados = `<section class="tarjeta"><h2>A quién bloqueaste</h2><p class="sub">${(E.bloqueados || []).length ? 'No te ven, no te escriben y el motor no los cruza contigo. Si fue un error, puedes retirar el bloqueo: deja de contar.' : 'A nadie. Ojalá siga así.'}</p>
+      ${(E.bloqueados || []).map((b) => `<div class="fila-acept"><span>${avatar(b.nombre, b.color, 'sm')}</span><div class="que"><b>${esc(b.nombre)}</b><span>${b.tipo === 'reporte' ? 'Reportado' : 'Bloqueado'} ${hace(b.creado)}</span></div><div class="acciones"><button class="enlace" data-desbloquear="${esc(b.id)}">Retirar el bloqueo</button></div></div>`).join('')}</section>`;
+  const cita = `<section class="tarjeta"><h2>Antes de verse en persona</h2><p class="sub">Seis cosas que no cuestan nada y cambian todo.</p>
+      <ul class="consejos">${CONSEJOS_CITA.map(([i, t]) => `<li><span>${i}</span>${t}</li>`).join('')}</ul>
+      <div class="cita-aviso"><b>Arma el aviso para alguien de confianza</b>
+        <div class="cita-campos"><select id="cita-quien">${abiertas.length ? abiertas.map((c) => `<option>${esc(c.nombre)}</option>`).join('') : '<option value="">alguien de Cupido</option>'}</select><input id="cita-donde" placeholder="Dónde (café, plaza…)" maxlength="80"><input id="cita-cuando" type="datetime-local"></div>
+        <p class="cita-texto" id="cita-texto"></p>
+        <div class="acciones"><button class="boton boton-chico" id="cita-mandar">📲 Compartir el aviso</button><button class="boton boton-claro boton-chico" id="cita-copiar">Copiar</button></div>
+        <p class="nota-entrar" style="text-align:left;margin:8px 0 0">Esto no se guarda en Cupido: sale de tu teléfono a quien tú elijas.</p></div></section>`;
+  const demoLado = DEMO() && !mando ? `<div class="cinta-demo"><span>👑</span><span><b>¿Quieres ver el lado de ella?</b> Entra al tablero de Mariana, la coincidencia de Diego: ahí están los permisos, el menú 👑 de la charla y todo lo que ella decide.</span><a class="boton boton-chico" href="/persona?id=m01">Entrar como Mariana</a></div>` : '';
+  if (!V.persona.genero) return cabeza('Las reglas de la casa', 'Aquí manda ella. Así funciona Cupido por dentro.', `<a class="boton boton-claro" href="/ella">Leer las reglas completas</a>`) + `
+    <section class="tarjeta corona"><h2>La regla</h2>
+      <ol class="regla"><li><b>Si ella bloquea, queda bloqueado.</b> Al instante y sin explicaciones.</li><li><b>Si ${L.veto} mujeres distintas bloquean al mismo hombre, queda fuera para siempre.</b></li><li><b>Ella puede decir que sí y después dejar de decirlo.</b> Cerrar la puerta nunca necesita un motivo.</li></ol>
+      <p class="sub" style="margin:10px 0 0">Cuando respondas la primera pregunta de tu cuestionario, esta sección se acomoda a ti.</p></section>${evitar}${cita}`;
+  if (mando) return cabeza('Aquí mando yo', 'Cupido está hecho para que tú encuentres a la persona correcta: segura, cómoda y en control.', `<a class="boton boton-claro" href="/ella">Leer las reglas completas</a>`) + `
+    <section class="tarjeta corona"><h2>La regla de la casa</h2>
+      <ol class="regla"><li><b>Si tú bloqueas, queda bloqueado.</b> Al instante, sin dar explicaciones.</li><li><b>Si ${L.veto} mujeres distintas bloquean al mismo hombre, queda fuera para siempre.</b></li><li><b>Puedes decir que sí y después dejar de decirlo.</b> Cerrar la puerta nunca necesita un motivo.</li></ol></section>
+    <section class="tarjeta"><h2>Antes de que alguien sepa de ti</h2><p class="sub">Dos interruptores que valen para todas tus coincidencias.</p>
+      <div class="son-panel">
+        ${sw('sw-primero', E.primero, 'Que nadie sepa de mí hasta que yo diga sí', 'Cuando haya una coincidencia, solo tú la ves. A él se le avisa hasta que tú dices que sí. Si dices que no, nunca supo que existías.')}
+        ${sw('sw-discreta', E.discreta, 'Modo discreta', 'Él no ve si estás en línea, cuándo entraste por última vez, si ya leíste ni si estás escribiendo.')}
+      </div></section>
+    <section class="tarjeta"><h2>Dentro de cada charla: el botón 👑</h2><p class="sub">Con cada persona decides por separado. Todo nace apagado y lo enciendes tú.</p>
+      <ul class="razones" style="padding:0">
+        <li><span class="i si">✓</span><span><b>Qué recibes.</b> Él no puede mandarte fotos, videos, notas de voz ni archivos hasta que lo permites.</span></li>
+        <li><span class="i si">✓</span><span><b>Qué enseñas.</b> Tu foto, tu voz y tu video los enciendes tú. Abrir la puerta no los entrega.</span></li>
+        <li><span class="i si">✓</span><span><b>Él no insiste.</b> Después de ${L.insistencia} mensajes seguidos sin respuesta, el sistema no le deja mandar otro.</span></li>
+        <li><span class="i si">✓</span><span><b>Lo que compartes, lo puedes guardar de nuevo.</b> Cada elemento de tu perfil tiene su ✕.</span></li>
+        <li><span class="i si">✓</span><span><b>Cuatro salidas:</b> cerrar la puerta (sin castigo), borrar la charla, bloquear y reportar. Él recibe el mismo aviso en las cuatro.</span></li>
+        <li><span class="i si">✓</span><span><b>Lo que ves de él</b> antes de decidir: cuánto lleva aquí, con cuántas personas conversa y cuántas mujeres lo han bloqueado.</span></li>
+      </ul>${abiertas.length ? `<p style="margin:12px 0 0"><a class="boton boton-claro boton-chico" href="#charlas">Ir a mis charlas</a></p>` : ''}</section>
+    ${evitar}${bloqueados}${cita}`;
+  return cabeza('Las reglas de la casa', 'Aquí manda ella. Es lo que hace que este lugar valga la pena, también para ti.', `<a class="boton boton-claro" href="/ella">Leer las reglas completas</a>`) + demoLado + `
+    <section class="tarjeta corona"><h2>La regla</h2>
+      <ol class="regla"><li><b>Si ella bloquea, queda bloqueado.</b> Al instante y sin explicaciones.</li><li><b>Si ${L.veto} mujeres distintas bloquean al mismo hombre, queda fuera para siempre.</b></li><li><b>Ella puede decir que sí y después dejar de decirlo.</b> Cerrar la puerta nunca necesita un motivo.</li></ol>
+      <p class="sub" style="margin:10px 0 0">Un lugar donde ellas se sienten seguras es el único lugar donde una mujer seria contesta en serio, se queda y se deja conocer. Eso es lo que estás buscando.</p></section>
+    <div class="rejilla-2"><section class="tarjeta"><h2>Lo que aceptas</h2><ul class="razones" style="padding:0">
+        <li><span class="i ojo">!</span><span>Ella decide el ritmo. Después de ${L.insistencia} mensajes sin respuesta, te toca esperar.</span></li>
+        <li><span class="i ojo">!</span><span>No mandas fotos, videos, voz ni archivos hasta que ella lo permite.</span></li>
+        <li><span class="i ojo">!</span><span>Su foto, su voz y su video los enseña ella cuando quiere.</span></li>
+        <li><span class="i ojo">!</span><span>Puede cerrar la puerta cuando quiera, y no te debe una razón.</span></li></ul></section>
+      <section class="tarjeta" style="margin-top:0"><h2>Lo que también es tuyo</h2><ul class="razones" style="padding:0">
+        <li><span class="i si">✓</span><span>Cerrar una puerta, bloquear y reportar, igual que cualquier persona.</span></li>
+        <li><span class="i si">✓</span><span>Nadie bloquea a un desconocido: solo cuenta quien cruzó el 90 % contigo y abrió la puerta.</span></li>
+        <li><span class="i si">✓</span><span>Que una conversación no funcione no es un bloqueo. Para eso existe cerrar la puerta, y eso no cuenta.</span></li>
+        <li><span class="i si">✓</span><span>Tus reportes los lee el mismo equipo.</span></li></ul></section></div>
+    ${evitar}${bloqueados}${cita}`;
+}
+function engancharElla() {
+  const guardar = async (cambio, msg) => { try { const r = await api('/api/yo/ajustes', cambio); V.ajustes = { ...V.ajustes, ...r.ajustes }; Object.assign(V.ella, cambio); tocar('guardado'); avisar(DEMO() && V.persona.origen === 'demo' ? msg + ' (En la cuenta demo no se guarda.)' : msg, 4200); } catch (e) { avisar(e.message); } };
+  const p = $('#sw-primero'); if (p) p.onchange = () => guardar({ primero: p.checked }, p.checked ? 'Listo: nadie sabrá de ti hasta que tú digas que sí.' : 'Listo: las coincidencias se avisan a los dos al mismo tiempo.');
+  const d = $('#sw-discreta'); if (d) d.onchange = () => guardar({ discreta: d.checked }, d.checked ? 'Modo discreta encendido.' : 'Modo discreta apagado.');
+  const pintarEvitar = (lista) => { V.ella.evitar = lista; ir('ella'); };
+  $('#evitar-form').onsubmit = async (e) => { e.preventDefault(); const c = $('#evitar-correo').value.trim(); if (!c) return; try { const r = await api('/api/ella/evitar', { correo: c }); tocar('guardado'); avisar('Listo. El motor no te cruza con esa persona.'); pintarEvitar(r.evitar); } catch (err) { avisar(err.message); } };
+  $$('[data-quitar]').forEach((b) => b.onclick = async () => { try { const r = await api('/api/ella/evitar/quitar', { huella: b.dataset.quitar }); pintarEvitar(r.evitar); } catch (err) { avisar(err.message); } });
+  $$('[data-desbloquear]').forEach((b) => b.onclick = async () => {
+    if (b.dataset.seguro !== '1') { b.dataset.seguro = '1'; b.textContent = '¿Seguro? Toca otra vez'; setTimeout(() => { if (b.isConnected) { b.dataset.seguro = ''; b.textContent = 'Retirar el bloqueo'; } }, 3500); return; }
+    try { const r = await api('/api/ella/desbloquear', { otra: b.dataset.desbloquear }); ponerVista(r.vista); avisar('Bloqueo retirado. Si el motor los vuelve a cruzar, aparecerá como una coincidencia nueva.', 5000); ir('ella'); } catch (err) { avisar(err.message); }
+  });
+  // el aviso para alguien de confianza: se arma aquí y sale del teléfono; Cupido no lo guarda
+  const texto = () => { const q = $('#cita-quien').value || 'alguien de Cupido', dn = $('#cita-donde').value.trim(), cu = $('#cita-cuando').value; const f = cu ? new Date(cu).toLocaleString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }) : ''; return `Voy a ver a ${q}, a quien conocí en Cupido Algorítmico${dn ? `, en ${dn}` : ''}${f ? `, el ${f}` : ''}. Te escribo cuando llegue y cuando me vaya. Si no sabes de mí, márcame.`; };
+  const pintar = () => { $('#cita-texto').textContent = texto(); };
+  ['cita-quien', 'cita-donde', 'cita-cuando'].forEach((id) => { $('#' + id).oninput = pintar; $('#' + id).onchange = pintar; }); pintar();
+  $('#cita-copiar').onclick = async () => { try { await navigator.clipboard.writeText(texto()); avisar('Copiado. Pégalo en un mensaje a quien tú quieras.'); } catch { avisar('No se pudo copiar. Selecciona el texto y cópialo a mano.'); } };
+  $('#cita-mandar').onclick = async () => { if (navigator.share) { try { await navigator.share({ text: texto() }); } catch {} } else $('#cita-copiar').click(); };
+}
+// Las reglas de la casa, una sola vez, para las cuentas que ya existían antes de esta regla
+function reglasUnaVez() {
+  if (DEMO() || V.ella?.reglas || !V.ajustes?.bienvenida) return;
+  const L = V.ella?.limites || { veto: 10, insistencia: 5 }, hombre = V.persona.genero === 'hombre', mando = MANDO();
+  const velo = document.createElement('div'); velo.className = 'modal-velo on';
+  velo.innerHTML = `<div class="modal claro" role="dialog"><p class="eyebrow" style="margin:0 0 6px">Las reglas de la casa</p>
+    <h2>${mando ? 'Algo nuevo: aquí mandas tú.' : 'Aquí manda ella.'}</h2>
+    <p class="sub">${mando ? 'Cupido está hecho para que tú encuentres a la persona correcta: segura, cómoda y en control. Desde hoy, así funciona por dentro.' : 'Cupido está hecho para que ella encuentre a la persona correcta, segura y en control. Un lugar así es el único donde una mujer seria contesta en serio.'}</p>
+    <ol class="regla"><li><b>Si ${mando ? 'tú bloqueas' : 'ella bloquea'}, queda bloqueado.</b></li><li><b>Si ${L.veto} mujeres distintas bloquean al mismo hombre, queda fuera para siempre.</b></li><li><b>${mando ? 'Puedes' : 'Ella puede'} decir que sí y después dejar de decirlo.</b></li></ol>
+    ${hombre ? `<p class="sub" style="margin-top:10px">También: no mandas fotos ni archivos hasta que ella lo permite, y después de ${L.insistencia} mensajes sin respuesta te toca esperar. Que una charla no funcione no es un bloqueo: cualquiera de los dos puede cerrar la puerta sin castigo.</p>` : ''}
+    <div class="acciones" style="margin-top:14px"><button class="boton" id="rg-ok">${hombre ? 'Acepto las reglas' : mando ? 'Ver todo lo que yo decido' : 'Entendido'}</button>${hombre ? '<button class="boton boton-fantasma" id="rg-salir">Cerrar sesión</button>' : '<button class="boton boton-fantasma" id="rg-luego">Entendido</button>'}</div></div>`;
+  document.body.appendChild(velo);
+  const aceptar = async (ira) => { try { const r = await api('/api/yo/ajustes', { reglas: true }); V.ajustes = { ...V.ajustes, ...r.ajustes }; V.ella.reglas = r.ajustes.reglas; } catch {} velo.remove(); if (ira) location.hash = 'ella'; };
+  $('#rg-ok', velo).onclick = () => aceptar(!hombre && mando);
+  const l = $('#rg-luego', velo); if (l) l.onclick = () => aceptar(false);
+  const sx = $('#rg-salir', velo); if (sx) sx.onclick = () => $('#salir').click();
+}
+
 /* ── piezas ──────────────────────────────────────────────────────────────── */
-const filaAviso = (a) => `<div class="aviso ${a.leido ? '' : 'nuevo'}"><span>${a.tipo === 'apertura' ? '🔓' : '💘'}</span><div>${esc(a.texto)}<span class="cuando">${hace(a.creado)}</span></div></div>`;
+const filaAviso = (a) => `<div class="aviso ${a.leido ? '' : 'nuevo'}"><span>${a.tipo === 'apertura' ? '🔓' : a.tipo === 'cierre' ? '🚪' : '💘'}</span><div>${esc(a.texto)}<span class="cuando">${hace(a.creado)}</span></div></div>`;
 async function marcarLeidos() {
   if (!V.avisos.some((a) => !a.leido)) return;
   try { await api('/api/avisos/leer', {}); V.avisos.forEach((a) => a.leido = 1); pintarLateral(); } catch {}
@@ -1156,6 +1376,7 @@ function tarjetaCoincidencia(c) {
       ${c.fuertes.map((f) => `<li><span class="i si">✓</span><span><small>${esc(f.dim)}</small>${esc(f.txt)}</span></li>`).join('')}
       ${c.cuidar ? `<li><span class="i ojo">~</span><span><small>Lo que tendrían que cuidar · ${esc(c.cuidar.dim)}</small>${esc(c.cuidar.txt)}</span></li>` : ''}
     </ul>
+    ${c.senales ? `<div class="senales"><b>👑 Lo que solo tú ves de él</b><span>${c.senales.dias < 1 ? 'Llegó hoy' : `Lleva ${c.senales.dias} ${c.senales.dias === 1 ? 'día' : 'días'} aquí`}</span><span>${c.senales.charlas ? `Conversa con ${c.senales.charlas} ${c.senales.charlas === 1 ? 'persona' : 'personas'} más` : 'No conversa con nadie más'}</span><span class="${c.senales.bloqueos ? 'ojo' : 'bien'}">${c.senales.bloqueos ? `${c.senales.bloqueos} ${c.senales.bloqueos === 1 ? 'mujer lo ha bloqueado' : 'mujeres lo han bloqueado'}` : 'Ninguna mujer lo ha bloqueado'}</span></div>` : ''}
     <div class="puerta-zona">${puerta}${c.demoId ? `<a class="demo-herramienta" href="/persona?id=${esc(c.demoId)}">👁 Herramienta de demo: entrar al tablero de esa persona</a>` : ''}</div>
     ${abierta ? `<div class="revelado">
       <div class="quien">${avatarDe(r, 'xl')}<div><h3>${esc(r.nombreCompleto)}</h3><div class="meta" style="color:var(--gris)">${esc(r.edad)} · ${esc(r.ciudad)}</div></div></div>
@@ -1167,7 +1388,7 @@ function tarjetaCoincidencia(c) {
         ${r.medios?.video ? `<div class="rm"><b>🎬 Su video</b><video controls playsinline preload="metadata" src="${esc(r.medios.video.url)}"></video></div>` : ''}
         ${r.medios?.foto ? `<div class="rm"><b>📷 Su foto</b><img src="${esc(r.medios.foto.url)}" alt="${esc(r.nombre)}"></div>` : ''}
       </div>
-      ${!(r.medios?.foto || r.medios?.audio || r.medios?.video) ? `<div class="proximos"><div><span>🎙️</span>Su voz</div><div><span>🎬</span>Su video</div><div><span>📷</span>Su foto</div></div><p class="seccion-sub" style="margin:12px 0 0">${esc(r.nombre)} todavía no ha subido foto, voz ni video. Aparecerán aquí en cuanto lo haga.</p>` : ''}</div>` : ''}
+      ${!(r.medios?.foto || r.medios?.audio || r.medios?.video) ? `<div class="proximos"><div><span>🎙️</span>Su voz</div><div><span>🎬</span>Su video</div><div><span>📷</span>Su foto</div></div><p class="seccion-sub" style="margin:12px 0 0">${c.mediosGuardados ? `${esc(r.nombre)} decide cuándo enseñarte su foto, su voz y su video. Abrir la puerta no los entrega.` : `${esc(r.nombre)} todavía no ha subido foto, voz ni video. Aparecerán aquí en cuanto lo haga.`}</p>` : ''}</div>` : ''}
   </article>`;
 }
 
@@ -1178,7 +1399,7 @@ async function decidir(clave, decision, boton) {
   try {
     const antes = V.coincidencias.find((c) => c.clave === clave);
     const r = await api('/api/puerta', { otra, decision });
-    V = r.vista;
+    ponerVista(r.vista);
     if (r.estado === 'abierta' && antes?.puerta.estado !== 'abierta') {
       if (seccion === 'coincidencias') ir('coincidencias'); else location.hash = 'coincidencias';
       setTimeout(() => {
