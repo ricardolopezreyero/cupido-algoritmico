@@ -1303,7 +1303,7 @@ button.ab:hover { border-color: var(--rosa); background: var(--rosa-suave); tran
 
 /* ── sonido: el interruptor (un toque), siempre a la vista ────────────────────────────── */
 /* en el menú de la izquierda: pegado abajo, se ve aunque el menú sea largo */
-.lateral #son-menu { position: sticky; bottom: 0; z-index: 2; margin-top: 16px; padding: 12px 0 0; background: var(--noche); border-top: 1px solid var(--noche-3); box-shadow: 0 24px 0 var(--noche); }
+.lateral .dock-lat { position: sticky; bottom: 0; z-index: 2; margin-top: 16px; padding: 12px 0 0; background: var(--noche); border-top: 1px solid var(--noche-3); box-shadow: 0 24px 0 var(--noche); display: grid; gap: 10px; }
 .son-lat { display: flex; gap: 8px; align-items: stretch; }
 .son-switch { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--noche-3); background: var(--noche-2); color: #d9cfe0; cursor: pointer; text-align: left; font: 500 14px var(--sans); transition: background .2s, border-color .2s; }
 .son-switch:hover { border-color: #6a5a76; }
@@ -1340,3 +1340,25 @@ button.ab:hover { border-color: var(--rosa); background: var(--rosa-suave); tran
 .son-pieza b { display: block; font: 600 15px var(--sans); } .son-pieza small { display: block; font-size: 13px; color: var(--gris); line-height: 1.4; }
 /* en el teléfono, el botón de la cuenta (arriba a la derecha) tapaba el ☰: la barra le deja su lugar */
 @media (max-width: 900px) { .barra-movil { padding-right: 64px; } }
+
+/* ── privacidad en pantalla: nombres y fotos borrosos, para grabar ────────────────────── */
+/* los dos interruptores del menú (la misma pieza del sonido, más delgada) */
+.priv-lat { display: grid; gap: 6px; }
+.priv-tit { font: 700 11px var(--sans); letter-spacing: .12em; text-transform: uppercase; color: #8e7f98; padding: 0 2px 1px; }
+.son-switch.fino { padding: 7px 12px; } .son-switch.fino b { font-size: 14px; font-weight: 500; color: #d9cfe0; } .son-switch.fino .ico { font-size: 16px; }
+.son-switch.fino.on { border-color: var(--rosa); background: #3a2130; } .son-switch.fino.on b { color: #fff; font-weight: 600; }
+.priv-ico.on { background: var(--rosa-suave); border-color: var(--rosa); } .barra-movil .priv-ico.on { background: var(--rosa); opacity: 1; }
+.barra-movil .priv-ico:not(.on) { background: var(--noche-3); opacity: 1; }
+/* nivel 1 · nombres: cada nombre y cada correo que se pinta va envuelto en .priv-n */
+html[data-priv~="nombres"] .priv-n { filter: blur(.42em); -webkit-user-select: none; user-select: none; }
+html[data-priv~="nombres"] .avatar:not(.foto):not(.misterio) { color: transparent; text-shadow: 0 0 9px rgba(255,255,255,.95); }
+html[data-priv~="nombres"] [data-priv="nombre"], html[data-priv~="nombres"] .priv-campo { color: transparent; text-shadow: 0 0 9px rgba(33,29,36,.7); caret-color: var(--tinta); }
+html[data-priv~="nombres"] [data-priv="nombre"]::placeholder, html[data-priv~="nombres"] .priv-ph::placeholder { color: transparent; text-shadow: 0 0 9px rgba(33,29,36,.5); }
+html[data-priv~="nombres"] [data-login-ct], html[data-priv~="fotos"] [data-login-ct] { filter: blur(5px); } /* el botón de la cuenta puede traer nombre, correo y foto */
+/* nivel 2 · fotos: toda imagen y todo video de la página (la marca y los iconos son texto, no imágenes) */
+html[data-priv~="fotos"] img:not([data-priv-no]), html[data-priv~="fotos"] video:not([data-priv-no]) { filter: blur(22px); clip-path: inset(0 round 12px); }
+html[data-priv~="fotos"] img.avatar { filter: blur(6px); clip-path: circle(50%); }
+html[data-priv~="fotos"] img.avatar.xl { filter: blur(10px); }
+html[data-priv~="fotos"] .visor img, html[data-priv~="fotos"] .visor video { filter: blur(44px); }
+html[data-priv~="fotos"] [data-login-ct] img { filter: none; clip-path: none; } /* ya va borroso entero */
+html[data-priv~="nombres"] .bv-av.a { color: transparent; text-shadow: 0 0 9px rgba(255,255,255,.95); } /* la inicial de quien recorre, en las pantallas del recorrido */

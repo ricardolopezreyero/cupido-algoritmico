@@ -11,6 +11,7 @@ export async function api(ruta, datos) {
   let j = null;
   try { j = await r.json(); } catch { /* sin cuerpo */ }
   if (!r.ok) throw Object.assign(new Error(j?.error || 'Algo falló'), { datos: j, status: r.status });
+  try { window.__cupidoAprender?.(j); } catch { /* la privacidad en pantalla nunca rompe una respuesta */ }
   return j;
 }
 

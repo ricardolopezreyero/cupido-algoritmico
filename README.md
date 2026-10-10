@@ -51,6 +51,7 @@ Detalle completo, incluida la revisión de lo sexual y lo espiritual: **[MODELO.
 - [`EXPERIENCIA.md`](EXPERIENCIA.md) — La experiencia de respuesta y la primera impresión multimedia.
 - [`docs/RUTA.md`](docs/RUTA.md) — **La lista completa** de lo que falta, priorizada.
 - [`docs/RECORRIDO.md`](docs/RECORRIDO.md) — **El recorrido**: cómo recibe Cupido a cada persona, con una voz para ella y otra para él.
+- [`docs/PANTALLA.md`](docs/PANTALLA.md) — **Privacidad en pantalla**: nombres y fotos borrosos con un toque, para grabar sin enseñar de quién es.
 - [`docs/SONIDOS.md`](docs/SONIDOS.md) — **El sonido**: un toque lo apaga, qué calla y qué no, las cuatro familias y los 26 sonidos.
 - [`docs/CORREOS.md`](docs/CORREOS.md) — **Los correos**: las reglas, los tonos, los 22 correos y cómo se revisan (Gmail corta a los 102 KB; el nuestro más pesado anda en 14).
 - `public/js/preguntas.js` — el cuestionario v2 (fuente única de verdad).

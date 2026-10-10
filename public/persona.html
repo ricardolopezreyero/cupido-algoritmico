@@ -21,7 +21,7 @@
 
 <!-- Tablero (con sesión) -->
 <div id="raiz-tablero">
-  <div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Mi tablero</b></a><span class="bm-acc"><span id="son-movil"></span><button id="abrir-menu" aria-label="Abrir menú">☰</button></span></div>
+  <div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Mi tablero</b></a><span class="bm-acc"><span id="priv-movil"></span><span id="son-movil"></span><button id="abrir-menu" aria-label="Abrir menú">☰</button></span></div>
   <div class="admin">
     <aside class="lateral" id="lateral">
       <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
@@ -30,7 +30,7 @@
       <nav id="nav"></nav>
       <button class="salir" id="salir"><span>⏻</span>Cerrar sesión</button>
       <div class="pie-lat" id="pie-lat"></div>
-      <div id="son-menu"></div>
+      <div class="dock-lat"><div id="priv-menu"></div><div id="son-menu"></div></div>
     </aside>
     <main class="contenido" id="contenido"><p class="vacio">Cargando tu tablero…</p></main>
   </div>
@@ -60,6 +60,9 @@ import { AREAS_VIDA, leerVida } from '/js/vida.js';
 import { ELEMENTOS, ELEMENTO, SUAVES } from '/js/elementos.js';
 import { dictable, puedeDictar } from '/js/dictar.js';
 import { tocar, precargar, interruptor, callar, ajustes as ajustesSonido } from '/js/sonido.js';
+import { interruptorPrivado, oculto } from '/js/privado.js';
+// privacidad en pantalla: nombres y fotos borrosos, para grabar. Va en el menú de la izquierda, junto al sonido.
+interruptorPrivado($('#priv-menu'), 'menu'); interruptorPrivado($('#priv-movil'), 'icono');
 import { TONOS, TONO, MAZOS, MAZO, CARTA, DETALLES, DETALLE, PLANES, PLAN, RESPUESTAS_CITA, RESPUESTA_CITA, RESPUESTA_MAX, NOTA_MAX, subidoDeTono } from '/js/chispa.js';
 import { montarVoz, vozLlamar, vozEvento } from '/js/llamada.js';
 import { subirPorPartes, prepararFoto, cartelDeVideo, duracionDeAudio, sinUbicacion, grabadora, MICROFONO, CAMARA, legible, duracionTxt } from '/js/subir.js';
@@ -1047,7 +1050,7 @@ function toastMensaje(c, vista) {
 function avisarFuera(nombre, vista) {
   CH.fuera = (CH.fuera || 0) + 1;
   document.title = `(${CH.fuera}) ${document.title.replace(/^\(\d+\) /, '')}`;
-  if ('Notification' in window && Notification.permission === 'granted') { try { const n = new Notification(nombre, { body: vista, icon: '/favicon.svg', tag: 'cupido-' + CH.otra, silent: !ajustesSonido().on }); n.onclick = () => { window.focus(); n.close(); }; } catch {} }
+  if ('Notification' in window && Notification.permission === 'granted') { try { const n = oculto('nombres') ? new Notification('Cupido', { body: 'Tienes un mensaje nuevo', icon: '/favicon.svg', tag: 'cupido-' + CH.otra, silent: !ajustesSonido().on }) : new Notification(nombre, { body: vista, icon: '/favicon.svg', tag: 'cupido-' + CH.otra, silent: !ajustesSonido().on }); n.onclick = () => { window.focus(); n.close(); }; } catch {} }
 }
 async function verPerfilCompartido() {
   const cont2 = $('#ch-perfil'); cont2.innerHTML = '<p class="vacio">Cargando…</p>';
@@ -1134,7 +1137,7 @@ async function pintarPrograma() {
     <div class="rejilla-2">
       <section class="tarjeta"><h2>Fondo de atracción</h2><p class="sub">Si quieres, una vez. El 100 % se usa para traer a la siguiente persona seria: anuncios cuidados, contenido y verificación de identidad. No te da ninguna ventaja, y así debe ser.</p>
         <div class="montos" data-tipo="fondo">${[99, 299, 999].map((m) => `<button type="button" class="boton boton-claro boton-chico" data-monto="${m}">${pesos(m)}</button>`).join('')}<input type="number" id="monto-fondo" min="${d.minimo}" max="100000" placeholder="otra cantidad" style="max-width:150px"></div>
-        <label class="campo" style="margin:10px 0 0"><small>¿Cómo quieres aparecer en la lista de agradecimiento? (opcional, solo tu nombre de pila)</small><input id="nombre-apoyo" maxlength="40" placeholder="${esc(V.persona.nombreCorto || 'Anónimo')}"></label>
+        <label class="campo" style="margin:10px 0 0"><small>¿Cómo quieres aparecer en la lista de agradecimiento? (opcional, solo tu nombre de pila)</small><input id="nombre-apoyo" maxlength="40" placeholder="${esc(V.persona.nombreCorto || 'Anónimo')}" data-priv="nombre"></label>
         <p class="nota-entrar" style="text-align:left">${d.pagos ? 'Pago seguro con tarjeta. Devoluciones sin preguntas en 15 días.' : 'Los pagos se activan pronto; mientras, lo que más ayuda es compartir.'}</p></section>
       <section class="tarjeta" style="margin-top:0"><h2>Socio fundador</h2><p class="sub">Cada mes, lo que quieras, cancelable en un clic. Los socios fundadores aparecen con un ✦ en la lista de agradecimiento y reciben cada año el informe de en qué se gastó cada peso.</p>
         <div class="montos" data-tipo="socio">${[99, 199, 499].map((m) => `<button type="button" class="boton boton-claro boton-chico" data-monto="${m}">${pesos(m)} al mes</button>`).join('')}</div>

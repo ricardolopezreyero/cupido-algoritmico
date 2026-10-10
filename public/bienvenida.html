@@ -18,7 +18,7 @@
   <a class="marca" href="/" id="marca"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
   <span class="pildora-demo" id="pildora-repaso" hidden>REPASO</span>
   <a class="enlace" id="volver-tablero" href="/persona" style="font-size:14px" hidden>Volver a mi tablero</a>
-  <span id="son-barra"></span>
+  <span id="priv-barra"></span><span id="son-barra"></span>
 </div></header>
 
 <main class="bv">
@@ -44,6 +44,8 @@ import { $, $$, esc, api } from '/js/ui.js';
 import { tocar, precargar, interruptor } from '/js/sonido.js';
 precargar(['paso', 'bienvenida', 'toque', 'puerta', 'si', 'mensaje', 'guardado']);
 interruptor($('#son-barra'), 'icono'); // el recorrido suena: se puede callar con un toque desde la primera pantalla
+import { interruptorPrivado, aprenderNombre } from '/js/privado.js';
+interruptorPrivado($('#priv-barra'), 'icono');
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const q = new URLSearchParams(location.search);
 const luego = q.get('luego');
@@ -80,12 +82,13 @@ const N = 8;
 const tachados = (no, si) => `<div class="bv-que"><div class="bv-no">${no.map((x) => `<span>${x}</span>`).join('')}</div><div class="bv-flecha-abajo">↓</div><div class="bv-si"><b>${si}</b></div></div>`;
 const puertaDemo = (otro) => `<div class="bv-puerta"><div class="puerta" id="bv-p"><div class="marco"></div><div class="luz"></div><div class="hoja"></div><span class="candado">🔒</span></div><div class="bv-sies"><button class="boton" id="bv-si-a">Tú: sí, quiero conocer</button><button class="boton boton-claro" id="bv-si-b" disabled data-otro="${otro}">${otro}: …</button></div><p class="bv-puerta-txt" id="bv-puerta-txt">Tu sí queda guardado. Nadie lo ve hasta que haya dos.</p></div>`;
 function pasos() {
+  aprenderNombre(yo.nombre); // su nombre aparece en los títulos: si pidió ocultar nombres, también se oculta aquí
   const v = via(), n = esc(yo.nombre || '');
   const T = (ella, el, par) => (v === 'ella' ? ella : v === 'el' ? el : par);
   return [
     { id: 'quien', eyebrow: 'Para hablarte a ti', t: 'Antes de contarte nada: <em>¿quién llega?</em>',
       p: 'Cupido no le habla igual a todo el mundo. Dinos quién eres y a quién buscas, y te contamos lo que te toca a ti. Son las dos primeras respuestas de tu cuestionario: ya no te las volvemos a preguntar.',
-      demo: `<div class="bv-form"><label class="bv-campo"><span>¿Cómo te llamamos?</span><input id="q-nombre" maxlength="40" placeholder="Solo tu nombre de pila" autocomplete="given-name" value="${n}" ${soloLeer ? 'disabled' : ''}></label>
+      demo: `<div class="bv-form"><label class="bv-campo"><span>¿Cómo te llamamos?</span><input id="q-nombre" maxlength="40" placeholder="Solo tu nombre de pila" autocomplete="given-name" value="${n}" data-priv="nombre" ${soloLeer ? 'disabled' : ''}></label>
         <div class="bv-campo"><span>Soy</span><div class="bv-ops" id="q-genero">${[['mujer', 'Mujer'], ['hombre', 'Hombre'], ['nobinaria', 'Persona no binaria']].map(([c, l]) => `<button type="button" data-v="${c}" class="${yo.genero === c ? 'sel' : ''}" ${soloLeer ? 'disabled' : ''}>${l}</button>`).join('')}</div></div>
         <div class="bv-campo"><span>Busco</span><div class="bv-ops" id="q-busca">${[['hombre', 'Hombres'], ['mujer', 'Mujeres'], ['nobinaria', 'Personas no binarias']].map(([c, l]) => `<button type="button" data-v="${c}" class="${yo.busca.includes(c) ? 'sel' : ''}" ${soloLeer ? 'disabled' : ''}>${l}</button>`).join('')}</div><small>Puedes elegir más de una.</small></div></div>`,
       nota: soloLeer ? 'Esto ya lo respondiste. Si cambió, se corrige en tu cuestionario.' : 'Solo tu nombre de pila. Tu apellido y tu foto llegan al final, cuando una puerta se abre.',
@@ -238,6 +241,7 @@ async function irseAlFinal() {
 const DEMOS = {
   quien() {
     $('#q-nombre').oninput = (e) => { yo.nombre = e.target.value.trim().slice(0, 40); };
+    $('#q-nombre').onchange = () => aprenderNombre(yo.nombre);
     $$('#q-genero button').forEach((b) => b.onclick = () => { yo.genero = b.dataset.v; tocar('toque'); $$('#q-genero button').forEach((x) => x.classList.toggle('sel', x === b)); refrescar(); });
     $$('#q-busca button').forEach((b) => b.onclick = () => { const v = b.dataset.v; yo.busca = yo.busca.includes(v) ? yo.busca.filter((x) => x !== v) : [...yo.busca, v]; tocar('toque'); b.classList.toggle('sel', yo.busca.includes(v)); refrescar(); });
   },

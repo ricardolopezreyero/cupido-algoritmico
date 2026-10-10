@@ -15,7 +15,7 @@
 </head>
 <body data-author="RLR">
 <!-- Cupido Algorítmico · Panel administrativo · RLR · Ricardo López Reyero -->
-<div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Admin</b></a><span class="bm-acc"><span id="son-movil"></span><button id="abrir-menu" aria-label="Abrir menú">☰</button></span></div>
+<div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Admin</b></a><span class="bm-acc"><span id="priv-movil"></span><span id="son-movil"></span><button id="abrir-menu" aria-label="Abrir menú">☰</button></span></div>
 <div class="admin">
   <aside class="lateral" id="lateral">
     <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
@@ -38,7 +38,7 @@
       <a href="#ruta" data-s="ruta"><span class="ico">🗺️</span>La lista completa</a>
     </nav>
     <div class="pie-lat">Demo con datos ficticios · admin abierto.<br><a href="/demo">Cuenta demo →</a> · <a href="/entrar">Entrar →</a></div>
-    <div id="son-menu"></div>
+    <div class="dock-lat"><div id="priv-menu"></div><div id="son-menu"></div></div>
   </aside>
   <main class="contenido" id="contenido"><p class="vacio">Cargando el panel…</p></main>
 </div>
@@ -53,6 +53,8 @@ import { PREGUNTAS, BLOQUES, PARTE, etiqueta } from '/js/preguntas.js';
 import { AREAS_VIDA } from '/js/vida.js';
 import { SONIDOS, FAMILIAS, tocar, precargar, interruptor, ajustes as ajustesSonido, alCambiar as alCambiarSonido } from '/js/sonido.js';
 interruptor($('#son-menu'), 'menu'); interruptor($('#son-movil'), 'icono'); // encender o apagar: un toque, desde cualquier sección
+import { interruptorPrivado } from '/js/privado.js';
+interruptorPrivado($('#priv-menu'), 'menu'); interruptorPrivado($('#priv-movil'), 'icono'); // nombres y fotos borrosos, para grabar el panel
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const cont = $('#contenido');
 let D = null, seccion = 'resumen', sondeo = null, ultimoEvento = 0;
