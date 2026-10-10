@@ -15,6 +15,7 @@ import { ESQUEMA_CORREOS, correoA } from './correos.js';
 import { ESQUEMA_PROGRAMA, sembrarPrograma } from './programa.js';
 import { ESQUEMA_SUBIDAS, espacioDe } from './subidas.js';
 import { ESQUEMA_CHISPA } from './chispa.js';
+import { ESQUEMA_GTM } from './gtm.js';
 import { ESQUEMA_ELLA, filtroElla, ajustesDe, manda, control, senalesPara, vistaElla } from './ella.js';
 
 export const _RLR = 'Ricardo López Reyero';
@@ -60,6 +61,7 @@ const ESQUEMA = [
   ...ESQUEMA_ELLA,
   ...ESQUEMA_SUBIDAS,
   ...ESQUEMA_CHISPA,
+  ...ESQUEMA_GTM,
   `CREATE INDEX IF NOT EXISTS idx_pares_pct ON pares(pct)`,
   `CREATE INDEX IF NOT EXISTS idx_avisos_persona ON avisos(persona, leido)`,
   `CREATE INDEX IF NOT EXISTS idx_articulos_estado ON articulos(estado, creado)`,

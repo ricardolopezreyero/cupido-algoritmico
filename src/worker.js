@@ -18,6 +18,7 @@ import { generarSonido, servirSonido, estadoSonidos, generarMusica, servirMusica
 import { avance } from '../public/js/preguntas.js';
 import { llamada, conectarVoz, cambiarTono, responderChispa, verAlbum, misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, retirar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
 import { empezarSubida, subirParte, subirVista, terminarSubida, cancelarSubida, limpiarSubidas } from './subidas.js';
+import { quienGtm, verGtm, marcarTarea, cambiarEquipo } from './gtm.js';
 import { esHombre, esAdmin, ponerControl, cerrarPuerta, bloquear, desbloquear, agregarEvitar, quitarEvitar, seguridadAdmin, accionAdmin } from './ella.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
@@ -287,6 +288,17 @@ async function api(req, env, ctx, url) {
   }
 
   /* ── El programa: todo gratis hoy; apoyar es voluntario ─────────────────── */
+  /* ── El go-to-market (/gtm): privado para el equipo. Se entra con el pase del login de la casa o con una sesión de Cupido ── */
+  if (ruta === '/api/gtm' || ruta.startsWith('/api/gtm/')) {
+    const q = await quienGtm(env, req, url, yo);
+    if (q.falta === 'sesion') return json({ error: 'Entra con tu cuenta para ver el plan.', falta: 'sesion' }, 401);
+    if (q.falta === 'permiso') return json({ error: 'Esta cuenta no está en el equipo.', falta: 'permiso', correo: q.email }, 403);
+    if (ruta === '/api/gtm' && metodo === 'GET') return json(await verGtm(env, q));
+    if (ruta === '/api/gtm/tarea' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await marcarTarea(env, q, String(b.id || ''), !!b.hecha); return json(r, r.ok ? 200 : 422); }
+    if (ruta === '/api/gtm/equipo' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await cambiarEquipo(env, q, b.email, !!b.quitar); return json(r, r.ok ? 200 : r.status || 422); }
+    return error('No existe', 404);
+  }
+
   if (ruta === '/api/programa' && metodo === 'GET') return json(await verPrograma(env, yo && !yo.sesion.demo ? yo.P : null));
   if (ruta === '/api/admin/sonidos' && metodo === 'GET') return json(await estadoSonidos(env));
   if (ruta === '/api/admin/musica' && metodo === 'GET') return json(await estadoMusica(env));

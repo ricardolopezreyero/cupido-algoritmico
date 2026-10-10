@@ -20,6 +20,7 @@ Te registras, respondes 43 preguntas una sola vez, y no pasa nada más. No hay s
 | **Artículos** · `/articulos` | Cualquiera publica sin crear cuenta. |
 | **Compartir** · `/compartir` | Todo para hablar de Cupido: 275 frases en la medida de Instagram, Facebook, TikTok y YouTube, 154 videos verticales (sin audio o con música), mensajes de WhatsApp, código para páginas, la marca y los paquetes para bajarlo todo. La misma sección vive en el tablero, con la liga personal. |
 | **Cuestionario** · `/cuestionario` | Las 43 preguntas conectadas a tu cuenta: autoguardado y el motor te cruza al terminar. |
+| **Go-to-market** · `/gtm` | Privado para el equipo: la estrategia para llegar a 10 millones de perfiles vivos, los atajos, a quién buscar y una lista de 244 actividades cuyas palomitas se guardan con nombre y fecha. |
 
 Sin contraseñas a propósito: el correo es la cuenta (enlace mágico) y el demo está a un clic. Lo que falta para abrirlo a personas reales (admin protegido, privacidad de datos sensibles, verificación de identidad, dominio propio para el correo…) está en **[la lista completa](docs/RUTA.md)**.
 
@@ -53,6 +54,7 @@ Detalle completo, incluida la revisión de lo sexual y lo espiritual: **[MODELO.
 - [`docs/RUTA.md`](docs/RUTA.md) — **La lista completa** de lo que falta, priorizada.
 - [`docs/RECORRIDO.md`](docs/RECORRIDO.md) — **El recorrido**: cómo recibe Cupido a cada persona, con una voz para ella y otra para él.
 - [`docs/COMPARTIR.md`](docs/COMPARTIR.md) — **Compartir**: 275 frases en la medida de cada red, 154 videos cortos con música o sin ella, el taller, WhatsApp, el código para páginas, la marca, y cómo se pintan las piezas y se fabrican los videos.
+- [`docs/GTM.md`](docs/GTM.md) — **El go-to-market**: qué trae `/gtm`, quién entra, dónde se edita el plan y la lista, y las reglas para tocarla.
 - [`docs/APP.md`](docs/APP.md) — **Cupido como app**: cómo se instala en cada equipo, qué guarda y qué no, pantalla completa y el código para entrar desde el iPhone.
 - [`docs/PANTALLA.md`](docs/PANTALLA.md) — **Privacidad en pantalla**: nombres y fotos borrosos con un toque, para grabar sin enseñar de quién es.
 - [`docs/SONIDOS.md`](docs/SONIDOS.md) — **El sonido**: un toque lo apaga, qué calla y qué no, las cuatro familias y los 26 sonidos.
