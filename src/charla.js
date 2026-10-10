@@ -53,7 +53,8 @@ const nom = (P) => (P.nombre === 'Sin nombre' ? 'Alguien' : P.nombre.split(' ')[
 const MAX_TEXTO = 2000;
 // Como en la Mina: el texto se escribe tal cual, sin caracteres de control ni marcas invisibles que voltean el texto; los emojis pasan enteros
 const limpiarTexto = (s) => Array.from(String(s ?? '').replace(/[\u0000-\u0009\u000b-\u001f\u007f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()).slice(0, MAX_TEXTO).join('');
-export const ARCHIVO = { max: 15 * 1024 * 1024, mimes: /^(image\/(jpeg|png|webp|gif|heic)|application\/pdf|audio\/|video\/(mp4|webm|quicktime)|text\/plain|application\/(msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)))/ };
+// `max` es el tope del envío directo; lo grande va por partes (src/subidas.js)
+export const ARCHIVO = { max: 15 * 1024 * 1024, mimes: /^(image\/(jpeg|png|webp|gif|heic|heif)|application\/pdf|audio\/|video\/(mp4|webm|quicktime|x-m4v|3gpp)|text\/plain|application\/(msword|vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet|presentationml\.presentation)))/ };
 
 /* ── nace la charla (puerta abierta): "hola" del hombre y luego de la mujer ─ */
 export async function abrirCharla(env, x, y) {
@@ -312,12 +313,24 @@ export async function adjuntar(env, req, yo, otraId, nombre) {
   const limpio = String(nombre || 'archivo').replace(/[^\w.\- áéíóúñÁÉÍÓÚÑ()]/g, '_').slice(0, 80);
   const claveR2 = `charla/${c.a}_${c.b}/${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
   await env.MEDIOS.put(claveR2, cuerpo, { httpMetadata: { contentType: mime } });
-  const archivo = { clave: claveR2, mime, nombre: limpio, tamano: cuerpo.byteLength };
+  return registrarAdjunto(env, yo, otraId, { clave: claveR2, mime, nombre: limpio, tamano: cuerpo.byteLength });
+}
+// ¿Puede mandar un archivo en esta charla? (puerta abierta + los candados de ella). Lo usa la subida por partes antes de empezar.
+export async function puedeAdjuntar(env, yo, otraId) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
+  const candado = await candadoDeElla(env, c, yo, otraId, true); if (candado) return candado;
+  return { c };
+}
+// El archivo ya está en R2: nace el mensaje. `archivo` = { clave, mime, nombre, tamano, vista?, ancho?, alto?, duracion? }
+export async function registrarAdjunto(env, yo, otraId, archivo) {
+  const pa = await puedeAdjuntar(env, yo, otraId); if (pa.error) return pa;
+  const c = pa.c, mime = archivo.mime, limpio = archivo.nombre;
   const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo) VALUES (?, ?, ?, 'archivo', ?, ?)`).bind(c.a, c.b, yo, limpio, JSON.stringify(archivo)).run();
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
-  await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo: 'archivo', vista: /^image\//.test(mime) ? '📷 Foto' : /^audio\//.test(mime) ? '🎤 Nota de voz' : /^video\//.test(mime) ? '🎬 Video' : '📎 ' + limpio, excepto: yo });
-  await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: /^image\//.test(mime) ? 'Te mandó una foto 📷' : /^audio\//.test(mime) ? 'Te mandó una nota de voz 🎤' : /^video\//.test(mime) ? 'Te mandó un video 🎬' : 'Te mandó un archivo 📎' });
-  await anotar(env, 'charla', 'Se mandó un archivo en una charla', `${Math.round(cuerpo.byteLength / 1024)} KB · ${mime}`);
+  await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo: 'archivo', vista: /^image\//.test(mime) ? '📷 Foto' : /^audio\//.test(mime) ? '🎤 Audio' : /^video\//.test(mime) ? '🎬 Video' : '📎 ' + limpio, excepto: yo });
+  await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: /^image\//.test(mime) ? 'Te mandó una foto 📷' : /^audio\//.test(mime) ? 'Te mandó un audio 🎤' : /^video\//.test(mime) ? 'Te mandó un video 🎬' : 'Te mandó un archivo 📎' });
+  await anotar(env, 'charla', 'Se mandó un archivo en una charla', `${archivo.tamano >= 1048576 ? (archivo.tamano / 1048576).toFixed(1) + ' MB' : Math.round(archivo.tamano / 1024) + ' KB'} · ${mime}`);
   return { ok: true, id: r.meta.last_row_id };
 }
 
@@ -327,16 +340,23 @@ export async function servirAdjunto(env, req, yo, otraId, id) {
   const m = await env.DB.prepare(`SELECT archivo FROM mensajes WHERE id = ? AND a = ? AND b = ? AND tipo = 'archivo'`).bind(id, c.a, c.b).first();
   if (!m) return new Response('No existe', { status: 404 });
   const ar = JSON.parse(m.archivo);
-  const obj = await env.MEDIOS.get(ar.clave, { range: req.headers, onlyIf: req.headers });
+  const u = new URL(req.url), quiereVista = u.searchParams.get('vista') === '1' && ar.vista;
+  // el original viaja tal cual se subió y por rangos; la vista es la miniatura ligera para la lista
+  const obj = await env.MEDIOS.get(quiereVista ? ar.clave + '.vista' : ar.clave, { range: req.headers, onlyIf: req.headers });
   if (!obj) return new Response('No existe', { status: 404 });
+  if (!('body' in obj)) return new Response(null, { status: 304, headers: { etag: obj.httpEtag } });
   const h = new Headers();
   obj.writeHttpMetadata(h);
   h.set('etag', obj.httpEtag);
-  h.set('cache-control', 'private, max-age=3600');
+  h.set('x-content-type-options', 'nosniff');
+  h.set('cache-control', 'private, max-age=86400');
   h.set('accept-ranges', 'bytes');
-  if (!/^(image|audio|video)\//.test(ar.mime) && ar.mime !== 'application/pdf') h.set('content-disposition', `attachment; filename="${ar.nombre}"`);
-  if (obj.range) h.set('content-range', `bytes ${obj.range.offset}-${obj.range.end ?? obj.size - 1}/${obj.size}`);
-  return new Response(obj.body, { status: obj.range ? 206 : 200, headers: h });
+  if (u.searchParams.get('bajar') === '1') h.set('content-disposition', `attachment; filename="${ar.nombre}"`);
+  else if (!/^(image|audio|video)\//.test(ar.mime) && ar.mime !== 'application/pdf') h.set('content-disposition', `attachment; filename="${ar.nombre}"`);
+  // el rango exacto que se entrega: sin esto el reproductor no puede adelantar ni regresar en archivos grandes
+  const pideRango = req.headers.has('range');
+  if (pideRango && obj.range) { const ini = obj.range.offset ?? Math.max(0, obj.size - (obj.range.suffix || 0)), largo = obj.range.length ?? obj.size - ini; h.set('content-range', `bytes ${ini}-${ini + largo - 1}/${obj.size}`); h.set('content-length', String(largo)); }
+  return new Response(obj.body, { status: pideRango && obj.range ? 206 : 200, headers: h });
 }
 
 /* ── liberar elementos del perfil (con confirmación del lado del cliente) ── */

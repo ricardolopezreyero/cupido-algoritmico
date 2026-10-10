@@ -59,6 +59,7 @@ import { AREAS_VIDA, leerVida } from '/js/vida.js';
 import { ELEMENTOS, ELEMENTO, SUAVES } from '/js/elementos.js';
 import { dictable, puedeDictar } from '/js/dictar.js';
 import { tocar, precargar, panelSonido, ajustes as ajustesSonido } from '/js/sonido.js';
+import { subirPorPartes, prepararFoto, cartelDeVideo, duracionDeAudio, sinUbicacion, grabadora, MICROFONO, CAMARA, legible, duracionTxt } from '/js/subir.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
 /* ── sesión: cookie que puso el Worker (correo con enlace mágico, o demo) ── */
@@ -174,8 +175,8 @@ function derivados() {
   return { esperanMi, miSi, abiertas, miNo, cerradas, logros, pasos, nuevos: V.avisos.filter((a) => !a.leido).length };
 }
 
-const miAvatar = (P, clase = '') => V.misMedios?.foto ? `<img class="avatar foto ${clase}" src="${esc(V.misMedios.foto.url)}" alt="">` : avatar(P.nombre === 'Sin nombre' ? '♥' : P.nombre, P.color, clase);
-const avatarDe = (r, clase = '') => r.medios?.foto ? `<img class="avatar foto ${clase}" src="${esc(r.medios.foto.url)}" alt="${esc(r.nombre)}">` : avatar(r.nombre, r.color, clase);
+const miAvatar = (P, clase = '') => V.misMedios?.foto ? `<img class="avatar foto ${clase}" src="${esc(V.misMedios.foto.mini || V.misMedios.foto.url)}" alt="">` : avatar(P.nombre === 'Sin nombre' ? '♥' : P.nombre, P.color, clase);
+const avatarDe = (r, clase = '') => r.medios?.foto ? `<img class="avatar foto ${clase}" src="${esc(r.medios.foto.mini || r.medios.foto.url)}" alt="${esc(r.nombre)}">` : avatar(r.nombre, r.color, clase);
 
 /* ── menú lateral en el orden del camino ─────────────────────────────────── */
 const MENU = [
@@ -386,13 +387,14 @@ const SECCIONES = {
         <label class="boton boton-claro boton-chico">${M[tipo] ? 'Cambiar' : 'Subir'} ${tipo === 'foto' ? 'foto' : 'archivo'}<input type="file" accept="${acepta}" data-subir="${tipo}" hidden></label>
         ${tipo !== 'foto' ? `<button class="boton boton-chico" data-grabar="${tipo}">🔴 Grabar ${tipo === 'audio' ? 'mi voz' : 'video'}</button>` : ''}
         ${M[tipo] ? `<button class="enlace" data-borrar="${tipo}">Quitar</button>` : ''}
-        <span class="medio-estado" id="estado-${tipo}"></span>
+        <span class="medio-estado" id="estado-${tipo}">${M[tipo] ? `${legible(M[tipo].tamano)} · ${tipo === 'foto' ? 'resolución completa' : 'calidad original'}` : ''}</span>
       </div></section>`;
     return cabeza('Foto, voz y video', 'Solo lo ve la persona con quien se abrió una puerta. Nadie lo ve antes: primero quién eres, al final cómo te ves.') + `
       <div class="cinta-demo" style="background:var(--rosa-suave);border-color:var(--rosa-linea);color:var(--tinta-2)"><span>🔐</span><span>Estos archivos <b>no aparecen en ninguna lista</b>. Se muestran una sola vez: cuando los dos dijeron que sí.</span></div>
-      ${bloque('foto', '📷', 'Tu foto', 'Una foto donde se te vea la cara, con luz natural. La ajustamos nosotros.', M.foto ? `<img src="${esc(M.foto.url)}" alt="Tu foto">` : `<div class="medio-vacio">${avatar(P.nombre === 'Sin nombre' ? '♥' : P.nombre, P.color, 'xl')}<span>Hoy te representa tu inicial.</span></div>`, 'image/*')}
-      ${bloque('audio', '🎙️', 'Tu voz', 'Lee tu carta en voz alta, o cuenta tu martes. Hasta 90 segundos.', M.audio ? `<audio controls preload="metadata" src="${esc(M.audio.url)}"></audio>` : `<div class="medio-vacio"><span style="font-size:34px">🎙️</span><span>Todavía no hay voz.</span></div>`, 'audio/*')}
-      ${bloque('video', '🎬', 'Tu video', 'Un video corto y sin producción: tú, hablando como hablas. Hasta 45 segundos.', M.video ? `<video controls playsinline preload="metadata" src="${esc(M.video.url)}"></video>` : `<div class="medio-vacio"><span style="font-size:34px">🎬</span><span>Todavía no hay video.</span></div>`, 'video/*')}`;
+      ${bloque('foto', '📷', 'Tu foto', 'Una foto donde se te vea la cara, con luz natural. Se guarda a resolución completa y sin los datos de dónde se tomó.', M.foto ? `<img src="${esc(M.foto.url)}" alt="Tu foto">` : `<div class="medio-vacio">${avatar(P.nombre === 'Sin nombre' ? '♥' : P.nombre, P.color, 'xl')}<span>Hoy te representa tu inicial.</span></div>`, 'image/*')}
+      ${bloque('audio', '🎙️', 'Tu voz', 'Lee tu carta en voz alta, o cuenta tu martes. Grabas hasta 90 segundos en alta fidelidad, o subes un audio tuyo (MP3, M4A, WAV o FLAC): se escucha tal cual.', M.audio ? `<audio controls preload="metadata" src="${esc(M.audio.url)}"></audio>` : `<div class="medio-vacio"><span style="font-size:34px">🎙️</span><span>Todavía no hay voz.</span></div>`, 'audio/*,.flac,.wav,.m4a,.mp3,.aac,.ogg,.opus')}
+      ${bloque('video', '🎬', 'Tu video', 'Un video corto y sin producción: tú, hablando como hablas. Grabas hasta 45 segundos en 1080p, o subes uno tuyo: se guarda en su calidad original, sin volver a comprimirse.', M.video ? `<video controls playsinline preload="${M.video.mini ? 'none' : 'metadata'}" ${M.video.mini ? `poster="${esc(M.video.mini)}"` : ''} src="${esc(M.video.url)}"></video>` : `<div class="medio-vacio"><span style="font-size:34px">🎬</span><span>Todavía no hay video.</span></div>`, 'video/*')}
+      ${tarjetaEspacio()}`;
   },
 
   claridad() {
@@ -557,8 +559,9 @@ function vistaCharla(otra) {
           <div class="ch-herr">
             <button type="button" class="ch-h" data-panel="emoji" title="Emojis y stickers">😊</button>
             <!-- GIF: listo en el servidor (Tenor), apagado por decisión de Ricardo hasta nuevo aviso -->
-            <label class="ch-h" title="Foto">📷<input type="file" accept="image/*" data-adj="foto" hidden></label>
-            <label class="ch-h" title="Video">🎬<input type="file" accept="video/*" capture="user" data-adj="video" hidden></label>
+            <label class="ch-h" title="Fotos en alta calidad">📷<input type="file" accept="image/*" data-adj="foto" multiple hidden></label>
+            <label class="ch-h" title="Video en su calidad original">🎬<input type="file" accept="video/*" data-adj="video" multiple hidden></label>
+            <label class="ch-h" title="Audio en su calidad original (MP3, M4A, WAV, FLAC…)">🎵<input type="file" accept="audio/*,.flac,.wav,.m4a,.mp3,.aac,.ogg,.opus" data-adj="audio" multiple hidden></label>
             <button type="button" class="ch-h" id="ch-voz" title="Nota de voz">🎤</button>
             <button type="button" class="ch-h" id="ch-dictar" title="Dictar (se escribe lo que digas)">🗣️</button>
             <label class="ch-h" title="Archivo">📎<input type="file" data-adj="archivo" hidden></label>
@@ -591,9 +594,11 @@ function filaMensaje(m, seguido) {
   else if (m.tipo === 'gif') { cuerpo = `<img src="${esc(m.archivo?.preview || m.archivo?.url || '')}" alt="GIF" loading="lazy">`; clase = 'media'; }
   else if (m.tipo === 'archivo') {
     const mime = m.archivo?.mime || '';
-    if (/^image\//.test(mime)) { cuerpo = `<a href="${ruta}" target="_blank" rel="noopener"><img src="${ruta}" alt="${esc(m.archivo.nombre)}" loading="lazy"></a>`; clase = 'media'; }
-    else if (/^audio\//.test(mime)) { cuerpo = `<div class="voz">🎤 <audio controls preload="metadata" src="${ruta}"></audio></div>`; }
-    else if (/^video\//.test(mime)) { cuerpo = `<video controls playsinline preload="metadata" src="${ruta}"></video>`; clase = 'media'; }
+    const A = m.archivo || {}, peso = A.tamano ? legible(A.tamano) : '';
+    // en la lista va la vista ligera; el original (en la calidad en que se mandó) se pide al abrirlo o al darle play
+    if (/^image\//.test(mime)) { cuerpo = `<a href="${ruta}" data-visor="${ruta}" data-nombre="${esc(A.nombre || 'foto')}"><img src="${A.vista ? ruta + '?vista=1' : ruta}" ${A.ancho && A.alto ? `width="${A.ancho}" height="${A.alto}"` : ''} alt="${esc(A.nombre)}" loading="lazy"></a><span class="hd-pie">${A.ancho ? `${A.ancho} × ${A.alto} · ` : ''}${peso}</span>`; clase = 'media'; }
+    else if (/^audio\//.test(mime)) { const voz = A.nombre === 'Nota de voz'; cuerpo = `<div class="voz">${voz ? '🎤' : '🎵'} <audio controls preload="metadata" src="${ruta}"></audio></div>${voz ? '' : `<span class="hd-nombre">${esc(A.nombre || '')}</span>`}<span class="hd-pie">${A.duracion ? duracionTxt(A.duracion) + ' · ' : ''}${peso} · calidad original · <a href="${ruta}?bajar=1">Descargar</a></span>`; clase = 'audio'; }
+    else if (/^video\//.test(mime)) { cuerpo = `<video controls playsinline preload="${A.vista ? 'none' : 'metadata'}" ${A.vista ? `poster="${ruta}?vista=1"` : ''} src="${ruta}"></video><span class="hd-pie">${A.duracion ? duracionTxt(A.duracion) + ' · ' : ''}${A.alto ? Math.min(A.ancho, A.alto) + 'p · ' : ''}${peso} · calidad original · <a href="${ruta}?bajar=1">Descargar</a></span>`; clase = 'media'; }
     else cuerpo = `<a class="ch-doc" href="${ruta}">📄 ${esc(m.archivo?.nombre || 'archivo')} <small>${Math.round((m.archivo?.tamano || 0) / 1024)} KB</small></a>`;
   } else if (SOLO_EMOJI.test(m.texto || '')) { cuerpo = esc(m.texto); clase = 'jumbo'; }
   else cuerpo = linkear(esc(m.texto));
@@ -660,35 +665,41 @@ async function mandar(cuerpo) {
   try { await api(`/api/charla/${encodeURIComponent(otra)}`, cuerpo); tocar(cuerpo.tipo === 'sticker' ? 'sticker' : 'enviado'); await CH.traer(); }
   catch (err) { temp.remove(); tocar('error'); avisar(err.message); throw err; }
 }
+const POR_EXT = { flac: 'audio/flac', wav: 'audio/wav', mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', opus: 'audio/ogg', mov: 'video/quicktime', mp4: 'video/mp4', m4v: 'video/mp4', webm: 'video/webm', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', gif: 'image/gif', pdf: 'application/pdf' };
+const tipoDe = (archivo) => (archivo.type || '').split(';')[0] || POR_EXT[String(archivo.name || '').split('.').pop().toLowerCase()] || '';
+// Manda un archivo en la calidad en que llegó: la foto a resolución completa, el audio y el video sin volver a comprimirse
 async function subirAdjunto(clase, archivo) {
   const otra = CH.otra;
   if (!archivo) return;
-  if (archivo.size > 15 * 1024 * 1024) { avisar('Máximo 15 MB.'); return; }
-  const caja = $('#ch-mensajes');
-  const temp = document.createElement('div'); temp.className = 'msg mio pendiente fin-grupo'; temp.innerHTML = `<div class="globo">${clase === 'foto' ? '📷' : clase === 'video' ? '🎬' : clase === 'voz' ? '🎤' : '📎'} Mandando ${esc(archivo.name || clase)}…</div><div class="cuando"><span class="ch-barra"><i></i></span></div>`;
+  if (CH.datos?.ella && !CH.datos.ella.puedoMedios) { avisarCandado(); return; }
+  const caja = $('#ch-mensajes'), tipo = tipoDe(archivo);
+  const ico = /^image\//.test(tipo) || clase === 'foto' ? '📷' : /^video\//.test(tipo) ? '🎬' : clase === 'voz' ? '🎤' : /^audio\//.test(tipo) ? '🎵' : '📎';
+  const temp = document.createElement('div'); temp.className = 'msg mio pendiente fin-grupo';
+  temp.innerHTML = `<div class="globo">${ico} <span class="sub-txt">Preparando ${esc(archivo.name || clase)}…</span></div><div class="cuando"><span class="ch-barra real"><i></i></span> <span class="sub-pct"></span></div>`;
   caja.appendChild(temp); caja.scrollTop = caja.scrollHeight;
   try {
-    const esFoto = clase === 'foto' || /^image\/(jpeg|png|webp|heic)/.test(archivo.type);
-    const cuerpo = esFoto ? await reducirFoto(archivo) : archivo;
-    const mime = esFoto ? 'image/jpeg' : (archivo.type || 'application/octet-stream').split(';')[0];
-    const nombre = esFoto && !/\.jpe?g$/i.test(archivo.name || '') ? (archivo.name || 'foto').replace(/\.[^.]+$/, '') + '.jpg' : (archivo.name || clase);
-    await api2('PUT', `/api/charla/${encodeURIComponent(otra)}/archivo?nombre=${encodeURIComponent(nombre)}`, cuerpo, mime);
-    await CH.traer();
-  } catch (err) { temp.remove(); avisar(err.message); }
+    let cuerpo = archivo, mime = tipo || 'application/octet-stream', extra = {}, nombre = archivo.name || clase;
+    if (/^image\//.test(tipo) || clase === 'foto') { const f = await prepararFoto(archivo); cuerpo = f.cuerpo; mime = f.mime; extra = { vista: f.vista, ancho: f.ancho, alto: f.alto }; if (mime === 'image/jpeg' && !/\.jpe?g$/i.test(nombre)) nombre = nombre.replace(/\.[^.]+$/, '') + '.jpg'; }
+    else if (/^video\//.test(tipo)) { cuerpo = await sinUbicacion(archivo); extra = await cartelDeVideo(archivo); }
+    else if (/^audio\//.test(tipo)) extra = { duracion: archivo.duracion || await duracionDeAudio(archivo) };
+    temp.querySelector('.sub-txt').textContent = `Mandando ${nombre}…`;
+    await subirPorPartes({ destino: 'charla', otra, nombre }, cuerpo, { mime, ...extra, alProgreso: (p) => { temp.querySelector('.ch-barra i').style.width = Math.round(p * 100) + '%'; temp.querySelector('.sub-pct').textContent = `${Math.round(p * 100)} % de ${legible(cuerpo.size)}`; } });
+    if (CH.otra === otra) await CH.traer(); else temp.remove();
+  } catch (err) { temp.remove(); avisar(err.message, 5000); }
 }
 async function notaDeVoz(boton) {
   if (CH.grabando) { CH.grabando.stop(); return; }
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { avisar('Tu navegador no puede grabar aquí.'); return; }
-  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { avisar('No se pudo usar el micrófono. Revisa los permisos.'); return; }
-  const mime = ['audio/mp4', 'audio/webm;codecs=opus', 'audio/webm'].find((m) => MediaRecorder.isTypeSupported(m));
-  const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : {}); const partes = []; let seg = 0;
+  let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: MICROFONO }); } catch { try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { avisar('No se pudo usar el micrófono. Revisa los permisos.'); return; } }
+  const rec = grabadora(stream, 'audio'), mime = rec.mimeType; const partes = []; let seg = 0; // 256 kbps, 48 kHz, sin filtros que ensucien
   rec.ondataavailable = (e) => e.data.size && partes.push(e.data);
-  const reloj = setInterval(() => { seg++; boton.textContent = `⏹ ${seg}s`; if (seg >= 120) rec.stop(); }, 1000);
+  const reloj = setInterval(() => { seg++; boton.textContent = `⏹ ${seg}s`; if (seg >= 300) rec.stop(); }, 1000);
   rec.onstop = () => {
     clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); CH.grabando = null; boton.textContent = '🎤'; boton.classList.remove('grabando'); tocar('voz_fin');
     if (seg < 1) { avisar('Muy corta. Mantén un segundo al menos.'); return; }
     const blob = new Blob(partes, { type: rec.mimeType || mime || 'audio/webm' });
-    subirAdjunto('voz', new File([blob], 'Nota de voz', { type: blob.type }));
+    const nota = new File([blob], 'Nota de voz', { type: blob.type }); nota.duracion = seg; // el navegador no sabe cuánto dura lo que acaba de grabar; nosotros sí
+    subirAdjunto('voz', nota);
   };
   CH.grabando = rec; boton.textContent = '⏹ 0s'; boton.classList.add('grabando'); rec.start(500); tocar('voz_inicio');
   avisar('Grabando… toca ⏹ para mandar.', 2500);
@@ -808,7 +819,7 @@ async function engancharCharla(otra) {
     try { await mandar({ tipo: 'texto', texto }); } catch { txt.value = texto; }
     txt.focus();
   };
-  $$('[data-adj]').forEach((i) => i.onchange = (e) => { subirAdjunto(i.dataset.adj, e.target.files[0]); e.target.value = ''; });
+  $$('[data-adj]').forEach((i) => i.onchange = async (e) => { const lista = [...e.target.files].slice(0, 10); e.target.value = ''; for (const f of lista) await subirAdjunto(i.dataset.adj, f); });
   // aquí manda ella: sin su permiso no se abre ni el selector de archivos
   $$('label.ch-h:has([data-adj])').forEach((l) => l.addEventListener('click', (e) => { if (CH.datos?.ella && !CH.datos.ella.puedoMedios) { e.preventDefault(); avisarCandado(); } }));
   $$('[data-panel]').forEach((b) => b.onclick = () => abrirPanel(b.dataset.panel, b));
@@ -848,6 +859,8 @@ async function engancharCharla(otra) {
       $('[data-guardar]', bar).onclick = async () => { bar.remove(); try { const r = await api(`/api/charla/${encodeURIComponent(otra)}/guardar`, { mensaje: id }); if (r.guardado) CH.guardados.add(id); else CH.guardados.delete(id); const el = caja.querySelector(`.msg[data-id="${id}"] .cuando`); el?.querySelector('.marca-guardado')?.remove(); if (r.guardado) el?.insertAdjacentHTML('beforeend', '<span class="marca-guardado" title="Guardado">🔖</span>'); avisar(r.guardado ? 'Guardado. Lo encuentras en 🔖.' : 'Quitado de guardados.'); } catch (err) { avisar(err.message); } };
       return;
     }
+    const vz = e.target.closest('[data-visor]');
+    if (vz) { e.preventDefault(); abrirVisor(vz.dataset.visor, vz.dataset.nombre); return; }
     const ir2 = e.target.closest('[data-ir]');
     if (ir2) { e.preventDefault(); irAMensaje(Number(ir2.dataset.ir)); return; }
     if (!e.target.closest('.reac-bar')) $('.reac-bar', caja)?.remove();
@@ -903,6 +916,14 @@ function abrirPanelCabeza(cual) {
     $('#ch-g-x').onclick = cerrarPaneles;
     api(`/api/charla/${encodeURIComponent(CH.otra)}/guardados`).then((r) => { $('#ch-res').innerHTML = r.length ? r.map(fila).join('') : '<p class="vacio" style="padding:8px 12px">Todavía no guardas nada. En cualquier mensaje: ☺ → ☆.</p>'; enganchar(); }).catch((e) => avisar(e.message));
   }
+}
+// La foto a tamaño completo, en la calidad en que se mandó
+function abrirVisor(ruta, nombre) {
+  const v = document.createElement('div'); v.className = 'visor';
+  v.innerHTML = `<img src="${esc(ruta)}" alt="${esc(nombre || '')}"><div class="visor-barra"><a class="boton boton-chico" href="${esc(ruta)}?bajar=1">Descargar original</a><button class="boton boton-claro boton-chico" type="button">Cerrar</button></div>`;
+  const cerrar = () => { v.remove(); document.removeEventListener('keydown', tecla); }; const tecla = (e) => { if (e.key === 'Escape') cerrar(); };
+  v.onclick = (e) => { if (e.target === v || e.target.tagName === 'BUTTON' || e.target.tagName === 'IMG') cerrar(); }; document.addEventListener('keydown', tecla);
+  document.body.appendChild(v);
 }
 function abrirHoja(titulo, html) {
   const velo = document.createElement('div'); velo.className = 'modal-velo on';
@@ -1105,53 +1126,55 @@ function lecturaVida(L) {
     <p class="seccion-sub" style="margin:10px 0 0">${L.vacio.id === 'pareja' ? 'Pareja es hoy tu elemento más vacío. Por eso estás aquí, y por eso no lo llenaremos con cualquiera.' : `Hoy lo que más pide atención es <b>${L.vacio.n.toLowerCase()}</b>. Una pareja no lo llena; una buena pareja lo acompaña.`}</p>`;
 }
 
-/* ── medios: subir (la foto se reduce aquí mismo), grabar voz o video ──── */
+/* ── medios: subir en alta calidad, grabar voz o video ───────────────────── */
+// Cuánto ocupa lo suyo. Hoy está incluido; el medidor ya existe para cuando el espacio extra tenga precio.
+function tarjetaEspacio() {
+  const e = V.espacio; if (!e) return '';
+  const pct = Math.min(100, Math.round(100 * e.usado / e.tope));
+  return `<section class="tarjeta"><h2>Tu espacio</h2><p class="sub">Todo lo tuyo se guarda en la calidad en que lo subes: aquí nada se vuelve a comprimir. Durante 2026 y 2027 el espacio está incluido.</p>
+    <div class="espacio"><div class="pista"><div class="relleno" data-w="${Math.max(pct, e.usado ? 2 : 0)}"></div></div><b>${legible(e.usado)}</b><span>de ${legible(e.tope)}</span></div>
+    <div class="estado-pool" style="margin-top:14px"><div><b>${legible(e.perfil)}</b><span>tu foto, tu voz y tu video</span></div><div><b>${legible(e.charlas)}</b><span>lo que mandaste en tus charlas</span></div><div><b>${e.archivos}</b><span>${e.archivos === 1 ? 'archivo mandado' : 'archivos mandados'}</span></div></div></section>`;
+}
 async function api2(metodo, ruta, cuerpo, tipo) {
   const r = await fetch(ruta, { method: metodo, headers: tipo ? { 'content-type': tipo } : {}, body: cuerpo });
   let j = null; try { j = await r.json(); } catch {}
   if (!r.ok) throw new Error(j?.error || 'Algo falló');
   return j;
 }
-async function reducirFoto(archivo) {
-  const bmp = await createImageBitmap(archivo).catch(() => null);
-  if (!bmp) return archivo;
-  const max = 1400, k = Math.min(1, max / Math.max(bmp.width, bmp.height));
-  const c = document.createElement('canvas'); c.width = Math.round(bmp.width * k); c.height = Math.round(bmp.height * k);
-  c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
-  return await new Promise((res) => c.toBlob((b) => res(b || archivo), 'image/jpeg', 0.86));
-}
+// Foto a resolución completa (y su miniatura para el avatar); voz y video tal cual, sin volver a comprimirse
 async function subirMedio(tipo, archivo) {
-  const est = $('#estado-' + tipo); if (est) est.textContent = 'Subiendo…';
+  const est = $('#estado-' + tipo), decir = (t) => { const e = $('#estado-' + tipo); if (e) e.textContent = t; };
+  decir('Preparando…');
   try {
-    const cuerpo = tipo === 'foto' ? await reducirFoto(archivo) : archivo;
-    const mime = tipo === 'foto' ? 'image/jpeg' : (archivo.type || (tipo === 'audio' ? 'audio/webm' : 'video/webm')).split(';')[0];
-    const r = await api2('PUT', `/api/medio/${tipo}`, cuerpo, mime);
-    V.misMedios = r.medios; pintarLateral(); ir('medios'); tocar('logro', { fuerza: 0.8 });
-    avisar(tipo === 'foto' ? 'Tu foto quedó guardada.' : tipo === 'audio' ? 'Tu voz quedó guardada.' : 'Tu video quedó guardado.');
-  } catch (e) { if (est) est.textContent = ''; avisar(e.message); }
+    let cuerpo = archivo, mime = tipoDe(archivo) || (tipo === 'audio' ? 'audio/webm' : tipo === 'video' ? 'video/webm' : 'image/jpeg'), extra = {};
+    if (tipo === 'foto') { const f = await prepararFoto(archivo, { vistaMax: 480 }); cuerpo = f.cuerpo; mime = f.mime; extra = { vista: f.vista, ancho: f.ancho, alto: f.alto }; }
+    else if (tipo === 'video') { cuerpo = await sinUbicacion(archivo); extra = await cartelDeVideo(archivo); }
+    const r = await subirPorPartes({ destino: 'medio', tipo }, cuerpo, { mime, ...extra, alProgreso: (p) => decir(`Subiendo… ${Math.round(p * 100)} % de ${legible(cuerpo.size)}`) });
+    V.misMedios = r.medios; if (r.espacio) V.espacio = r.espacio; pintarLateral(); if (seccion === 'medios') ir('medios'); tocar('logro', { fuerza: 0.8 });
+    avisar(tipo === 'foto' ? 'Tu foto quedó guardada, a resolución completa.' : tipo === 'audio' ? 'Tu voz quedó guardada, en su calidad original.' : 'Tu video quedó guardado, en su calidad original.');
+  } catch (e) { decir(''); avisar(e.message, 5000); }
 }
-let grabadora = null;
+let grabando = null;
 async function grabar(tipo, boton) {
-  if (grabadora) { grabadora.stop(); return; }
+  if (grabando) { grabando.stop(); return; }
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { avisar('Tu navegador no puede grabar aquí. Sube un archivo.'); return; }
   let stream;
-  try { stream = await navigator.mediaDevices.getUserMedia(tipo === 'audio' ? { audio: true } : { audio: true, video: { facingMode: 'user', width: { ideal: 1280 } } }); }
-  catch { avisar('No se pudo usar el micrófono o la cámara. Revisa los permisos.'); return; }
+  try { stream = await navigator.mediaDevices.getUserMedia(tipo === 'audio' ? { audio: MICROFONO } : { audio: MICROFONO, video: CAMARA }); }
+  catch { try { stream = await navigator.mediaDevices.getUserMedia(tipo === 'audio' ? { audio: true } : { audio: true, video: { facingMode: 'user' } }); } catch { avisar('No se pudo usar el micrófono o la cámara. Revisa los permisos.'); return; } }
   const vista = $('#vista-' + tipo);
   if (tipo === 'video') { vista.innerHTML = '<video autoplay muted playsinline></video>'; vista.querySelector('video').srcObject = stream; }
   else vista.innerHTML = '<div class="medio-vacio grabando"><span style="font-size:34px">🎙️</span><span>Grabando… habla con calma.</span></div>';
   const limite = tipo === 'audio' ? 90 : 45;
-  const mime = ['video/mp4', 'video/webm;codecs=vp9', 'video/webm', 'audio/mp4', 'audio/webm'].filter((m) => m.startsWith(tipo)).find((m) => MediaRecorder.isTypeSupported(m));
-  const rec = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+  const rec = grabadora(stream, tipo), mime = rec.mimeType; // voz a 256 kbps; video a 1080p y 8 Mbps
   const partes = []; let seg = 0;
   rec.ondataavailable = (e) => e.data.size && partes.push(e.data);
   const reloj = setInterval(() => { seg++; boton.textContent = `⏹ Detener (${limite - seg} s)`; if (seg >= limite) rec.stop(); }, 1000);
   rec.onstop = () => {
-    clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); grabadora = null;
+    clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); grabando = null;
     const blob = new Blob(partes, { type: rec.mimeType || mime || (tipo === 'audio' ? 'audio/webm' : 'video/webm') });
     subirMedio(tipo, blob);
   };
-  grabadora = rec; boton.textContent = `⏹ Detener (${limite} s)`;
+  grabando = rec; boton.textContent = `⏹ Detener (${limite} s)`;
   rec.start(1000);
 }
 
@@ -1385,7 +1408,7 @@ function tarjetaCoincidencia(c) {
       <p style="margin:14px 0 0"><a class="boton" href="#charlas/${esc(otraDe(c))}">💬 Abrir la charla</a></p>
       <div class="revelado-medios">
         ${r.medios?.audio ? `<div class="rm"><b>🎙️ Su voz</b><audio controls preload="metadata" src="${esc(r.medios.audio.url)}"></audio></div>` : ''}
-        ${r.medios?.video ? `<div class="rm"><b>🎬 Su video</b><video controls playsinline preload="metadata" src="${esc(r.medios.video.url)}"></video></div>` : ''}
+        ${r.medios?.video ? `<div class="rm"><b>🎬 Su video</b><video controls playsinline preload="${r.medios.video.mini ? 'none' : 'metadata'}" ${r.medios.video.mini ? `poster="${esc(r.medios.video.mini)}"` : ''} src="${esc(r.medios.video.url)}"></video></div>` : ''}
         ${r.medios?.foto ? `<div class="rm"><b>📷 Su foto</b><img src="${esc(r.medios.foto.url)}" alt="${esc(r.nombre)}"></div>` : ''}
       </div>
       ${!(r.medios?.foto || r.medios?.audio || r.medios?.video) ? `<div class="proximos"><div><span>🎙️</span>Su voz</div><div><span>🎬</span>Su video</div><div><span>📷</span>Su foto</div></div><p class="seccion-sub" style="margin:12px 0 0">${c.mediosGuardados ? `${esc(r.nombre)} decide cuándo enseñarte su foto, su voz y su video. Abrir la puerta no los entrega.` : `${esc(r.nombre)} todavía no ha subido foto, voz ni video. Aparecerán aquí en cuanto lo haga.`}</p>` : ''}</div>` : ''}

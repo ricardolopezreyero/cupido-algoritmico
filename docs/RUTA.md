@@ -41,6 +41,8 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 
 - [x] **Aquí manda ella** (9 oct 2026): la regla de la casa, completa en [ELLA.md](ELLA.md) y en la página `/ella`. Si ella bloquea, queda bloqueado; **diez mujeres distintas → fuera para siempre** (la cuenta se retira y su correo no vuelve a entrar); tres reportes → sale del matching hasta que una persona lo revise. **Cerrar no es bloquear**: cerrar la puerta no castiga a nadie y se puede volver a abrir. Candados en la charla: él no manda fotos, video, voz ni archivos hasta que ella lo permite; cinco mensajes sin respuesta y le toca esperar; la foto, la voz y el video de ella los enseña ella, no la puerta; lo compartido del perfil se puede guardar de nuevo; borrar la charla. Además: modo discreta, «que nadie sepa de mí hasta que yo diga sí», «no cruzarme con» (por correo, guardado como huella), lo que ella ve de él antes de decidir (días aquí, charlas abiertas, bloqueos), la guía de primera cita con el aviso para alguien de confianza, pantalla nueva en el recorrido (10 pantallas) y panel «Aquí manda ella» en el admin. Lo básico (cerrar, bloquear, reportar, evitar) lo tiene cualquier persona. Código en `src/ella.js`.
 
+- [x] **Fotos, audio y video en alta calidad** (9 oct 2026): nada se vuelve a comprimir. Las fotos se guardan a resolución completa (hasta 4096 px de lado) y sin los datos de dónde se tomaron; el audio (MP3, M4A, WAV, FLAC) y el video viajan tal cual, por partes de 8 MB que se reintentan solas (R2 multipart), con barra de avance real. Topes por archivo en la charla: foto 40 MB, audio 300 MB, video 800 MB; en el perfil: 40, 100 y 500 MB. La voz se graba a 256 kbps y 48 kHz sin cancelación de eco ni supresión de ruido; el video del perfil, a 1080p y 8 Mbps. Cada archivo lleva su vista ligera (miniatura o cuadro del video): la charla carga rápido y el original se pide al abrirlo o al darle play, por rangos. A los videos MP4/MOV se les borra la ubicación sin tocar imagen ni sonido. **Tu espacio**: se mide por persona (perfil + lo que mandó en sus charlas), 5 GB incluidos; el medidor ya existe para cuando el espacio extra tenga precio. Código en `src/subidas.js` y `public/js/subir.js`.
+
 ## 1 · Antes de abrirlo a personas reales (bloquea el lanzamiento)
 
 ### Acceso sin contraseñas
@@ -91,6 +93,9 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 - [ ] **Caducidad de puertas**: si en 14 días no hay dos síes, "la puerta se cerró sin abrirse" — sin decir por qué.
 - [ ] Decidir **una puerta abierta a la vez** o varias (ver decisiones).
 - [ ] Pausa y regreso al estado exacto; editar respuestas con aviso de que cambian las coincidencias.
+- [ ] **Compatibilidad de video**: se guarda y se reproduce el original, sin convertir. Un video HEVC de iPhone no se ve en algunos Android viejos ni en Firefox; para eso hay «Descargar». Si un día hace falta que todo se vea en todo, se agrega una copia compatible (Cloudflare Stream o un convertidor propio), conservando el original.
+- [ ] **Precio del espacio extra**: hoy 5 GB incluidos por persona (`TOPE_PERSONA`). Falta decidir cuánto incluye para siempre, cuánto cuesta ampliar y publicarlo en el programa antes de cobrarlo.
+- [ ] Probar en un iPhone real que la galería entrega el video original (se pide con selección múltiple para que iOS no lo comprima).
 - [ ] **Geografía real** con coordenadas y radio, no solo ciudad; países y mudanza internacional.
 - [ ] Todas las orientaciones e identidades desde el día uno (el motor ya cruza "quién busca a quién" en las dos direcciones).
 - [ ] Explicar a la persona su "lo más cerca" con más contexto (qué dimensión le faltó a esa persona, sin decir quién).

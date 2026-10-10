@@ -17,6 +17,7 @@ import { limpiarPrecioJusto, REVISION_DIAS } from './precios.js';
 import { generarSonido, servirSonido, estadoSonidos } from './sonidos.js';
 import { avance } from '../public/js/preguntas.js';
 import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, retirar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
+import { empezarSubida, subirParte, subirVista, terminarSubida, cancelarSubida, limpiarSubidas } from './subidas.js';
 import { esHombre, esAdmin, ponerControl, cerrarPuerta, bloquear, desbloquear, agregarEvitar, quitarEvitar, seguridadAdmin, accionAdmin } from './ella.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
@@ -56,6 +57,7 @@ export default {
       await correoA(env, P, 'recordatorio', { faltan: Math.max(1, faltan), pct: av.pct }, { cadaMinutos: 60 * 24 * 3650 });
     }
     await hitosDelDia(env); // aniversarios de las charlas
+    await limpiarSubidas(env); // lo que se quedó a medias no ocupa espacio
     // precio justo: cada 180 días, ¿sigue igual tu situación? (junto con lo que cambia: ciudad, trabajo, hijos)
     const reales = (await env.DB.prepare(`SELECT id FROM personas WHERE pool = 'real' AND correo IS NOT NULL AND completo = 1`).all()).results;
     for (const f of reales) { const P = await persona(env, f.id); let aj = {}; try { aj = JSON.parse(P.ajustes || '{}'); } catch {} const rev = aj.precio_revisado ? Date.parse(aj.precio_revisado) : Date.parse(P.creada + 'Z'); if (Date.now() - rev >= REVISION_DIAS * 86400000) await correoA(env, P, 'revision', {}, { cadaMinutos: 60 * 24 * (REVISION_DIAS - 1) }); }
@@ -223,6 +225,18 @@ async function api(req, env, ctx, url) {
     // retirar para siempre o regresar al matching: solo una cuenta administradora (con su enlace mágico)
     if (!(await esAdmin(env, yo))) return error('Esta acción pide entrar con una cuenta administradora.', 403);
     const r = await accionAdmin(env, await leerJson(req, 2000)); return r.error ? error(r.error, r.status) : json(r);
+  }
+  /* ── Subidas en alta calidad: por partes, sin volver a comprimir (src/subidas.js) ── */
+  if (ruta.startsWith('/api/subida')) {
+    if (!yo) return sinSesion();
+    if (yo.sesion.demo && yo.P.origen === 'demo') return error('En la cuenta demo no se suben archivos. Con tu cuenta sí.', 403);
+    let r = null;
+    if (ruta === '/api/subida' && metodo === 'POST') r = await empezarSubida(env, yo.P, await leerJson(req, 4000));
+    else if ((x = m(/^\/api\/subida\/([a-z0-9]{10,40})\/parte\/(\d{1,4})$/)) && metodo === 'PUT') r = await subirParte(env, yo.P, x[1], Number(x[2]), req);
+    else if ((x = m(/^\/api\/subida\/([a-z0-9]{10,40})\/vista$/)) && metodo === 'PUT') r = await subirVista(env, yo.P, x[1], req);
+    else if ((x = m(/^\/api\/subida\/([a-z0-9]{10,40})\/fin$/)) && metodo === 'POST') r = await terminarSubida(env, yo.P, x[1], (await leerJson(req, 200_000)).partes);
+    else if ((x = m(/^\/api\/subida\/([a-z0-9]{10,40})$/)) && metodo === 'DELETE') r = await cancelarSubida(env, yo.P, x[1]);
+    if (r) return r.error ? error(r.error, r.status) : json(r);
   }
   /* ── Medios: foto, voz y video (solo con cuestionario completo; se ven solo con puerta abierta) ── */
   if ((x = m(/^\/api\/medio\/(foto|audio|video)$/)) && (metodo === 'PUT' || metodo === 'DELETE')) {

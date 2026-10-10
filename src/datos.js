@@ -13,6 +13,7 @@ import { ESQUEMA_MEDIOS, mediosDe } from './medios.js';
 import { ESQUEMA_CHARLA, abrirCharla, misCharlas } from './charla.js';
 import { ESQUEMA_CORREOS, correoA } from './correos.js';
 import { ESQUEMA_PROGRAMA, sembrarPrograma } from './programa.js';
+import { ESQUEMA_SUBIDAS, espacioDe } from './subidas.js';
 import { ESQUEMA_ELLA, filtroElla, ajustesDe, manda, control, senalesPara, vistaElla } from './ella.js';
 
 export const _RLR = 'Ricardo López Reyero';
@@ -56,6 +57,7 @@ const ESQUEMA = [
   ...ESQUEMA_CORREOS,
   ...ESQUEMA_PROGRAMA,
   ...ESQUEMA_ELLA,
+  ...ESQUEMA_SUBIDAS,
   `CREATE INDEX IF NOT EXISTS idx_pares_pct ON pares(pct)`,
   `CREATE INDEX IF NOT EXISTS idx_avisos_persona ON avisos(persona, leido)`,
   `CREATE INDEX IF NOT EXISTS idx_articulos_estado ON articulos(estado, creado)`,
@@ -75,6 +77,7 @@ export async function asegurar(env) {
   // Aquí manda ella: las puertas y las charlas se pueden cerrar (y quién las cerró)
   try { await env.DB.prepare(`ALTER TABLE puertas ADD COLUMN cerro TEXT`).run(); await env.DB.prepare(`ALTER TABLE puertas ADD COLUMN cerrada TEXT`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN cerrada TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN cerro TEXT`).run(); } catch { /* ya existen */ }
+  try { await env.DB.prepare(`ALTER TABLE medios ADD COLUMN vista INTEGER NOT NULL DEFAULT 0`).run(); } catch { /* ya existe */ }
   await sembrarPrograma(env);
   await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_personas_correo ON personas(correo)`).run();
   const n = await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas`).first();
@@ -366,6 +369,7 @@ export async function vistaPersona(env, P) {
     invitacion: { codigo: await codigoDe(env, P), invitados: (await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas WHERE invitado_por = ?`).bind(P.id).first()).n },
     vida: (() => { try { return JSON.parse(P.vida || 'null'); } catch { return null; } })(),
     ella: await vistaElla(env, P),
+    espacio: await espacioDe(env, P.id), // cuánto ocupa lo suyo; hoy incluido
   };
 }
 

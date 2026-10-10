@@ -128,7 +128,7 @@ async function apagarCharla(env, a, b, cerro) {
 // Borra lo que mandó esta persona en la charla: sus textos y sus archivos (los de la otra persona se conservan como evidencia)
 async function borrarLoMio(env, a, b, yo) {
   const arch = (await env.DB.prepare(`SELECT archivo FROM mensajes WHERE a = ? AND b = ? AND de = ? AND tipo = 'archivo'`).bind(a, b, yo).all()).results;
-  for (const f of arch) { try { const k = JSON.parse(f.archivo || '{}').clave; if (k) await env.MEDIOS.delete(k); } catch {} }
+  for (const f of arch) { try { const k = JSON.parse(f.archivo || '{}').clave; if (k) await env.MEDIOS.delete([k, k + '.vista']); } catch {} }
   await env.DB.prepare(`UPDATE mensajes SET texto = '', archivo = NULL, tipo = 'borrado' WHERE a = ? AND b = ? AND de = ?`).bind(a, b, yo).run();
 }
 const avisoCierre = (env, paraId, P) => env.DB.prepare(`INSERT INTO avisos (persona, tipo, texto, otra) VALUES (?, 'cierre', ?, ?)`)
