@@ -46,7 +46,7 @@ export function anillo(pct, etiqueta = 'contigo') {
       <circle class="arco" cx="52" cy="52" r="${r}" fill="none" stroke="url(#g-${pct})" stroke-width="9" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${c}" style="transition:stroke-dashoffset 1.4s cubic-bezier(.16,1,.3,1)"/>
       <defs><linearGradient id="g-${pct}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#e77a4e"/><stop offset="1" stop-color="#d6455f"/></linearGradient></defs>
     </svg>
-    <div class="num"><span class="cuenta">0</span><small>% ${esc(etiqueta)}</small></div>
+    <div class="num"><span class="cifra"><span class="cuenta">0</span><i>%</i></span><small>${esc(etiqueta)}</small></div>
   </div>`;
 }
 export function animarAnillos(raiz = document) {
