@@ -51,12 +51,13 @@ const TEXTOS = [
     { t: 'Sin publicidad', x: 'Quien busca pareja no debería ser el producto de nadie. Por eso aquí no hay publicidad. Ni una. Ni la habrá.\n{liga}' },
   ] },
 ];
+// quien = el nombre que sale arriba del chat (en vez del de un contacto) · sub = el renglón chico de debajo · foto = persona, grupo o estado
 const WHATSAPP = [
-  { id: 'amiga', i: '👭', t: 'Para una amiga', x: 'Amiga, mira esto. No es una app de citas: contestas 43 preguntas una sola vez y solo te avisa si alguien cruza el 90 % contigo. Nadie ve tu perfil, nadie te escribe sin tu sí y tu foto la enseñas tú cuando quieras. Es gratis y no tiene anuncios.\n{liga}' },
-  { id: 'amigo', i: '🤝', t: 'Para un amigo', x: 'Te paso esto. No es una app de citas: contestas 43 preguntas una sola vez y el sistema solo te avisa si alguien cruza el 90 % contigo. Aquí no gana la mejor foto, gana embonar. Una regla: ahí manda ella. Es gratis y no tiene anuncios.\n{liga}' },
-  { id: 'grupo', i: '👥', t: 'Para un grupo', x: 'Les comparto algo distinto para quien esté buscando pareja en serio, o conozca a alguien que sí. Se llama Cupido Algorítmico: 43 preguntas una sola vez, y solo avisa cuando dos personas cruzan el 90 %. Sin perfiles, sin deslizar y sin anuncios. Es gratis. Entre más gente seria entre, más fácil que cada quien encuentre a su persona.\n{liga}' },
-  { id: 'pareja', i: '💍', t: 'Si tú ya tienes pareja', x: 'Yo ya no estoy buscando, pero me acordé de ti. Esto no es una app de citas: son 43 preguntas una sola vez y solo te avisa si alguien cruza el 90 % contigo. Es gratis y no tiene anuncios. Dale una vuelta:\n{liga}' },
-  { id: 'estado', i: '🟢', t: 'Para tu estado', x: 'No es una app de citas 💘\n{liga}' },
+  { id: 'amiga', quien: 'Para una amiga', sub: 'en línea', foto: 'persona', x: 'Amiga, mira esto. No es una app de citas: contestas 43 preguntas una sola vez y solo te avisa si alguien cruza el 90 % contigo. Nadie ve tu perfil, nadie te escribe sin tu sí y tu foto la enseñas tú cuando quieras. Es gratis y no tiene anuncios.\n{liga}' },
+  { id: 'amigo', quien: 'Para un amigo', sub: 'en línea', foto: 'persona', x: 'Te paso esto. No es una app de citas: contestas 43 preguntas una sola vez y el sistema solo te avisa si alguien cruza el 90 % contigo. Aquí no gana la mejor foto, gana embonar. Una regla: ahí manda ella. Es gratis y no tiene anuncios.\n{liga}' },
+  { id: 'grupo', quien: 'Para un grupo', sub: 'tus amigas, tus primos, tú', foto: 'grupo', x: 'Les comparto algo distinto para quien esté buscando pareja en serio, o conozca a alguien que sí. Se llama Cupido Algorítmico: 43 preguntas una sola vez, y solo avisa cuando dos personas cruzan el 90 %. Sin perfiles, sin deslizar y sin anuncios. Es gratis. Entre más gente seria entre, más fácil que cada quien encuentre a su persona.\n{liga}' },
+  { id: 'pareja', quien: 'Para alguien que quieres', sub: 'si tú ya tienes pareja', foto: 'persona', x: 'Yo ya no estoy buscando, pero me acordé de ti. Esto no es una app de citas: son 43 preguntas una sola vez y solo te avisa si alguien cruza el 90 % contigo. Es gratis y no tiene anuncios. Dale una vuelta:\n{liga}' },
+  { id: 'estado', quien: 'Para tu estado', sub: 'lo ven tus contactos por 24 horas', foto: 'estado', x: 'No es una app de citas 💘\n{liga}' },
 ];
 const REDES = [
   ['Instagram', 'Publicación', 'retrato'], ['Instagram', 'Historia y portada de Reel', 'historia'], ['Instagram', 'Carrusel o cuadrícula', 'cuadrado'],
@@ -76,6 +77,14 @@ const COLORES = [
 const bajar = (blob, nombre) => { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 8000); };
 // Un respiro entre tandas para que la pantalla siga respondiendo. Con un canal y no con setTimeout: así no se frena si la pestaña queda atrás.
 const respiro = () => new Promise((ok) => { const c = new MessageChannel(); c.port1.onmessage = () => ok(); c.port2.postMessage(0); });
+// Los dibujos del chat (las siluetas, las palomitas y la flecha de mandar), hechos aquí
+const WA_FOTO = {
+  persona: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#dfe5e7"/><circle cx="20" cy="15.5" r="6.6" fill="#fff"/><path d="M6.5 34.5C7.9 27.5 13.3 23.9 20 23.9s12.1 3.6 13.5 10.6A19.9 19.9 0 0 1 20 40a19.9 19.9 0 0 1-13.5-5.5z" fill="#fff"/></svg>',
+  grupo: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="20" fill="#dfe5e7"/><circle cx="14.5" cy="16" r="4.8" fill="#fff"/><circle cx="26.5" cy="16.5" r="4.2" fill="#fff"/><path d="M5.5 30c.9-5 4.300-7.600 9-7.600s8.100 2.600 9 7.600v2.500h-18z" fill="#fff"/><path d="M25.500 32.500V30c-.2-2.300-1-4.200-2.300-5.700 1-.5 2.100-.7 3.300-.7 4.200 0 7.300 2.300 8.100 6.900v2z" fill="#fff"/></svg>',
+  estado: '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18.5" fill="none" stroke="#25d366" stroke-width="2.6" stroke-dasharray="26 3.1"/><circle cx="20" cy="20" r="14.5" fill="#dfe5e7"/><circle cx="20" cy="17" r="4.8" fill="#fff"/><path d="M10.500 30.500c1.100-5 4.900-7.400 9.500-7.400s8.400 2.400 9.500 7.400a14.400 14.400 0 0 1-19 0z" fill="#fff"/></svg>',
+};
+const WA_PALOMITAS = '<svg viewBox="0 0 16 11" width="16" height="11" aria-label="Leído"><path d="M11.07.65a.46.46 0 0 0-.65.08L4.9 7.8 2.37 5.4a.46.46 0 0 0-.65.02l-.3.32a.46.46 0 0 0 .02.65l3.2 3.05c.2.19.5.17.67-.05l6.1-7.8a.46.46 0 0 0-.08-.65zM15.1.65a.46.46 0 0 0-.65.08L8.93 7.8l-.7-.67-.6.77 1.02.98c.2.19.5.17.67-.05l6.1-7.8a.46.46 0 0 0-.08-.65z" fill="#53bdeb"/></svg>';
+const WA_MANDAR = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M3.400 20.400l17.500-7.500a1 1 0 0 0 0-1.800L3.400 3.600a1 1 0 0 0-1.400 1.200L4 11l9 1-9 1-2 6.200a1 1 0 0 0 1.400 1.200z" fill="currentColor"/></svg>';
 const ICONO_BOTON = (punto) => `<svg width="20" height="20" viewBox="14 16 36 36" aria-hidden="true"><path d="M32 50s-16-9.6-16-21.3C16 22.7 20.3 18 25.9 18c2.7 0 5 1.2 6.1 3.2C33.1 19.2 35.4 18 38.1 18 43.7 18 48 22.7 48 28.7 48 40.4 32 50 32 50z" fill="${punto[0]}"/><circle cx="32" cy="30" r="3.2" fill="${punto[1]}"/></svg>`;
 const BOTONES = {
   // un solo color manda en las cuatro piezas: el botón, la insignia, la tarjeta y la imagen
@@ -151,18 +160,27 @@ export async function montarCompartir(raiz, op = {}) {
       <div class="acciones cmp-pie-muro"><button class="boton boton-claro boton-chico" data-a="zip-muro" id="cmp-zip-muro"></button></div>
     </section>
 
-    <section class="tarjeta" id="cmp-textos">
-      <h2>Textos para acompañar</h2><p class="sub">Ya traen tu liga. Copia, pega y publica; o cámbialos a tu manera.</p>
+    <section class="tarjeta cmp-plegada" id="cmp-textos"><details>
+      <summary><div><h2>Textos para acompañar</h2><p class="sub">Cada imagen ya trae su texto. Aquí están los largos, por red, con tu liga puesta.</p></div><span class="cmp-abre"><i>Ver los textos</i><i>Cerrar</i></span></summary>
       <div class="cmp-series" id="cmp-red">${TEXTOS.map((t) => `<button data-a="red" data-r="${t.id}" class="${t.id === E.red ? 'on' : ''}">${t.n}</button>`).join('')}</div>
       <div id="cmp-textos-lista"></div>
-    </section>
+    </details></section>
 
     <section class="tarjeta" id="cmp-whatsapp">
-      <h2>WhatsApp</h2><p class="sub">De persona a persona es como más se cree. Cinco mensajes listos: toca «Mandar», elige a quién, y ya. Al pegar la liga, WhatsApp enseña sola la imagen de Cupido.</p>
-      <div class="cmp-whats">${WHATSAPP.map((w) => `<article class="cmp-msj"><h3><span>${w.i}</span>${w.t}</h3><p>${esc(llenar(w.x)).replace(/\n/g, '<br>')}</p>
-        <div class="acciones"><a class="boton boton-chico cmp-wa" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(llenar(w.x))}">Mandar</a><button class="boton boton-claro boton-chico" data-a="copiar-wa" data-w="${w.id}">Copiar</button></div></article>`).join('')}</div>
-      <h3 class="cmp-h3">La foto del grupo</h3><p class="sub">Si abres un grupo o una comunidad para hablar de Cupido, usa el corazón. Todas las redes lo recortan en círculo, y cabe.</p>
-      <div class="cmp-perfiles">${P.PERFILES.map((p) => `<button class="cmp-perfil" data-a="perfil" data-p="${p.id}" title="Descargar el perfil ${p.n.toLowerCase()} · 1080 × 1080"><canvas data-perfil="${p.id}"></canvas><span>${p.n}</span></button>`).join('')}</div>
+      <h2>WhatsApp</h2><p class="sub">De persona a persona es como más se cree. Así se va a ver tu mensaje cuando llegue: con la imagen de Cupido y la liga ya puestas. Toca «Mandar», elige a quién, y ya.</p>
+      <div class="cmp-whats">${WHATSAPP.map((w) => { const texto = w.x.replace(/\n?\{liga\}$/, ''), hora = new Date().toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', hour12: true });
+        return `<article class="wa ${w.foto === 'estado' ? 'wa-estado' : ''}">
+          <header class="wa-cab"><span class="wa-atras" aria-hidden="true">‹</span><span class="wa-foto">${WA_FOTO[w.foto]}</span><div class="wa-quien"><b>${w.quien}</b><small>${w.sub}</small></div></header>
+          <div class="wa-chat"><span class="wa-dia">Hoy</span>
+            <div class="wa-burbuja">
+              <div class="wa-previa"><img src="/img/compartir/liga.png" alt="" loading="lazy" data-priv-no><b>Cupido Algorítmico — No es una app de citas</b><span>43 preguntas, una sola vez. Si alguien cruza el 90 % contigo, les avisamos a los dos.</span><small>${P.CASA}</small></div>
+              <p>${esc(texto).replace(/\n/g, '<br>')}<br><i>${esc(liga)}</i></p>
+              <span class="wa-hora">${esc(hora)} ${WA_PALOMITAS}</span>
+            </div></div>
+          <footer class="wa-pie"><a class="wa-mandar" target="_blank" rel="noopener" href="https://wa.me/?text=${encodeURIComponent(llenar(w.x))}">${WA_MANDAR}Mandar por WhatsApp</a><button class="wa-copiar" data-a="copiar-wa" data-w="${w.id}">Copiar</button></footer>
+        </article>`; }).join('')}</div>
+      <h3 class="cmp-h3">La foto del grupo</h3><p class="sub">Si abres un grupo o una comunidad para hablar de Cupido, usa el corazón. Todas las redes lo recortan en círculo, y cabe. Toca uno y se descarga.</p>
+      <div class="cmp-perfiles">${P.PERFILES.map((p) => `<button class="cmp-perfil" data-a="perfil" data-p="${p.id}" title="Descargar el perfil ${p.n.toLowerCase()} · 1080 × 1080"><canvas data-perfil="${p.id}"></canvas><span>⬇ ${p.n}</span></button>`).join('')}</div>
     </section>
 
     <section class="tarjeta" id="cmp-redes">
@@ -187,20 +205,20 @@ export async function montarCompartir(raiz, op = {}) {
       <div class="cmp-cab"><div><h2>La marca</h2><p class="sub">Con esto se arma todo lo demás. Úsalo tal cual: no pide permiso.</p></div>
         <div class="acciones"><button class="boton boton-claro boton-chico" data-a="guia">⬇ Guía de estilos</button></div></div>
       <div class="cmp-marca">
-        <div><h3 class="cmp-h3">Logotipo</h3><p class="sub">El corazón con su punto y el nombre en Fraunces. El corazón va en rosa; el nombre, en negro o en blanco.</p>
+        <div><h3 class="cmp-h3">Logotipo</h3><p class="sub">El corazón con su punto y el nombre en Fraunces. El corazón va en rosa; el nombre, en negro o en blanco. Toca el que necesites y se descarga.</p>
           <div class="cmp-logos">
-            <button class="cmp-logo claro" data-a="logo" data-l="negro" title="Descargar en PNG sin fondo"><canvas data-logo="negro"></canvas><span>Sobre claro · PNG</span></button>
-            <button class="cmp-logo oscuro" data-a="logo" data-l="blanco" title="Descargar en PNG sin fondo"><canvas data-logo="blanco"></canvas><span>Sobre oscuro · PNG</span></button>
-            <button class="cmp-logo claro" data-a="logo" data-l="una" title="Descargar en PNG sin fondo"><canvas data-logo="una"></canvas><span>A una tinta · PNG</span></button>
-            <button class="cmp-logo claro" data-a="logo" data-l="svg" title="Descargar en SVG"><canvas data-logo="solo"></canvas><span>El corazón · SVG</span></button>
+            <button class="cmp-logo claro" data-a="logo" data-l="negro" title="Descargar en PNG sin fondo"><canvas data-logo="negro"></canvas><span>⬇ Sobre claro · PNG</span></button>
+            <button class="cmp-logo oscuro" data-a="logo" data-l="blanco" title="Descargar en PNG sin fondo"><canvas data-logo="blanco"></canvas><span>⬇ Sobre oscuro · PNG</span></button>
+            <button class="cmp-logo claro" data-a="logo" data-l="una" title="Descargar en PNG sin fondo"><canvas data-logo="una"></canvas><span>⬇ A una tinta · PNG</span></button>
+            <button class="cmp-logo claro" data-a="logo" data-l="svg" title="Descargar en SVG"><canvas data-logo="solo"></canvas><span>⬇ El corazón · SVG</span></button>
           </div></div>
         <div><h3 class="cmp-h3">Color</h3><p class="sub">Negro sobre blanco. El rosa es solo del corazón. Toca un color para copiarlo.</p>
-          <div class="cmp-colores">${COLORES.map((c) => `<button data-a="color" data-h="${c.h}" title="Copiar ${c.h}"><i style="background:${c.h}"></i><b>${c.n}</b><code>${c.h}</code><small>${c.u}</small></button>`).join('')}</div></div>
-        <div><h3 class="cmp-h3">Tipografía</h3><p class="sub">Dos letras, las dos libres y gratis.</p>
+          <div class="cmp-colores">${COLORES.map((c) => `<button data-a="color" data-h="${c.h}" title="Copiar ${c.h}"><i style="background:${c.h}"></i><b>${c.n}</b><code>${c.h} · copiar</code><small>${c.u}</small></button>`).join('')}</div></div>
+        <div><h3 class="cmp-h3">Tipografía</h3><p class="sub">Dos letras, las dos libres y gratis. Toca una y se descarga a tu equipo.</p>
           <div class="cmp-tipos">
-            <a href="https://fonts.google.com/specimen/Fraunces" target="_blank" rel="noopener"><b style="font:600 30px/1.1 Fraunces,Georgia,serif">Las mujeres <i>mandan.</i></b><span>Fraunces 600 · para decir. La cursiva, para lo que importa.</span></a>
-            <a href="https://fonts.google.com/specimen/Inter" target="_blank" rel="noopener"><b style="font:500 17px/1.4 Inter,system-ui,sans-serif">Es la regla de la casa.</b><span>Inter 500 · para explicar, en gris y en chico.</span></a>
-          </div></div>
+            <a class="cmp-tipo" href="/letras/Cupido_Tipografia_Fraunces.zip" download data-a="letra" data-l="Fraunces"><b style="font:600 30px/1.1 Fraunces,Georgia,serif">Las mujeres <i>mandan.</i></b><span>Fraunces 600 · para decir. La cursiva, para lo que importa.</span><em>⬇ Descargar Fraunces <small>.zip · 0.5 MB</small></em></a>
+            <a class="cmp-tipo" href="/letras/Cupido_Tipografia_Inter.zip" download data-a="letra" data-l="Inter"><b style="font:500 17px/1.4 Inter,system-ui,sans-serif">Es la regla de la casa.</b><span>Inter 500 · para explicar, en gris y en chico.</span><em>⬇ Descargar Inter <small>.zip · 0.9 MB</small></em></a>
+          </div><p class="cmp-pista">Cada paquete trae la letra normal, la cursiva, su licencia y cómo instalarla en Mac, Windows, Canva o CapCut.</p></div>
         <div class="cmp-voz"><div><h3 class="cmp-h3">Así suena Cupido</h3><ul class="razones" style="padding:0">
             <li><span class="i si">✓</span><span>Invita, no vende. Se le habla a una persona, de tú.</span></li>
             <li><span class="i si">✓</span><span>Frases cortas, que se entiendan a la primera.</span></li>
@@ -351,7 +369,7 @@ export async function montarCompartir(raiz, op = {}) {
   const lienzoNuevo = () => document.createElement('canvas'), mesa = lienzoNuevo();   // la mesa: un solo lienzo para todo el paquete (las piezas se pintan de una en una)
   const tareaPieza = (carpeta, receta) => ({ nombre: `${carpeta}${P.nombreDe(receta)}`, hacer: () => P.aBytes(P.pintar(mesa, receta)) });
   const textosPlanos = () => TEXTOS.map((t) => `══ ${t.n.toUpperCase()} ══\n${t.nota}\n\n` + t.lista.map((x) => `— ${x.t} —\n${llenar(x.x)}`).join('\n\n')).join('\n\n\n') + `\n\n\n══ ETIQUETAS ══\n${ETIQUETAS}\n`;
-  const whatsPlano = () => WHATSAPP.map((w) => `— ${w.t} —\n${llenar(w.x)}`).join('\n\n') + '\n';
+  const whatsPlano = () => WHATSAPP.map((w) => `— ${w.quien} —\n${llenar(w.x)}`).join('\n\n') + '\n';
   const codigoPlano = () => { const c = codigos(); return `<!-- Cupido Algorítmico · código para tu página. Copia el bloque que quieras y pégalo donde deba verse. -->\n\n<!-- Botón -->\n${c.boton}\n\n<!-- Insignia -->\n${c.insignia}\n\n<!-- Tarjeta con una frase distinta cada día -->\n${c.tarjeta}\n\n<!-- Imagen con liga -->\n${c.imagen}\n`; };
   const leeme = (sello) => `CUPIDO ALGORÍTMICO · Kit para compartir ${VERSION_KIT} · ${sello}
 ${P.CASA}/compartir
@@ -468,7 +486,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
     if (T.grabando) return;   // mientras se graba el video no se toca nada: el lienzo es la película
     const b = e.target.closest('[data-a]'); if (!b) { if (e.target === velo) cerrarTaller(); return; }
     const a = b.dataset.a;
-    if (a === 'ir') { $('#cmp-' + b.dataset.p, raiz)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    if (a === 'ir') { const parte = $('#cmp-' + b.dataset.p, raiz), plegada = parte?.querySelector('details'); if (plegada) plegada.open = true; parte?.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     if (a === 'copiar-liga') return copiar(liga, codigo ? 'Tu liga quedó copiada. Compártela con alguien que busque en serio.' : 'Liga copiada.');
     if (a === 'compartir-liga') { try { await navigator.share({ title: 'Cupido Algorítmico', text: 'No es una app de citas. 43 preguntas, una sola vez. Gratis y sin anuncios.', url: liga }); } catch {} return; }
     if (a === 'qr') return abrirQr();
@@ -493,6 +511,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
     if (a === 'boton') { E.boton = b.dataset.b; marcar('#cmp-boton', 'b', E.boton); return pintarCodigos(); }
     if (a === 'copiar-codigo') return copiar(codigos()[b.dataset.c], 'Código copiado. Pégalo en tu página.');
     if (a === 'color') return copiar(b.dataset.h, `${b.dataset.h} copiado.`);
+    if (a === 'letra') { tocar('guardado'); return avisar(`Descargando ${b.dataset.l}. Abre el .zip: adentro dice cómo instalarla.`, 5000); }   // el propio enlace baja el archivo
     if (a === 'logo') {
       const l = b.dataset.l;
       if (l === 'svg') bajar(new Blob([P.SVG_CORAZON()], { type: 'image/svg+xml' }), 'Cupido_corazon.svg');
