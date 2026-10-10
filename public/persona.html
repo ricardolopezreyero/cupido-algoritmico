@@ -258,6 +258,7 @@ const MENU = [
   { s: 'claridad', i: '🔎', t: 'Qué tan bien me conoce' },
   { s: 'filtros', i: '🚧', t: 'Lo que me deja fuera', n: () => V.dejanFuera.length },
   { sep: 'Cuenta' },
+  { s: 'compartir', i: '📣', t: 'Compartir' },
   { s: 'ella', i: () => (MANDO() ? '👑' : '🛡️'), t: () => (MANDO() ? 'Aquí mando yo' : 'Las reglas de la casa') },
   { s: 'estilo', i: '🎨', t: 'Mi estilo' },
   { s: 'apoyar', i: '🤍', t: 'Apoyar a Cupido' },
@@ -349,7 +350,8 @@ const SECCIONES = {
       <section class="tarjeta" style="margin-top:16px"><h2>Últimos avisos</h2>
         <div class="avisos-lista">${V.avisos.slice(0, 3).map(filaAviso).join('') || '<p class="vacio">Sin avisos todavía.</p>'}</div>
         ${V.avisos.length > 3 ? '<p style="margin:10px 0 0"><a class="enlace" href="#avisos">Ver todos →</a></p>' : ''}
-      </section>`;
+      </section>
+      <p class="gratis-linea" style="margin-top:16px">📣 Entre más somos, más fácil que cada quien encuentre a su persona. <a href="#compartir">Compartir Cupido</a></p>`;
   },
 
   coincidencias() {
@@ -488,6 +490,10 @@ const SECCIONES = {
 
   ella() { return seccionElla(); },
 
+  compartir() {
+    return cabeza('Compartir', 'Entre más compartas, más nos ayudas a todos a encontrar a la pareja ideal. Aquí está todo listo: tu liga, las imágenes, los textos y el código.') + `<div id="compartir"><p class="vacio">Preparando las piezas…</p></div>`;
+  },
+
   apoyar() {
     return cabeza('Apoyar a Cupido', 'Confianza primero. El dinero, después, y solo donde ya recibiste valor.') + `<div id="programa"><p class="vacio">Cargando el programa…</p></div>`;
   },
@@ -532,6 +538,13 @@ const SECCIONES = {
 const DESPUES = {
   charlas() { if (parametro && $('#ch-mensajes')) engancharCharla(parametro); },
   apoyar() { pintarPrograma(); },
+  async compartir() {
+    // la galería y el pintor se cargan solo al entrar aquí: el tablero no pesa más por tenerlos
+    const z = $('#compartir'); if (!z) return;
+    try { const { montarCompartir } = await import('/js/compartir.js'); const real = !DEMO() || V.persona.origen !== 'demo'; if (!z.isConnected) return;
+      await montarCompartir(z, { codigo: real ? V.invitacion?.codigo : '', invitados: V.invitacion?.invitados || 0, demo: !real, tocar, parte: parametro }); }
+    catch (e) { z.innerHTML = `<p class="vacio">No se pudo abrir la galería: ${esc(e.message)}</p>`; }
+  },
   correos() { pintarCorreos(); },
   vida() {
     let t = null;
@@ -1266,7 +1279,7 @@ async function pintarPrograma() {
           ${d.mio.nota ? `<p class="nota-pj">${esc(d.mio.nota)}</p>` : ''}</div>
       </div>
       <p class="seccion-sub" style="margin-top:12px">${d.mio.revisado ? `Lo revisaste ${hace(d.mio.revisado)}. Te lo volvemos a preguntar cada seis meses, junto con lo que cambia: ciudad, trabajo, hijos.` : 'Aún no lo has dicho. Mientras, cuentas con el precio base.'} Si cambia antes, cámbialo aquí.</p></section>` : ''}
-    <section class="tarjeta"><h2>Compartir Cupido</h2><p class="sub">Lo que de verdad hace crecer tus probabilidades es que entre más gente seria. Si te gustó, compártelo. Esta liga es tuya.</p>
+    <section class="tarjeta"><h2>Compartir Cupido</h2><p class="sub">Lo que de verdad hace crecer tus probabilidades es que entre más gente seria. Si te gustó, compártelo. ${real ? 'Esta liga es tuya.' : ''} <a href="#compartir">Imágenes, textos y código para compartir →</a></p>
       ${real ? `<div class="enlace-privado"><input id="liga-inv" readonly value="${esc(liga)}"><button class="boton boton-chico" id="copiar-inv">Copiar</button><a class="boton boton-claro boton-chico" href="${whats}" target="_blank" rel="noopener">WhatsApp</a></div>
       <p class="seccion-sub" style="margin:10px 0 0">${inv.invitados ? `<b>${inv.invitados}</b> ${inv.invitados === 1 ? 'persona llegó' : 'personas llegaron'} por tu liga. Gracias.` : 'Aún nadie ha llegado por tu liga. La primera persona que entre por aquí también cuenta para ti: más gente, más cruces.'}</p>`
       : `<p style="margin:0;color:var(--tinta-2)">Con tu propia cuenta tendrás una liga personal para compartir y verás cuántas personas llegaron por ti.</p>`}</section>

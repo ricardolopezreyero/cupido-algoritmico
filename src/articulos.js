@@ -105,7 +105,7 @@ export function layout({ titulo, descripcion = '', cuerpo, url = '', activo = ''
 <title>${esc(titulo)}</title>
 <meta name="description" content="${esc(descripcion)}">
 <meta name="author" content="Ricardo López Reyero"><meta name="rev" content="181218">
-<meta property="og:title" content="${esc(titulo)}"><meta property="og:description" content="${esc(descripcion)}"><meta property="og:type" content="article">${url ? `<meta property="og:url" content="${esc(url)}">` : ''}
+<meta property="og:title" content="${esc(titulo)}"><meta property="og:description" content="${esc(descripcion)}"><meta property="og:type" content="article">${url ? `<meta property="og:url" content="${esc(url)}">` : ''}<meta property="og:site_name" content="Cupido Algorítmico"><meta property="og:image" content="https://cupido.capitaltorreon.com/img/compartir/liga.png"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#faf7f4"><meta name="apple-mobile-web-app-title" content="Cupido"><link rel="apple-touch-icon" href="/app/icono-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -115,7 +115,7 @@ export function layout({ titulo, descripcion = '', cuerpo, url = '', activo = ''
 <!-- RLR · Ricardo López Reyero -->
 ${barra(activo)}
 ${cuerpo}
-<footer class="pie"><div class="envoltura"><span>💘 Cupido Algorítmico · demo</span><span><a href="/">Inicio</a> · <a href="/articulos">Artículos</a> · <a href="/entrar">Entrar</a> · <a href="/demo">Demo</a> · <a href="/admin">Admin</a></span></div></footer>
+<footer class="pie"><div class="envoltura"><span>💘 Cupido Algorítmico · demo</span><span><a href="/">Inicio</a> · <a href="/articulos">Artículos</a> · <a href="/entrar">Entrar</a> · <a href="/demo">Demo</a> · <a href="/compartir">Compartir</a> · <a href="/admin">Admin</a></span></div></footer>
 <script type="module" src="/js/app.js"></script>
 </body></html>`;
 }

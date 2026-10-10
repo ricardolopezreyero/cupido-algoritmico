@@ -18,6 +18,7 @@ Te registras, respondes 43 preguntas una sola vez, y no pasa nada más. No hay s
 | **Tablero de la persona** · `/persona` | Menú lateral: inicio con camino y logros, coincidencias de 90 % hacia arriba, aceptaciones, avisos, lo que más pesa, sus respuestas por categoría, privacidad, pausa y cerrar sesión. |
 | **Panel administrativo** · `/admin` | Cifras, matriz 10 × 10, vetos explicados, el cálculo de cada par en las dos direcciones, puertas, corrida del matching por fases, laboratorio de pesos, artículos y bitácora en vivo. |
 | **Artículos** · `/articulos` | Cualquiera publica sin crear cuenta. |
+| **Compartir** · `/compartir` | Todo para hablar de Cupido: 64 frases en la medida de Instagram, Facebook, TikTok y YouTube (imagen o video), textos, mensajes de WhatsApp, código para páginas, la marca y un zip con todo. La misma sección vive en el tablero, con la liga personal. |
 | **Cuestionario** · `/cuestionario` | Las 43 preguntas conectadas a tu cuenta: autoguardado y el motor te cruza al terminar. |
 
 Sin contraseñas a propósito: el correo es la cuenta (enlace mágico) y el demo está a un clic. Lo que falta para abrirlo a personas reales (admin protegido, privacidad de datos sensibles, verificación de identidad, dominio propio para el correo…) está en **[la lista completa](docs/RUTA.md)**.
@@ -51,6 +52,7 @@ Detalle completo, incluida la revisión de lo sexual y lo espiritual: **[MODELO.
 - [`EXPERIENCIA.md`](EXPERIENCIA.md) — La experiencia de respuesta y la primera impresión multimedia.
 - [`docs/RUTA.md`](docs/RUTA.md) — **La lista completa** de lo que falta, priorizada.
 - [`docs/RECORRIDO.md`](docs/RECORRIDO.md) — **El recorrido**: cómo recibe Cupido a cada persona, con una voz para ella y otra para él.
+- [`docs/COMPARTIR.md`](docs/COMPARTIR.md) — **Compartir**: la galería de 64 frases en la medida de cada red, el taller, los textos, WhatsApp, el código para páginas, la marca y cómo se pintan las piezas.
 - [`docs/APP.md`](docs/APP.md) — **Cupido como app**: cómo se instala en cada equipo, qué guarda y qué no, pantalla completa y el código para entrar desde el iPhone.
 - [`docs/PANTALLA.md`](docs/PANTALLA.md) — **Privacidad en pantalla**: nombres y fotos borrosos con un toque, para grabar sin enseñar de quién es.
 - [`docs/SONIDOS.md`](docs/SONIDOS.md) — **El sonido**: un toque lo apaga, qué calla y qué no, las cuatro familias y los 26 sonidos.
