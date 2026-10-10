@@ -138,7 +138,8 @@ export async function pedirEnlace(env, req, url, correoCrudo) {
   await env.DB.prepare(`INSERT INTO enlaces (token, correo, ip_hash) VALUES (?, ?, ?)`).bind(token, correo, ipHash).run();
   const enlace = new URL(`/entrar/${token}`, url).href;
   const existe = await env.DB.prepare(`SELECT id FROM personas WHERE correo = ?`).bind(correo).first();
-  const c = await armar(env, null, existe ? 'enlace' : 'bienvenida', { enlace, minutos: MIN_ENLACE });
+  // quien ya tiene cuenta recibe su enlace con su nombre y lo que le espera adentro
+  const c = await armar(env, existe ? await persona(env, existe.id) : null, existe ? 'enlace' : 'bienvenida', { enlace, minutos: MIN_ENLACE });
   const mandado = await mandar(env, { persona: existe?.id || null, para: correo, tipo: existe ? 'enlace' : 'bienvenida', asunto: c.asunto, contenido: c.contenido });
   await anotar(env, 'acceso', existe ? 'Alguien pidió su enlace para entrar' : 'Alguien pidió crear su cuenta', await hash(correo));
   if (mandado === 'sin_remitente') {

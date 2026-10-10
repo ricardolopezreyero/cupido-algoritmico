@@ -436,6 +436,8 @@ export function avance(r = {}) {
   return {
     estructuradas: e, estructuradasTotal: est.length, textos: t, textosTotal: txt.length,
     pct: Math.round(100 * (e + t) / (est.length + txt.length)),
+    // cuántas preguntas (no partes) tienen todavía algo sin contestar: es lo que se le dice a la persona
+    preguntasFaltan: new Set(req.filter((p) => !lleno(p)).map((p) => p.n)).size,
     // Entra al matching con todo lo estructurado + la carta: sin carta no hay primera impresión
     listo: e === est.length && lleno(PARTE.carta),
   };

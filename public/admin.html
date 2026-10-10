@@ -230,16 +230,31 @@ const SECCIONES = {
 
   // Correos: el catálogo completo, cómo se ve cada uno (para ella, para él, discreto) y lo que ha salido
   async correos() {
-    const C = await api('/api/admin/correos/catalogo');
+    const [C, R] = await Promise.all([api('/api/admin/correos/catalogo'), api('/api/admin/correos/revision')]);
     const env = Object.fromEntries(C.enviados.map((e) => [e.tipo, e]));
     const total = C.enviados.reduce((x, e) => x + e.n, 0);
-    return cabeza('Correos', 'Aquí somos chismógrafos: de inicio se avisa de todo, y cada quien apaga lo que no quiera. Lo de una charla se junta en un solo correo.') + `
-      <div class="banda" style="grid-template-columns:repeat(4,1fr)"><div class="rosa"><b>${C.correos.length}</b><span>correos<br>distintos</span></div><div><b>${C.categorias}</b><span>categorías que<br>cada quien apaga</span></div><div><b>${total}</b><span>enviados en<br>30 días</span></div><div><b>${C.enEspera}</b><span>novedades por<br>juntar y mandar</span></div></div>
-      <section class="tarjeta"><h2>Cómo se ve cada correo</h2><p class="sub">El mismo correo cambia según quién lo lee. Los de ejemplo no se le mandan a nadie.</p>
-        <div class="correo-controles"><select id="cv-tipo">${C.correos.map((c) => `<option value="${esc(c.tipo)}" ${c.tipo === 'novedades' ? 'selected' : ''}>${esc(c.categoria)} · ${esc(c.tipo)}</option>`).join('')}</select>
+    const TONO = { amor: '#c93a55', noche: '#1c1622', claro: '#fbe6eb', sol: '#fbe8c6', calma: '#d8eee2', sereno: '#e9e2da' };
+    const malos = R.lista.filter((x) => x.faltas.length);
+    return cabeza('Correos', 'Aquí somos chismógrafos: de inicio se avisa de todo, y cada quien apaga lo que no quiera. Cada correo lleva lo suyo e invita a una sola cosa.') + `
+      <div class="banda" style="grid-template-columns:repeat(4,1fr)"><div class="rosa"><b>${C.correos.length}</b><span>correos<br>distintos</span></div><div><b>${C.categorias}</b><span>categorías que<br>cada quien apaga</span></div><div><b>${total}</b><span>enviados en<br>30 días</span></div><div><b>${R.masPesado.kb}<small style="font-size:16px"> KB</small></b><span>pesa el más pesado<br>(Gmail corta en ${R.limiteGmailKb})</span></div></div>
+      <section class="tarjeta"><h2>Todos los correos, juntos</h2><p class="sub">Así llega cada uno. Cambia quién lo lee y en qué pantalla: el texto cambia con la persona. Los de ejemplo no se le mandan a nadie. Toca uno para verlo completo.</p>
+        <div class="correo-controles"><select id="cg-genero"><option value="mujer">Lo lee ella</option><option value="hombre">Lo lee él</option><option value="otro">Sin género</option></select>
+          <select id="cg-ancho"><option value="390">En el teléfono</option><option value="640">En la computadora</option></select>
+          <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="cg-discreto" style="accent-color:var(--rosa)"> Discretos</label></div>
+        <div class="correo-galeria" id="cg">${C.correos.map((c) => `<a class="correo-ficha" href="#" data-ver="${esc(c.tipo)}" data-fijo="${c.fijo ? 1 : 0}">
+          <span class="correo-mini"><iframe title="${esc(c.tipo)}" loading="lazy" tabindex="-1" scrolling="no"></iframe></span>
+          <span class="correo-dato"><b><i style="background:${TONO[c.tono] || '#eee'}"></i>${esc(c.tipo)}</b><span>${esc(c.categoria)}${c.fijo ? ' · siempre llega' : ''}</span><span class="cg-asunto"></span>
+            <span>Invita a: <u>${esc(c.boton)}</u></span><span class="correo-peso" title="${c.kb} KB de ${R.limiteGmailKb} que admite Gmail"><i style="width:${Math.max(4, Math.round(c.kb / R.limiteGmailKb * 100))}%"></i></span><span>${c.kb} KB de ${R.limiteGmailKb}</span></span></a>`).join('')}</div></section>
+      <section class="tarjeta" id="cv"><h2>Uno, completo</h2>
+        <div class="correo-controles"><select id="cv-tipo">${C.correos.map((c) => `<option value="${esc(c.tipo)}" ${c.tipo === 'coincidencia' ? 'selected' : ''}>${esc(c.categoria)} · ${esc(c.tipo)}</option>`).join('')}</select>
           <select id="cv-genero"><option value="mujer">Lo lee ella</option><option value="hombre">Lo lee él</option><option value="otro">Sin género</option></select>
-          <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="cv-discreto" style="accent-color:var(--rosa)"> Discreto</label></div>
+          <select id="cv-ancho"><option value="100%">En la computadora</option><option value="390px">En el teléfono</option></select>
+          <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="cv-discreto" style="accent-color:var(--rosa)"> Discreto</label>
+          <a href="#" id="cv-texto" style="font-size:14px">Ver la versión de puro texto</a></div>
         <p class="correo-asunto" id="cv-asunto"></p><iframe class="correo-marco" id="cv-marco" title="Vista previa del correo"></iframe></section>
+      <section class="tarjeta"><h2>La revisión</h2><p class="sub">Cada correo se arma como lo lee ella, él y alguien sin género, en su versión normal y en la discreta, más los casos más cargados. A todos se les exige lo mismo: marca arriba, título, un botón, firma, por qué llegó y cómo apagarlo, ligas que abren, versión de puro texto y pesar menos de ${R.topeKb} KB.</p>
+        <p style="font:600 22px var(--serif);margin:6px 0 10px">${malos.length ? `<span style="color:var(--rosa-osc)">${malos.length} de ${R.revisados} tienen algo que arreglar</span>` : `<span style="color:var(--ok)">✓ Los ${R.revisados} casos pasan</span>`}</p>
+        ${malos.length ? `<ul class="razones" style="padding:0">${malos.map((x) => `<li><span class="i ojo">!</span><span><b>${esc(x.tipo)}</b> (${esc(x.genero)}${x.discreto ? ', discreto' : ''}${x.nota ? ', ' + esc(x.nota) : ''}): ${x.faltas.map(esc).join(' · ')}</span></li>`).join('')}</ul>` : ''}</section>
       <section class="tarjeta"><h2>El catálogo</h2><p class="sub">Qué correo existe, a qué categoría pertenece y cuándo sale.</p>
         <div style="overflow-x:auto"><table class="tabla"><thead><tr><th>Categoría</th><th>Correo</th><th>Cuándo se manda</th><th>30 días</th></tr></thead><tbody>${C.correos.map((c) => `<tr><td>${esc(c.categoria)}${c.fijo ? ' <span class="chip gris">siempre</span>' : ''}</td><td><a href="#" data-ver="${esc(c.tipo)}"><b>${esc(c.tipo)}</b></a>${c.discreta ? ' <span class="chip gris">versión discreta</span>' : ''}</td><td style="color:var(--tinta-2)">${esc(c.cuando)}</td><td>${env[c.tipo]?.n || 0}${env[c.tipo]?.fallas ? ` <span class="chip ambar">${env[c.tipo].fallas} fallas</span>` : ''}</td></tr>`).join('')}</tbody></table></div></section>
       <section class="tarjeta"><h2>Mandarme la serie completa</h2><p class="sub">Todos los correos de ejemplo, uno tras otro, a un correo tuyo. Pide entrar con una cuenta administradora.</p>
@@ -269,12 +284,27 @@ const SECCIONES = {
 
 const DESPUES = {
   correos() {
+    const liga = (tipo, genero, discreto) => `/api/admin/correos/vista?tipo=${encodeURIComponent(tipo)}&genero=${genero}&discreto=${discreto ? 1 : 0}`;
+    // uno, completo
     const ver = async () => {
-      const r = await fetch(`/api/admin/correos/vista?tipo=${encodeURIComponent($('#cv-tipo').value)}&genero=${$('#cv-genero').value}&discreto=${$('#cv-discreto').checked ? 1 : 0}`);
-      $('#cv-asunto').innerHTML = `Asunto: <b>${esc(decodeURIComponent(r.headers.get('x-asunto') || ''))}</b>`; $('#cv-marco').srcdoc = await r.text();
+      const u = liga($('#cv-tipo').value, $('#cv-genero').value, $('#cv-discreto').checked), r = await fetch(u);
+      $('#cv-asunto').innerHTML = `Asunto: <b>${esc(decodeURIComponent(r.headers.get('x-asunto') || ''))}</b> · pesa ${(Number(r.headers.get('x-peso') || 0) / 1024).toFixed(1)} KB`;
+      const m = $('#cv-marco'); m.style.width = $('#cv-ancho').value; m.srcdoc = await r.text(); $('#cv-texto').href = u + '&texto=1';
     };
-    ['cv-tipo', 'cv-genero', 'cv-discreto'].forEach((id) => $('#' + id).onchange = ver); ver();
-    $$('[data-ver]').forEach((a) => a.onclick = (e) => { e.preventDefault(); $('#cv-tipo').value = a.dataset.ver; ver(); $('#cv-marco').scrollIntoView({ block: 'center', behavior: 'smooth' }); });
+    ['cv-tipo', 'cv-genero', 'cv-discreto', 'cv-ancho'].forEach((id) => $('#' + id).onchange = ver); ver();
+    $('#cv-texto').target = '_blank';
+    $$('[data-ver]').forEach((a) => a.onclick = (e) => { e.preventDefault(); $('#cv-tipo').value = a.dataset.ver; $('#cv-genero').value = $('#cg-genero').value; $('#cv-discreto').checked = $('#cg-discreto').checked && a.dataset.fijo !== '1'; ver(); $('#cv').scrollIntoView({ block: 'start', behavior: 'smooth' }); });
+    // todos juntos: cada miniatura es el correo de verdad, encogido
+    const pintar = () => {
+      const ancho = Number($('#cg-ancho').value), genero = $('#cg-genero').value, disc = $('#cg-discreto').checked;
+      $$('#cg .correo-ficha').forEach(async (f) => {
+        const caja = f.querySelector('.correo-mini'), marco = caja.querySelector('iframe'), z = caja.clientWidth / ancho;
+        marco.style.width = ancho + 'px'; marco.style.height = Math.ceil(caja.clientHeight / z) + 'px'; marco.style.transform = `scale(${z})`;
+        const r = await fetch(liga(f.dataset.ver, genero, disc && f.dataset.fijo !== '1'));
+        f.querySelector('.cg-asunto').textContent = '«' + decodeURIComponent(r.headers.get('x-asunto') || '') + '»'; marco.srcdoc = await r.text();
+      });
+    };
+    ['cg-genero', 'cg-ancho', 'cg-discreto'].forEach((id) => $('#' + id).onchange = pintar); pintar();
     const b = $('#cm-ir'); if (b) {
       b.onclick = async () => { const para = $('#cm-para').value.trim(); if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(para)) { avisar('Ese correo no se ve bien.'); return; } b.disabled = true; b.textContent = 'Mandando…'; try { const r = await api('/api/admin/correos/muestra', { para, genero: $('#cm-genero').value }); avisar(`Salieron ${r.filter((x) => x.id).length} de ${r.length} correos a ${para}.`, 5200); } catch (e) { avisar(e.message); } b.disabled = false; b.textContent = 'Mandar la serie'; };
       api('/api/admin/correos').then((l) => { $('#cm-lista').innerHTML = l.length ? `<div style="overflow-x:auto"><table class="tabla"><thead><tr><th>Cuándo</th><th>Tipo</th><th>Asunto</th><th>Estado</th></tr></thead><tbody>${l.slice(0, 40).map((c) => `<tr><td>${hace(c.creado)}</td><td>${esc(c.tipo)}</td><td>${esc(c.asunto)}</td><td>${esc(c.estado)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vacio">Nada todavía.</p>'; }).catch(() => {});

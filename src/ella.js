@@ -311,7 +311,7 @@ async function avisarAdmin(env, motivo) {
     if (!lista.includes(await huella(c.correo))) continue;
     const m = MOTIVOS.find((x) => x.id === motivo)?.n || motivo;
     await mandar(env, { persona: c.id, para: c.correo, tipo: 'reporte_admin', asunto: 'Cupido: llegó un reporte', cadaMinutos: 10,
-      contenido: { eyebrow: 'Seguridad', titulo: 'Llegó un reporte.', parrafos: [`Alguien reportó a una persona. Motivo: <b>${m}</b>.`, 'El detalle y lo último que se dijo en esa charla están en el panel. Un reporte necesita ojos humanos pronto.'], boton: { txt: 'Revisar en el panel', url: `${env.BASE_URL || 'https://cupido.capitaltorreon.com'}/admin#seguridad` }, bajas: false } });
+      contenido: { tono: 'sol', figura: { tipo: 'emoji', v: '🚩' }, firma: 'equipo', promesas: false, etiqueta: '🛡️&nbsp; Panel', eyebrow: 'Seguridad', titulo: 'Llegó un reporte.', sub: 'Un reporte necesita ojos humanos pronto.', vista: 'Alguien reportó a una persona. Necesita ojos humanos pronto.', parrafos: [`Alguien reportó a una persona. Motivo: <b>${m}</b>.`, 'El detalle y lo último que se dijo en esa charla están en el panel. Quien reportó ya recibió su acuse y espera saber que una persona lo leyó.'], boton: { txt: 'Revisar en el panel', url: `${env.BASE_URL || 'https://cupido.capitaltorreon.com'}/admin#seguridad` }, pieCuenta: 'Te llegó porque tu cuenta es administradora de Cupido.' } });
   }
 }
 export async function seguridadAdmin(env, admin) {

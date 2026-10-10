@@ -13,11 +13,23 @@
      bajó el tono, que alguien guardó de nuevo algo que había compartido.
    · «Correos discretos»: llegan sin nombres ni contenido, para quien comparte
      pantalla o bandeja.
+   · Ningún correo se vende: cada uno cuenta algo que es de esa persona y la
+     invita a UNA cosa. Por eso todos traen un botón, y solo uno.
+   · Cada correo lleva lo suyo: su nombre, el porcentaje, en qué coinciden,
+     lo que le espera adentro. Lo que hace falta saber para armarlo se busca
+     en `prepara`, y si esa búsqueda falla el correo sale igual, más sencillo.
+   El diseño (marca, portada, bloques, firma y pie) vive en correo-diseno.js.
    Remitente: cupido@capitaltorreon.com vía Resend. Cada envío se registra.
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
-import { anotar, persona, vistaPersona } from './datos.js';
+import { anotar, persona, vistaPersona, codigoDe } from './datos.js';
 import { presenciaVivo } from './viva.js';
+import { mediosDe } from './medios.js';
+import { senalesPara } from './ella.js';
+import { razonesPersona } from '../public/js/motor.js';
+import { avance } from '../public/js/preguntas.js';
+import { plantilla, revisar, esc, TONOS, TOPE_CORREO, LIMITE_GMAIL, p, sec, lista, cita, cifras, burbujas, pasos, ficha, chips, aviso } from './correo-diseno.js';
+export { plantilla };
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -35,13 +47,20 @@ export const ESQUEMA_CORREOS = [
 ];
 
 const BASE = (env) => env.BASE_URL || 'https://cupido.capitaltorreon.com';
-const esc = (s) => String(s ?? '').replace(/[<>&"]/g, (c) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]));
+const tablero = (env, h = '') => `${BASE(env)}/persona${h ? '#' + h : ''}`;
 const nom = (P) => (!P || !P.nombre || P.nombre === 'Sin nombre' ? '' : P.nombre.split(' ')[0]);
 const hola = (P) => (nom(P) ? `Hola, ${esc(nom(P))}.` : 'Hola.');
 const ajustesDe = (P) => { try { return JSON.parse(P?.ajustes || '{}'); } catch { return {}; } };
 // El mismo correo, dicho distinto según quién lo lee
 const segun = (P, ella, el, neutro = el) => (P?.genero === 'mujer' ? ella : P?.genero === 'hombre' ? el : neutro);
 const mayus = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
+const cuantos = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
+// Un pedazo de un texto largo, cortado en una palabra y no a media sílaba
+const recorte = (t, n = 210) => { const s = String(t || '').replace(/\s+/g, ' ').trim(); if (s.length <= n) return s; const c = s.slice(0, n); return c.slice(0, Math.max(c.lastIndexOf(' '), n - 40)).replace(/[,;:.\s]+$/, '') + '…'; };
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const fechaDe = (iso) => { const d = new Date(String(iso || '').slice(0, 10) + 'T12:00:00Z'); return isNaN(d) ? null : { dia: d.getUTCDate(), mes: MESES[d.getUTCMonth()], sem: DIAS[d.getUTCDay()] }; };
+const ICO_DIM = { 'Visión de vida': '🧭', 'Proyecto de familia': '🏡', 'Valores en acción': '⚖️', 'Conflicto y reparación': '🤝', 'Afecto y cuidado': '🤍', 'Fe y vida interior': '🕊️', 'Vida cotidiana': '☕', 'Personalidad y humor': '😄', Cartas: '✉️' };
 
 /* ── las categorías: lo que cada quien enciende o apaga ──────────────────── */
 export const CATEGORIAS = [
@@ -70,37 +89,6 @@ const discreto = (P) => !!ajustesDe(P).correo_discreto;
 // De 10 de la noche a 8 de la mañana (hora del centro de México) no se manda lo que puede esperar
 const esHoraDeSilencio = () => { const h = (new Date().getUTCHours() + 18) % 24; return h >= 22 || h < 8; };
 
-/* ── la plantilla ────────────────────────────────────────────────────────── */
-// { eyebrow, titulo, parrafos:[], lista:[{ico,txt,sub}], destacado, boton:{txt,url}, nota, pie, vista, baja:{url,n,todas} }
-export function plantilla(env, c) {
-  const base = BASE(env);
-  const p = (c.parrafos || []).map((t) => `<p style="margin:0 0 14px;font-size:16px;line-height:1.65;color:#211d24">${t}</p>`).join('');
-  const lista = (c.lista || []).length ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:4px 0 18px;border:1px solid #f0e3e7;border-radius:14px">${c.lista.map((f, k) => `<tr><td width="44" valign="top" style="padding:12px 0 12px 14px;font-size:22px;line-height:1.2;${k ? 'border-top:1px solid #f6edef;' : ''}">${f.ico || '•'}</td><td valign="top" style="padding:12px 14px 12px 4px;font-family:Inter,Helvetica,Arial,sans-serif;font-size:15.5px;line-height:1.5;color:#211d24;${k ? 'border-top:1px solid #f6edef;' : ''}">${f.txt}${f.sub ? `<br><span style="font-size:14px;color:#75707c">${f.sub}</span>` : ''}</td></tr>`).join('')}</table>` : '';
-  const destacado = c.destacado ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin:6px 0 18px"><tr><td style="background:#fbeef1;border-left:4px solid #d6455f;border-radius:0 12px 12px 0;padding:14px 16px;font-family:Georgia,'Times New Roman',serif;font-size:19px;line-height:1.45;color:#211d24">${c.destacado}</td></tr></table>` : '';
-  const boton = c.boton ? `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:6px 0 18px"><tr><td style="background:#d6455f;border-radius:999px"><a href="${esc(c.boton.url)}" style="display:inline-block;padding:14px 26px;font-family:Inter,Helvetica,Arial,sans-serif;font-size:15.5px;font-weight:700;color:#ffffff;text-decoration:none;border-radius:999px">${esc(c.boton.txt)} →</a></td></tr></table>` : '';
-  const nota = c.nota ? `<p style="margin:0;font-size:13.5px;line-height:1.6;color:#75707c">${c.nota}</p>` : '';
-  const porque = c.baja ? `Te llegó porque tienes encendido «${esc(c.baja.n)}». <a href="${esc(c.baja.url)}" style="color:#75707c">Ya no quiero estos</a> · <a href="${esc(c.baja.todas)}" style="color:#75707c">Elegir qué correos recibo</a>` : (c.pieCuenta || '');
-  const html = `<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light"><title>${esc(String(c.titulo).replace(/<[^>]+>/g, ''))}</title></head>
-<body style="margin:0;padding:0;background:#faf7f4;-webkit-text-size-adjust:100%">
-<div style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(c.vista || c.parrafos?.[0]?.replace(/<[^>]+>/g, '') || '')}</div>
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#faf7f4"><tr><td align="center" style="padding:28px 14px">
-<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:560px">
-  <tr><td style="padding:0 6px 14px;font-family:Georgia,'Times New Roman',serif;font-size:19px;color:#211d24"><span style="font-size:22px">💘</span>&nbsp; <b>Cupido Algorítmico</b></td></tr>
-  <tr><td style="background:#ffffff;border:1px solid #eae5df;border-radius:18px;padding:30px 28px;font-family:Inter,Helvetica,Arial,sans-serif">
-    ${c.eyebrow ? `<p style="margin:0 0 8px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:#b23349">${esc(c.eyebrow)}</p>` : ''}
-    <h1 style="margin:0 0 14px;font-family:Georgia,'Times New Roman',serif;font-weight:600;font-size:27px;line-height:1.2;color:#211d24">${c.titulo}</h1>
-    ${p}${lista}${destacado}${boton}${nota}
-  </td></tr>
-  <tr><td style="padding:18px 8px 0;font-family:Inter,Helvetica,Arial,sans-serif;font-size:12px;line-height:1.7;color:#a09aa6">
-    ${porque ? porque + '<br>' : ''}${c.pie || 'Sin anuncios, nunca. Nadie navega perfiles: solo te avisamos arriba del 90 % y la puerta se abre con dos síes.'}<br>
-    <a href="${base}" style="color:#75707c">cupido.capitaltorreon.com</a>
-  </td></tr>
-</table></td></tr></table></body></html>`;
-  const sinHtml = (t) => String(t || '').replace(/<br\s*\/?>/g, '\n').replace(/<[^>]+>/g, '');
-  const text = [sinHtml(c.titulo), '', ...(c.parrafos || []).map(sinHtml), ...(c.lista || []).map((f) => `${f.ico || '•'} ${sinHtml(f.txt)}${f.sub ? ' — ' + sinHtml(f.sub) : ''}`), c.destacado ? `\n"${sinHtml(c.destacado)}"\n` : '', c.boton ? `${c.boton.txt}: ${c.boton.url}` : '', '', sinHtml(c.nota), '', c.baja ? `Dejar de recibir «${c.baja.n}»: ${c.baja.url}\nElegir qué correos recibo: ${c.baja.todas}` : '', `— Cupido Algorítmico · ${base}`].join('\n').replace(/\n{3,}/g, '\n\n');
-  return { html, text };
-}
-
 /* ── envío + registro ────────────────────────────────────────────────────── */
 export async function mandar(env, { persona: pid = null, para, tipo, clave = null, asunto, contenido, cadaMinutos = 0 }) {
   if (!para) return null;
@@ -109,7 +97,9 @@ export async function mandar(env, { persona: pid = null, para, tipo, clave = nul
     const ya = await env.DB.prepare(`SELECT 1 AS v FROM correos WHERE persona = ? AND tipo = ? AND (clave = ? OR ? IS NULL) AND creado > datetime('now', ?)`).bind(pid, tipo, clave, clave, `-${cadaMinutos} minutes`).first();
     if (ya) return 'reciente';
   }
-  const { html, text } = plantilla(env, contenido);
+  const { html, text, peso } = plantilla(env, contenido);
+  // Gmail corta lo que pasa de 102 KB. Ningún correo debería acercarse; si alguno crece, que se sepa antes de que alguien lo reciba cortado.
+  if (peso > TOPE_CORREO) await anotar(env, 'sistema', 'Un correo salió más pesado de lo debido', `${tipo} · ${(peso / 1024).toFixed(1)} KB`);
   // En desarrollo (CORREO_SIMULADO en .dev.vars) el correo se arma y se registra, pero no sale: sirve para probar todo el camino sin escribirle a nadie
   if (env.CORREO_SIMULADO) { await env.DB.prepare(`INSERT INTO correos (persona, correo, tipo, clave, asunto, resend_id, estado) VALUES (?, ?, ?, ?, ?, NULL, 'simulado')`).bind(pid, para, tipo, clave, asunto).run(); return 'simulado'; }
   // la baja con un clic, como la piden los buzones (Gmail, Apple): mejora que el correo llegue a la bandeja y no al spam
@@ -128,167 +118,314 @@ export async function mandar(env, { persona: pid = null, para, tipo, clave = nul
   } catch (e) { console.error('Resend falló', e.message); await anotar(env, 'sistema', 'No salió un correo', `${tipo} · ${e.message}`); return null; }
 }
 
+/* ── lo que se busca antes de armar un correo ────────────────────────────── */
+// En qué coinciden dos personas, visto por una de ellas. Lo íntimo no viaja por correo: se lee adentro.
+async function razonesCon(env, P, otraId) {
+  const fx = await env.DB.prepare(`SELECT detalle FROM pares WHERE (a = ? AND b = ?) OR (a = ? AND b = ?)`).bind(P.id, otraId, otraId, P.id).first();
+  if (!fx) return [];
+  return razonesPersona(JSON.parse(fx.detalle), P.id).fuertes.filter((f) => !/sexual|íntim/i.test(f.dim)).slice(0, 3).map((f) => ({ dim: f.dim, pct: f.pct, txt: f.txt }));
+}
+// Lo que ella puede ver de él antes de decidir (lo mismo que le enseña su tablero)
+async function senalesDe(env, P, otraId) {
+  const O = await persona(env, otraId);
+  return O ? (await senalesPara(env, P, [O])).get(otraId) || null : null;
+}
+
 /* ── los correos ─────────────────────────────────────────────────────────── */
-// Cada uno: cat (categoría), cuando (para el catálogo), arma(env, datos) → { asunto, contenido }, muestra (datos de ejemplo)
-const O_M = { id: 'm01', nombre: 'Mariana Treviño', genero: 'mujer' }, O_H = { id: 'h01', nombre: 'Diego Garza', genero: 'hombre' };
+// Cada uno: cat (categoría), cuando (para el catálogo), reenvio (¿se presta a reenviarse? entonces lleva la invitación al pie),
+// prepara(env, P, datos) → lo que hay que buscar para personalizarlo, arma(env, datos) → { asunto, contenido }, muestra (datos de ejemplo)
+const O_M = { id: 'm01', nombre: 'Mariana Treviño', genero: 'mujer', color: '#8a6bbf', r: { carta: 'Busco a alguien con quien el silencio no sea incómodo y los domingos se alarguen sin plan. Soy de las que preguntan cómo te fue y de verdad escuchan la respuesta. Me río fuerte y cocino regular.' } };
+const O_H = { id: 'h01', nombre: 'Diego Garza', genero: 'hombre', color: '#2f8f83', r: { carta: 'No busco a alguien que me complete: busco con quién construir. Me gusta el café sin prisa, manejar en carretera con buena música y la gente que dice lo que piensa. Si algo me importa, lo cuido.' } };
 const laOtra = (P) => (P?.genero === 'mujer' ? O_H : O_M);
 const charlaUrl = (env, O) => `${BASE(env)}/persona#charlas/${O?.id || ''}`;
+const FUERTES_MUESTRA = [{ dim: 'Conflicto y reparación', pct: 97, txt: 'Cuando algo les molesta, los dos se calman y lo hablan pronto' }, { dim: 'Proyecto de familia', pct: 94, txt: 'En hijos van en la misma dirección' }, { dim: 'Visión de vida', pct: 93, txt: 'Se imaginan su vida en el mismo tipo de lugar' }];
+const filasDeRazones = (fuertes) => (fuertes || []).map((f) => ({ ico: ICO_DIM[f.dim] || '💗', txt: `<b>${esc(f.txt)}</b>`, sub: `${esc(f.dim)} · ${f.pct} %` }));
+const candado = (minutos) => aviso('🔒', `<b>Este enlace abre tu cuenta: no reenvíes este correo.</b> Vale ${minutos} minutos y se usa una sola vez. Si tú no lo pediste, ignóralo: nadie puede entrar sin él.`, 'gris');
+const DISCRETO = (env, h = '') => ({ asunto: 'Tienes novedades en Cupido', contenido: { tono: 'sereno', figura: { tipo: 'emoji', v: '💌' }, eyebrow: 'Cupido', titulo: 'Tienes novedades.', sub: 'Entra a verlas cuando tengas un momento a solas.', vista: 'Entra a verlas cuando tengas un momento.',
+  cuerpo: [p('Este correo no dice más porque tienes encendidos los <b>correos discretos</b>: sin nombres y sin contenido, para que nadie más lea lo que es tuyo.')], boton: { txt: 'Abrir mi tablero', url: tablero(env, h) } } });
+
 export const CORREOS = {
-  enlace: { cat: 'acceso', cuando: 'Cada vez que alguien pide entrar con su correo.', muestra: () => ({ enlace: 'https://cupido.capitaltorreon.com/entrar/muestra', minutos: 20 }),
-    arma: (env, { enlace, minutos }) => ({ asunto: 'Tu enlace para entrar a Cupido Algorítmico',
-      contenido: { eyebrow: 'Entrar', titulo: 'Tu enlace para entrar', vista: 'Un toque y estás en tu tablero. Sin contraseña.',
-        parrafos: ['Un toque y estás en tu tablero. Sin contraseña: tu correo es tu llave.'], boton: { txt: 'Entrar a mi tablero', url: enlace },
-        nota: `El enlace vale ${minutos} minutos y se usa una sola vez. Si tú no lo pediste, ignora este correo: nadie puede entrar sin él.<br><span style="word-break:break-all">Si el botón no abre: ${esc(enlace)}</span>` } }) },
+  enlace: { cat: 'acceso', cuando: 'Cada vez que alguien pide entrar con su correo. Si ya tiene cuenta, le dice lo que le espera adentro.',
+    muestra: () => ({ enlace: 'https://cupido.capitaltorreon.com/entrar/muestra', minutos: 20, espera: { sinLeer: 3, esperan: 1, abiertas: 1 } }),
+    prepara: async (env, P) => (!P?.id || discreto(P) ? {} : P.completo ? { espera: await resumenSemana(env, P) } : { av: avance(P.r || {}).pct }),
+    arma: (env, { P, enlace, minutos, espera, av }) => {
+      const filas = [
+        espera?.sinLeer ? { ico: '💬', txt: `<b>${cuantos(espera.sinLeer, 'mensaje', 'mensajes')}</b> sin leer` } : null,
+        espera?.esperan ? { ico: '💘', txt: `<b>${cuantos(espera.esperan, 'coincidencia espera', 'coincidencias esperan')}</b> tu respuesta` } : null,
+        espera?.abiertas ? { ico: '🚪', txt: `<b>${cuantos(espera.abiertas, 'puerta abierta', 'puertas abiertas')}</b>` } : null,
+        av != null && av < 100 ? { ico: '📝', txt: `<b>Tu cuestionario va en ${av} %</b>`, sub: 'Todo sigue donde lo dejaste.' } : null,
+      ].filter(Boolean);
+      return { asunto: nom(P) ? `${nom(P)}, aquí está tu enlace para entrar a Cupido` : 'Tu enlace para entrar a Cupido Algorítmico',
+        contenido: { tono: 'noche', figura: { tipo: 'emoji', v: '🔑' }, eyebrow: 'Tu llave', titulo: nom(P) ? `Pásale, ${esc(nom(P))}.` : 'Pásale.', sub: 'Un toque y estás en tu tablero. Sin contraseña: tu correo es tu llave.', vista: `Un toque y estás adentro. Vale ${minutos} minutos y se usa una sola vez.`,
+          cuerpo: [p('Aquí está el enlace que pediste. Ábrelo en el mismo teléfono o computadora donde quieres entrar.')],
+          boton: { txt: 'Entrar a mi tablero', url: enlace, sub: `Vale ${minutos} minutos · se usa una sola vez` },
+          despues: [...(filas.length ? [sec('Lo que te espera adentro'), lista(filas)] : []), candado(minutos)],
+          nota: `Si el botón no abre, copia esta liga en tu navegador:<br><span style="word-break:break-all">${esc(enlace)}</span>` } };
+    } },
   bienvenida: { cat: 'acceso', cuando: 'La primera vez que alguien entra con un correo nuevo.', muestra: () => ({ enlace: 'https://cupido.capitaltorreon.com/entrar/muestra', minutos: 20 }),
-    arma: (env, { enlace, minutos }) => ({ asunto: 'Tu cuenta de Cupido está lista',
-      contenido: { eyebrow: 'Qué gusto', titulo: 'No es una app de citas.<br>Es un sistema de detección de parejas.', vista: 'Tu cuenta está lista. Respondes 43 preguntas una sola vez y el motor hace el resto.',
-        parrafos: ['Tu cuenta está lista y no hay contraseña que recordar: tu correo es tu cuenta.', 'Respondes <b>43 preguntas una sola vez</b>, con la verdad. No hay perfiles que mirar ni fotos como moneda de cambio. Si alguien cruza el 90 % contigo, les avisamos a los dos, y la puerta solo se abre si los dos dicen que sí.', 'Dos reglas de la casa: <b>aquí manda ella</b>, y <b>aquí no hay anuncios</b>. Nunca.'],
-        destacado: 'Tú pon la verdad. Nosotros ponemos la lógica. El amor lo ponen ustedes dos.', boton: { txt: 'Empezar mi cuestionario', url: enlace },
-        nota: `Este enlace vale ${minutos} minutos y se usa una sola vez. Te vamos a avisar por correo de todo lo que pase; lo que no quieras saber, lo apagas en tu tablero, en «Mis correos».` } }) },
-  matching: { cat: 'busqueda', cuando: 'Al terminar el cuestionario: el motor ya cruzó a la persona.', muestra: () => ({ pares: 21, nuevas: 1 }),
-    arma: (env, { P, pares, nuevas }) => ({ asunto: 'Entraste al matching',
-      contenido: { eyebrow: 'Tu cuestionario', titulo: 'Entraste al matching.', vista: 'El motor ya te cruzó. Y ahora, silencio hasta que alguien cruce el 90 %.',
-        parrafos: [`${hola(P)} Terminaste las 43 preguntas y el motor ya te cruzó con todas las personas que buscan lo mismo que tú: <b>${pares}</b> ${pares === 1 ? 'par evaluado' : 'pares evaluados'}${nuevas ? ` y <b>${nuevas}</b> ${nuevas === 1 ? 'coincidencia' : 'coincidencias'} arriba del 90 %` : ''}.`,
-          nuevas ? 'Entra a tu tablero: ahí está, con la puerta cerrada hasta que los dos digan que sí.' : 'Y ahora, silencio. No es que algo falle: te estamos ahorrando años con las personas incorrectas. Cuando alguien cruce el 90 %, te escribimos a este correo.'],
-        boton: { txt: nuevas ? 'Ver mi coincidencia' : 'Ver mi tablero', url: `${BASE(env)}/persona` }, nota: 'Mientras tanto, sube tu foto, tu voz y un video: solo los verá quien abra una puerta contigo.' } }) },
+    arma: (env, { enlace, minutos }) => ({ asunto: 'Qué gusto: tu cuenta de Cupido está lista',
+      contenido: { tono: 'amor', figura: { tipo: 'emoji', v: '💘' }, eyebrow: 'Qué gusto que llegaste', titulo: 'No es una app de citas.', sub: 'Es un sistema de detección de parejas. Y tu cuenta ya está lista.', vista: 'Respondes 43 preguntas una sola vez y el motor hace el resto. Aquí está tu enlace.',
+        cuerpo: [
+          p('Aquí no hay perfiles que deslizar ni fotos como moneda de cambio. Hay 43 preguntas, un motor que cruza respuestas y una promesa: <b>solo te escribimos si alguien cruza el 90 % contigo</b>, en las dos direcciones.'),
+          sec('Así funciona'),
+          pasos([{ txt: '<b>Respondes 43 preguntas, una sola vez.</b>', sub: 'Con la verdad. Puedes cerrar y seguir otro día: todo se guarda.' }, { txt: '<b>El motor te cruza con quien busca lo mismo.</b>', sub: 'Mientras tanto, silencio. Eso también es el sistema trabajando.' }, { txt: '<b>Si alguien cruza el 90 %, les avisamos a los dos.</b>', sub: 'La puerta se abre solo con dos síes. De un no, nadie se entera.' }]),
+          cita('Tú pon la verdad. Nosotros ponemos la lógica. El amor lo ponen ustedes dos.'),
+        ],
+        boton: { txt: 'Empezar mi cuestionario', url: enlace, sub: 'No hay contraseña que recordar: tu correo es tu cuenta' },
+        despues: [candado(minutos)],
+        nota: 'Te vamos a avisar por correo de todo lo que pase. Lo que no quieras saber, lo apagas en tu tablero, en «Mis correos».' } }) },
+  matching: { cat: 'busqueda', reenvio: true, cuando: 'Al terminar el cuestionario: el motor ya cruzó a la persona. Le dice qué le falta subir.', muestra: () => ({ pares: 21, nuevas: 0, tengo: { foto: true, voz: false, video: false } }),
+    prepara: async (env, P) => { const m = await mediosDe(env, P.id); return { tengo: { foto: !!m.foto, voz: !!m.voz, video: !!m.video } }; },
+    arma: (env, { P, pares, nuevas, tengo }) => {
+      const faltan = tengo ? [['foto', 'mi foto'], ['voz', 'mi voz'], ['video', 'mi video']].filter(([k]) => !tengo[k]).map(([, n]) => n) : [], falta = faltan.length > 0;
+      const juntar = (l) => (l.length > 1 ? l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1] : l[0]);
+      const medio = (k, ico, n, listo, pend) => ({ ico, txt: `<b>${n}</b>${tengo[k] ? ' &nbsp;<span style="color:#2e8b57;font-weight:700">✓ Listo</span>' : ''}`, sub: tengo[k] ? listo : pend });
+      return { asunto: nom(P) ? `${nom(P)}, ya estás en el matching` : 'Ya estás en el matching',
+        contenido: { tono: nuevas ? 'amor' : 'claro', figura: { tipo: 'emoji', v: '🏹' }, eyebrow: 'Tu cuestionario', titulo: 'Ya estás en el matching.', sub: 'Terminaste las 43 preguntas, y el motor ya dio su primera vuelta.', vista: nuevas ? 'El motor ya te cruzó, y hay alguien arriba del 90 % contigo.' : 'El motor ya te cruzó. Y ahora, silencio hasta que alguien cruce el 90 %.',
+          cuerpo: [
+            p(`${hola(P)} Hiciste la parte difícil: contestar con la verdad. Esto encontró el motor al cruzarte con todas las personas que buscan lo mismo que tú:`),
+            cifras([{ n: pares, e: pares === 1 ? 'par evaluado' : 'pares evaluados' }, nuevas ? { n: nuevas, e: nuevas === 1 ? 'coincidencia arriba del 90 %' : 'coincidencias arriba del 90 %' } : { n: '90&nbsp;%', e: 'lo mínimo para escribirte' }]),
+            p(nuevas ? 'Entra a tu tablero: ahí está, con la puerta cerrada hasta que los dos digan que sí.' : '<b>Y ahora, silencio.</b> No es que algo falle: te estamos ahorrando años con las personas incorrectas. Cada vez que alguien nuevo termine su cuestionario, el motor te vuelve a cruzar. Cuando alguien pase del 90 %, te escribimos a este correo.'),
+            ...(tengo ? [sec(falta ? 'Mientras tanto, deja lista tu parte' : 'Tu parte ya está lista'), lista([
+              medio('foto', '📷', 'Tu foto', 'Solo la verá quien abra una puerta contigo, y cuando tú decidas.', 'Solo la verá quien abra una puerta contigo, y cuando tú decidas.'),
+              medio('voz', '🎙️', 'Tu voz', 'Un saludo tuyo, para que te conozcan antes de verte.', 'Un saludo de medio minuto dice más que diez mensajes.'),
+              medio('video', '🎬', 'Tu video', 'Para quien ya llegó hasta ahí contigo.', 'Opcional. Para quien ya llegó hasta ahí contigo.')])] : []),
+          ],
+          boton: nuevas ? { txt: 'Ver mi coincidencia', url: tablero(env, 'coincidencias') } : falta ? { txt: `Subir ${juntar(faltan)}`, url: tablero(env, 'medios'), sub: 'Nada se enseña sin que tú lo decidas' } : { txt: 'Ver mi tablero', url: tablero(env) } } };
+    } },
   recordatorio: { cat: 'busqueda', cuando: 'Una sola vez, a los dos días de dejar el cuestionario a medias.', muestra: () => ({ faltan: 11, pct: 74 }),
-    arma: (env, { P, faltan, pct }) => ({ asunto: `Te faltan ${faltan} preguntas para entrar al matching`,
-      contenido: { eyebrow: 'Tu cuestionario', titulo: `Vas en ${pct} %. Te faltan ${faltan} preguntas.`, vista: 'Todo sigue donde lo dejaste. Sin ellas, el motor no te ve.',
-        parrafos: [`${hola(P)} Todo sigue exactamente donde lo dejaste. Sin esas respuestas el motor no puede cruzarte con nadie: no te ve.`, 'No tiene que ser de corrido. Las de párrafo las puedes dictar con el micrófono.'],
-        boton: { txt: 'Seguir donde iba', url: `${BASE(env)}/cuestionario` }, nota: 'Este recordatorio se manda una sola vez.' } }) },
-  coincidencia: { cat: 'busqueda', cuando: 'Cuando alguien cruza el 90 % con la persona. A los dos, al mismo tiempo (salvo que ella haya pedido decidir primero).', muestra: () => ({ pct: 96 }),
-    arma: (env, { P, pct }) => ({ asunto: `Apareció alguien al ${pct} % contigo`,
-      contenido: { eyebrow: 'Coincidencia', titulo: `Apareció alguien al <span style="color:#d6455f">${pct} %</span> contigo.`, vista: 'Alguien cruzó el 90 % contigo. La puerta está cerrada hasta que los dos digan que sí.',
-        parrafos: [`${hola(P)} Casi nunca mandamos este correo. Hoy sí: alguien cruzó el 90 % contigo, en las dos direcciones.`, 'No sabes quién es, y esa persona tampoco sabe quién eres tú. La puerta está cerrada hasta que los dos digan que sí, y nadie se entera jamás de un no.',
-          segun(P, 'Decide con calma: aquí mandas tú. Antes de responder puedes ver cuánto lleva él aquí, con cuántas personas conversa y si alguna mujer lo ha bloqueado.', 'Tómate tu tiempo para leer por qué coinciden. Ella decide a su ritmo, y eso es parte de por qué este lugar funciona.', 'Tómate tu tiempo para leer por qué coinciden.')],
-        boton: { txt: 'Ver por qué coinciden', url: `${BASE(env)}/persona#coincidencias` } } }),
-    discreta: (env) => ({ asunto: 'Hay algo importante en tu tablero', contenido: { eyebrow: 'Cupido', titulo: 'Hay algo importante en tu tablero.', parrafos: ['Pasó algo que casi nunca pasa. Entra a verlo cuando tengas un momento a solas.'], boton: { txt: 'Abrir mi tablero', url: `${BASE(env)}/persona#coincidencias` } } }) },
-  pendiente: { cat: 'busqueda', cuando: 'Cuando hay coincidencias que llevan tres días o más sin respuesta. Todas juntas en un correo, y como mucho cada dos semanas.', muestra: () => ({ n: 2, pct: 94, dias: 4 }),
-    arma: (env, { P, n, pct, dias }) => ({ asunto: n === 1 ? 'Tienes una coincidencia sin responder' : `Tienes ${n} coincidencias sin responder`,
-      contenido: { eyebrow: 'Tu búsqueda', titulo: n === 1 ? `Tu coincidencia al ${pct} % sigue ahí.` : `${n} coincidencias siguen ahí.`, vista: 'No hay prisa. Solo que no se te pasen.',
-        parrafos: [`${hola(P)} ${n === 1 ? `Hace ${dias} días apareció alguien al ${pct} % contigo y todavía no dices ni sí ni no.` : `Tienes ${n} coincidencias arriba del 90 % sin responder; la más alta, al ${pct} %. La que más lleva esperando apareció hace ${dias} días.`}`, 'No hay prisa y no hay respuesta incorrecta: un «ahora no» nadie lo ve. Solo queremos que no se te pase.'],
-        boton: { txt: n === 1 ? 'Verla y decidir' : 'Verlas y decidir', url: `${BASE(env)}/persona#aceptaciones` }, nota: 'Te lo recordamos como mucho cada dos semanas.' } }) },
-  puerta: { cat: 'puertas', cuando: 'Cuando los dos dijeron que sí. A los dos.', muestra: (P) => ({ O: laOtra(P) }),
-    arma: (env, { P, O }) => ({ asunto: `Se abrió la puerta con ${nom(O) || 'tu coincidencia'}`,
-      contenido: { eyebrow: 'Puerta abierta', titulo: `Se abrió la puerta con ${esc(nom(O) || 'tu coincidencia')}.`, vista: 'Los dos dijeron que sí. Ya hay una charla esperándote.',
-        parrafos: [`${hola(P)} Los dos dijeron que sí. Ya hay una charla entre ustedes, y el primer hola ya está dicho.`, 'Lo primero que conoces es su carta. Lo demás, cada quien lo libera a su ritmo: primero quién es, al final cómo se ve.'],
-        lista: segun(P, [{ ico: '🖼️', txt: '<b>Tu foto, tu voz y tu video siguen guardados.</b>', sub: 'Abrir la puerta no los entrega: los enseñas tú cuando quieras.' }, { ico: '📎', txt: '<b>Él no puede mandarte fotos ni archivos, ni llamarte.</b>', sub: 'Todo eso nace apagado. Lo enciendes en el botón 👑 de la charla.' }, { ico: '🚪', txt: '<b>Puedes cerrar la puerta cuando quieras.</b>', sub: 'Sin motivo y sin castigo para nadie.' }],
-          [{ ico: '✋', txt: '<b>Ella decide el ritmo.</b>', sub: 'Después de cinco mensajes sin respuesta, te toca esperar.' }, { ico: '📎', txt: '<b>Fotos, archivos y llamadas llegan después.</b>', sub: 'Cuando ella los enciende en esa charla.' }, { ico: '🎴', txt: '<b>Para romper el hielo, saca una carta.</b>', sub: 'La contestan los dos y se abre cuando están las dos respuestas.' }],
-          [{ ico: '🎴', txt: '<b>Para romper el hielo, saca una carta.</b>', sub: 'La contestan los dos y se abre cuando están las dos respuestas.' }, { ico: '🚪', txt: '<b>Cualquiera puede cerrar la puerta cuando quiera.</b>', sub: 'Sin motivo y sin castigo.' }]),
-        boton: { txt: 'Abrir la charla', url: charlaUrl(env, O) } } }) },
+    arma: (env, { P, faltan, pct }) => ({ asunto: !pct ? 'Tus 43 preguntas te esperan en Cupido' : `Te ${faltan === 1 ? 'falta 1 pregunta' : `faltan ${faltan} preguntas`} para entrar al matching`,
+      contenido: { tono: 'sol', figura: { tipo: 'barra', pct, pie: 'de tu cuestionario' }, eyebrow: 'Tu cuestionario', titulo: !pct ? 'Tus 43 preguntas te esperan.' : faltan === 1 ? 'Te falta una pregunta.' : `Te faltan ${faltan} preguntas.`, sub: pct ? 'Todo sigue exactamente donde lo dejaste.' : 'Se contestan una sola vez, y a tu ritmo.', vista: pct ? 'Todo sigue donde lo dejaste. Sin ellas, el motor todavía no te ve.' : 'Se contestan una sola vez. Sin ellas, el motor todavía no te ve.',
+        cuerpo: [
+          p(`${hola(P)} ${pct >= 50 ? 'Ya hiciste la mayor parte.' : pct ? 'Ya empezaste, que es lo más difícil.' : 'Tu cuenta ya está lista; falta lo que la hace funcionar.'} Sin ${pct ? 'las que faltan' : 'tus respuestas'} el motor no puede cruzarte con nadie: todavía no te ve.`),
+          lista([{ ico: '⏸️', txt: '<b>No tiene que ser de corrido</b>', sub: 'Contestas unas cuantas, cierras y sigues otro día. Todo se guarda.' }, { ico: '🎙️', txt: '<b>Las de párrafo se pueden dictar</b>', sub: 'Tocas el micrófono y hablas, como si le contaras a alguien.' }, { ico: '🤫', txt: '<b>Nadie lee tus respuestas</b>', sub: 'Las cruza el motor. Ninguna persona navega perfiles aquí.' }]),
+        ],
+        boton: { txt: pct ? 'Seguir donde iba' : 'Empezar mi cuestionario', url: `${BASE(env)}/cuestionario` }, nota: 'Este recordatorio se manda una sola vez. No te vamos a insistir.' } }) },
+  coincidencia: { cat: 'busqueda', reenvio: true, cuando: 'Cuando alguien cruza el 90 % con la persona. A los dos, al mismo tiempo (salvo que ella haya pedido decidir primero). Dice en qué coinciden; a ella, además, lo que vemos de él.',
+    muestra: (P) => ({ pct: 96, fuertes: FUERTES_MUESTRA, senales: P?.genero === 'mujer' ? { dias: 34, charlas: 1, bloqueos: 0 } : null }),
+    prepara: async (env, P, { otra }) => (otra ? { fuertes: await razonesCon(env, P, otra), senales: P.genero !== 'hombre' ? await senalesDe(env, P, otra) : null } : {}),
+    arma: (env, { P, pct, fuertes, senales }) => ({ asunto: `${nom(P) ? nom(P) + ', a' : 'A'}pareció alguien al ${pct} % contigo 💘`,
+      contenido: { tono: 'amor', figura: { tipo: 'numero', v: pct, sufijo: '%', pie: 'de afinidad, en las dos direcciones' }, eyebrow: 'Coincidencia', titulo: 'Apareció alguien.', sub: 'Casi nunca mandamos este correo. Hoy sí.', vista: 'Alguien cruzó el 90 % contigo. La puerta está cerrada hasta que los dos digan que sí.',
+        cuerpo: [
+          p(`${hola(P)} Alguien cruzó el 90 % contigo: lo que tú buscas se parece a lo que esa persona es, y al revés. No sabes quién es, y esa persona tampoco sabe quién eres tú.`),
+          ...(fuertes?.length ? [sec('En qué coinciden'), lista(filasDeRazones(fuertes))] : []),
+          ...(senales ? [aviso('👁️', `<b>Lo que vemos de él:</b> ${senales.dias ? `lleva ${cuantos(senales.dias, 'día', 'días')} aquí` : 'llegó hoy'}, ${senales.charlas ? `conversa con ${cuantos(senales.charlas, 'persona', 'personas')} más` : 'no conversa con nadie más'} y ${senales.bloqueos ? `${cuantos(senales.bloqueos, 'mujer lo ha bloqueado', 'mujeres lo han bloqueado')}` : 'ninguna mujer lo ha bloqueado'}.`, 'gris')] : []),
+          p(segun(P, '<b>Decide con calma: aquí mandas tú.</b> La puerta está cerrada hasta que los dos digan que sí, y de un no nadie se entera jamás.', 'La puerta está cerrada hasta que los dos digan que sí, y de un no nadie se entera jamás. Ella decide a su ritmo, y eso es parte de por qué este lugar funciona.', 'La puerta está cerrada hasta que los dos digan que sí, y de un no nadie se entera jamás.')),
+        ],
+        boton: { txt: 'Ver por qué coinciden', url: tablero(env, 'coincidencias'), sub: 'Lo lees completo y después decides: sí, o ahora no' } } }),
+    discreta: (env) => ({ asunto: 'Hay algo importante en tu tablero', contenido: { tono: 'sereno', figura: { tipo: 'emoji', v: '💌' }, eyebrow: 'Cupido', titulo: 'Hay algo importante en tu tablero.', sub: 'Pasó algo que casi nunca pasa.', vista: 'Entra a verlo cuando tengas un momento a solas.', cuerpo: [p('Entra a verlo cuando tengas un momento a solas. Este correo no dice más porque tienes encendidos los correos discretos.')], boton: { txt: 'Abrir mi tablero', url: tablero(env, 'coincidencias') } } }) },
+  pendiente: { cat: 'busqueda', cuando: 'Cuando hay coincidencias que llevan tres días o más sin respuesta. Todas juntas en un correo, y como mucho cada dos semanas.', muestra: () => ({ n: 2, pct: 94, dias: 6, lista: [{ pct: 94, dias: 4 }, { pct: 91, dias: 6 }] }),
+    arma: (env, { P, n, pct, dias, lista: pend }) => ({ asunto: n === 1 ? `Tu coincidencia al ${pct} % sigue esperando` : `Tienes ${n} coincidencias sin responder`,
+      contenido: { tono: 'sol', figura: n === 1 ? { tipo: 'numero', v: pct, sufijo: '%', pie: `apareció hace ${cuantos(dias, 'día', 'días')}` } : { tipo: 'numero', v: n, pie: 'coincidencias esperan tu respuesta' }, eyebrow: 'Tu búsqueda', titulo: n === 1 ? 'Sigue ahí.' : 'Siguen ahí.', sub: 'No hay prisa. Solo que no se te pasen.', vista: 'No hay prisa y no hay respuesta incorrecta. Solo que no se te pasen.',
+        cuerpo: [
+          p(`${hola(P)} ${n === 1 ? 'Alguien cruzó el 90 % contigo y todavía no dices ni sí ni no.' : `Tienes ${n} coincidencias arriba del 90 % a las que todavía no les dices ni sí ni no.`} Cruzar el 90 % casi nunca pasa; por eso te lo recordamos.`),
+          ...(n > 1 && pend?.length ? [lista(pend.slice(0, 5).map((x) => ({ ico: '💘', txt: `<b>${x.pct} %</b> contigo`, sub: `Apareció hace ${cuantos(x.dias, 'día', 'días')}` })).concat(pend.length > 5 ? [{ ico: '➕', txt: `y ${pend.length - 5} más` }] : []))] : []),
+          aviso('🤫', '<b>No hay respuesta incorrecta.</b> Un «ahora no» nadie lo ve. Y un sí tampoco, a menos que la otra persona también lo diga.'),
+        ],
+        boton: { txt: n === 1 ? 'Verla y decidir' : 'Verlas y decidir', url: tablero(env, 'aceptaciones') }, nota: 'Te lo recordamos como mucho cada dos semanas.' } }) },
+  puerta: { cat: 'puertas', cuando: 'Cuando los dos dijeron que sí. A los dos. Lleva un pedazo de la carta de la otra persona.', muestra: (P) => ({ O: laOtra(P), pct: 96 }),
+    prepara: async (env, P, { O }) => { const f = O?.id ? await env.DB.prepare(`SELECT pct FROM puertas WHERE (a = ? AND b = ?) OR (a = ? AND b = ?)`).bind(P.id, O.id, O.id, P.id).first() : null; return { pct: f?.pct || null }; },
+    arma: (env, { P, O, pct }) => {
+      const n = nom(O) || 'tu coincidencia', carta = recorte(O?.r?.carta);
+      return { asunto: `Se abrió la puerta con ${n} 💘`,
+        contenido: { tono: 'amor', figura: { tipo: 'pareja', a: nom(P), ca: P?.color, b: nom(O), cb: O?.color }, eyebrow: 'Puerta abierta', titulo: `Se abrió la puerta con ${esc(n)}.`, sub: `Los dos dijeron que sí${pct ? `. Coinciden al ${pct} %.` : '.'}`, vista: 'Los dos dijeron que sí. Ya hay una charla esperándote.',
+          cuerpo: [
+            p(`${hola(P)} Ya hay una charla entre ustedes, y el primer hola ya está dicho.`),
+            ...(carta ? [cita(esc(carta), `De la carta de ${esc(n)}`), p('Su carta completa te espera adentro. Lo demás, cada quien lo libera a su ritmo: primero quién es, al final cómo se ve.')] : [p('Lo primero que conoces es su carta. Lo demás, cada quien lo libera a su ritmo: primero quién es, al final cómo se ve.')]),
+            lista(segun(P, [{ ico: '🖼️', txt: '<b>Tu foto, tu voz y tu video siguen guardados.</b>', sub: 'Abrir la puerta no los entrega: los enseñas tú cuando quieras.' }, { ico: '📎', txt: '<b>Él no puede mandarte fotos ni archivos, ni llamarte.</b>', sub: 'Todo eso nace apagado. Lo enciendes en el botón 👑 de la charla.' }, { ico: '🚪', txt: '<b>Puedes cerrar la puerta cuando quieras.</b>', sub: 'Sin motivo y sin castigo para nadie.' }],
+              [{ ico: '✋', txt: '<b>Ella decide el ritmo.</b>', sub: 'Después de cinco mensajes sin respuesta, te toca esperar.' }, { ico: '📎', txt: '<b>Fotos, archivos y llamadas llegan después.</b>', sub: 'Cuando ella los enciende en esa charla.' }, { ico: '🎴', txt: '<b>Para romper el hielo, saca una carta.</b>', sub: 'La contestan los dos y se abre cuando están las dos respuestas.' }],
+              [{ ico: '🎴', txt: '<b>Para romper el hielo, saca una carta.</b>', sub: 'La contestan los dos y se abre cuando están las dos respuestas.' }, { ico: '🚪', txt: '<b>Cualquiera puede cerrar la puerta cuando quiera.</b>', sub: 'Sin motivo y sin castigo.' }])),
+          ],
+          boton: { txt: nom(O) ? `Abrir mi charla con ${nom(O)}` : 'Abrir la charla', url: charlaUrl(env, O), sub: segun(P, 'Contestas cuando quieras: aquí nadie te apura', 'Sin prisa: lo bueno se escribe con calma', '') } } };
+    } },
   cierre: { cat: 'puertas', cuando: 'Cuando la otra persona cierra la puerta. Es el mismo correo si cerró, bloqueó o reportó: nunca se distingue.', muestra: (P) => ({ O: laOtra(P) }),
     arma: (env, { P, O }) => ({ asunto: `Se cerró la puerta con ${nom(O) || 'tu coincidencia'}`,
-      contenido: { eyebrow: 'Puertas', titulo: `Se cerró la puerta con ${esc(nom(O) || 'tu coincidencia')}.`, vista: 'Aquí cualquiera de los dos puede cerrarla cuando quiera, sin dar explicaciones.',
-        parrafos: [`${hola(P)} La charla ya no existe para ninguno de los dos, y lo que se compartieron del perfil dejó de verse.`, 'Aquí cualquiera de los dos puede cerrar la puerta cuando quiera, sin dar explicaciones. No hay nada que hacer ni que contestar.', 'Tu búsqueda sigue igual: el motor te sigue cruzando, y cuando alguien cruce el 90 % te escribimos.'],
-        boton: { txt: 'Ir a mi tablero', url: `${BASE(env)}/persona` } } }) },
-  reabrir: { cat: 'puertas', cuando: 'Cuando quien cerró una puerta quiere volver a abrirla. A la otra persona se le pregunta de nuevo.', muestra: () => ({ pct: 93 }),
-    arma: (env, { P, pct }) => ({ asunto: 'Alguien quiere volver a abrir una puerta contigo',
-      contenido: { eyebrow: 'Puertas', titulo: 'Alguien quiere volver a abrir una puerta contigo.', vista: 'Tú decides, igual que la primera vez.',
-        parrafos: [`${hola(P)} Alguien con quien ya habías hablado${pct ? ` (${pct} % contigo)` : ''} quiere volver a abrir la puerta.`, 'Tú decides, igual que la primera vez. Si prefieres que no, nadie lo sabrá.'],
-        boton: { txt: 'Ver y decidir', url: `${BASE(env)}/persona#aceptaciones` } } }) },
+      contenido: { tono: 'sereno', figura: { tipo: 'emoji', v: '🚪' }, eyebrow: 'Puertas', titulo: `Se cerró la puerta con ${esc(nom(O) || 'tu coincidencia')}.`, sub: 'Aquí cualquiera de los dos puede cerrarla cuando quiera, sin dar explicaciones.', vista: 'Aquí cualquiera de los dos puede cerrarla cuando quiera, sin dar explicaciones.',
+        cuerpo: [
+          p(`${hola(P)} La charla ya no existe para ninguno de los dos, y lo que se compartieron del perfil dejó de verse. No hay nada que contestar ni que arreglar.`),
+          p('Que una puerta se cierre no dice nada malo de nadie: dice que no era ahí. Y cruzar el 90 % una vez quiere decir que tus respuestas sí encuentran a alguien.'),
+          aviso('🏹', '<b>Tu búsqueda sigue igual.</b> El motor te vuelve a cruzar cada vez que llega alguien nuevo, y cuando alguien pase del 90 % contigo te escribimos.'),
+        ],
+        boton: { txt: 'Ir a mi tablero', url: tablero(env) } } }) },
+  reabrir: { cat: 'puertas', cuando: 'Cuando quien cerró una puerta quiere volver a abrirla. A la otra persona se le pregunta de nuevo.', muestra: () => ({ pct: 93, fuertes: FUERTES_MUESTRA.slice(0, 2) }),
+    prepara: async (env, P, { otra }) => (otra ? { fuertes: (await razonesCon(env, P, otra)).slice(0, 2) } : {}),
+    arma: (env, { P, pct, fuertes }) => ({ asunto: 'Alguien quiere volver a abrir una puerta contigo',
+      contenido: { tono: 'claro', figura: { tipo: 'emoji', v: '🚪' }, eyebrow: 'Puertas', titulo: 'Alguien quiere volver a abrir una puerta contigo.', sub: 'Tú decides, igual que la primera vez.', vista: 'Tú decides, igual que la primera vez. Si prefieres que no, nadie lo sabrá.',
+        cuerpo: [
+          p(`${hola(P)} Alguien con quien ya habías hablado${pct ? ` (${pct} % contigo)` : ''} cerró la puerta y ahora quiere volver a intentarlo.`),
+          ...(fuertes?.length ? [sec('En qué coincidían'), lista(filasDeRazones(fuertes))] : []),
+          aviso('🤍', '<b>No le debes un sí.</b> Si prefieres que no, nadie lo sabrá: de tu lado, simplemente no pasa nada.'),
+        ],
+        boton: { txt: 'Ver y decidir', url: tablero(env, 'aceptaciones') } } }) },
   // Todo lo que pasó en una charla mientras la persona no estaba, junto en un solo correo
   novedades: { cat: 'charla', cuando: 'Unos minutos después de que pasa algo en una charla y la persona no está en Cupido. Junta mensajes, fotos, cartas, detalles, invitaciones y llamadas perdidas en un solo correo; como mucho uno cada media hora por charla.',
     muestra: (P) => ({ O: laOtra(P), filas: [{ cat: 'charla', ico: '💬', v: 'te escribió', d: 'Leí tu carta dos veces. ¿Cómo fue tu martes hoy?' }, { cat: 'chispa', ico: '🌹', v: 'te manda una rosa', d: 'Para tu martes.' }, { cat: 'chispa', ico: '🎴', v: 'sacó una carta para los dos', d: '¿Cómo es un domingo perfecto para ti?' }, { cat: 'llamadas', ico: '📞', v: 'te llamó por voz', d: 'No estabas en Cupido en ese momento.' }] }),
     arma: (env, { P, O, filas }) => {
-      const n = nom(O) || 'Tu coincidencia', una = filas.length === 1, f0 = filas[0];
-      return { asunto: una ? `${n} ${f0.v}${f0.ico ? ' ' + f0.ico : ''}` : `${n}: ${filas.length} novedades en su charla`,
-        contenido: { eyebrow: `Tu charla con ${n}`, titulo: una ? `${esc(n)} ${esc(f0.v)}.` : `${esc(n)}: ${filas.length} novedades.`, vista: una ? (f0.d || `${n} ${f0.v}.`) : filas.map((f) => f.v).join(' · '),
-          parrafos: [una ? hola(P) : `${hola(P)} Esto pasó en tu charla con ${esc(n)} mientras no estabas:`],
-          lista: filas.slice(0, 8).map((f) => ({ ico: f.ico, txt: `<b>${esc(mayus(f.v))}</b>`, sub: f.d ? esc(String(f.d).slice(0, 180)) : '' })).concat(filas.length > 8 ? [{ ico: '➕', txt: `y ${filas.length - 8} más` }] : []),
-          boton: { txt: 'Abrir la charla', url: charlaUrl(env, O) },
-          nota: segun(P, 'Contestas cuando quieras, o nunca: aquí él no puede insistir. Te escribimos solo cuando no estás en Cupido, y juntamos lo que pasa para no llenarte el correo.', 'Te escribimos solo cuando no estás en Cupido, y juntamos lo que pasa para no llenarte el correo.') } };
+      const n = nom(O) || 'Tu coincidencia', una = filas.length === 1, f0 = filas[0], contesta = filas.some((f) => f.cat === 'charla' || f.cat === 'chispa');
+      return { asunto: una ? `${n} ${f0.v}${f0.ico ? ' ' + f0.ico : ''}` : `${n} te dejó ${filas.length} novedades`,
+        contenido: { tono: 'claro', figura: { tipo: 'avatar', v: nom(O), c: O?.color }, eyebrow: `Tu charla con ${n}`, titulo: una ? `${esc(n)} ${esc(f0.v)}.` : `${esc(n)} te dejó ${filas.length} novedades.`, sub: 'Pasó mientras no estabas en Cupido.', vista: una ? (f0.d || `${n} ${f0.v}.`) : filas.map((f) => f.v).join(' · '),
+          cuerpo: [
+            p(una ? hola(P) : `${hola(P)} Esto pasó en tu charla con ${esc(n)}:`),
+            burbujas(filas.slice(0, 8).map((f) => ({ ico: f.ico, v: esc(mayus(f.v)), d: f.d ? esc(recorte(f.d, 180)) : '', suave: f.cat !== 'charla' })).concat(filas.length > 8 ? [{ ico: '➕', v: `y ${filas.length - 8} más`, suave: true }] : [])),
+          ],
+          boton: { txt: contesta && nom(O) ? `Contestarle a ${nom(O)}` : 'Abrir la charla', url: charlaUrl(env, O), sub: segun(P, 'Contestas cuando quieras, o nunca: aquí él no puede insistir', 'Sin prisa: ella decide el ritmo', '') },
+          nota: 'Te escribimos solo cuando no estás en Cupido, y juntamos lo que pasa para no llenarte el correo.' } };
     },
-    discreta: (env, { filas }) => ({ asunto: 'Tienes novedades en Cupido', contenido: { eyebrow: 'Cupido', titulo: 'Tienes novedades.', parrafos: [`Hay ${filas.length === 1 ? 'una novedad' : filas.length + ' novedades'} en una de tus charlas. Este correo no dice más porque tienes encendidos los correos discretos.`], boton: { txt: 'Abrir mi tablero', url: `${BASE(env)}/persona#charlas` } } }) },
-  cita_manana: { cat: 'planes', cuando: 'El día antes de un plan que los dos aceptaron. A los dos.', muestra: (P) => ({ O: laOtra(P), que: 'Un café', donde: 'Café de la plaza', hora: '6:00 p.m.' }),
-    arma: (env, { P, O, que, donde, hora }) => ({ asunto: `Mañana: ${String(que).toLowerCase()} con ${nom(O)}`,
-      contenido: { eyebrow: 'Mañana', titulo: `Mañana se ven: ${esc(String(que).toLowerCase())} con ${esc(nom(O))}.`, vista: `${que}${donde ? ', en ' + donde : ''}${hora ? ', a las ' + hora : ''}.`,
-        parrafos: [`${hola(P)} Mañana es el plan que hicieron en su charla.`],
-        lista: [{ ico: '📅', txt: `<b>${esc(que)}</b>`, sub: `${donde ? esc(donde) : 'Lugar: lo platican en la charla'}${hora ? ' · ' + esc(hora) : ''}` },
-          ...segun(P, [{ ico: '📲', txt: '<b>Avísale a alguien de confianza</b>', sub: 'Con quién, dónde y a qué hora. Tu tablero te arma el mensaje en «Aquí mando yo».' }, { ico: '☀️', txt: '<b>Lugar público, y llega y vete por tu cuenta</b>', sub: 'Si algo no se siente bien, te vas. No le debes una explicación a nadie.' }],
-            [{ ico: '☀️', txt: '<b>Lugar público y sin prisa</b>', sub: 'Que ella llegue y se vaya por su cuenta es lo normal aquí. Así la primera vez sale bien.' }], [{ ico: '☀️', txt: '<b>Lugar público y sin prisa</b>' }])],
-        boton: { txt: 'Abrir la charla', url: charlaUrl(env, O) }, nota: 'Si cambió algo, díganselo en la charla: quien aceptó puede cambiar su respuesta cuando quiera.' } }) },
-  semana: { cat: 'resumen', cuando: 'Cada domingo a las 10 de la mañana, a quien ya terminó su cuestionario.', muestra: () => ({ r: { coincidencias: 2, esperan: 1, abiertas: 1, sinLeer: 3, masCerca: 88, pool: 37, nuevas: 6, invitados: 1, pausada: false } }),
+    discreta: (env, { filas }) => ({ asunto: 'Tienes novedades en Cupido', contenido: { tono: 'sereno', figura: { tipo: 'emoji', v: '💌' }, eyebrow: 'Cupido', titulo: 'Tienes novedades.', sub: `Hay ${filas.length === 1 ? 'una novedad' : filas.length + ' novedades'} en una de tus charlas.`, vista: 'Entra a verlas cuando tengas un momento.', cuerpo: [p('Este correo no dice más porque tienes encendidos los <b>correos discretos</b>: sin nombres y sin contenido.')], boton: { txt: 'Abrir mi tablero', url: tablero(env, 'charlas') } } }) },
+  cita_manana: { cat: 'planes', cuando: 'El día antes de un plan que los dos aceptaron. A los dos.', muestra: (P) => ({ O: laOtra(P), que: 'Un café', donde: 'Café de la plaza', hora: '6:00 p.m.', fecha: new Date(Date.now() + 86400000 - 6 * 3600000).toISOString().slice(0, 10) }),
+    arma: (env, { P, O, que, donde, hora, fecha }) => {
+      const f = fechaDe(fecha), n = nom(O) || 'tu coincidencia', q = String(que || 'un plan');
+      return { asunto: `Mañana: ${q.toLowerCase()} con ${n}`,
+        contenido: { tono: 'sol', figura: f ? { tipo: 'fecha', dia: f.dia, mes: f.mes.slice(0, 3).toUpperCase(), sem: mayus(f.sem), pie: [hora, donde].filter(Boolean).map(esc).join(' · ') } : { tipo: 'emoji', v: '📅' }, eyebrow: 'Mañana', titulo: `Mañana se ven: ${esc(q.toLowerCase())} con ${esc(n)}.`, sub: 'Que salga bonito.', vista: `${q}${donde ? ', en ' + donde : ''}${hora ? ', a las ' + hora : ''}.`,
+          cuerpo: [
+            p(`${hola(P)} Mañana es el plan que hicieron en su charla. Solo queríamos que no se te pasara.`),
+            ficha('El plan', [['Qué', esc(q)], ['Con', esc(n)], f ? ['Cuándo', `${mayus(f.sem)} ${f.dia} de ${f.mes}${hora ? ', ' + esc(hora) : ''}`] : null, ['Dónde', donde ? esc(donde) : 'Lo platican en la charla']]),
+            lista(segun(P, [{ ico: '📲', txt: '<b>Avísale a alguien de confianza</b>', sub: 'Con quién, dónde y a qué hora. Tu tablero te arma el mensaje en «Aquí mando yo».' }, { ico: '☀️', txt: '<b>Lugar público, y llega y vete por tu cuenta</b>', sub: 'Si algo no se siente bien, te vas. No le debes una explicación a nadie.' }],
+              [{ ico: '☀️', txt: '<b>Lugar público y sin prisa</b>', sub: 'Que ella llegue y se vaya por su cuenta es lo normal aquí. Así la primera vez sale bien.' }, { ico: '👂', txt: '<b>Llega a escuchar</b>', sub: 'Ya coinciden en lo importante. Mañana toca conocerse.' }], [{ ico: '☀️', txt: '<b>Lugar público y sin prisa</b>', sub: 'Ya coinciden en lo importante. Mañana toca conocerse.' }])),
+          ],
+          boton: { txt: nom(O) ? `Abrir mi charla con ${nom(O)}` : 'Abrir la charla', url: charlaUrl(env, O), sub: 'Si cambió algo, díganselo ahí' }, nota: 'Quien aceptó puede cambiar su respuesta cuando quiera.' } };
+    } },
+  semana: { cat: 'resumen', reenvio: true, cuando: 'Cada domingo a las 10 de la mañana, a quien ya terminó su cuestionario. El botón cambia según lo que más le conviene hacer a esa persona.', muestra: () => ({ r: { coincidencias: 2, esperan: 1, abiertas: 1, sinLeer: 3, masCerca: 88, pool: 37, nuevas: 6, invitados: 1, pausada: false, sinFoto: false } }),
     arma: (env, { P, r }) => {
       const quieto = !r.coincidencias && !r.abiertas;
-      return { asunto: quieto ? 'Tu semana en Cupido: silencio, y por qué eso está bien' : 'Tu semana en Cupido',
-        contenido: { eyebrow: 'Tu semana en Cupido', titulo: quieto ? 'Esta semana, silencio.' : 'Esto pasó esta semana.', vista: quieto ? 'Nadie cruzó el 90 % contigo todavía. Te contamos qué sí se movió.' : `${r.coincidencias} coincidencias, ${r.abiertas} puertas abiertas.`,
-          parrafos: [quieto ? `${hola(P)} Nadie cruzó el 90 % contigo todavía. No es que algo falle: es el sistema ahorrándote años con las personas incorrectas. Esto es lo que sí se movió:` : `${hola(P)} Tu búsqueda, en una mirada:`],
-          lista: [
-            r.pausada ? { ico: '⏸️', txt: '<b>Tu perfil está en pausa</b>', sub: 'No apareces para nadie. Lo reactivas con un toque.' } : null,
-            { ico: '💘', txt: `<b>${r.coincidencias}</b> ${r.coincidencias === 1 ? 'coincidencia' : 'coincidencias'} arriba del 90 %`, sub: r.esperan ? `${r.esperan} ${r.esperan === 1 ? 'espera' : 'esperan'} tu respuesta` : (r.coincidencias ? 'Todas respondidas' : (r.masCerca ? `Lo más cerca que alguien ha estado: ${r.masCerca} %` : '')) },
-            { ico: '🚪', txt: `<b>${r.abiertas}</b> ${r.abiertas === 1 ? 'puerta abierta' : 'puertas abiertas'}`, sub: r.sinLeer ? `${r.sinLeer} ${r.sinLeer === 1 ? 'mensaje sin leer' : 'mensajes sin leer'}` : '' },
-            { ico: '👥', txt: `<b>${r.pool}</b> personas buscan lo mismo que tú`, sub: r.nuevas ? `${r.nuevas} ${r.nuevas === 1 ? 'llegó' : 'llegaron'} esta semana, y el motor ya te cruzó con ${r.nuevas === 1 ? 'esa persona' : 'todas'}` : 'Nadie nuevo esta semana' },
-            r.invitados ? { ico: '🤍', txt: `<b>${r.invitados}</b> ${r.invitados === 1 ? 'persona llegó' : 'personas llegaron'} por tu invitación`, sub: 'Cada persona seria que entra sube las probabilidades de todos, también las tuyas.' } : null,
-          ].filter(Boolean),
-          boton: { txt: 'Abrir mi tablero', url: `${BASE(env)}/persona` }, nota: 'Lo que más ayuda a que el silencio dure menos: compartir Cupido con alguien que busque en serio. Tu liga está en tu tablero, en «Apoyar a Cupido».' } };
+      // Lo que sigue: una sola cosa, la que más le sirve a esta persona hoy
+      const sigue = r.pausada ? { ico: '⏸️', x: '<b>Tu perfil está en pausa.</b> No apareces para nadie y el motor no te cruza. Cuando quieras volver, es un toque.', b: { txt: 'Reactivar mi perfil', url: tablero(env) } }
+        : r.esperan ? { ico: '💘', x: `<b>${cuantos(r.esperan, 'coincidencia espera', 'coincidencias esperan')} tu respuesta.</b> Léela con calma: un «ahora no» nadie lo ve.`, b: { txt: r.esperan === 1 ? 'Ver mi coincidencia y decidir' : 'Ver mis coincidencias y decidir', url: tablero(env, 'aceptaciones') } }
+        : r.sinLeer ? { ico: '💬', x: `<b>Tienes ${cuantos(r.sinLeer, 'mensaje', 'mensajes')} sin leer</b> en una charla que se abrió con dos síes.`, b: { txt: 'Leer mis mensajes', url: tablero(env, 'charlas') } }
+        : r.sinFoto ? { ico: '📷', x: '<b>Todavía no subes tu foto.</b> No se la enseñamos a nadie: solo la ve quien abra una puerta contigo, y cuando tú decidas. Tenerla lista hace que ese día todo fluya.', b: { txt: 'Subir mi foto', url: tablero(env, 'medios') } }
+        : { ico: '🤍', x: '<b>Lo que más acorta el silencio es más gente seria.</b> Si conoces a alguien que busca en serio, pásale tu liga. No te da ventaja en el algoritmo: te da más cruces posibles.', b: { txt: 'Ver mi liga para compartir', url: tablero(env, 'apoyar') } };
+      return { asunto: quieto ? 'Tu semana en Cupido: silencio, y por qué eso está bien' : `${nom(P) ? nom(P) + ', t' : 'T'}u semana en Cupido`,
+        contenido: { tono: quieto ? 'noche' : 'claro', figura: { tipo: 'emoji', v: quieto ? '🌙' : '🗞️' }, eyebrow: (() => { const h = fechaDe(new Date(Date.now() - 6 * 3600000).toISOString()); return `${mayus(h.sem)} ${h.dia} de ${h.mes}`; })(), titulo: quieto ? 'Esta semana, silencio.' : 'Esto pasó esta semana.', sub: quieto ? 'Y eso también es el sistema trabajando para ti.' : 'Tu búsqueda, en una mirada.', vista: quieto ? 'Nadie cruzó el 90 % contigo todavía. Te contamos qué sí se movió.' : `${cuantos(r.coincidencias, 'coincidencia', 'coincidencias')}, ${cuantos(r.abiertas, 'puerta abierta', 'puertas abiertas')}${r.sinLeer ? `, ${cuantos(r.sinLeer, 'mensaje', 'mensajes')} sin leer` : ''}.`,
+          cuerpo: [
+            p(quieto ? `${hola(P)} Nadie cruzó el 90 % contigo todavía. No es que algo falle: es el sistema ahorrándote años con las personas incorrectas. Esto es lo que sí se movió:` : `${hola(P)} Así va lo tuyo:`),
+            cifras([...(quieto ? [] : [{ n: r.coincidencias, e: 'arriba del 90 % contigo' }, { n: r.abiertas, e: r.abiertas === 1 ? 'puerta abierta' : 'puertas abiertas' }]), { n: r.pool, e: r.pool === 1 ? 'persona busca lo mismo que tú' : 'personas buscan lo mismo que tú' }, { n: r.nuevas, e: r.nuevas === 1 ? 'llegó esta semana' : 'llegaron esta semana' }]),
+            lista([
+              r.nuevas ? { ico: '🏹', txt: `<b>El motor ya te cruzó con ${r.nuevas === 1 ? 'la persona nueva' : `las ${r.nuevas} personas nuevas`}</b>`, sub: 'Cada vez que alguien termina su cuestionario, te vuelve a cruzar.' } : { ico: '🏹', txt: '<b>Nadie nuevo esta semana</b>', sub: 'En cuanto alguien termine su cuestionario, el motor te cruza.' },
+              !r.coincidencias && r.masCerca ? { ico: '📈', txt: `<b>Lo más cerca que alguien ha estado: ${r.masCerca} %</b>`, sub: 'Avisamos a partir del 90 %. Abajo de eso, preferimos el silencio.' } : null,
+              r.invitados ? { ico: '🤍', txt: `<b>${cuantos(r.invitados, 'persona llegó', 'personas llegaron')} por tu invitación</b>`, sub: 'Cada persona seria que entra sube las probabilidades de todos, también las tuyas.' } : null,
+            ]),
+            sec('Lo que sigue'), aviso(sigue.ico, sigue.x),
+          ],
+          boton: sigue.b, nota: 'Este resumen llega los domingos, aunque no haya pasado nada: también el silencio se cuenta.' } };
     } },
   en_revision: { cat: 'acceso', cuando: 'Cuando una cuenta junta tres reportes de mujeres distintas y sale del matching mientras alguien la revisa.', muestra: () => ({}),
     arma: (env, { P }) => ({ asunto: 'Tu cuenta de Cupido está en revisión',
-      contenido: { eyebrow: 'Tu cuenta', titulo: 'Tu cuenta está en revisión.', vista: 'Recibimos reportes sobre ti. Mientras alguien los revisa, sales del matching.',
-        parrafos: [`${hola(P)} Recibimos varios reportes sobre ti. Mientras una persona del equipo los lee, tu cuenta sale del matching: no aparecen coincidencias nuevas. Tus charlas abiertas siguen.`, 'No te vamos a decir quién ni cuándo: eso protege a quien reporta. Sí te vamos a avisar en cuanto alguien lo haya revisado.'],
+      contenido: { tono: 'sereno', figura: { tipo: 'emoji', v: '🔎' }, firma: 'equipo', eyebrow: 'Tu cuenta', titulo: 'Tu cuenta está en revisión.', sub: 'Mientras una persona del equipo la revisa, sales del matching.', vista: 'Recibimos reportes sobre ti. Mientras alguien los revisa, sales del matching.',
+        cuerpo: [
+          p(`${hola(P)} Recibimos varios reportes sobre ti. Esto es lo que cambia mientras una persona del equipo los lee:`),
+          lista([{ ico: '⏸️', txt: '<b>No aparecen coincidencias nuevas</b>', sub: 'Tu cuenta sale del matching hasta que termine la revisión.' }, { ico: '💬', txt: '<b>Tus charlas abiertas siguen</b>', sub: 'Lo que ya tienes no se toca.' }, { ico: '✉️', txt: '<b>Te avisamos en cuanto alguien lo haya revisado</b>', sub: 'Lo lee una persona, no una máquina.' }]),
+          p('No te vamos a decir quién ni cuándo: eso protege a quien reporta. Lo que sí puedes hacer hoy es releer las reglas de la casa.'),
+        ],
         boton: { txt: 'Leer las reglas de la casa', url: `${BASE(env)}/ella` } } }) },
   regreso: { cat: 'acceso', cuando: 'Cuando una persona del equipo revisa una cuenta y la regresa al matching.', muestra: () => ({}),
     arma: (env, { P }) => ({ asunto: 'Tu cuenta regresó al matching',
-      contenido: { eyebrow: 'Tu cuenta', titulo: 'Tu cuenta regresó al matching.', vista: 'Una persona del equipo ya la revisó.',
-        parrafos: [`${hola(P)} Una persona del equipo ya revisó tu cuenta y la regresó al matching. El motor ya te volvió a cruzar.`, 'Las reglas de la casa siguen siendo las mismas, y vale la pena releerlas.'],
-        boton: { txt: 'Ir a mi tablero', url: `${BASE(env)}/persona` } } }) },
+      contenido: { tono: 'calma', figura: { tipo: 'emoji', v: '✅' }, firma: 'equipo', eyebrow: 'Tu cuenta', titulo: 'Tu cuenta regresó al matching.', sub: 'Una persona del equipo ya la revisó.', vista: 'Una persona del equipo ya la revisó. El motor ya te volvió a cruzar.',
+        cuerpo: [
+          p(`${hola(P)} Una persona del equipo ya revisó tu cuenta y la regresó al matching. El motor ya te volvió a cruzar con todas las personas que buscan lo mismo que tú.`),
+          p('Las reglas de la casa siguen siendo las mismas, y vale la pena tenerlas presentes: aquí ella decide el ritmo.'),
+        ],
+        boton: { txt: 'Ir a mi tablero', url: tablero(env) }, segunda: { txt: 'Releer las reglas de la casa', url: `${BASE(env)}/ella` } } }) },
   retirada: { cat: 'acceso', cuando: 'Cuando diez mujeres distintas bloquean a alguien, o el equipo lo decide tras un reporte.', muestra: () => ({}),
     arma: (env, { P }) => ({ asunto: 'Tu cuenta de Cupido Algorítmico fue retirada',
-      contenido: { eyebrow: 'Las reglas de la casa', titulo: 'Tu cuenta fue retirada.', vista: 'Tu cuenta ya no está en Cupido. Es una decisión definitiva.',
-        parrafos: [`${hola(P)} Tu cuenta ya no está en Cupido Algorítmico y no puede volver a entrar.`,
-          'Al entrar aceptaste la regla de la casa: aquí manda ella. Cuando diez mujeres distintas bloquean a la misma persona, o cuando un reporte lo amerita, esa cuenta queda fuera para siempre. Bloquear no es lo mismo que dejar de hablar: es lo que alguien hace cuando la hicieron sentir incómoda.',
-          'No vamos a decirte quién ni cuándo: eso las protege a ellas. Tus puertas se cerraron y tus respuestas dejaron de cruzarse con nadie.'],
-        nota: 'Si quieres que borremos tus datos por completo, responde a este correo y lo hacemos.', pie: 'Cupido Algorítmico existe para que ella encuentre a la persona correcta, segura y en control.' } }) },
+      contenido: { tono: 'noche', firma: 'equipo', promesas: false, eyebrow: 'Las reglas de la casa', titulo: 'Tu cuenta fue retirada.', sub: 'Es una decisión definitiva.', vista: 'Tu cuenta ya no está en Cupido. Es una decisión definitiva.',
+        cuerpo: [
+          p(`${hola(P)} Tu cuenta ya no está en Cupido Algorítmico y no puede volver a entrar.`),
+          p('Al entrar aceptaste la regla de la casa: aquí manda ella. Cuando diez mujeres distintas bloquean a la misma persona, o cuando un reporte lo amerita, esa cuenta queda fuera para siempre. Bloquear no es lo mismo que dejar de hablar: es lo que alguien hace cuando la hicieron sentir incómoda.'),
+          p('No vamos a decirte quién ni cuándo: eso las protege a ellas. Tus puertas se cerraron y tus respuestas dejaron de cruzarse con nadie.'),
+        ],
+        boton: { txt: 'Leer la regla de la casa', url: `${BASE(env)}/ella` },
+        nota: 'Si quieres que borremos tus datos por completo, responde a este correo y lo hacemos.', pieCuenta: 'Te llegó porque tenías una cuenta en Cupido Algorítmico.', pie: 'Cupido Algorítmico existe para que ella encuentre a la persona correcta, segura y en control.' } }) },
   reporte_recibido: { cat: 'cuidado', cuando: 'Al instante, a quien reporta a alguien.', muestra: (P) => ({ O: laOtra(P) }),
     arma: (env, { P, O }) => ({ asunto: 'Recibimos tu reporte',
-      contenido: { eyebrow: 'Seguridad', titulo: 'Recibimos tu reporte. Gracias por decirlo.', vista: 'Ya no lo vas a volver a ver, y una persona lo va a leer.',
-        parrafos: [`${hola(P)} Hiciste bien en decirlo. Desde este momento:`],
-        lista: [{ ico: '⛔', txt: `<b>${esc(nom(O) || 'Esa persona')} quedó ${segun(O, 'bloqueada', 'bloqueado')}</b>`, sub: 'No te ve, no puede escribirte ni llamarte, y el motor no los vuelve a cruzar nunca.' }, { ico: '👀', txt: '<b>Una persona del equipo lo va a leer</b>', sub: 'No una máquina. Con lo que escribiste y lo último que se dijo en esa charla.' }, { ico: '🤫', txt: `<b>${segun(O, 'Ella', 'Él')} no sabe que fue un reporte</b>`, sub: 'Solo vio «Se cerró la puerta», igual que si hubieras cerrado sin más.' }],
-        boton: { txt: 'Ir a mi tablero', url: `${BASE(env)}/persona#ella` }, nota: 'Si corres peligro ahora mismo, esto no sustituye al 911. Te escribimos de nuevo cuando alguien lo haya leído.' } }),
-    discreta: (env) => ({ asunto: 'Recibimos lo que nos mandaste', contenido: { eyebrow: 'Cupido', titulo: 'Recibimos lo que nos mandaste.', parrafos: ['Una persona del equipo lo va a leer. Los detalles están en tu tablero.'], boton: { txt: 'Abrir mi tablero', url: `${BASE(env)}/persona#ella` } } }) },
+      contenido: { tono: 'calma', figura: { tipo: 'emoji', v: '🛡️' }, firma: 'equipo', eyebrow: 'Seguridad', titulo: 'Recibimos tu reporte.', sub: 'Gracias por decirlo. Hiciste bien.', vista: 'Ya no lo vas a volver a ver, y una persona lo va a leer.',
+        cuerpo: [
+          p(`${hola(P)} Desde este momento:`),
+          lista([{ ico: '⛔', txt: `<b>${esc(nom(O) || 'Esa persona')} quedó ${segun(O, 'bloqueada', 'bloqueado')}</b>`, sub: 'No te ve, no puede escribirte ni llamarte, y el motor no los vuelve a cruzar nunca.' }, { ico: '👀', txt: '<b>Una persona del equipo lo va a leer</b>', sub: 'No una máquina. Con lo que escribiste y lo último que se dijo en esa charla.' }, { ico: '🤫', txt: `<b>${segun(O, 'Ella', 'Él')} no sabe que fue un reporte</b>`, sub: 'Solo vio «Se cerró la puerta», igual que si hubieras cerrado sin más.' }]),
+          aviso('🚨', '<b>Si corres peligro ahora mismo, llama al 911.</b> Esto no lo sustituye.', 'sol'),
+        ],
+        boton: { txt: 'Ver mis candados', url: tablero(env, 'ella'), sub: 'Todo lo que tú decides, en un solo lugar' }, nota: 'Te escribimos de nuevo cuando alguien lo haya leído.' } }),
+    discreta: (env) => ({ asunto: 'Recibimos lo que nos mandaste', contenido: { tono: 'sereno', figura: { tipo: 'emoji', v: '💌' }, firma: 'equipo', eyebrow: 'Cupido', titulo: 'Recibimos lo que nos mandaste.', sub: 'Una persona del equipo lo va a leer.', vista: 'Los detalles están en tu tablero.', cuerpo: [p('Los detalles están en tu tablero. Este correo no dice más porque tienes encendidos los correos discretos.')], boton: { txt: 'Abrir mi tablero', url: tablero(env, 'ella') } } }) },
   reporte_atendido: { cat: 'cuidado', cuando: 'Cuando una persona del equipo lee un reporte (y, si es el caso, cuando la cuenta reportada se retira).', muestra: () => ({ retirada: true }),
     arma: (env, { P, retirada }) => ({ asunto: 'Una persona ya leyó tu reporte',
-      contenido: { eyebrow: 'Seguridad', titulo: 'Una persona del equipo ya leyó tu reporte.', vista: retirada ? 'Esa cuenta ya no está en Cupido.' : 'Sigue sin poder verte ni escribirte.',
-        parrafos: [`${hola(P)} Ya lo leímos, completo.`, retirada ? '<b>Esa cuenta ya no está en Cupido</b>, y su correo no puede volver a entrar. Gracias: lo que dijiste también cuida a las que vienen después.' : 'Para ti nada cambia: esa persona sigue sin poder verte, escribirte ni llamarte, y el motor no los vuelve a cruzar. Tu reporte queda guardado y cuenta si alguien más reporta lo mismo.'],
-        boton: { txt: 'Ir a mi tablero', url: `${BASE(env)}/persona` } } }),
-    discreta: (env) => ({ asunto: 'Ya revisamos lo que nos mandaste', contenido: { eyebrow: 'Cupido', titulo: 'Ya revisamos lo que nos mandaste.', parrafos: ['Los detalles están en tu tablero.'], boton: { txt: 'Abrir mi tablero', url: `${BASE(env)}/persona` } } }) },
-  invitado: { cat: 'cuenta', cuando: 'Cuando alguien crea su cuenta con la liga de invitación de la persona.', muestra: () => ({ total: 3 }),
-    arma: (env, { P, total }) => ({ asunto: 'Alguien entró a Cupido por tu invitación',
-      contenido: { eyebrow: 'Gracias', titulo: 'Alguien entró a Cupido por tu invitación.', vista: 'Cada persona seria que entra sube las probabilidades de todos.',
-        parrafos: [`${hola(P)} Alguien abrió su cuenta con tu liga. ${total > 1 ? `Ya van <b>${total}</b> personas que llegan por ti.` : 'Es la primera persona que llega por ti.'}`, 'No te da ninguna ventaja en el algoritmo, y así debe ser. Te da algo mejor: más personas serias, más cruces, más posibilidades de que alguien cruce el 90 % contigo.'],
-        boton: { txt: 'Ver mi liga para compartir', url: `${BASE(env)}/persona#apoyar` } } }) },
-  gracias: { cat: 'cuenta', cuando: 'Al confirmar un aporte al Fondo de atracción o al hacerse Socio fundador.', muestra: () => ({ tipo: 'fondo', monto: 200 }),
-    arma: (env, { P, tipo, monto }) => ({ asunto: tipo === 'socio' ? 'Gracias por ser Socio fundador de Cupido' : 'Gracias por tu aporte al Fondo de atracción',
-      contenido: { eyebrow: 'Gracias', titulo: tipo === 'socio' ? 'Eres Socio fundador de Cupido.' : 'Tu aporte ya está en el Fondo de atracción.', vista: 'Cada peso se usa para traer a la siguiente persona seria.',
-        parrafos: [`${hola(P)} ${tipo === 'socio' ? `Cada mes, ${monto} pesos tuyos` : `Tus ${monto} pesos`} se van íntegros a traer a la siguiente persona seria a Cupido: más personas, más cruces, más coincidencias arriba del 90 %, también para ti.`, 'No te da ninguna ventaja en el algoritmo, y así debe ser. Te da algo mejor: una comunidad más grande y nuestro agradecimiento. Cada año publicamos en qué se gastó.'],
-        boton: { txt: 'Ver el programa', url: `${BASE(env)}/persona#apoyar` },
-        nota: tipo === 'socio' ? 'Puedes cancelar cuando quieras desde tu tablero, sin preguntas. Devoluciones sin preguntas durante 15 días escribiendo a contacto@ingenieriadigital.mx.' : 'Devoluciones sin preguntas durante 15 días escribiendo a contacto@ingenieriadigital.mx.' } }) },
+      contenido: { tono: 'calma', figura: { tipo: 'emoji', v: retirada ? '✅' : '🛡️' }, firma: 'equipo', eyebrow: 'Seguridad', titulo: 'Una persona del equipo ya leyó tu reporte.', sub: retirada ? 'Esa cuenta ya no está en Cupido.' : 'Completo, y con calma.', vista: retirada ? 'Esa cuenta ya no está en Cupido.' : 'Sigue sin poder verte ni escribirte.',
+        cuerpo: [
+          p(`${hola(P)} Ya lo leímos, completo.`),
+          retirada ? aviso('✅', '<b>Esa cuenta ya no está en Cupido</b>, y su correo no puede volver a entrar. Gracias: lo que dijiste también cuida a las que vienen después.', 'calma')
+            : aviso('🛡️', '<b>Para ti nada cambia:</b> esa persona sigue sin poder verte, escribirte ni llamarte, y el motor no los vuelve a cruzar. Tu reporte queda guardado y cuenta si alguien más reporta lo mismo.', 'calma'),
+          p('Tu búsqueda sigue igual que antes. Cuando alguien cruce el 90 % contigo, te escribimos.'),
+        ],
+        boton: { txt: 'Ir a mi tablero', url: tablero(env) } } }),
+    discreta: (env) => ({ asunto: 'Ya revisamos lo que nos mandaste', contenido: { tono: 'sereno', figura: { tipo: 'emoji', v: '💌' }, firma: 'equipo', eyebrow: 'Cupido', titulo: 'Ya revisamos lo que nos mandaste.', sub: 'Los detalles están en tu tablero.', vista: 'Los detalles están en tu tablero.', cuerpo: [p('Este correo no dice más porque tienes encendidos los correos discretos.')], boton: { txt: 'Abrir mi tablero', url: tablero(env) } } }) },
+  invitado: { cat: 'cuenta', reenvio: true, cuando: 'Cuando alguien crea su cuenta con la liga de invitación de la persona.', muestra: () => ({ total: 3, codigo: 'k7m2p' }),
+    prepara: async (env, P) => ({ codigo: P.codigo || await codigoDe(env, P) }),
+    arma: (env, { P, total, codigo }) => ({ asunto: total > 1 ? `Ya van ${total} personas que llegan a Cupido por ti` : 'Alguien entró a Cupido por tu invitación',
+      contenido: { tono: 'amor', figura: { tipo: 'numero', v: total, pie: total === 1 ? 'persona llegó por ti' : 'personas han llegado por ti' }, eyebrow: 'Gracias', titulo: 'Alguien entró por tu invitación.', sub: 'Cada persona seria que entra sube las probabilidades de todos.', vista: 'Cada persona seria que entra sube las probabilidades de todos, también las tuyas.',
+        cuerpo: [
+          p(`${hola(P)} Alguien abrió su cuenta con tu liga. ${total > 1 ? `Ya van <b>${total}</b> personas que llegan por ti.` : 'Es la primera persona que llega por ti.'} Gracias, de verdad.`),
+          p('No te da ninguna ventaja en el algoritmo, y así debe ser. Te da algo mejor: más personas serias, más cruces, más posibilidades de que alguien cruce el 90 % contigo.'),
+          ...(codigo ? [ficha('Tu liga para compartir', [['Es tuya', `<a href="${BASE(env)}/i/${esc(codigo)}" style="color:#b23349">${BASE(env).replace(/^https?:\/\//, '')}/i/${esc(codigo)}</a>`]])] : []),
+        ],
+        boton: { txt: 'Compartir mi liga otra vez', url: tablero(env, 'apoyar'), sub: 'Mándasela a alguien que busque en serio' } } }) },
+  gracias: { cat: 'cuenta', reenvio: true, cuando: 'Al confirmar un aporte al Fondo de atracción o al hacerse Socio fundador.', muestra: () => ({ tipo: 'fondo', monto: 200 }),
+    arma: (env, { P, tipo, monto }) => {
+      const socio = tipo === 'socio';
+      return { asunto: socio ? 'Gracias por ser Socio fundador de Cupido' : 'Gracias por tu aporte al Fondo de atracción',
+        contenido: { tono: 'calma', figura: { tipo: 'emoji', v: '💝' }, eyebrow: 'Gracias', titulo: socio ? 'Eres Socio fundador de Cupido.' : 'Tu aporte ya está en el Fondo de atracción.', sub: 'Cada peso se usa para traer a la siguiente persona seria.', vista: 'Cada peso se usa para traer a la siguiente persona seria.',
+          cuerpo: [
+            p(`${hola(P)} Gracias. Cupido no tiene anuncios ni los va a tener, así que crece con gente como tú.`),
+            ficha('Tu apoyo', [['Qué', socio ? 'Socio fundador' : 'Fondo de atracción'], ['Cuánto', `$${esc(monto)} MXN${socio ? ' al mes' : ''}`], ['A dónde va', 'Íntegro, a traer más personas serias'], ['Cuentas claras', 'Cada año publicamos en qué se gastó']]),
+            p('No te da ninguna ventaja en el algoritmo, y así debe ser. Te da algo mejor: una comunidad más grande, más cruces y más coincidencias arriba del 90 %, también para ti.'),
+          ],
+          boton: { txt: 'Ver el programa', url: tablero(env, 'apoyar') },
+          nota: `${socio ? 'Puedes cancelar cuando quieras desde tu tablero, sin preguntas. ' : ''}Devoluciones sin preguntas durante 15 días escribiendo a contacto@ingenieriadigital.mx.` } };
+    } },
   revision: { cat: 'cuenta', cuando: 'Cada seis meses: ¿sigue igual tu ciudad, tu trabajo, tu situación?', muestra: () => ({}),
     arma: (env, { P }) => ({ asunto: '¿Sigue igual tu situación? Un minuto, cada seis meses',
-      contenido: { eyebrow: 'Revisión', titulo: '¿Sigue todo igual?', vista: 'Ciudad, trabajo, hijos, tu situación: lo que cambia en seis meses.',
-        parrafos: [`${hola(P)} Cada seis meses te preguntamos lo que sí cambia: tu ciudad, tu trabajo, si quieres hijos, y tu situación. Con eso el motor te lee mejor y tu precio justo se acomoda a ti.`, 'Si te quedaste sin trabajo, dilo ahí: Cupido se vuelve gratis en ese instante y sin preguntas.'],
-        boton: { txt: 'Revisar en un minuto', url: `${BASE(env)}/persona#apoyar` }, nota: 'Es un minuto. Si todo sigue igual, solo confirmas.' } }) },
+      contenido: { tono: 'sol', figura: { tipo: 'emoji', v: '🗓️' }, eyebrow: 'Revisión de cada seis meses', titulo: '¿Sigue todo igual?', sub: 'Un minuto. Si nada cambió, solo confirmas.', vista: 'Ciudad, trabajo, hijos, tu situación: lo que sí cambia en seis meses.',
+        cuerpo: [
+          p(`${hola(P)} Tus 43 respuestas se quedan como están. Cada seis meses te preguntamos solo lo que sí cambia, para que el motor te siga leyendo bien:`),
+          lista([{ ico: '📍', txt: '<b>Tu ciudad</b>', sub: 'Si te mudaste, cambian tus cruces.' }, { ico: '💼', txt: '<b>Tu trabajo y tu situación</b>', sub: 'Con eso tu precio justo se acomoda a ti.' }, { ico: '🏡', txt: '<b>Si quieres hijos</b>', sub: 'Es de lo que más pesa al cruzar.' }]),
+          aviso('🤍', '<b>Si te quedaste sin trabajo, dilo ahí:</b> Cupido se vuelve gratis en ese instante y sin preguntas.', 'calma'),
+        ],
+        boton: { txt: 'Revisar en un minuto', url: tablero(env, 'apoyar') } } }) },
   espacio: { cat: 'cuenta', cuando: 'Cuando lo que la persona ha subido pasa del 80 % de su espacio incluido.', muestra: () => ({ usado: '4.2 GB', tope: '5.0 GB', pct: 84 }),
     arma: (env, { P, usado, tope, pct }) => ({ asunto: `Tu espacio en Cupido va en ${pct} %`,
-      contenido: { eyebrow: 'Tu espacio', titulo: `Llevas ${esc(usado)} de ${esc(tope)}.`, vista: 'Todo lo tuyo se guarda sin comprimir. Te avisamos antes de que se llene.',
-        parrafos: [`${hola(P)} Tus fotos, audios y videos se guardan en la calidad en que los subes, y eso ocupa. Vas en <b>${pct} %</b> de tu espacio incluido.`, 'Si se llena, nada se borra: solo no podrás subir más hasta quitar algo que ya no uses.'],
-        boton: { txt: 'Ver mi espacio', url: `${BASE(env)}/persona#medios` } } }) },
-  prueba: { cat: 'acceso', cuando: 'Cuando la persona toca «Mándame un correo de prueba» en su tablero.', muestra: () => ({}),
-    arma: (env, { P }) => ({ asunto: 'Así se ven los correos de Cupido',
-      contenido: { eyebrow: 'Correo de prueba', titulo: 'Sí llegó. Así te vamos a escribir.', vista: 'Tu correo funciona y Cupido te encuentra.',
-        parrafos: [`${hola(P)} Este es un correo de prueba: llegó bien, así que no te vas a perder nada.`, 'De inicio te avisamos de todo. Lo que no quieras saber lo apagas tú, por categoría, y cada correo trae su propio «ya no quiero estos».'],
-        boton: { txt: 'Elegir qué correos recibo', url: `${BASE(env)}/persona#correos` }, nota: 'Si alguno cae en spam, márcalo como «no es spam» y agrega cupido@capitaltorreon.com a tus contactos.' } }) },
+      contenido: { tono: 'sol', figura: { tipo: 'barra', pct, pie: 'de tu espacio' }, eyebrow: 'Tu espacio', titulo: `Llevas ${esc(usado)} de ${esc(tope)}.`, sub: 'Te avisamos antes de que se llene.', vista: 'Todo lo tuyo se guarda sin comprimir. Te avisamos antes de que se llene.',
+        cuerpo: [
+          p(`${hola(P)} Tus fotos, audios y videos se guardan en la calidad en que los subes, y eso ocupa.`),
+          lista([{ ico: '🗂️', txt: '<b>Si se llena, nada se borra</b>', sub: 'Solo no podrás subir más hasta quitar algo que ya no uses.' }, { ico: '🧹', txt: '<b>Tú eliges qué quitar</b>', sub: 'En tu tablero ves cuánto ocupa cada cosa.' }]),
+        ],
+        boton: { txt: 'Ver mi espacio', url: tablero(env, 'medios') } } }) },
+  prueba: { cat: 'acceso', reenvio: true, cuando: 'Cuando la persona toca «Mándame un correo de prueba» en su tablero.', muestra: () => ({}),
+    arma: (env, { P }) => ({ asunto: 'Sí llegó: así se ven los correos de Cupido',
+      contenido: { tono: 'noche', figura: { tipo: 'emoji', v: '📬' }, eyebrow: 'Correo de prueba', titulo: 'Sí llegó.', sub: 'Así te vamos a escribir.', vista: 'Tu correo funciona y Cupido te encuentra.',
+        cuerpo: [
+          p(`${hola(P)} Este es un correo de prueba: llegó bien, así que no te vas a perder nada.`),
+          p('Aquí somos chismógrafos: <b>de inicio te contamos todo.</b> Lo que no quieras saber lo apagas tú, por tema, y cada correo trae su propio «ya no quiero estos».'),
+          sec('De esto te contamos'),
+          chips(CATEGORIAS.filter((c) => !c.fijo).map((c) => `${c.i}&nbsp; ${esc(c.n)}`)),
+        ],
+        boton: { txt: 'Elegir qué correos recibo', url: tablero(env, 'correos') }, nota: 'Si alguno cae en spam, márcalo como «no es spam» y agrega cupido@capitaltorreon.com a tus contactos.' } }) },
 };
 
-// Arma un correo para una persona: elige la versión discreta si la pidió y le pone su pie de baja
+// Arma un correo para una persona: busca lo que hace falta para personalizarlo, elige la versión discreta si la pidió y le pone su pie
 export async function armar(env, P, tipo, datos = {}) {
   const def = CORREOS[tipo]; if (!def) throw new Error('No existe ese correo: ' + tipo);
   const cat = datos.cat && CATEGORIA[datos.cat] ? datos.cat : def.cat, C = CATEGORIA[cat];
-  let c = def.arma(env, { P, ...datos });
-  if (P && discreto(P) && !C.fijo) c = def.discreta ? def.discreta(env, { P, ...datos }) : { asunto: 'Tienes novedades en Cupido', contenido: { eyebrow: 'Cupido', titulo: 'Tienes novedades.', parrafos: ['Entra a tu tablero para verlas. Este correo no dice más porque tienes encendidos los correos discretos.'], boton: { txt: 'Abrir mi tablero', url: `${BASE(env)}/persona` } } };
-  if (P?.id && !C.fijo) { const t = await tokenBaja(env, P); c.contenido.baja = { n: C.n, url: `${BASE(env)}/correo/baja?t=${t}&c=${cat}`, todas: `${BASE(env)}/persona#correos` }; }
-  else c.contenido.pieCuenta = P?.id ? `Este correo es de tu cuenta y llega siempre. <a href="${BASE(env)}/persona#correos" style="color:#75707c">Elegir qué correos recibo</a>` : '';
-  return { ...c, cat };
+  const callado = !!P && discreto(P) && !C.fijo;
+  let extra = {};
+  if (def.prepara && P?.id && !callado) { try { extra = (await def.prepara(env, P, datos)) || {}; } catch (e) { console.error('prepara', tipo, e.message); } }
+  const c = callado ? (def.discreta ? def.discreta(env, { P, ...datos }) : DISCRETO(env)) : def.arma(env, { P, ...extra, ...datos });
+  return { ...c, contenido: await vestir(env, c.contenido, { P, def, C, cat, callado }), cat };
+}
+// Lo que todo correo lleva además de lo suyo: la categoría arriba, por qué llegó, cómo apagarlo y, si se presta a reenviarse, la invitación
+async function vestir(env, contenido, { P, def, C, cat, callado, token = null }) {
+  const c = { ...contenido };
+  if (!callado) c.etiqueta = `${C.i}&nbsp; ${esc(C.n)}`;
+  if (!C.fijo) c.baja = { n: C.n, url: `${BASE(env)}/correo/baja?t=${token || (P?.id ? await tokenBaja(env, P) : 'muestra')}&c=${cat}`, todas: tablero(env, 'correos') };
+  else c.pieCuenta = c.pieCuenta || (P ? `Este correo es de tu cuenta y llega siempre. <a href="${tablero(env, 'correos')}" style="color:#6b6672">Elegir qué correos recibo</a>` : 'Te llegó porque alguien pidió entrar a Cupido con este correo.');
+  if (def.reenvio && !callado) { let cod = null; try { cod = P?.id ? (P.codigo || await codigoDe(env, P)) : null; } catch { /* sin código: va al inicio */ } c.reenvio = { url: cod ? `${BASE(env)}/i/${cod}` : BASE(env) }; }
+  return c;
 }
 // Envía un correo a una persona si tiene encendida su categoría (los de acceso van siempre)
 export async function correoA(env, P, tipo, datos = {}, { clave = null, cadaMinutos = 0, forzar = false } = {}) {
@@ -386,7 +523,7 @@ export async function despacharNovedades(env) {
     if (reciente) continue; // se junta con lo siguiente
     const cat = filas.some((f) => f.cat === 'charla') ? 'charla' : filas[0].cat;
     await limpiar();
-    if (salio(await correoA(env, P, 'novedades', { O: { id: O.id, nombre: O.nombre, genero: O.genero }, filas, cat }, { clave: g.otra, forzar: true }))) enviados++;
+    if (salio(await correoA(env, P, 'novedades', { O: { id: O.id, nombre: O.nombre, genero: O.genero, color: O.color }, filas, cat }, { clave: g.otra, forzar: true }))) enviados++;
   }
   return enviados;
 }
@@ -404,9 +541,9 @@ export async function correosDelDia(env, { domingo = new Date().getUTCDay() === 
     if (!P?.correo || P.estado !== 'activa' || !O || O.estado !== 'activa') continue;
     if (P.genero === 'hombre' && O.genero !== 'hombre' && ajustesDe(O).primero && suya !== 'si') continue;
     const dias = Math.floor((Date.now() - Date.parse(pu.avisada.replace(' ', 'T') + 'Z')) / 86400000);
-    const x = porPersona.get(yo) || { P, n: 0, pct: 0, dias: 0 }; x.n++; x.pct = Math.max(x.pct, pu.pct); x.dias = Math.max(x.dias, dias); porPersona.set(yo, x);
+    const x = porPersona.get(yo) || { P, n: 0, pct: 0, dias: 0, lista: [] }; x.n++; x.pct = Math.max(x.pct, pu.pct); x.dias = Math.max(x.dias, dias); x.lista.push({ pct: pu.pct, dias }); porPersona.set(yo, x);
   }
-  for (const x of porPersona.values()) if (salio(await correoA(env, x.P, 'pendiente', { n: x.n, pct: x.pct, dias: x.dias }, { cadaMinutos: 60 * 24 * 14 }))) hechos.pendientes++;
+  for (const x of porPersona.values()) if (salio(await correoA(env, x.P, 'pendiente', { n: x.n, pct: x.pct, dias: x.dias, lista: x.lista.sort((p1, p2) => p2.pct - p1.pct) }, { cadaMinutos: 60 * 24 * 14 }))) hechos.pendientes++;
   // 2 · planes de mañana (hora del centro de México)
   const manana = new Date(Date.now() - 6 * 3600000 + 86400000).toISOString().slice(0, 10);
   const citas = (await env.DB.prepare(`SELECT m.id, m.a, m.b, m.de, m.archivo FROM mensajes m JOIN charlas c ON c.a = m.a AND c.b = m.b WHERE m.tipo = 'cita' AND c.cerrada IS NULL AND json_extract(m.archivo, '$.cuando') LIKE ? AND EXISTS (SELECT 1 FROM respuestas r WHERE r.mensaje = m.id AND r.valor = 'si')`).bind(manana + '%').all()).results;
@@ -415,7 +552,7 @@ export async function correosDelDia(env, { domingo = new Date().getUTCDay() === 
     const hora = (() => { try { return new Date(A.cuando + ':00Z').toLocaleTimeString('es-MX', { hour: 'numeric', minute: '2-digit', timeZone: 'UTC' }); } catch { return ''; } })();
     for (const [yo, otra] of [[m.a, m.b], [m.b, m.a]]) {
       const [P, O] = [await persona(env, yo), await persona(env, otra)];
-      if (P?.correo && O && salio(await correoA(env, P, 'cita_manana', { O: { id: O.id, nombre: O.nombre, genero: O.genero }, que: A.que, donde: A.donde || '', hora }, { clave: `cita${m.id}`, cadaMinutos: 60 * 24 * 30 }))) hechos.citas++;
+      if (P?.correo && O && salio(await correoA(env, P, 'cita_manana', { O: { id: O.id, nombre: O.nombre, genero: O.genero, color: O.color }, que: A.que, donde: A.donde || '', hora, fecha: manana }, { clave: `cita${m.id}`, cadaMinutos: 60 * 24 * 30 }))) hechos.citas++;
     }
   }
   // 3 · tu semana en Cupido: los domingos, a quien ya está en el matching (o en pausa)
@@ -434,29 +571,64 @@ export async function resumenSemana(env, P) {
   const vivas = v.coincidencias.filter((c) => c.puerta.estado !== 'retirada');
   const nuevas = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas WHERE completo = 1 AND estado = 'activa' AND id != ? AND creada > datetime('now', '-7 days')`).bind(P.id).first()).n;
   return { coincidencias: vivas.length, esperan: vivas.filter((c) => c.puerta.estado === 'cerrada' && !c.puerta.miDecision).length, abiertas: vivas.filter((c) => c.puerta.estado === 'abierta').length,
-    sinLeer: (v.charlas || []).reduce((s, c) => s + c.nuevos, 0), masCerca: v.masCerca || 0, pool: v.pool.delOtroLado, nuevas: Math.min(nuevas, v.pool.delOtroLado), invitados: v.invitacion?.invitados || 0, pausada: P.estado === 'pausada' };
+    sinLeer: (v.charlas || []).reduce((s, c) => s + c.nuevos, 0), masCerca: v.masCerca || 0, pool: v.pool.delOtroLado, nuevas: Math.min(nuevas, v.pool.delOtroLado), invitados: v.invitacion?.invitados || 0, pausada: P.estado === 'pausada', sinFoto: !v.misMedios?.foto };
 }
 
-/* ── para el admin: el catálogo, la vista previa y la serie de muestra ───── */
-const personaDeMuestra = (genero, para = 'muestra@cupido.test') => ({ id: null, nombre: genero === 'mujer' ? 'Sofía Rangel' : genero === 'hombre' ? 'Andrés Luna' : 'Alex Mora', genero: genero === 'otro' ? 'nobinaria' : genero, correo: para, ajustes: '{}' });
-export const catalogoCorreos = () => Object.entries(CORREOS).map(([tipo, d]) => ({ tipo, cat: d.cat, categoria: CATEGORIA[d.cat].n, cuando: d.cuando, fijo: !!CATEGORIA[d.cat].fijo, discreta: !!d.discreta }));
-export function vistaPrevia(env, tipo, genero = 'mujer', esDiscreto = false) {
+
+/* ── para el admin: el catálogo, la vista previa, la revisión y la serie de muestra ── */
+const personaDeMuestra = (genero, para = 'muestra@cupido.test') => ({ id: null, nombre: genero === 'mujer' ? 'Sofía Rangel' : genero === 'hombre' ? 'Andrés Luna' : 'Alex Mora', genero: genero === 'otro' ? 'nobinaria' : genero, color: genero === 'mujer' ? '#be185d' : genero === 'hombre' ? '#1d4ed8' : '#2f8f83', correo: para, ajustes: '{}' });
+// Un correo de ejemplo, completo: con sus datos de muestra y vestido igual que uno de verdad
+async function deMuestra(env, tipo, genero = 'mujer', esDiscreto = false, datos = null) {
   const def = CORREOS[tipo]; if (!def) return null;
-  const P = { ...personaDeMuestra(genero), ajustes: JSON.stringify({ correo_discreto: esDiscreto }) };
-  let c = def.arma(env, { P, ...def.muestra(P) });
-  const C = CATEGORIA[def.cat];
-  if (esDiscreto && !C.fijo) c = def.discreta ? def.discreta(env, { P, ...def.muestra(P) }) : { asunto: 'Tienes novedades en Cupido', contenido: { eyebrow: 'Cupido', titulo: 'Tienes novedades.', parrafos: ['Entra a tu tablero para verlas. Este correo no dice más porque tienes encendidos los correos discretos.'], boton: { txt: 'Abrir mi tablero', url: `${BASE(env)}/persona` } } };
-  if (!C.fijo) c.contenido.baja = { n: C.n, url: `${BASE(env)}/correo/baja?t=muestra&c=${def.cat}`, todas: `${BASE(env)}/persona#correos` };
-  else c.contenido.pieCuenta = `Este correo es de tu cuenta y llega siempre. <a href="${BASE(env)}/persona#correos" style="color:#75707c">Elegir qué correos recibo</a>`;
-  return { asunto: c.asunto, ...plantilla(env, c.contenido) };
+  const P = personaDeMuestra(genero), C = CATEGORIA[def.cat], callado = esDiscreto && !C.fijo, d = { P, ...def.muestra(P), ...(datos || {}) };
+  const c = callado ? (def.discreta ? def.discreta(env, d) : DISCRETO(env)) : def.arma(env, d);
+  return { asunto: c.asunto, contenido: await vestir(env, c.contenido, { P, def, C, cat: def.cat, callado, token: 'muestra' }) };
+}
+export async function catalogoCorreos(env) {
+  const r = [];
+  for (const [tipo, d] of Object.entries(CORREOS)) {
+    const m = await deMuestra(env, tipo, 'mujer'), { peso } = plantilla(env, m.contenido);
+    r.push({ tipo, cat: d.cat, categoria: CATEGORIA[d.cat].n, cuando: d.cuando, fijo: !!CATEGORIA[d.cat].fijo, discreta: !!d.discreta, tono: m.contenido.tono, tonoNombre: TONOS[m.contenido.tono]?.n || '', boton: m.contenido.boton?.txt || '', kb: Math.round(peso / 102.4) / 10 });
+  }
+  return r;
+}
+export async function vistaPrevia(env, tipo, genero = 'mujer', esDiscreto = false) {
+  const m = await deMuestra(env, tipo, genero, esDiscreto); if (!m) return null;
+  return { asunto: m.asunto, ...plantilla(env, m.contenido) };
+}
+// La revisión: cada correo, como lo lee ella, él y alguien sin género, en su versión normal y en la discreta,
+// más el caso más cargado que puede darse. Dice cuánto pesa cada uno y qué le falta. Si la lista de faltas sale vacía, todo pasa.
+export async function revisarCorreos(env) {
+  const lleno = { filas: Array.from({ length: 14 }, (_, k) => ({ cat: k % 3 ? 'charla' : 'chispa', ico: '💬', v: 'te escribió', d: 'Un mensaje largo, de los que se escriben cuando hay mucho que contar y nadie tiene prisa. '.repeat(4) })) };
+  const casos = [];
+  for (const tipo of Object.keys(CORREOS)) {
+    const C = CATEGORIA[CORREOS[tipo].cat];
+    for (const genero of ['mujer', 'hombre', 'otro']) for (const d of (C.fijo ? [false] : [false, true])) casos.push({ tipo, genero, discreto: d });
+  }
+  casos.push({ tipo: 'novedades', genero: 'mujer', discreto: false, datos: lleno, nota: 'el más cargado' });
+  casos.push({ tipo: 'semana', genero: 'hombre', discreto: false, datos: { r: { coincidencias: 0, esperan: 0, abiertas: 0, sinLeer: 0, masCerca: 0, pool: 0, nuevas: 0, invitados: 0, pausada: false, sinFoto: true } }, nota: 'semana en silencio' });
+  casos.push({ tipo: 'enlace', genero: 'otro', discreto: false, datos: { espera: null }, nota: 'sin nada adentro' });
+  casos.push({ tipo: 'recordatorio', genero: 'mujer', discreto: false, datos: { faltan: 43, pct: 0 }, nota: 'sin empezar' });
+  casos.push({ tipo: 'matching', genero: 'mujer', discreto: false, datos: { nuevas: 2, tengo: { foto: true, voz: true, video: true } }, nota: 'con coincidencias' });
+  casos.push({ tipo: 'pendiente', genero: 'hombre', discreto: false, datos: { n: 1, pct: 93, dias: 3, lista: [{ pct: 93, dias: 3 }] }, nota: 'una sola' });
+  casos.push({ tipo: 'gracias', genero: 'mujer', discreto: false, datos: { tipo: 'socio', monto: 99 }, nota: 'socio fundador' });
+  casos.push({ tipo: 'reporte_atendido', genero: 'mujer', discreto: false, datos: { retirada: false }, nota: 'sin retiro' });
+  const lista = [];
+  for (const k of casos) {
+    try {
+      const m = await deMuestra(env, k.tipo, k.genero, k.discreto, k.datos), r = plantilla(env, m.contenido);
+      lista.push({ tipo: k.tipo, genero: k.genero, discreto: k.discreto, nota: k.nota || '', asunto: m.asunto, kb: Math.round(r.peso / 102.4) / 10, boton: m.contenido.boton?.txt || '', faltas: revisar({ asunto: m.asunto, ...r }, m.contenido) });
+    } catch (e) { lista.push({ tipo: k.tipo, genero: k.genero, discreto: k.discreto, nota: k.nota || '', asunto: '', kb: 0, boton: '', faltas: ['no se pudo armar: ' + e.message] }); }
+  }
+  const pesado = lista.reduce((x, y) => (y.kb > x.kb ? y : x), lista[0]);
+  return { revisados: lista.length, conFaltas: lista.filter((x) => x.faltas.length).length, masPesado: { tipo: pesado.tipo, kb: pesado.kb }, topeKb: TOPE_CORREO / 1024, limiteGmailKb: LIMITE_GMAIL / 1024, lista };
 }
 // La serie completa a un correo, como la recibiría una mujer o un hombre
 export async function mandarMuestra(env, para, genero = 'mujer') {
-  const P = personaDeMuestra(genero, para), r = [];
-  for (const [tipo, def] of Object.entries(CORREOS)) {
-    const c = def.arma(env, { P, ...def.muestra(P) }), C = CATEGORIA[def.cat];
-    if (!C.fijo) c.contenido.baja = { n: C.n, url: `${BASE(env)}/correo/baja?t=muestra&c=${def.cat}`, todas: `${BASE(env)}/persona#correos` };
-    r.push({ tipo, id: await mandar(env, { persona: null, para, tipo: 'muestra', asunto: `[Muestra] ${c.asunto}`, contenido: c.contenido }) });
+  const r = [];
+  for (const tipo of Object.keys(CORREOS)) {
+    const m = await deMuestra(env, tipo, genero);
+    r.push({ tipo, id: await mandar(env, { persona: null, para, tipo: 'muestra', asunto: `[Muestra] ${m.asunto}`, contenido: m.contenido }) });
     await new Promise((x) => setTimeout(x, 550));
   }
   return r;

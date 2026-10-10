@@ -225,7 +225,7 @@ export async function publicarPuertas(env, lista, { soloId = null } = {}) {
   // por correo, a quien tenga correo (las personas reales): a los dos, al mismo tiempo
   for (const p of lista) if (p.pct >= UMBRAL && !existentes.has(p.a + '|' + p.b)) for (const [yo, otra] of [[p.a, p.b], [p.b, p.a]]) {
     if (callado(yo, otra)) continue;
-    const P = await persona(env, yo); if (P?.correo) await correoA(env, P, 'coincidencia', { pct: p.pct }, { clave: otra, cadaMinutos: 60 * 24 * 30 });
+    const P = await persona(env, yo); if (P?.correo) await correoA(env, P, 'coincidencia', { pct: p.pct, otra }, { clave: otra, cadaMinutos: 60 * 24 * 30 });
   }
   return { nuevas, retiradas, actualizadas };
 }
@@ -262,7 +262,7 @@ export async function decidir(env, yo, otra, decision) {
       env.DB.prepare(`INSERT INTO avisos (persona, tipo, texto, otra, pct) VALUES (?, 'coincidencia', ?, ?, ?)`).bind(otra, 'Alguien con quien ya habías hablado quiere volver a abrir la puerta. Tú decides, igual que la primera vez.', yo, p.pct),
     ]);
     await anotar(env, 'ella', 'Alguien quiso volver a abrir una puerta que cerró', '');
-    if (O.correo) await correoA(env, O, 'reabrir', { pct: p.pct }, { clave: yo, cadaMinutos: 60 * 24 });
+    if (O.correo) await correoA(env, O, 'reabrir', { pct: p.pct, otra: yo }, { clave: yo, cadaMinutos: 60 * 24 });
     return { estado: 'cerrada', miDecision: 'si' };
   }
   await env.DB.prepare(`UPDATE puertas SET ${col} = ? WHERE a = ? AND b = ?`).bind(decision, a, b).run();
@@ -272,7 +272,7 @@ export async function decidir(env, yo, otra, decision) {
     const r = await env.DB.prepare(`INSERT INTO avisos (persona, tipo, texto, otra, pct)
       SELECT ?, 'coincidencia', ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM avisos WHERE persona = ? AND otra = ? AND tipo = 'coincidencia')`)
       .bind(otra, `Apareció alguien al ${p.pct} % contigo. La puerta está cerrada hasta que los dos digan que sí.`, yo, p.pct, otra, yo).run();
-    if (r.meta.changes && O.correo) await correoA(env, O, 'coincidencia', { pct: p.pct }, { clave: yo, cadaMinutos: 60 * 24 * 30 });
+    if (r.meta.changes && O.correo) await correoA(env, O, 'coincidencia', { pct: p.pct, otra: yo }, { clave: yo, cadaMinutos: 60 * 24 * 30 });
   }
   if (da === 'si' && db === 'si') {
     await env.DB.prepare(`UPDATE puertas SET estado = 'abierta', abierta = datetime('now') WHERE a = ? AND b = ?`).bind(a, b).run();

@@ -1195,3 +1195,18 @@ button.ab:hover { border-color: var(--rosa); background: var(--rosa-suave); tran
 .correo-controles select, .correo-controles input[type=email] { border: 1px solid var(--linea); border-radius: 10px; padding: 9px 10px; font: 14px var(--sans); background: var(--blanco); color: var(--tinta); }
 .correo-asunto { margin: 0 0 8px; font-size: 14px; color: var(--tinta-2); }
 .co-dir { font-style: normal; font-weight: 600; color: var(--tinta); word-break: break-all; }
+
+/* ── admin · la galería de correos: todos juntos, cada uno es el correo de verdad encogido ── */
+.correo-galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.correo-ficha { display: flex; flex-direction: column; text-decoration: none; color: var(--tinta); border: 1px solid var(--linea); border-radius: 16px; overflow: hidden; background: var(--blanco); transition: transform .25s var(--ease), box-shadow .25s, border-color .2s; }
+.correo-ficha:hover { transform: translateY(-3px); box-shadow: var(--sombra); border-color: var(--rosa-linea); }
+.correo-mini { display: block; height: 400px; overflow: hidden; background: var(--crema); border-bottom: 1px solid var(--linea); }
+.correo-mini iframe { display: block; border: 0; transform-origin: 0 0; pointer-events: none; }
+.correo-dato { display: flex; flex-direction: column; gap: 3px; padding: 12px 14px 14px; font-size: 13px; line-height: 1.4; color: var(--gris); }
+.correo-dato b { font: 600 16px var(--serif); color: var(--tinta); display: flex; align-items: center; gap: 7px; }
+.correo-dato b i { width: 12px; height: 12px; border-radius: 99px; border: 1px solid rgba(33,29,36,.14); flex: none; }
+.correo-dato .cg-asunto { color: var(--tinta-2); font-style: italic; min-height: 2.8em; }
+.correo-dato u { text-decoration: none; color: var(--rosa-osc); font-weight: 600; }
+.correo-peso { display: block; height: 6px; border-radius: 99px; background: var(--rosa-suave); margin-top: 5px; overflow: hidden; }
+.correo-peso i { display: block; height: 100%; border-radius: 99px; background: var(--ok); }
+.correo-marco { display: block; margin: 0 auto; max-width: 100%; transition: width .3s var(--ease); }

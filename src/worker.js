@@ -11,7 +11,7 @@ import { quien, entrarDemo, pedirEnlace, canjearEnlace, cerrarSesion, cookieSesi
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
-import { CATEGORIAS as CATEGORIAS_CORREO, mandarMuestra, correoA, despacharNovedades, correosDelDia, paginaBaja, prefsDe, ponerPrefs, catalogoCorreos, vistaPrevia } from './correos.js';
+import { CATEGORIAS as CATEGORIAS_CORREO, mandarMuestra, correoA, despacharNovedades, correosDelDia, paginaBaja, prefsDe, ponerPrefs, catalogoCorreos, vistaPrevia, revisarCorreos, armar, plantilla as plantillaCorreo } from './correos.js';
 import { verPrograma, apoyar, confirmarApoyo, ajustarPrograma, aportesAdmin, distribucionPrecios } from './programa.js';
 import { limpiarPrecioJusto, REVISION_DIAS } from './precios.js';
 import { generarSonido, servirSonido, estadoSonidos } from './sonidos.js';
@@ -55,8 +55,8 @@ export default {
     for (const fila of lista) {
       const P = await persona(env, fila.id);
       const av = avance(P.r);
-      const faltan = av.estructuradasTotal - av.estructuradas + (av.textosTotal - av.textos);
-      await correoA(env, P, 'recordatorio', { faltan: Math.max(1, faltan), pct: av.pct }, { cadaMinutos: 60 * 24 * 3650 });
+      // se cuentan preguntas, no partes: la persona sabe que son 43
+      await correoA(env, P, 'recordatorio', { faltan: Math.max(1, av.preguntasFaltan), pct: av.pct }, { cadaMinutos: 60 * 24 * 3650 });
     }
     await hitosDelDia(env); // aniversarios de las charlas
     await limpiarSubidas(env); // lo que se quedó a medias no ocupa espacio
@@ -337,8 +337,18 @@ async function api(req, env, ctx, url) {
   if (ruta === '/api/admin/correr' && metodo === 'POST') { const b = await leerJson(req); return json(await correrFase(env, Number(b.fase))); }
   if (ruta === '/api/admin/reiniciar' && metodo === 'POST') { await reiniciarDemo(env); return json({ ok: true }); }
   // El catálogo y la vista previa son de ejemplo y los ve cualquiera; mandar la serie y ver lo enviado piden cuenta administradora
-  if (ruta === '/api/admin/correos/catalogo' && metodo === 'GET') return json({ correos: catalogoCorreos(), categorias: CATEGORIAS_CORREO.filter((c) => !c.fijo).length, admin: await esAdmin(env, yo), enviados: (await env.DB.prepare(`SELECT tipo, COUNT(*) AS n, SUM(estado != 'enviado') AS fallas FROM correos WHERE creado > datetime('now', '-30 days') GROUP BY tipo`).all()).results, enEspera: (await env.DB.prepare(`SELECT COUNT(*) AS n FROM novedades`).first()).n });
-  if (ruta === '/api/admin/correos/vista' && metodo === 'GET') { const v = vistaPrevia(env, String(url.searchParams.get('tipo') || ''), String(url.searchParams.get('genero') || 'mujer'), url.searchParams.get('discreto') === '1'); return v ? new Response(v.html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-asunto': encodeURIComponent(v.asunto) } }) : error('No existe ese correo', 404); }
+  if (ruta === '/api/admin/correos/catalogo' && metodo === 'GET') return json({ correos: await catalogoCorreos(env), categorias: CATEGORIAS_CORREO.filter((c) => !c.fijo).length, admin: await esAdmin(env, yo), enviados: (await env.DB.prepare(`SELECT tipo, COUNT(*) AS n, SUM(estado != 'enviado') AS fallas FROM correos WHERE creado > datetime('now', '-30 days') GROUP BY tipo`).all()).results, enEspera: (await env.DB.prepare(`SELECT COUNT(*) AS n FROM novedades`).first()).n });
+  if (ruta === '/api/admin/correos/vista' && metodo === 'GET') { const v = await vistaPrevia(env, String(url.searchParams.get('tipo') || ''), String(url.searchParams.get('genero') || 'mujer'), url.searchParams.get('discreto') === '1'); if (v && url.searchParams.get('texto') === '1') return new Response(v.text, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } }); return v ? new Response(v.html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-asunto': encodeURIComponent(v.asunto), 'x-peso': String(v.peso) } }) : error('No existe ese correo', 404); }
+  // Solo en desarrollo (CORREO_SIMULADO): el correo de verdad de una persona de la base local, para probar lo que se busca al armarlo
+  if (ruta === '/api/admin/correos/real' && metodo === 'GET' && env.CORREO_SIMULADO) {
+    const Pr = await persona(env, String(url.searchParams.get('persona') || '')); if (!Pr) return error('No existe esa persona', 404);
+    let d = {}; try { d = JSON.parse(url.searchParams.get('d') || '{}'); } catch {}
+    if (d.O) d.O = await persona(env, String(d.O));
+    const c = await armar(env, Pr, String(url.searchParams.get('tipo') || ''), d), v = plantillaCorreo(env, c.contenido);
+    return new Response(url.searchParams.get('texto') === '1' ? `${c.asunto}\n\n${v.text}` : v.html, { headers: { 'content-type': `text/${url.searchParams.get('texto') === '1' ? 'plain' : 'html'}; charset=utf-8`, 'cache-control': 'no-store', 'x-asunto': encodeURIComponent(c.asunto) } });
+  }
+  // La revisión corre sobre correos de ejemplo: no enseña nada de nadie
+  if (ruta === '/api/admin/correos/revision' && metodo === 'GET') return json(await revisarCorreos(env));
   if (ruta === '/api/admin/correos/muestra' && metodo === 'POST') {
     if (!(await esAdmin(env, yo))) return error('Mandar la serie pide entrar con una cuenta administradora.', 403);
     const b = await leerJson(req, 2000); if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(String(b.para || ''))) return error('Correo inválido');
