@@ -137,7 +137,7 @@ Regla: **toda frase se puede comprobar en la plataforma, o es una invitación de
 ## Decisiones tomadas aquí
 
 - **154 videos, no 100.** Se pidieron 100; salieron 154 porque había frases que lo merecían. Bajar la cuenta es quitar `v: 1` y borrar el archivo.
-- **Los videos van en el repositorio** (unos 55 MB). Es lo más simple y cualquier copia puede publicar. Cada vez que se rehacen todos, el repositorio crece otro tanto: si eso llega a estorbar, se mudan a R2.
+- **Los videos van en el repositorio** (66 MB: 24 sin audio y 41 con música). Es lo más simple y cualquier copia puede publicar. Cada vez que se rehacen todos, el repositorio crece otro tanto: si eso llega a estorbar, se mudan a R2.
 - **Cada video trae una sola música**, la de su serie. Las otras tres se graban en el navegador al pedirlas.
 - **«Con mi frase» está abierto.** Cualquiera puede escribir su frase con el estilo y la marca de Cupido. Se quita con una línea (el botón `mia`).
 - **Las piezas llevan la dirección de la casa, no la liga personal.** Una liga impresa no se puede tocar; la personal va en el texto que acompaña. Quien quiera, la enciende o pone el código QR.
