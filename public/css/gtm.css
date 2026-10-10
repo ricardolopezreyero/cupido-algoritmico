@@ -161,6 +161,17 @@
 .gtm-et.ritmo { background: #efe9f7; color: #5b3d8a; }
 .gtm-et.ok { background: var(--ok-suave); color: var(--ok); }
 
+/* las pruebas de /ceo */
+.gtm-pruebas { margin-top: 38px; }
+.gtm-pruebas h2 i { font-style: normal; font-size: .6em; color: var(--gris); vertical-align: middle; margin-left: 6px; }
+.gtm-prueba { background: var(--blanco); border: 1px solid var(--linea); border-radius: 14px; padding: 0 18px; margin-top: 10px; max-width: 860px; }
+.gtm-prueba summary { cursor: pointer; padding: 14px 0; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; font-size: 15.5px; }
+.gtm-prueba summary span { font-size: 13px; color: var(--gris); }
+.gtm-prueba[open] { padding-bottom: 16px; }
+.gtm-prueba h5 { font: 700 12px/1 var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--rosa-osc); margin: 18px 0 6px; }
+.gtm-prueba p { margin: 0; font-size: 15px; line-height: 1.55; color: var(--tinta-2); overflow-wrap: anywhere; }
+.gtm-prueba-contacto { font-size: 14px !important; padding-bottom: 4px; border-bottom: 1px dashed var(--linea-2); padding-bottom: 12px; }
+
 /* el equipo */
 .gtm-equipo { max-width: 620px; margin-top: 30px; }
 .gtm-equipo h3 { margin: 0 0 4px; font-size: 20px; }

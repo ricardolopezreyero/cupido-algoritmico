@@ -18,9 +18,19 @@ El plan para llevar a Cupido a 10 millones de perfiles vivos, y la lista de todo
 | **Alianzas** | Dónde ya se junta la gente en La Laguna, Monterrey y Saltillo: sedes, egresados, clubes, iglesias, bodas y las fechas de cada ciudad. |
 | **Números** | La calculadora de ciudad, de dónde salen los primeros 5,000 perfiles, el embudo, cuántas publicaciones, la propuesta de presupuesto y las señales para decidir cada lunes. |
 | **Ritmo** | La semana tipo, qué hace la persona y qué hace la IA, y lo que no se hace. |
-| **Equipo** | A quién contratar primero, cómo reconocerla, la prueba, quién más y cuándo, y lo que le toca al fundador. Aquí también se da acceso a la página. |
+| **Equipo** | A quién buscar para dirigir y ejecutar, cómo reconocerla, las dos pruebas, **la guía para leer una prueba**, quién más y cuándo, y lo que le toca al fundador. Aquí llegan las pruebas de `/ceo` (solo las ven las cuentas administradoras) y se da acceso a la página. |
 
 Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verdad (sin la demo): perfiles vivos, mujeres y hombres, cuentas, invitados, cruces arriba de 90 %, puertas abiertas y cuánto de la lista está hecho. Cuando hay suficientes cruces entre personas reales, la calculadora usa la tasa de par real en lugar del supuesto.
+
+## El perfil de quien dirige (`/ceo`)
+
+**https://cupido.capitaltorreon.com/ceo** es la página que se le manda a quien podría dirigir Cupido y ejecutar este plan. Es pública pero no está listada en buscadores (`noindex`). No pide currículum: pide una prueba.
+
+- **Lo que dice:** de qué se trata, «no se llena una app: se enciende una ciudad», once rasgos en espejo (cada uno con «se nota en que…»), nueve cosas que tiene que saber, diez que tiene que poder hacer, las metas con fecha y su marcador (perfiles vivos con equilibrio), de dónde viene probablemente, para quién no es, y lo que tiene desde el primer día.
+- **La prueba:** la vez que juntó gente desde cero · diez días y cero pesos para cien perfiles · tres cosas que cambiaría · lo correcto sobre lo conveniente · un minuto a cámara (opcional). Más nombre, correo, WhatsApp y ciudad.
+- **A dónde llega:** `POST /api/ceo/postular` la guarda en `ceo_postulaciones` (`src/ceo.js`). Se lee en `/gtm` → Equipo, y a las cuentas administradoras que ya abrieron `/gtm` (tabla `gtm_avisos`) les llega un correo corto con un botón. Candados: casilla trampa, una por correo al día, tres por conexión y cuarenta en total al día.
+- **Lo que hay que decidir antes de mandar la liga** (está escrito en Equipo): la paga, si vivir en La Laguna de noviembre a febrero es requisito, y cómo se llama el puesto.
+- La vacante no pide género ni edad.
 
 ## Quién entra
 
@@ -40,6 +50,7 @@ Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verda
 | `src/gtm.js` | Quién entra (`quienGtm`), los números de hoy, guardar una palomita y cambiar el equipo. Tablas `gtm_tareas` y `gtm_equipo`. |
 | `src/verificar.js` | Verifica el pase del login de la casa (copia de `Login_CapitalTorreon/publico/verificar.js`). |
 | `public/gtm.html`, `public/js/gtm.js`, `public/css/gtm.css` | El cascarón, lo que pinta y el estilo. |
+| `public/ceo.html`, `public/css/ceo.css`, `src/ceo.js` | El perfil de quien dirige, su estilo, y el guardado de las pruebas con su aviso. |
 
 Rutas: `GET /api/gtm` (todo), `POST /api/gtm/tarea {id, hecha}`, `POST /api/gtm/equipo {email, quitar}`.
 

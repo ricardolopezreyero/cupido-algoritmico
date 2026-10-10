@@ -20,6 +20,7 @@ Te registras, respondes 43 preguntas una sola vez, y no pasa nada más. No hay s
 | **Artículos** · `/articulos` | Cualquiera publica sin crear cuenta. |
 | **Compartir** · `/compartir` | Todo para hablar de Cupido: 325 frases en la medida de Instagram, Facebook, TikTok y YouTube (entre ellas, 50 «verdades incómodas» con su fuente), la cuenta completa en orden de publicación, 154 videos verticales (sin audio o con música), mensajes de WhatsApp, código para páginas, la marca y los paquetes para bajarlo todo. La misma sección vive en el tablero, con la liga personal. |
 | **Cuestionario** · `/cuestionario` | Las 43 preguntas conectadas a tu cuenta: autoguardado y el motor te cruza al terminar. |
+| **Dirección** · `/ceo` | El perfil de quien va a dirigir Cupido y ejecutar el go-to-market: cómo es, qué tiene que saber y poder hacer, las metas con fecha y una prueba en vez de currículum. Pública, sin listar en buscadores. |
 | **Go-to-market** · `/gtm` | Privado para el equipo: la estrategia para llegar a 10 millones de perfiles vivos, los atajos, a quién buscar y una lista de 244 actividades cuyas palomitas se guardan con nombre y fecha. |
 
 Sin contraseñas a propósito: el correo es la cuenta (enlace mágico) y el demo está a un clic. Lo que falta para abrirlo a personas reales (admin protegido, privacidad de datos sensibles, verificación de identidad, dominio propio para el correo…) está en **[la lista completa](docs/RUTA.md)**.

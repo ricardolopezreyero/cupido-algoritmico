@@ -530,16 +530,29 @@ const ritmo = [
 
 /* ═══ EQUIPO ══════════════════════════════════════════════════════════ */
 const equipo = [
-  { k: 'cabeza', e: 'A quién contratar', t: 'Una persona, de tiempo completo, que viva en la ciudad semilla', s: 'Líder de crecimiento y comunidad. Es a quien se le dice: «sigue el go-to-market».' },
+  { k: 'cabeza', e: 'A quién buscar', t: 'Una persona que dirija y ejecute, viviendo en la ciudad semilla', s: 'Es a quien se le dice: «sigue el go-to-market». Su perfil completo (cómo es, qué tiene que saber, qué tiene que poder hacer y la prueba) está en [cupido.capitaltorreon.com/ceo](/ceo). Esa es la liga que se manda; no está listada en buscadores.' },
   { k: 'tarjetas', col: 2, l: [
     { t: 'Lo que hace', l: ['Llena las Noches de las 43 y las deja contentas.', 'Invita, convence y da seguimiento: fundadoras, madrinas, sedes, clubes, iglesias.', 'Escribe a diez creadores al día y cumple con sus números.', 'Sale a cámara dos veces por semana.', 'Lleva el lunes de números y propone la decisión.', 'Usa IA todos los días para todo lo que no pide presencia.'] },
     { t: 'Cómo reconocerla', l: ['Ya hizo crecer algo desde cero con poco dinero: una comunidad, un evento, un negocio local.', 'Tiene gente: en una semana puede sentar a cuarenta personas en un café.', 'Escribe claro y sin adornos.', 'Le gustan los números y no se los cuenta bonito a sí misma.', 'Puede explicarle Cupido a una amiga que no cree en estas cosas, sin exagerar.', 'Cree en las reglas de la casa: manda ella y cero publicidad.'] },
     { t: 'Lo que no es', l: ['Una agencia de publicidad.', 'Alguien que solo programa publicaciones.', 'Un experto en trucos: cuentas falsas, seguidores comprados, mensajes en frío.', 'Alguien que necesita un equipo para empezar.'] },
-    { t: 'La prueba, pagada', d: 'Diez días para organizar una Noche de las 43 con cuarenta personas y traer cien perfiles completos. Se le paga la prueba a cada finalista. Se contrata a quien lo logra, no a quien mejor lo explica.' },
+    { t: 'Dos pruebas, ningún currículum', d: 'Primero, la escrita de [/ceo](/ceo): cinco cosas que se contestan en una tarde; llegan aquí abajo. Después, con dos o tres finalistas, la de verdad y pagada: diez días para organizar una Noche de las 43 con cuarenta personas y traer cien perfiles completos. Se elige a quien lo logra, no a quien mejor lo explica.' },
     { t: 'Cómo se le paga', d: 'Propuesta: un sueldo base, un bono por cada perfil vivo que entra con equilibrio entre mujeres y hombres, y un bono al encender la ciudad. Los montos están por definir con el presupuesto de la fase 1.' },
     { t: 'Sus primeros 90 días', l: ['**30:** la casa lista, las cien fundadoras invitadas y la primera noche hecha.', '**60:** mil perfiles vivos en La Laguna, diez embajadoras y tres medios publicados.', '**90:** el Gran Cruce anunciado, veinte creadores comprometidos y el manual de ciudad empezado.'] },
   ] },
   { k: 'nota', tono: 'ojo', e: 'Al publicar la vacante.', t: 'No se pide género ni edad: sería discriminar y además no hace falta. Lo que sí importa es que pueda hablarle con credibilidad a mujeres de 27 a 45 años sobre seguridad y citas. La voz hacia ellas también la llevan las fundadoras y las embajadoras.' },
+
+  { k: 'cabeza', e: 'Para evaluar', t: 'Cómo leer una prueba', s: 'Esto no se publica: es para quien decide. La prueba no busca buena redacción; busca hechos, números y criterio.' },
+  { k: 'tabla', cab: ['Lo que se pregunta', 'Buena señal', 'Bandera'], filas: [
+    ['La vez que juntó gente desde cero', 'Dice de cuánto a cuánto, en cuánto tiempo y con cuánto dinero. Cuenta lo que hizo con sus manos y qué salió mal.', 'Habla de «el equipo» y de «la estrategia». No hay un solo número. Todo salió bien.'],
+    ['Diez días y cero pesos', 'Empieza por personas con nombre: a quién le escribe el día uno. Hay una fecha y un lugar. Piensa en quién invita a quién.', 'Empieza por redes sociales o por un anuncio. Pide presupuesto. No sale de su casa en diez días.'],
+    ['Tres cosas que cambiaría', 'Entró de verdad: cita pantallas. Lo que cambia sirve a quien llega, no a su gusto. Cuida la regla de la casa.', 'Elogia todo. O quiere quitar lo que protege a las mujeres «para crecer más rápido».'],
+    ['Lo correcto sobre lo conveniente', 'Le costó algo que se puede medir: dinero, un cliente, un puesto. Lo cuenta sin presumir.', 'No le costó nada. O el ejemplo lo deja como héroe.'],
+    ['El minuto a cámara', 'Mira a la cámara, habla como persona y no promete amor. Se entiende qué es Cupido.', 'Lee. Exagera. Dice «la mejor app». No lo mandó.'],
+  ], nota: 'Además: ¿cuánto tardó en mandarla desde que recibió la liga? La rapidez también contesta.' },
+  { k: 'tarjetas', col: 2, l: [
+    { t: 'La conversación: cinco preguntas', l: ['Enséñame cómo llevas tu semana. (Método)', '¿Cuál fue tu peor número y a quién se lo dijiste primero? (Honradez)', 'Explícale a un hombre por qué le conviene que mande ella. (La regla)', 'Tienes 5,000 mujeres y 1,500 hombres en la ciudad. ¿Qué haces el lunes? (Números y foco)', '¿Qué hiciste esta semana con IA y qué le corregiste? (Herramienta)'] },
+    { t: 'Lo que falta decidir antes de mandar la liga', l: ['**La paga.** La página dice «atada al marcador; los términos se platican con quien pase la prueba». Definir base, bono por ciudad encendida y si lleva parte de la empresa.', '**La Laguna.** La página pide vivir ahí de noviembre a febrero. Confirmar si es requisito o preferencia.', '**El nombre del puesto.** La página no pone título: dice «quien va a dirigir Cupido». Definir cómo firma.'] },
+  ] },
 
   { k: 'cabeza', e: 'Después', t: 'Quién más, y cuándo' },
   { k: 'tabla', cab: ['Rol', 'Cuándo', 'Cómo', 'Para qué'], filas: [
@@ -564,7 +577,7 @@ const equipo = [
 ];
 
 export const PLAN = {
-  version: '1.1', fecha: '10 de octubre de 2026',
+  version: '1.2', fecha: '10 de octubre de 2026',
   titulo: 'El plan para que 10 millones de personas busquen pareja con Cupido',
   bajada: 'Primero el resumen y los atajos; después, la lista de todo lo que hay que hacer. Lo que dice «supuesto» se cambia por el dato real en cuanto exista.',
   pestanas: [

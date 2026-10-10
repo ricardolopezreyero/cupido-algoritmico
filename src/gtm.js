@@ -12,6 +12,7 @@ import { huella } from './ella.js';
 import { etiqueta } from '../public/js/preguntas.js';
 import { TAREAS, FASES, AREAS, QUIENES, ESFUERZOS, RITMOS } from './gtm-tareas.js';
 import { PLAN } from './gtm-plan.js';
+import { ESQUEMA_CEO, listarPostulaciones } from './ceo.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -22,6 +23,7 @@ export const ESQUEMA_GTM = [
      hecha_at TEXT NOT NULL DEFAULT (datetime('now')))`,
   `CREATE TABLE IF NOT EXISTS gtm_equipo (
      email TEXT PRIMARY KEY, agregado_por TEXT, at TEXT NOT NULL DEFAULT (datetime('now')))`,
+  ...ESQUEMA_CEO,
 ];
 
 const IDS = new Set(TAREAS.map((t) => t[0]));
@@ -70,7 +72,10 @@ export async function verGtm(env, q) {
     if (IDS.has(f.id)) hechas[f.id] = { por: f.hecha_por, nombre: f.hecha_nombre || f.hecha_por.split('@')[0], at: f.hecha_at };
   }
   const equipo = q.admin ? (await env.DB.prepare(`SELECT email, agregado_por, at FROM gtm_equipo ORDER BY at`).all()).results : [];
-  return { yo: { email: q.email, nombre: q.nombre, admin: q.admin }, plan: PLAN, tareas: TAREAS, catalogo: { fases: FASES, areas: AREAS, quienes: QUIENES, esfuerzos: ESFUERZOS, ritmos: RITMOS }, hechas, equipo, hoy: await hoy(env) };
+  // las pruebas de /ceo traen datos de personas: solo las ve una cuenta administradora. Y a esa cuenta se le avisará de las que lleguen.
+  const postulaciones = q.admin ? await listarPostulaciones(env) : [];
+  if (q.admin && esCorreo(q.email)) await env.DB.prepare(`INSERT OR IGNORE INTO gtm_avisos (email) VALUES (?)`).bind(q.email).run();
+  return { yo: { email: q.email, nombre: q.nombre, admin: q.admin }, plan: PLAN, tareas: TAREAS, catalogo: { fases: FASES, areas: AREAS, quienes: QUIENES, esfuerzos: ESFUERZOS, ritmos: RITMOS }, hechas, equipo, postulaciones, hoy: await hoy(env) };
 }
 
 /* ── una palomita: se pone o se quita, y queda quién y cuándo ── */

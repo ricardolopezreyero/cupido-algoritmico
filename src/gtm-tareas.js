@@ -88,8 +88,8 @@ export const TAREAS = [
   ['f1-57', 1, 'MKT', 'A', 2, 'u', 'Los cinco pilares, con ejemplos', 'Ella manda · Las 43 preguntas · Lo contrario a las apps · Los números · Tu ciudad se enciende. Tres ejemplos buenos y uno malo de cada pilar.'],
 
   ['f1-60', 1, 'ADM', 'P', 2, 'u', 'Presupuesto de 90 días con tope', 'La propuesta está en Números. Decidir el tope, de dónde sale y qué gasto pide autorización.'],
-  ['f1-61', 1, 'ADM', 'P', 2, 'u', 'Publicar la vacante de quien va a ejecutar este plan', 'El perfil está en la pestaña Equipo. Publicarla en LinkedIn y pasarla por WhatsApp a diez personas que conozcan gente así.'],
-  ['f1-62', 1, 'ADM', 'P', 2, 'u', 'Prueba pagada para candidatos', 'Diez días para organizar una Noche de las 43 con 40 personas. Se contrata a quien lo logra, no a quien mejor lo explica.'],
+  ['f1-61', 1, 'ADM', 'P', 2, 'u', 'Mandar el perfil de quien va a dirigir', 'La página ya existe: cupido.capitaltorreon.com/ceo, con la prueba en vez de currículum. Antes de mandarla, cerrar la paga y si vivir en La Laguna es requisito. Luego, por WhatsApp a diez personas que conozcan gente así, y en LinkedIn.'],
+  ['f1-62', 1, 'ADM', 'P', 2, 'u', 'Leer las pruebas y hacer la prueba pagada', 'Las pruebas escritas llegan a Equipo, con su guía para leerlas. A dos o tres finalistas: diez días pagados para organizar una Noche de las 43 con 40 personas. Se elige a quien lo logra, no a quien mejor lo explica.'],
   ['f1-63', 1, 'ADM', 'A', 2, 'u', 'Una sola hoja de contactos', 'Creadores, medios, sedes y comunidades con estado y siguiente paso. Si no está en la hoja, no pasó.'],
   ['f1-64', 1, 'ADM', 'P', 2, 'u', 'Cuenta de cobro propia para los apoyos', 'Hoy los apoyos voluntarios pasan por la cuenta de SuperLeads. Abrir la de CapitalTorreon y cambiar la liga.'],
   ['f1-65', 1, 'ADM', 'P', 1, 'u', 'Nombrar a quien da la cara', 'Quién habla con medios, quién aparece en video y quién contesta cuando algo sale mal. Puede ser la misma persona; que esté escrito.'],

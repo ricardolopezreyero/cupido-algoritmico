@@ -183,9 +183,17 @@ function refrescarTarea(id) {
 }
 
 /* ═══ el equipo (solo lo ve y lo cambia una cuenta administradora) ═══ */
+// Las pruebas que llegan por /ceo: quién quiere dirigir Cupido. Traen datos de personas, así que solo las ve una cuenta administradora
+function pruebas() {
+  const l = D.postulaciones || [], liga = (u, t) => (u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>` : ''), parte = (t, v) => (v ? `<h5>${t}</h5><p>${esc(v).replace(/\n/g, '<br>')}</p>` : '');
+  return `<section class="gtm-pruebas"><header class="gtm-cabeza"><p class="eyebrow">Dirección</p><h2>Pruebas recibidas <i>${l.length}</i></h2><p class="lead">Lo que mandó cada persona desde <a href="/ceo">/ceo</a>. Solo lo ven las cuentas administradoras, y a ellas les llega un aviso por correo con cada prueba nueva.</p></header>
+    ${l.length ? l.map((p) => `<details class="gtm-prueba"><summary><b>${esc(p.nombre)}</b><span>${esc(p.ciudad || 'sin ciudad')} · ${fecha(p.creado)}</span>${p.video ? '<span class="gtm-et ok">🎥 mandó video</span>' : ''}</summary>
+      <p class="gtm-prueba-contacto"><a href="mailto:${esc(p.correo)}">${esc(p.correo)}</a>${p.whatsapp ? ` · ${esc(p.whatsapp)}` : ''}${p.video ? ` · ${liga(p.video, 'Ver su video')}` : ''}${p.enlace ? ` · ${liga(p.enlace, 'Lo que construyó')}` : ''}</p>
+      ${parte('1 · La vez que juntó gente desde cero', p.sala)}${parte('2 · Diez días y cero pesos', p.diez_dias)}${parte('3 · Tres cosas que cambiaría', p.cambiarias)}${parte('4 · Lo correcto sobre lo conveniente', p.correcto)}</details>`).join('') : '<p class="vacio">Todavía no llega ninguna. La liga para mandar es cupido.capitaltorreon.com/ceo</p>'}</section>`;
+}
 function equipo() {
   if (!D.yo.admin) return '';
-  return `<section class="gtm-equipo tarjeta"><h3>Quién puede ver esta página</h3>
+  return pruebas() + `<section class="gtm-equipo tarjeta"><h3>Quién puede ver esta página</h3>
     <p class="gtm-chica">Las cuentas administradoras de Cupido entran siempre. Aquí se agrega a quien va a ejecutar el plan, con su correo de Google. Puede palomear la lista; no puede cambiar el equipo.</p>
     <ul id="gtm-eq-lista">${D.equipo.length ? D.equipo.map((e) => `<li><b>${esc(e.email)}</b><span>desde el ${fecha(e.at)}</span><button class="gtm-quitar" data-quitar="${esc(e.email)}">Quitar</button></li>`).join('') : '<li class="vacio">Todavía no hay nadie más.</li>'}</ul>
     <form id="gtm-eq-form"><input type="email" id="gtm-eq-correo" placeholder="correo@gmail.com" required aria-label="Correo de la persona"><button class="boton boton-chico">Dar acceso</button></form>

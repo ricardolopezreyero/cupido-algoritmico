@@ -19,6 +19,8 @@ import { avance } from '../public/js/preguntas.js';
 import { llamada, conectarVoz, cambiarTono, responderChispa, verAlbum, misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, retirar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
 import { empezarSubida, subirParte, subirVista, terminarSubida, cancelarSubida, limpiarSubidas } from './subidas.js';
 import { quienGtm, verGtm, marcarTarea, cambiarEquipo } from './gtm.js';
+import { guardarPostulacion, avisoPostulacion, aQuienAvisar } from './ceo.js';
+import { mandar as correoSuelto } from './correos.js';   // un correo que no sale del catálogo: el aviso a quien administra
 import { esHombre, esAdmin, ponerControl, cerrarPuerta, bloquear, desbloquear, agregarEvitar, quitarEvitar, seguridadAdmin, accionAdmin } from './ella.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
 import { cruzarTodos, UMBRAL } from '../public/js/motor.js';
@@ -145,6 +147,12 @@ async function api(req, env, ctx, url) {
     const id = String(b.persona || DEMO_ID);
     if (!/^[a-z0-9]{2,20}$/.test(id)) return error('Persona inválida');
     return json({ ok: true }, 200, { 'set-cookie': cookieSesion(await entrarDemo(env, id), url) });
+  }
+  /* ── Dirección (/ceo): llega una prueba de quien quiere dirigir Cupido. Pública; se lee en /gtm → Equipo ── */
+  if (ruta === '/api/ceo/postular' && metodo === 'POST') {
+    const r = await guardarPostulacion(env, req, await leerJson(req, 40_000));
+    if (r.ok && r.fila) ctx.waitUntil((async () => { const a = avisoPostulacion(env, r.fila); for (const para of await aQuienAvisar(env)) await correoSuelto(env, { para, ...a }); })().catch((e) => console.error('aviso de dirección', e.message)));
+    return json(r.ok ? { ok: true } : { ok: false, error: r.error }, r.ok ? 200 : 422);
   }
   if (ruta === '/api/salir' && metodo === 'POST') {
     await cerrarSesion(env, req);
