@@ -18,6 +18,7 @@
   <a class="marca" href="/" id="marca"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
   <span class="pildora-demo" id="pildora-repaso" hidden>REPASO</span>
   <a class="enlace" id="volver-tablero" href="/persona" style="font-size:14px" hidden>Volver a mi tablero</a>
+  <span id="son-barra"></span>
 </div></header>
 
 <main class="bv">
@@ -40,8 +41,9 @@
 // · A los dos, sin regañar: completo y con ejemplos. Se enseña con los números del motor, no con un «debes».
 // Tres segundos mínimo en cada pantalla; sin salida la primera vez; el avance y lo elegido se guardan.
 import { $, $$, esc, api } from '/js/ui.js';
-import { tocar, precargar } from '/js/sonido.js';
+import { tocar, precargar, interruptor } from '/js/sonido.js';
 precargar(['paso', 'bienvenida', 'toque', 'puerta', 'si', 'mensaje', 'guardado']);
+interruptor($('#son-barra'), 'icono'); // el recorrido suena: se puede callar con un toque desde la primera pantalla
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const q = new URLSearchParams(location.search);
 const luego = q.get('luego');

@@ -17,6 +17,7 @@
 <header class="barra"><div class="envoltura barra-in">
   <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
   <span class="pildora-demo" id="pildora" hidden>CUENTA DEMO</span>
+  <span id="son-barra"></span>
   <nav class="menu"><a href="/persona">Mi tablero</a><a href="/articulos">Artículos</a></nav>
 </div></header>
 <div class="progreso" id="progreso" hidden><div class="envoltura-texto"><div class="txt"><span id="p-izq"></span><span id="p-der"></span></div><div class="pista"><div class="relleno" id="p-relleno" style="width:0"></div></div></div></div>
@@ -27,8 +28,9 @@
 import { $, $$, esc, api, avisar } from '/js/ui.js';
 import { PREGUNTAS, BLOQUES, PARTES, avance } from '/js/preguntas.js';
 import { dictable } from '/js/dictar.js';
-import { tocar, precargar } from '/js/sonido.js';
-precargar(['toque', 'guardado', 'paso', 'logro', 'coincidencia', 'error']);
+import { tocar, precargar, interruptor } from '/js/sonido.js';
+precargar(['toque', 'paso', 'logro', 'coincidencia', 'error']);
+interruptor($('#son-barra'), 'icono');
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const app = $('#app');
 const q = new URLSearchParams(location.search);
@@ -374,6 +376,6 @@ if (saltar >= 1 && saltar <= 43) {
 </script>
 <!-- RLR · Login de CapitalTorreon: todo funciona sin entrar; entrar solo agrega -->
 <div data-login-ct style="position:fixed;top:12px;right:12px;z-index:9999"></div>
-<script src="https://login.capitaltorreon.com/login.js" data-prefs="cupido.estilo,cupido.sonido" defer></script>
+<script src="https://login.capitaltorreon.com/login.js" data-prefs="cupido.estilo,cupido.sonido.v2" defer></script>
 </body>
 </html>

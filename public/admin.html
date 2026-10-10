@@ -15,7 +15,7 @@
 </head>
 <body data-author="RLR">
 <!-- Cupido Algorítmico · Panel administrativo · RLR · Ricardo López Reyero -->
-<div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Admin</b></a><button id="abrir-menu" aria-label="Abrir menú">☰</button></div>
+<div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Admin</b></a><span class="bm-acc"><span id="son-movil"></span><button id="abrir-menu" aria-label="Abrir menú">☰</button></span></div>
 <div class="admin">
   <aside class="lateral" id="lateral">
     <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
@@ -32,11 +32,13 @@
       <div class="sep">Contenido</div>
       <a href="#articulos" data-s="articulos"><span class="ico">📝</span>Artículos</a>
       <a href="#correos" data-s="correos"><span class="ico">✉️</span>Correos</a>
+      <a href="#sonidos" data-s="sonidos"><span class="ico">🔊</span>Sonidos</a>
       <a href="#bitacora" data-s="bitacora"><span class="ico">📜</span>Bitácora</a>
       <a href="#programa" data-s="programa"><span class="ico">🤍</span>Programa y apoyos</a>
       <a href="#ruta" data-s="ruta"><span class="ico">🗺️</span>La lista completa</a>
     </nav>
     <div class="pie-lat">Demo con datos ficticios · admin abierto.<br><a href="/demo">Cuenta demo →</a> · <a href="/entrar">Entrar →</a></div>
+    <div id="son-menu"></div>
   </aside>
   <main class="contenido" id="contenido"><p class="vacio">Cargando el panel…</p></main>
 </div>
@@ -49,6 +51,8 @@
 import { $, $$, esc, api, avisar, avatar, hace, colorPct, pronto } from '/js/ui.js';
 import { PREGUNTAS, BLOQUES, PARTE, etiqueta } from '/js/preguntas.js';
 import { AREAS_VIDA } from '/js/vida.js';
+import { SONIDOS, FAMILIAS, tocar, precargar, interruptor, ajustes as ajustesSonido, alCambiar as alCambiarSonido } from '/js/sonido.js';
+interruptor($('#son-menu'), 'menu'); interruptor($('#son-movil'), 'icono'); // encender o apagar: un toque, desde cualquier sección
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const cont = $('#contenido');
 let D = null, seccion = 'resumen', sondeo = null, ultimoEvento = 0;
@@ -228,6 +232,23 @@ const SECCIONES = {
     return `<section class="tarjeta prosa" style="font-size:16.5px">${html.replace(/href="(?:\.\.\/)?(?:docs\/)?([A-Z]+\.md)"/g, 'href="/#doc=$1" target="_blank"')}</section>`;
   },
 
+  // Sonidos: los 26, por familia, con cuándo suena cada uno y un botón para oírlo
+  async sonidos() {
+    const ids = Object.keys(SONIDOS), a = ajustesSonido();
+    return cabeza('Sonidos', 'Lo que suena en Cupido: avisos y efectos cortos. Un toque en el menú de la izquierda los apaga todos; lo que alguien pone a sonar a propósito (una nota de voz, un video, una llamada) se oye siempre.') + `
+      <div class="banda banda-4"><div class="rosa"><b>${ids.length}</b><span>sonidos<br>distintos</span></div><div><b>${Object.keys(FAMILIAS).length}</b><span>familias que<br>se apagan aparte</span></div><div><b id="son-estado">${a.on ? 'Sí' : 'No'}</b><span>suena en<br>este equipo</span></div><div><b>1</b><span>toque para<br>apagarlo todo</span></div></div>
+      ${Object.entries(FAMILIAS).map(([f, x]) => `<section class="tarjeta"><h2>${x.i}&nbsp; ${esc(x.n)}</h2><p class="sub">${esc(x.d)}.</p>
+        <div class="son-cat">${ids.filter((id) => SONIDOS[id].f === f).map((id) => `<button type="button" class="son-pieza" data-oir="${id}" title="Oír «${id}»"><span class="play">▶</span><span><b>${id}</b><small>${esc(SONIDOS[id].c)}</small></span></button>`).join('')}</div></section>`).join('')}
+      <section class="tarjeta"><h2>Cómo se apaga</h2>
+        <ul class="razones" style="padding:0">
+          <li><span class="i si">✓</span><span><b>Un toque, en el menú de la izquierda.</b> Está siempre a la vista, en el tablero y aquí. En el teléfono también va arriba, junto al menú.</span></li>
+          <li><span class="i si">✓</span><span><b>En el recorrido y en el cuestionario</b>, que no tienen menú, el mismo botón va arriba a la derecha.</span></li>
+          <li><span class="i si">✓</span><span><b>El engrane</b> abre lo fino: el volumen y qué familia suena. Nadie tiene que entrar ahí para callar a Cupido.</span></li>
+          <li><span class="i si">✓</span><span><b>Mientras alguien graba</b> una nota de voz, su voz o su video, los efectos se callan solos para no quedar grabados.</span></li>
+          <li><span class="i si">✓</span><span><b>La preferencia viaja con la cuenta</b> y se guarda en cada equipo.</span></li>
+        </ul></section>`;
+  },
+
   // Correos: el catálogo completo, cómo se ve cada uno (para ella, para él, discreto) y lo que ha salido
   async correos() {
     const [C, R] = await Promise.all([api('/api/admin/correos/catalogo'), api('/api/admin/correos/revision')]);
@@ -328,6 +349,12 @@ const DESPUES = {
   laboratorio: laboratorio,
   articulos() { $$('[data-art]').forEach((b) => b.onclick = async () => { b.disabled = true; await api(`/api/admin/articulos/${b.dataset.art}`, { accion: b.dataset.acc }); avisar('Listo'); ir('articulos'); }); },
   bitacora() { vivir(); },
+  sonidos() {
+    precargar();
+    // aquí se oyen aunque el sonido esté apagado: es el catálogo
+    $$('[data-oir]').forEach((b) => b.onclick = () => { precargar([b.dataset.oir]).then(() => tocar(b.dataset.oir, { siempre: true })); b.classList.add('suena'); setTimeout(() => b.classList.remove('suena'), 600); });
+    alCambiarSonido((n) => { const e = $('#son-estado'); if (e) e.textContent = n.on ? 'Sí' : 'No'; });
+  },
 };
 function animarBarras() { pronto(() => { $$('.histo .bar').forEach((b) => b.style.height = b.dataset.h + '%'); $$('.relleno[data-w]').forEach((b) => b.style.width = b.dataset.w + '%'); }); }
 
@@ -494,6 +521,6 @@ ir(location.hash.slice(1) || 'resumen');
 </script>
 <!-- RLR · Login de CapitalTorreon: todo funciona sin entrar; entrar solo agrega -->
 <div data-login-ct style="position:fixed;top:12px;right:12px;z-index:9999"></div>
-<script src="https://login.capitaltorreon.com/login.js" data-prefs="cupido.estilo,cupido.sonido" defer></script>
+<script src="https://login.capitaltorreon.com/login.js" data-prefs="cupido.estilo,cupido.sonido.v2" defer></script>
 </body>
 </html>

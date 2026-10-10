@@ -21,7 +21,7 @@
 
 <!-- Tablero (con sesión) -->
 <div id="raiz-tablero">
-  <div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Mi tablero</b></a><button id="abrir-menu" aria-label="Abrir menú">☰</button></div>
+  <div class="barra-movil"><a class="marca" href="/"><span class="corazon">💘</span><b>Mi tablero</b></a><span class="bm-acc"><span id="son-movil"></span><button id="abrir-menu" aria-label="Abrir menú">☰</button></span></div>
   <div class="admin">
     <aside class="lateral" id="lateral">
       <a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
@@ -30,6 +30,7 @@
       <nav id="nav"></nav>
       <button class="salir" id="salir"><span>⏻</span>Cerrar sesión</button>
       <div class="pie-lat" id="pie-lat"></div>
+      <div id="son-menu"></div>
     </aside>
     <main class="contenido" id="contenido"><p class="vacio">Cargando tu tablero…</p></main>
   </div>
@@ -58,7 +59,7 @@ import { PREGUNTAS, BLOQUES, etiqueta, PARTE } from '/js/preguntas.js';
 import { AREAS_VIDA, leerVida } from '/js/vida.js';
 import { ELEMENTOS, ELEMENTO, SUAVES } from '/js/elementos.js';
 import { dictable, puedeDictar } from '/js/dictar.js';
-import { tocar, precargar, panelSonido, ajustes as ajustesSonido } from '/js/sonido.js';
+import { tocar, precargar, interruptor, callar, ajustes as ajustesSonido } from '/js/sonido.js';
 import { TONOS, TONO, MAZOS, MAZO, CARTA, DETALLES, DETALLE, PLANES, PLAN, RESPUESTAS_CITA, RESPUESTA_CITA, RESPUESTA_MAX, NOTA_MAX, subidoDeTono } from '/js/chispa.js';
 import { montarVoz, vozLlamar, vozEvento } from '/js/llamada.js';
 import { subirPorPartes, prepararFoto, cartelDeVideo, duracionDeAudio, sinUbicacion, grabadora, MICROFONO, CAMARA, legible, duracionTxt } from '/js/subir.js';
@@ -87,6 +88,7 @@ async function tablero() {
   // la llamada de voz vive encima de todo el tablero: suena y sigue aunque cambies de sección
   montarVoz({ yoId: V.persona.id, api, avisar, quien: (otra) => (V.charlas || []).find((c) => c.otra === otra), alTerminar: (otra) => { if (CH.otra === otra) CH.traer?.(true); } });
   precargar(); // todos los sonidos, decodificados y listos antes de que pase algo
+  interruptor($('#son-menu'), 'menu'); interruptor($('#son-movil'), 'icono'); // encender o apagar: un toque, desde cualquier sección
   sonarNovedades();
   reglasUnaVez();
 }
@@ -485,7 +487,6 @@ const SECCIONES = {
         ${DEMO() ? `<p class="sub">Esta es la <b>cuenta demo</b>: datos ficticios que cualquiera puede ver. Para tener tu propio tablero, crea tu cuenta con tu correo.</p><button class="boton" id="crear-cuenta">Crear mi cuenta</button>`
           : `<p class="sub">Sin contraseña. Cada vez que entres te mandamos un enlace a tu correo; vale 20 minutos y se usa una sola vez.</p><div class="acceso-correo"><span>✉️</span><b>${esc(V.sesion.correo || '')}</b></div>
           <p style="margin:12px 0 0"><a class="boton boton-claro boton-chico" href="#correos">✉️ Elegir de qué me avisan por correo</a></p>`}</section>
-      <section class="tarjeta"><h2>Sonido</h2><p class="sub">Cupido suena suave y solo cuando pasa algo. Aquí eliges qué familias quieres oír y el volumen.</p><div id="son-priv"></div></section>
       <section class="tarjeta"><h2>Cerrar sesión</h2><p class="sub">Olvida tu sesión en este dispositivo. ${DEMO() ? 'El demo siempre está a un clic en la puerta de entrada.' : 'Para volver, pide un enlace nuevo con tu correo.'}</p>
         <button class="boton boton-oscuro" id="btn-salir">⏻ Cerrar sesión</button></section>`;
   },
@@ -523,7 +524,6 @@ const DESPUES = {
   },
   privacidad() {
     $('#btn-salir').onclick = () => $('#salir').click();
-    panelSonido($('#son-priv'));
     const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta;
     $('#btn-pausa').onclick = async (e) => {
       e.target.disabled = true;
@@ -544,7 +544,7 @@ CH = CH0();
 window.__cupidoVivo = () => ({ vivo: CH.vivo, otra: CH.otra, ultimo: CH.ultimo, escribiendo: !!CH.escribiendo }); // diagnóstico
 function detenerCharla() {
   clearInterval(CH.reloj); clearInterval(CH.ping); clearTimeout(CH.escribiendoTimer);
-  if (CH.grabando) { try { CH.grabando.stop(); } catch {} }
+  pararNota();
   if (CH.ws) { CH.ws.onclose = null; try { CH.ws.close(); } catch {} }
   CH = CH0(); cerrarPaneles(); document.title = document.title.replace(/^\(\d+\) /, '');
 }
@@ -573,7 +573,6 @@ function vistaCharla(otra) {
         <button class="ch-h" id="ch-carta" title="Su carta">✉️</button>
         <button class="ch-h" id="ch-buscar" title="Buscar en la charla">🔍</button>
         <button class="ch-h" id="ch-guardados" title="Mensajes guardados">🔖</button>
-        <button class="ch-h" id="ch-sonido" title="Sonido">${sonidoOn() ? '🔈' : '🔇'}</button>
         <button class="ch-h" id="ch-aviso" title="Avisarme cuando escriba">🔔</button>
         <button class="ch-h" id="ch-album" title="Nuestro álbum: fotos, videos, audios, cartas y planes">🖼️</button>
         <button class="ch-h" id="ch-lado-btn" title="Perfil compartido">🔓</button>
@@ -609,12 +608,6 @@ function vistaCharla(otra) {
       </section>
       <aside class="tarjeta ch-lado" id="ch-lado"><p class="vacio">Cargando…</p></aside>
     </div>`;
-}
-const sonidoOn = () => ajustesSonido().on;
-let _ac = null;
-function campana(f = 1175, dur = 0.16, vol = 0.05, retraso = 0) { // tono suave por código, sin archivos (como en la Mina)
-  if (!sonidoOn()) return;
-  try { _ac = _ac || new (window.AudioContext || window.webkitAudioContext)(); const t = _ac.currentTime + retraso; const o = _ac.createOscillator(), g = _ac.createGain(); o.type = 'sine'; o.frequency.value = f; g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, t + dur); o.connect(g).connect(_ac.destination); o.start(t); o.stop(t + dur + 0.02); } catch {}
 }
 const sonMensaje = () => tocar('mensaje');
 const fechaDe = (iso) => new Date(String(iso).replace(' ', 'T') + 'Z');
@@ -734,21 +727,26 @@ async function subirAdjunto(clase, archivo) {
     if (CH.otra === otra) await CH.traer(); else temp.remove();
   } catch (err) { temp.remove(); avisar(err.message, 5000); }
 }
+// Detiene la nota de voz. Si todavía no arrancaba (está sonando el aviso de inicio), la cancela sin dejar el micrófono abierto.
+function pararNota() { const rec = CH.grabando; if (!rec) return; try { if (rec.state === 'inactive') rec.onstop?.(); else rec.stop(); } catch {} }
 async function notaDeVoz(boton) {
-  if (CH.grabando) { CH.grabando.stop(); return; }
+  if (CH.grabando) { pararNota(); return; }
   if (!navigator.mediaDevices?.getUserMedia || !window.MediaRecorder) { avisar('Tu navegador no puede grabar aquí.'); return; }
   let stream; try { stream = await navigator.mediaDevices.getUserMedia({ audio: MICROFONO }); } catch { try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); } catch { avisar('No se pudo usar el micrófono. Revisa los permisos.'); return; } }
   const rec = grabadora(stream, 'audio'), mime = rec.mimeType; const partes = []; let seg = 0; // 256 kbps, 48 kHz, sin filtros que ensucien
   rec.ondataavailable = (e) => e.data.size && partes.push(e.data);
   const reloj = setInterval(() => { seg++; boton.textContent = `⏹ ${seg}s`; if (seg >= 300) rec.stop(); }, 1000);
   rec.onstop = () => {
-    clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); CH.grabando = null; boton.textContent = '🎤'; boton.classList.remove('grabando'); tocar('voz_fin');
+    clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); CH.grabando = null; boton.textContent = '🎤'; boton.classList.remove('grabando'); callar(false); tocar('voz_fin');
     if (seg < 1) { avisar('Muy corta. Mantén un segundo al menos.'); return; }
     const blob = new Blob(partes, { type: rec.mimeType || mime || 'audio/webm' });
     const nota = new File([blob], 'Nota de voz', { type: blob.type }); nota.duracion = seg; // el navegador no sabe cuánto dura lo que acaba de grabar; nosotros sí
     subirAdjunto('voz', nota);
   };
-  CH.grabando = rec; boton.textContent = '⏹ 0s'; boton.classList.add('grabando'); rec.start(500); tocar('voz_inicio');
+  CH.grabando = rec; boton.textContent = '⏹ 0s'; boton.classList.add('grabando');
+  // el aviso suena antes de abrir el micrófono a la grabación: así no queda grabado al principio de la nota
+  const sono = tocar('voz_inicio'); callar(true);
+  setTimeout(() => { if (CH.grabando === rec && rec.state === 'inactive') rec.start(500); }, sono ? 380 : 0);
   avisar('Grabando… toca ⏹ para mandar.', 2500);
 }
 function conectarVivo(otra) {
@@ -953,7 +951,6 @@ async function engancharCharla(otra) {
     vozLlamar(otra);
   };
   $('#ch-carta').onclick = abrirSuCarta;
-  $('#ch-sonido').onclick = () => abrirPanelSonido();
   $('#ch-buscar').onclick = () => abrirPanelCabeza('buscar');
   $('#ch-guardados').onclick = () => abrirPanelCabeza('guardados');
   $('#ch-lado-btn').onclick = () => { $('#ch-rejilla').classList.toggle('lado-abierto'); };
@@ -1050,7 +1047,7 @@ function toastMensaje(c, vista) {
 function avisarFuera(nombre, vista) {
   CH.fuera = (CH.fuera || 0) + 1;
   document.title = `(${CH.fuera}) ${document.title.replace(/^\(\d+\) /, '')}`;
-  if ('Notification' in window && Notification.permission === 'granted') { try { const n = new Notification(nombre, { body: vista, icon: '/favicon.svg', tag: 'cupido-' + CH.otra }); n.onclick = () => { window.focus(); n.close(); }; } catch {} }
+  if ('Notification' in window && Notification.permission === 'granted') { try { const n = new Notification(nombre, { body: vista, icon: '/favicon.svg', tag: 'cupido-' + CH.otra, silent: !ajustesSonido().on }); n.onclick = () => { window.focus(); n.close(); }; } catch {} }
 }
 async function verPerfilCompartido() {
   const cont2 = $('#ch-perfil'); cont2.innerHTML = '<p class="vacio">Cargando…</p>';
@@ -1161,27 +1158,22 @@ async function pintarPrograma() {
 // al volver de Stripe
 (async () => { const sid = new URLSearchParams(location.search).get('apoyo'); if (!sid) return; history.replaceState(null, '', '/persona#apoyar'); try { const r = await api('/api/apoyar/confirmar', { sid }); tocar('gracias'); avisar(r.tipo === 'socio' ? `✦ Gracias. Ya eres Socio fundador con ${pesos(r.monto)} al mes.` : `🤍 Gracias. Tus ${pesos(r.monto)} ya están en el Fondo de atracción.`, 6000); setTimeout(() => { if (seccion === 'apoyar') pintarPrograma(); }, 500); } catch (e) { avisar(e.message); } })();
 
-/* ── sonido: panel y novedades (coincidencias nuevas y logros recién ganados) ── */
-function abrirPanelSonido() {
-  const velo = document.createElement('div'); velo.className = 'modal-velo on';
-  velo.innerHTML = `<div class="modal claro" role="dialog"><button class="cerrar" aria-label="Cerrar">×</button><h2>Sonido</h2><p class="sub">Todo está precargado: del evento al sonido no hay espera. Apaga lo que no quieras.</p><div id="son-cont"></div></div>`;
-  document.body.appendChild(velo); panelSonido(velo.querySelector('#son-cont'));
-  const cerrar = () => { velo.remove(); const b = $('#ch-sonido'); if (b) b.textContent = ajustesSonido().on ? '🔈' : '🔇'; };
-  velo.querySelector('.cerrar').onclick = cerrar; velo.onclick = (e) => { if (e.target === velo) cerrar(); };
-}
+/* ── sonido: las novedades al abrir el tablero ───────────────────────────── */
 // Al abrir el tablero: si hay una coincidencia nueva sin leer, suena una vez; si ganaste un logro desde la última vez, también
 function sonarNovedades() {
   try {
     const k = 'cupido.novedades.' + V.persona.id, prev = JSON.parse(localStorage.getItem(k) || '{}');
     const nuevos = V.avisos.filter((a) => !a.leido && a.tipo === 'coincidencia').map((a) => a.id);
     const apert = V.avisos.filter((a) => !a.leido && a.tipo === 'apertura').map((a) => a.id);
+    const otros = V.avisos.filter((a) => !a.leido && !['coincidencia', 'apertura'].includes(a.tipo)).map((a) => a.id);
     const d = derivados(), ganados = d.logros.filter((l) => l.ok).length;
     setTimeout(() => {
       if (apert.some((id) => !(prev.avisos || []).includes(id))) tocar('puerta');
       else if (nuevos.some((id) => !(prev.avisos || []).includes(id))) tocar('coincidencia');
       else if (prev.logros != null && ganados > prev.logros) tocar('logro');
+      else if (otros.some((id) => !(prev.avisos || []).includes(id))) tocar('aviso');
     }, 900);
-    localStorage.setItem(k, JSON.stringify({ avisos: [...nuevos, ...apert], logros: ganados }));
+    localStorage.setItem(k, JSON.stringify({ avisos: [...nuevos, ...apert, ...otros], logros: ganados }));
   } catch {}
 }
 
@@ -1257,11 +1249,12 @@ async function grabar(tipo, boton) {
   rec.ondataavailable = (e) => e.data.size && partes.push(e.data);
   const reloj = setInterval(() => { seg++; boton.textContent = `⏹ Detener (${limite - seg} s)`; if (seg >= limite) rec.stop(); }, 1000);
   rec.onstop = () => {
-    clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); grabando = null;
+    clearInterval(reloj); stream.getTracks().forEach((t) => t.stop()); grabando = null; callar(false);
     const blob = new Blob(partes, { type: rec.mimeType || mime || (tipo === 'audio' ? 'audio/webm' : 'video/webm') });
     subirMedio(tipo, blob);
   };
   grabando = rec; boton.textContent = `⏹ Detener (${limite} s)`;
+  callar(true); // mientras grabas tu voz o tu video, los efectos de Cupido no suenan: no deben quedar grabados
   rec.start(1000);
 }
 
@@ -1737,6 +1730,6 @@ async function decidir(clave, decision, boton) {
 </script>
 <!-- RLR · Login de CapitalTorreon: todo funciona sin entrar; entrar solo agrega -->
 <div data-login-ct style="position:fixed;top:12px;right:12px;z-index:9999"></div>
-<script src="https://login.capitaltorreon.com/login.js" data-prefs="cupido.estilo,cupido.sonido" defer></script>
+<script src="https://login.capitaltorreon.com/login.js" data-prefs="cupido.estilo,cupido.sonido.v2" defer></script>
 </body>
 </html>

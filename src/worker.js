@@ -282,7 +282,8 @@ async function api(req, env, ctx, url) {
   if (ruta === '/api/programa' && metodo === 'GET') return json(await verPrograma(env, yo && !yo.sesion.demo ? yo.P : null));
   if (ruta === '/api/admin/sonidos' && metodo === 'GET') return json(await estadoSonidos(env));
   if ((x = m(/^\/api\/admin\/sonidos\/([a-z_]+)\.mp3$/)) && metodo === 'GET') return await servirSonido(env, x[1]); // el original en R2, para bajarlo a public/sonidos
-  if (ruta === '/api/admin/sonidos/generar' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await generarSonido(env, String(b.id || '')); return r.error ? error(r.error, r.status) : json(r); }
+  // Crear un sonido gasta créditos de ElevenLabs y reemplaza el original: solo una cuenta administradora
+  if (ruta === '/api/admin/sonidos/generar' && metodo === 'POST') { if (!(await esAdmin(env, yo))) return error('Crear un sonido pide entrar con una cuenta administradora.', 403); const b = await leerJson(req, 2000); const r = await generarSonido(env, String(b.id || '')); return r.error ? error(r.error, r.status) : json(r); }
   if (ruta === '/api/admin/precios' && metodo === 'GET') return json(await distribucionPrecios(env));
   if (ruta === '/api/apoyar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 4000); const r = await apoyar(env, url, yo.P, b); return r.error ? error(r.error, r.status) : json(r); }
   if (ruta === '/api/apoyar/confirmar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await confirmarApoyo(env, yo.P, b.sid); return r.error ? error(r.error, r.status) : json(r); }

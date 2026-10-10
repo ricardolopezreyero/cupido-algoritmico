@@ -861,7 +861,7 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 .toast-msg b { display: block; font-size: 13px; color: #ffd0da; }
 .toast-msg span { display: block; font-size: 13.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 320px; }
 @keyframes toastEntra { from { transform: translateY(14px); opacity: 0; } to { transform: none; opacity: 1; } }
-@media (max-width: 860px) { .ch-cab-acc .ch-h { width: 32px; height: 30px; font-size: 16px; } #ch-sonido { display: none; } }
+@media (max-width: 860px) { .ch-cab-acc .ch-h { width: 32px; height: 30px; font-size: 16px; } }
 /* fin charla v4 · RLR */
 
 /* ── Dictar y pulir · RLR ──────────────────────────────────────────────── */
@@ -1300,3 +1300,43 @@ button.ab:hover { border-color: var(--rosa); background: var(--rosa-suave); tran
 .completo-item.ok { background: var(--ok-suave); border-color: #cfe8da; } .completo-item.ok .estado { color: var(--ok); font-size: 16px; }
 .completo-item.cerrado { opacity: .6; } .completo-item.cerrado .estado { font-size: 14px; }
 @media (max-width: 560px) { .completo-cab { align-items: flex-start; } .completo-cab .anillo { width: 72px; height: 72px; } }
+
+/* ── sonido: el interruptor (un toque), siempre a la vista ────────────────────────────── */
+/* en el menú de la izquierda: pegado abajo, se ve aunque el menú sea largo */
+.lateral #son-menu { position: sticky; bottom: 0; z-index: 2; margin-top: 16px; padding: 12px 0 0; background: var(--noche); border-top: 1px solid var(--noche-3); box-shadow: 0 24px 0 var(--noche); }
+.son-lat { display: flex; gap: 8px; align-items: stretch; }
+.son-switch { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--noche-3); background: var(--noche-2); color: #d9cfe0; cursor: pointer; text-align: left; font: 500 14px var(--sans); transition: background .2s, border-color .2s; }
+.son-switch:hover { border-color: #6a5a76; }
+.son-switch .ico { flex: none; font-size: 18px; width: 22px; text-align: center; }
+.son-switch .txt { flex: 1; min-width: 0; }
+.son-switch b { display: block; color: #fff; font-size: 14.5px; font-weight: 600; }
+.son-switch small { display: block; font-size: 12.5px; color: #a99bb3; }
+.son-switch.on small { color: #ffb3c0; }
+.son-switch .pal { flex: none; width: 42px; height: 24px; border-radius: 99px; background: #4b3f55; position: relative; transition: background .2s; }
+.son-switch .pal::after { content: ''; position: absolute; left: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3); transition: transform .25s var(--ease); }
+.son-switch.on .pal { background: var(--rosa); } .son-switch.on .pal::after { transform: translateX(18px); }
+.son-mas { flex: none; width: 44px; border-radius: 12px; border: 1px solid var(--noche-3); background: transparent; color: #cbbfd3; font-size: 18px; cursor: pointer; }
+.son-mas:hover { background: var(--noche-2); color: #fff; }
+.son-switch:focus-visible, .son-mas:focus-visible, .son-ico:focus-visible { outline: 3px solid var(--rosa-linea); outline-offset: 2px; }
+/* el mismo interruptor, sobre fondo claro (la ventana de ajustes) */
+.son-switch.claro { width: 100%; padding: 14px 16px; background: var(--blanco); border-color: var(--linea-2); color: var(--tinta); }
+.son-switch.claro b { color: var(--tinta); font-size: 16.5px; } .son-switch.claro small { color: var(--gris); font-size: 13.5px; } .son-switch.claro .ico { font-size: 22px; width: 28px; }
+.son-switch.claro .pal { background: var(--linea-2); }
+.son-switch.claro.on { background: var(--rosa-suave); border-color: var(--rosa-linea); } .son-switch.claro.on small { color: var(--rosa-osc); } .son-switch.claro.on .pal { background: var(--rosa); }
+.son-detalle { display: grid; gap: 6px; transition: opacity .2s; } .son-detalle.apagado { opacity: .45; }
+.son-titulo { margin: 10px 2px 2px; font: 700 12px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--tinta-2); }
+.son-nota { margin: 8px 2px 0; font-size: 13px; line-height: 1.55; color: var(--gris); }
+/* el botón redondo, para las barras de arriba */
+.son-ico { width: 40px; height: 40px; flex: none; border-radius: 50%; border: 1px solid var(--linea-2); background: var(--blanco); font-size: 18px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; transition: background .2s, opacity .2s; }
+.son-ico:hover { border-color: var(--rosa-linea); } .son-ico:not(.on) { background: #f0ece8; }
+#son-barra, #son-movil { display: inline-flex; }
+.barra-movil .bm-acc { display: flex; gap: 8px; align-items: center; }
+.barra-movil .son-ico { border: 0; border-radius: 10px; font-size: 18px; } .barra-movil .son-ico:not(.on) { background: #2a2130; opacity: .8; }
+/* admin · el catálogo de sonidos */
+.son-cat { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 8px; }
+.son-pieza { display: flex; gap: 12px; align-items: center; text-align: left; padding: 10px 12px; border: 1px solid var(--linea); border-radius: 14px; background: var(--blanco); cursor: pointer; font: 14px var(--sans); color: var(--tinta); transition: border-color .2s, transform .2s var(--ease), background .2s; }
+.son-pieza:hover { border-color: var(--rosa-linea); transform: translateY(-1px); } .son-pieza.suena { background: var(--rosa-suave); border-color: var(--rosa); }
+.son-pieza .play { flex: none; width: 34px; height: 34px; border-radius: 50%; background: var(--rosa); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 12px; padding-left: 2px; }
+.son-pieza b { display: block; font: 600 15px var(--sans); } .son-pieza small { display: block; font-size: 13px; color: var(--gris); line-height: 1.4; }
+/* en el teléfono, el botón de la cuenta (arriba a la derecha) tapaba el ☰: la barra le deja su lugar */
+@media (max-width: 900px) { .barra-movil { padding-right: 64px; } }
