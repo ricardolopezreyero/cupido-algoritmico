@@ -59,6 +59,7 @@ import { AREAS_VIDA, leerVida } from '/js/vida.js';
 import { ELEMENTOS, ELEMENTO, SUAVES } from '/js/elementos.js';
 import { dictable, puedeDictar } from '/js/dictar.js';
 import { tocar, precargar, panelSonido, ajustes as ajustesSonido } from '/js/sonido.js';
+import { TONOS, TONO, MAZOS, MAZO, CARTA, DETALLES, DETALLE, PLANES, PLAN, RESPUESTAS_CITA, RESPUESTA_CITA, RESPUESTA_MAX, NOTA_MAX, subidoDeTono } from '/js/chispa.js';
 import { subirPorPartes, prepararFoto, cartelDeVideo, duracionDeAudio, sinUbicacion, grabadora, MICROFONO, CAMARA, legible, duracionTxt } from '/js/subir.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
@@ -507,7 +508,7 @@ const DESPUES = {
 /* ── la charla: mensajes, "está escribiendo", archivos y liberar el perfil ─ */
 const otraDe = (c) => { const [a, b] = c.clave.split('-'); return a === V.persona.id ? b : a; };
 let CH = null;
-const CH0 = () => ({ otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null, reac: {}, visto: 0, grabando: null, ws: null, vivo: false, reintento: 0, ping: null, ultimoDe: null, ultimoTs: 0, ultimoDia: null, sinLeer: 0, escribiendoTimer: null, divisor: false, traer: null, guardados: new Set(), citando: null, primero: 0, hayMas: false, cargandoAntes: false });
+const CH0 = () => ({ otra: null, ultimo: 0, reloj: null, tecleo: 0, datos: null, reac: {}, visto: 0, grabando: null, ws: null, vivo: false, reintento: 0, ping: null, ultimoDe: null, ultimoTs: 0, ultimoDia: null, sinLeer: 0, escribiendoTimer: null, divisor: false, traer: null, guardados: new Set(), citando: null, primero: 0, hayMas: false, cargandoAntes: false, chispas: new Map(), juego: {}, usadas: [], frase: null });
 CH = CH0();
 window.__cupidoVivo = () => ({ vivo: CH.vivo, otra: CH.otra, ultimo: CH.ultimo, escribiendo: !!CH.escribiendo }); // diagnóstico
 function detenerCharla() {
@@ -542,11 +543,13 @@ function vistaCharla(otra) {
         <button class="ch-h" id="ch-guardados" title="Mensajes guardados">🔖</button>
         <button class="ch-h" id="ch-sonido" title="Sonido">${sonidoOn() ? '🔈' : '🔇'}</button>
         <button class="ch-h" id="ch-aviso" title="Avisarme cuando escriba">🔔</button>
+        <button class="ch-h" id="ch-album" title="Nuestro álbum: fotos, videos, audios, cartas y planes">🖼️</button>
         <button class="ch-h" id="ch-lado-btn" title="Perfil compartido">🔓</button>
         <button class="ch-h corona" id="ch-mando" title="${MANDO() ? 'Aquí mando yo: permisos, cerrar, bloquear, reportar' : 'Cerrar la puerta, bloquear o reportar'}">${MANDO() ? '👑' : '🛡️'}</button>
         <button class="boton boton-claro boton-chico" id="ch-compartir">Compartir mi perfil</button>
       </div>
     </div>
+    <div class="ch-tono" id="ch-tono"></div>
     <div class="charla-rejilla" id="ch-rejilla">
       <section class="tarjeta charla" id="ch-zona">
         <div class="ch-mensajes" id="ch-mensajes"><p class="vacio">Cargando…</p></div>
@@ -558,6 +561,7 @@ function vistaCharla(otra) {
         <form class="ch-compositor" id="ch-form">
           <div class="ch-herr">
             <button type="button" class="ch-h" data-panel="emoji" title="Emojis y stickers">😊</button>
+            <button type="button" class="ch-h chispa-btn" data-panel="chispa" title="La chispa: cartas para conocerse, detalles e invitación">✨</button>
             <!-- GIF: listo en el servidor (Tenor), apagado por decisión de Ricardo hasta nuevo aviso -->
             <label class="ch-h" title="Fotos en alta calidad">📷<input type="file" accept="image/*" data-adj="foto" multiple hidden></label>
             <label class="ch-h" title="Video en su calidad original">🎬<input type="file" accept="video/*" data-adj="video" multiple hidden></label>
@@ -589,6 +593,10 @@ function filaMensaje(m, seguido) {
   if (m.tipo === 'sistema') { const hito = /⟨[a-z0-9]+⟩/.test(m.texto || ''); return `<div class="msg sistema ${hito ? 'hito' : ''}" data-id="${m.id}"><span>${esc(String(m.texto || '').replace(/\s*⟨[a-z0-9]+⟩/, ''))}</span></div>`; }
   const ruta = `/api/charla/${esc(CH.otra)}/archivo/${m.id}`;
   let cuerpo, clase = '';
+  if (m.tipo === 'carta' || m.tipo === 'detalle' || m.tipo === 'cita') { // la chispa: tarjetas que viven en medio de la charla
+    CH.chispas.set(m.id, m);
+    return `<div class="msg chispa t-${m.tipo} ${m.mio ? 'mio' : 'suyo'} fin-grupo" data-id="${m.id}" data-firma='${esc(JSON.stringify(CH.juego[m.id] || {}))}'><div class="globo">${htmlChispa(m)}</div>${reaccionesHtml(m.id)}<div class="cuando">${horaDe(m.creado)}</div><button class="reac-btn" data-reac="${m.id}" title="Reaccionar o guardar">☺</button></div>`;
+  }
   if (m.tipo === 'borrado') { cuerpo = '<i>Mensaje borrado</i>'; clase = 'borrado'; }
   else if (m.tipo === 'sticker') { cuerpo = esc(m.texto); clase = 'sticker'; }
   else if (m.tipo === 'gif') { cuerpo = `<img src="${esc(m.archivo?.preview || m.archivo?.url || '')}" alt="GIF" loading="lazy">`; clase = 'media'; }
@@ -601,7 +609,7 @@ function filaMensaje(m, seguido) {
     else if (/^video\//.test(mime)) { cuerpo = `<video controls playsinline preload="${A.vista ? 'none' : 'metadata'}" ${A.vista ? `poster="${ruta}?vista=1"` : ''} src="${ruta}"></video><span class="hd-pie">${A.duracion ? duracionTxt(A.duracion) + ' · ' : ''}${A.alto ? Math.min(A.ancho, A.alto) + 'p · ' : ''}${peso} · calidad original · <a href="${ruta}?bajar=1">Descargar</a></span>`; clase = 'media'; }
     else cuerpo = `<a class="ch-doc" href="${ruta}">📄 ${esc(m.archivo?.nombre || 'archivo')} <small>${Math.round((m.archivo?.tamano || 0) / 1024)} KB</small></a>`;
   } else if (SOLO_EMOJI.test(m.texto || '')) { cuerpo = esc(m.texto); clase = 'jumbo'; }
-  else cuerpo = linkear(esc(m.texto));
+  else cuerpo = (m.archivo?.frase ? `<span class="cita frase-cita"><b>${m.mio ? `De la carta de ${esc(CH.datos?.otra?.nombre || '')}` : 'De tu carta'}</b>«${esc(m.archivo.frase)}»</span>` : '') + linkear(esc(m.texto));
   const av = !m.mio && !seguido ? avatar(CH.datos?.otra?.nombre || '?', CH.datos?.otra?.color, 'sm msg-av') : '';
   const cita = m.cita ? `<a class="cita" href="#" data-ir="${m.cita.id}"><b>${m.cita.de === V.persona.id ? 'Tú' : esc(CH.datos?.otra?.nombre || '')}</b>${esc(m.cita.vista)}</a>` : '';
   const guardado = CH.guardados.has(m.id) ? '<span class="marca-guardado" title="Guardado">🔖</span>' : '';
@@ -642,6 +650,7 @@ function abrirPanel(cual, boton) {
   const p = $('#ch-panel');
   if (!p.hidden && p.dataset.cual === cual) { cerrarPaneles(); return; }
   cerrarPaneles(); boton.classList.add('on'); p.hidden = false; p.dataset.cual = cual;
+  if (cual === 'chispa') { panelChispa(p); return; }
   if (cual === 'emoji') {
     p.innerHTML = `<div class="ch-tabs"><button class="on" data-t="emojis">Emojis</button><button data-t="stickers">Stickers</button></div>
       <div class="ch-emojis" id="ch-emojis">${Object.entries(EMOJIS).map(([g, l]) => `<div class="grupo">${g}</div><div class="fila-e">${l.map((e) => `<button type="button" data-e="${e}">${e}</button>`).join('')}</div>`).join('')}</div>
@@ -661,8 +670,10 @@ async function mandar(cuerpo) {
   temp.innerHTML = `<div class="globo">${esc(cuerpo.texto || '')}</div><div class="cuando">enviando…</div>`;
   caja.appendChild(temp); caja.scrollTop = caja.scrollHeight;
   señalEscribiendo(false);
-  if (CH.citando) { cuerpo.respondeA = CH.citando.id; quitarCita(); }
-  try { await api(`/api/charla/${encodeURIComponent(otra)}`, cuerpo); tocar(cuerpo.tipo === 'sticker' ? 'sticker' : 'enviado'); await CH.traer(); }
+  if (cuerpo.tipo === 'texto' && CH.frase) cuerpo.frase = CH.frase;
+  if (CH.citando) cuerpo.respondeA = CH.citando.id;
+  quitarCita();
+  try { await api(`/api/charla/${encodeURIComponent(otra)}`, cuerpo); tocar(cuerpo.tipo === 'sticker' ? 'sticker' : cuerpo.tipo === 'detalle' ? 'detalle' : cuerpo.tipo === 'carta' ? 'carta' : 'enviado'); await CH.traer(); }
   catch (err) { temp.remove(); tocar('error'); avisar(err.message); throw err; }
 }
 const POR_EXT = { flac: 'audio/flac', wav: 'audio/wav', mp3: 'audio/mpeg', m4a: 'audio/mp4', aac: 'audio/aac', ogg: 'audio/ogg', opus: 'audio/ogg', mov: 'video/quicktime', mp4: 'video/mp4', m4v: 'video/mp4', webm: 'video/webm', jpg: 'image/jpeg', jpeg: 'image/jpeg', png: 'image/png', webp: 'image/webp', heic: 'image/heic', gif: 'image/gif', pdf: 'application/pdf' };
@@ -720,6 +731,7 @@ function conectarVivo(otra) {
     else if (ev.t === 'presencia') { if (ev.en) tocar('en_linea'); if (CH.datos) { CH.datos.otra.enLinea = !!ev.en; if (!ev.en) CH.datos.otra.ultimaVez = new Date().toISOString().replace('T', ' ').slice(0, 19); } pintarPresencia(); }
     else if (ev.t === 'quien') { if (CH.datos) CH.datos.otra.enLinea = (ev.en || []).includes(otra); pintarPresencia(); }
     else if (ev.t === 'cerrada') puertaCerrada(otra);
+    else if (ev.t === 'juego') { if (ev.de !== V.persona.id && !ev.listo) tocar('reaccion', { fuerza: 0.8 }); CH.traer?.(true); }
   };
   ws.onclose = () => { if (CH.otra !== otra) return; CH.vivo = false; clearInterval(CH.ping); clearInterval(CH.reloj); CH.reloj = setInterval(() => CH.traer?.(false), 2500); const espera = Math.min(15000, 1000 * 2 ** CH.reintento++); setTimeout(() => { if (CH.otra === otra && !CH.vivo) conectarVivo(otra); }, espera); };
   ws.onerror = () => { try { ws.close(); } catch {} };
@@ -742,14 +754,24 @@ async function engancharCharla(otra) {
       try { const r = await api(`/api/charla/${encodeURIComponent(otra)}/retirar`, { elementos: [e.id] }); CH.datos.compartido.mios = r.mios; pintarLado(); tocar('guardado'); avisar(`Listo: ${d.otra.nombre} ya no ve «${e.n}».`); CH.traer?.(true); } catch (err) { avisar(err.message); }
     });
   };
-  const traer = async (forzar = false, ev = null) => {
+  // Una sola traída a la vez: si llegan varios avisos juntos (mensaje + carta + sistema), la segunda espera a la primera.
+  // Sin esto, dos traídas con el mismo "desde" pintarían el mismo mensaje dos veces.
+  let enVuelo = null, pendiente = null;
+  const traer = (forzar = false, ev = null) => {
+    if (enVuelo) { pendiente = { forzar: forzar || pendiente?.forzar, ev: ev || pendiente?.ev }; return enVuelo; }
+    enVuelo = traerUna(forzar, ev).finally(() => { enVuelo = null; if (pendiente && CH.otra === otra) { const p2 = pendiente; pendiente = null; traer(p2.forzar, p2.ev); } });
+    return enVuelo;
+  };
+  const traerUna = async (forzar = false, ev = null) => {
     if (document.hidden && !forzar) return;
     try {
       const d = await api(`/api/charla/${encodeURIComponent(otra)}?despues=${CH.ultimo}`);
       if (CH.otra !== otra) return;
+      if (CH.datos) d.mensajes = d.mensajes.filter((m) => m.id > CH.ultimo); // nunca dos veces el mismo
       const primera = !CH.datos;
       if (primera) { CH.datos = d; caja.innerHTML = ''; } else { d.otra.enLinea = CH.vivo ? CH.datos.otra.enLinea : d.otra.enLinea; CH.datos = d; }
       CH.reac = d.reacciones || {}; CH.visto = Math.max(CH.visto, d.vistoHasta || 0);
+      CH.juego = d.juego || {}; CH.usadas = d.cartasUsadas || [];
       if (d.guardados) CH.guardados = new Set(d.guardados);
       if (primera) { CH.hayMas = !!d.hayMas; CH.primero = d.mensajes[0]?.id || 0; }
       if (d.total != null) { const r = $('#ch-resumen'); if (r) r.textContent = ` · ${d.total} mensajes · puerta abierta ${hace(d.desde)}`; }
@@ -757,7 +779,9 @@ async function engancharCharla(otra) {
       if (d.mensajes.length) {
         const abajo = primera || cercaDelFinal(caja);
         let html = '';
+        CH.fechas = CH.fechas || new Map();
         for (const m of d.mensajes) {
+          if (m.mio) CH.fechas.set(m.id, fechaDe(m.creado).getTime());
           const dia = diaDe(m.creado); if (dia !== CH.ultimoDia) { html += `<div class="ch-dia"><span>${dia}</span></div>`; CH.ultimoDia = dia; CH.ultimoDe = null; }
           if (primera && !CH.divisor && !m.mio && m.id > (d.miLeido || 0) && m.tipo !== 'sistema') { html += `<div class="ch-dia nuevo"><span>Mensajes nuevos</span></div>`; CH.divisor = true; CH.ultimoDe = null; }
           const ts = fechaDe(m.creado).getTime();
@@ -779,15 +803,21 @@ async function engancharCharla(otra) {
         if (abajo) caja.scrollTop = caja.scrollHeight;
         else { const n = d.mensajes.filter((m) => !m.mio && m.tipo !== 'sistema').length; if (n) { CH.sinLeer += n; $('#ch-abajo-n').textContent = CH.sinLeer; $('#ch-abajo').hidden = false; } }
         if (ev && ev.de === 'sistema' && d.mensajes.some((m) => m.tipo === 'sistema' && /⟨[a-z0-9]+⟩/.test(m.texto || ''))) tocar('hito');
+        if (!primera && d.mensajes.some((m) => m.tipo === 'sistema' && /⟨tono/.test(m.texto || ''))) { efecto('💫', 18); tocar('tono'); }
+        if (!primera && d.mensajes.some((m) => m.tipo === 'sistema' && /⟨cita/.test(m.texto || ''))) efecto('💛', 14);
+        if (ev && ev.de && ev.de !== V.persona.id) { const det = d.mensajes.find((m) => m.tipo === 'detalle' && !m.mio); if (det && DETALLE[det.archivo?.detalle]) { efecto(DETALLE[det.archivo.detalle].e); tocar('detalle'); } }
         if (ev && ev.de && ev.de !== 'sistema' && ev.de !== V.persona.id) { sonMensaje(); if (document.hidden) avisarFuera(d.otra.nombre, ev.vista || 'Mensaje nuevo'); }
         const mia = (V.charlas || []).find((x) => x.otra === otra); if (mia) { mia.nuevos = 0; pintarLateral(); }
         if (d.mensajes.some((m) => !m.mio && m.tipo !== 'sistema')) mostrarEscribiendo(false);
       }
-      repintarReacciones(); repintarVisto();
+      repintarReacciones(); repintarVisto(); repintarJuego(); pintarTono();
       if (!CH.vivo && d.otroEscribiendo) mostrarEscribiendo(true);
       pintarPresencia();
       const soloAuto = $$('#ch-mensajes .msg:not(.sistema):not(.escribe)').every((el) => el.textContent.includes('saludo automático'));
-      const rh = $('#ch-rompehielos'); rh.hidden = !soloAuto;
+      // un saludo a un toque: en la mañana o en la noche, si hoy todavía no le escribes
+      const hora = new Date().getHours(), saludo = !soloAuto && (hora < 12 || hora >= 20) && ![...$$('#ch-mensajes .msg.mio[data-id]')].some((el) => { const m = CH.fechas?.get(Number(el.dataset.id)); return m && new Date(m).toDateString() === new Date().toDateString(); }) ? (hora < 12 ? 'dias' : 'noches') : null;
+      const rh = $('#ch-rompehielos'); rh.hidden = !(soloAuto || saludo);
+      if (!soloAuto && rh.dataset.modo !== (saludo || '')) { rh.dataset.modo = saludo || ''; rh.innerHTML = saludo ? `<span>Un toque y ya:</span><button type="button" data-saludo="${saludo}">${DETALLE[saludo].i} ${esc(DETALLE[saludo].n)}, ${esc(d.otra.nombre)}</button>` : ''; const bs = $('[data-saludo]', rh); if (bs) bs.onclick = async () => { rh.hidden = true; try { await mandar({ tipo: 'detalle', detalle: saludo, texto: `${DETALLE[saludo].i} ${DETALLE[saludo].n}` }); efecto(DETALLE[saludo].e); } catch {} }; }
       if (soloAuto && !rh.innerHTML) { rh.innerHTML = `<span>Para romper el hielo:</span>${ROMPEHIELOS(d.otra.nombre).map((t) => `<button type="button">${esc(t)}</button>`).join('')}`; $$('button', rh).forEach((b) => b.onclick = () => { const t = $('#ch-texto'); t.value = b.textContent; t.focus(); t.dispatchEvent(new Event('input')); }); }
       if (primera || d.mensajes.some((m) => m.tipo === 'sistema')) pintarLado();
       pintarCandados();
@@ -815,6 +845,7 @@ async function engancharCharla(otra) {
   form.onsubmit = async (e) => {
     e.preventDefault();
     const texto = txt.value.trim(); if (!texto) return;
+    if (subidoDeTono(texto) && !(await pausaAmable(texto))) { txt.focus(); return; }
     txt.value = ''; txt.style.height = 'auto'; cerrarPaneles(); try { localStorage.removeItem(borradorK(otra)); } catch {}
     try { await mandar({ tipo: 'texto', texto }); } catch { txt.value = texto; }
     txt.focus();
@@ -848,7 +879,18 @@ async function engancharCharla(otra) {
     CH.cargandoAntes = false;
   }
   $('#ch-abajo').onclick = () => { caja.scrollTop = caja.scrollHeight; };
+  const responder = async (el, valor, sonido = 'si') => { const id = Number(el.closest('.msg[data-id]').dataset.id); try { await api(`/api/charla/${encodeURIComponent(otra)}/responder`, { mensaje: id, valor }); tocar(sonido); await traer(true); } catch (err) { avisar(err.message); } };
+  caja.ondblclick = async (e) => { // doble toque: un corazón
+    const el = e.target.closest('.msg[data-id]:not(.sistema)'); if (!el || e.target.closest('button, a, textarea, audio, video, input')) return;
+    const id = Number(el.dataset.id); if ((CH.reac[id] || []).some((x) => x.mia && x.emoji === '❤️')) return;
+    el.classList.add('latido'); setTimeout(() => el.classList.remove('latido'), 700); tocar('reaccion');
+    try { await api(`/api/charla/${encodeURIComponent(otra)}/reaccion`, { mensaje: id, emoji: '❤️' }); await traer(true); } catch (err) { avisar(err.message); }
+  };
   caja.onclick = async (e) => {
+    const ab = e.target.closest('[data-ab]'); if (ab) { ab.disabled = true; await responder(ab, ab.dataset.ab); return; }
+    const ro = e.target.closest('[data-resp-ok]'); if (ro) { const t = ro.closest('.globo').querySelector('[data-resp]'), v = t.value.trim(); if (!v) { t.focus(); avisar('Escribe tu respuesta.'); return; } ro.disabled = true; t.blur(); await responder(ro, v); return; }
+    const cr = e.target.closest('[data-cita-r]'); if (cr) { await responder(cr, cr.dataset.citaR, cr.dataset.citaR === 'si' ? 'logro' : 'guardado'); return; }
+    const av = e.target.closest('[data-aviso-cita]'); if (av) { const m = CH.chispas.get(Number(av.closest('.msg[data-id]').dataset.id)); try { sessionStorage.setItem('cupido.cita', JSON.stringify({ quien: CH.datos?.otra?.nombre, donde: m?.archivo?.donde || '', cuando: m?.archivo?.cuando || '' })); } catch {} return; }
     const b = e.target.closest('[data-reac]');
     if (b) {
       const id = Number(b.dataset.reac), ya = $('.reac-bar', caja); if (ya) ya.remove();
@@ -867,7 +909,8 @@ async function engancharCharla(otra) {
   };
   $('#ch-compartir').onclick = abrirCompartir;
   $('#ch-mando').onclick = abrirMando;
-  $('#ch-carta').onclick = () => { const o = CH.datos?.otra; if (!o) return; abrirHoja(`La carta de ${esc(o.nombre)}`, `${o.carta ? `<div class="carta">${esc(o.carta)}</div>` : '<p class="vacio">Todavía no hay carta.</p>'}${o.malinterpretan ? `<p class="entender"><b>Lo que le gustaría que entendieras desde el día uno:</b> ${esc(o.malinterpretan)}</p>` : ''}${o.martes ? `<h3 style="margin:16px 0 6px">Su martes ideal dentro de 10 años</h3><p style="white-space:pre-line;color:var(--tinta-2)">${esc(o.martes)}</p>` : ''}`); };
+  $('#ch-album').onclick = abrirAlbum;
+  $('#ch-carta').onclick = abrirSuCarta;
   $('#ch-sonido').onclick = () => abrirPanelSonido();
   $('#ch-buscar').onclick = () => abrirPanelCabeza('buscar');
   $('#ch-guardados').onclick = () => abrirPanelCabeza('guardados');
@@ -888,7 +931,7 @@ function ponerCita(id, mio, vista) {
   const c = $('#ch-citando'); c.hidden = false; c.innerHTML = `<span>↩︎ Respondiendo a <b>${mio ? 'ti' : esc(CH.datos?.otra?.nombre || '')}</b>: ${esc(vista)}</span><button type="button" id="ch-quitar-cita" aria-label="Quitar">×</button>`;
   $('#ch-quitar-cita').onclick = quitarCita; $('#ch-texto').focus();
 }
-function quitarCita() { CH.citando = null; const c = $('#ch-citando'); if (c) { c.hidden = true; c.innerHTML = ''; } }
+function quitarCita() { CH.citando = null; CH.frase = null; const c = $('#ch-citando'); if (c) { c.hidden = true; c.innerHTML = ''; } const t = $('#ch-texto'); if (t) t.placeholder = 'Escribe…'; }
 async function irAMensaje(id) {
   const caja = $('#ch-mensajes');
   let el = caja.querySelector(`.msg[data-id="${id}"]`);
@@ -1178,6 +1221,172 @@ async function grabar(tipo, boton) {
   rec.start(1000);
 }
 
+/* ═══ LA CHISPA ═══════════════════════════════════════════════════════════
+   El tono de la charla (dos síes), las cartas que se abren cuando los dos
+   responden, los detalles, la invitación y el álbum. Contenido en
+   /js/chispa.js; reglas en src/chispa.js. */
+const nombreOtra = () => CH.datos?.otra?.nombre || 'la otra persona';
+// Lo que flota un momento sobre la charla (solo transform y opacidad)
+function efecto(emoji, n = 16) {
+  const z = $('#ch-zona'); if (!z || document.hidden || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const capa = document.createElement('div'); capa.className = 'ch-efecto'; capa.setAttribute('aria-hidden', 'true');
+  capa.innerHTML = Array.from({ length: n }, () => `<i style="left:${4 + Math.random() * 88}%;animation-delay:${(Math.random() * 0.8).toFixed(2)}s;font-size:${22 + Math.round(Math.random() * 24)}px;--dx:${Math.round(Math.random() * 70 - 35)}px">${emoji}</i>`).join('');
+  z.appendChild(capa); setTimeout(() => capa.remove(), 3600);
+}
+function htmlChispa(m) {
+  const A = m.archivo || {}, n = esc(nombreOtra()), e = CH.juego[m.id] || {};
+  if (m.tipo === 'detalle') {
+    const D = DETALLE[A.detalle]; if (!D) return '<i>Un detalle</i>';
+    return `<div class="detalle"><span class="det-ico">${D.i}</span><div><b>${m.mio ? esc(D.yo.replace('{n}', nombreOtra())) : `${n} ${esc(D.v)}`}</b>${A.nota ? `<span>${linkear(esc(A.nota))}</span>` : ''}</div></div>`;
+  }
+  if (m.tipo === 'carta') {
+    const C = CARTA[A.carta]; if (!C) return '<i>Una carta</i>';
+    const M = MAZO[C.mazo], cab = `<div class="carta-cab"><span>${M.i} ${esc(M.n)}</span><small>${m.mio ? 'La sacaste tú' : `La sacó ${n}`}</small></div>`;
+    const espera = e.suyaLista ? `🔓 ${n} ya respondió. Se abre en cuanto respondas tú.` : 'Nadie ve la respuesta del otro hasta que los dos respondieron.';
+    if (C.tipo === 'ab') {
+      const op = (k, t) => {
+        const yo = e.mia === k, el = e.suya === k;
+        if (e.mia == null) return `<button type="button" class="ab" data-ab="${k}">${esc(t)}</button>`;
+        return `<div class="ab ${yo ? 'yo' : ''} ${el ? 'el' : ''}">${esc(t)}<span class="quien">${yo ? '<i>Tú</i>' : ''}${el ? `<i class="o">${n}</i>` : ''}</span></div>`;
+      };
+      const pie = e.mia == null ? espera : e.suya == null ? `Elegiste. Falta ${n}: se abre cuando elija.` : e.mia === e.suya ? '✨ ¡Coincidieron!' : 'Cada quien lo suyo, y qué bueno: ya tienen de qué platicar.';
+      return `${cab}<div class="abs">${op('a', C.a)}<span class="o-sep">o</span>${op('b', C.b)}</div><p class="carta-pie ${e.suya != null && e.mia === e.suya ? 'igual' : ''}">${pie}</p>`;
+    }
+    let cuerpo;
+    if (e.mia == null) cuerpo = `<textarea rows="2" maxlength="${RESPUESTA_MAX}" placeholder="Tu respuesta, con tus palabras…" data-resp></textarea><div class="carta-acc"><button type="button" class="boton boton-chico" data-resp-ok>Guardar mi respuesta</button></div><p class="carta-pie">${espera}</p>`;
+    else if (e.suya == null) cuerpo = `<div class="resp mia"><small>Tú</small>${esc(e.mia)}</div><div class="resp cerrada">🔒 ${n} todavía no responde. Su respuesta se abre aquí.</div>`;
+    else cuerpo = `<div class="resp mia"><small>Tú</small>${esc(e.mia)}</div><div class="resp suya"><small>${n}</small>${esc(e.suya)}</div>`;
+    return `${cab}<h4>${esc(C.t)}</h4>${cuerpo}`;
+  }
+  if (m.tipo === 'cita') {
+    const P = PLAN[A.plan] || PLAN.otro, r = e.respuesta || null;
+    const cuando = A.cuando ? new Date(A.cuando).toLocaleString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }) : '';
+    const cab = `<div class="carta-cab"><span>📅 Invitación</span><small>${m.mio ? 'La hiciste tú' : `De ${n}`}</small></div><h4>${P.i} ${esc(A.que || P.n)}</h4><p class="cita-datos">${A.donde ? `📍 ${esc(A.donde)}` : ''}${A.donde && cuando ? '<br>' : ''}${cuando ? `🕒 ${esc(cuando)}` : ''}${!A.donde && !cuando ? 'Lugar y hora: lo platican aquí.' : ''}</p>`;
+    if (m.mio) return `${cab}<p class="carta-pie ${r === 'si' ? 'igual' : ''}">${r ? `${RESPUESTA_CITA[r].i} ${n} ${esc(RESPUESTA_CITA[r].dice)}.` : `Esperando a ${n}. Tiene tres respuestas listas, y decir que no también es fácil.`}</p>`;
+    return `${cab}<div class="cita-resps">${RESPUESTAS_CITA.map((x) => `<button type="button" class="ab ${r === x.id ? 'yo' : ''}" data-cita-r="${x.id}">${x.i} ${esc(x.n)}</button>`).join('')}</div>
+      <p class="carta-pie ${r === 'si' ? 'igual' : ''}">${r === 'si' ? `💛 ¡Hay plan! ${MANDO() ? `<a href="#ella" data-aviso-cita>Armar el aviso para alguien de confianza</a>` : ''}` : r ? 'Puedes cambiar tu respuesta cuando quieras.' : 'Responde con calma. Las tres son buenas respuestas.'}</p>`;
+  }
+  return '';
+}
+// Cartas e invitaciones cambian después de pintadas (cuando alguien responde): se repintan solo si cambió su estado
+function repintarJuego() {
+  $$('#ch-mensajes .msg.chispa[data-id]').forEach((el) => {
+    const id = Number(el.dataset.id), m = CH.chispas.get(id); if (!m || m.tipo === 'detalle') return;
+    const e = CH.juego[id] || {}, firma = JSON.stringify(e);
+    if (el.dataset.firma === firma) return;
+    const antes = el.dataset.firma ? JSON.parse(el.dataset.firma) : null;
+    const escribiendoAqui = el.contains(document.activeElement) && e.mia == null && (antes?.suyaLista === e.suyaLista);
+    if (escribiendoAqui) return;
+    const borrador = el.querySelector('[data-resp]')?.value || '';
+    el.querySelector('.globo').innerHTML = htmlChispa(m); el.dataset.firma = firma;
+    const t = el.querySelector('[data-resp]'); if (t && borrador) t.value = borrador;
+    if (antes && antes.suya == null && e.suya != null) { el.classList.add('revelada'); tocar('carta'); if (e.mia === e.suya && CARTA[m.archivo?.carta]?.tipo === 'ab') efecto('✨', 10); setTimeout(() => el.classList.remove('revelada'), 1200); }
+  });
+}
+function pintarTono() {
+  const z = $('#ch-tono'), t = CH.datos?.tono; if (!z || !t) return;
+  const T = TONO[t.comun], mio = TONO[t.mio];
+  z.innerHTML = `<button type="button" id="ch-tono-btn" class="tono-${T.id}"><span>${T.i}</span>Tono de la charla: <b>${T.n}</b></button>${mio.nivel > T.nivel ? `<small>Tú elegiste ${mio.n.toLowerCase()}. Sube solo cuando ${esc(nombreOtra())} también quiera.</small>` : `<small>${esc(T.d)}</small>`}`;
+  $('#ch-tono-btn').onclick = abrirTono;
+}
+function abrirTono() {
+  const t = CH.datos?.tono; if (!t) return; const n = esc(nombreOtra()), otra = CH.otra;
+  const h = abrirHoja('El tono de la charla', `
+    <p class="sub">Cada quien elige el suyo, en privado. La charla toma <b>el más tranquilo de los dos</b>. ${n} no ve lo que tú elegiste: solo se nota cuando coinciden. Igual que la puerta, el coqueteo se enciende con dos síes.</p>
+    <div class="mando-salidas">${TONOS.map((x) => `<button type="button" class="mando-salida ${t.mio === x.id ? 'elegido' : ''}" data-tono="${x.id}"><span>${x.i}</span><div><b>${x.n}${t.mio === x.id ? ' · tu elección' : ''}</b><small>${esc(x.d)}</small></div></button>`).join('')}</div>
+    <p class="nota-entrar" style="text-align:left;margin-top:12px">Hoy la charla está en <b>${TONO[t.comun].n.toLowerCase()}</b>. Puedes cambiar el tuyo cuando quieras, hacia arriba o hacia abajo, sin dar explicaciones. Y si terminan siendo amigos, también es un buen final.</p>`);
+  $$('[data-tono]', h.cuerpo).forEach((b) => b.onclick = async () => {
+    try { const r = await api(`/api/charla/${encodeURIComponent(otra)}/tono`, { tono: b.dataset.tono }); const subio = TONO[r.tono.comun].nivel > TONO[t.comun].nivel; CH.datos.tono = r.tono; pintarTono(); h.cerrar();
+      avisar(r.tono.comun !== t.comun ? `El tono de la charla ahora es ${TONO[r.tono.comun].n.toLowerCase()}.` : TONO[r.tono.mio].nivel > TONO[r.tono.comun].nivel ? `Guardado. Nadie lo ve; sube cuando ${nombreOtra()} también lo elija.` : 'Guardado.', 4200);
+      if (!subio) tocar('guardado'); CH.traer?.(true);
+    } catch (e) { avisar(e.message); }
+  });
+}
+// El panel ✨: cartas, detalles e invitación
+function panelChispa(p) {
+  const t = CH.datos?.tono || { comun: 'conocernos' }, usadas = new Set(CH.usadas || []), n = esc(nombreOtra());
+  const abre = (pedido) => TONO[t.comun].nivel >= TONO[pedido].nivel;
+  p.innerHTML = `<div class="ch-tabs"><button class="on" data-t="cartas">🎴 Cartas</button><button data-t="detalles">🎁 Detalles</button><button data-t="invitar">📅 Invitar</button></div>
+    <div class="chispa-cuerpo" data-c="cartas"><p class="chispa-nota">Sacas una carta y la contestan los dos. <b>Nadie ve la respuesta del otro hasta que las dos están.</b></p>
+      <div class="mazos">${MAZOS.map((m) => { const quedan = m.cartas.filter(([id]) => !usadas.has(id)).length, ok = abre(m.tono); return `<button type="button" class="mazo ${ok ? '' : 'candado'}" data-mazo="${m.id}" ${quedan ? '' : 'disabled'}><span>${ok ? m.i : '🔒'}</span><div><b>${esc(m.n)}</b><small>${ok ? `${esc(m.d)} · ${quedan ? `quedan ${quedan}` : 'ya salieron todas'}` : 'Se abre cuando los dos elijan coqueteo.'}</small></div></button>`; }).join('')}</div>
+      <div id="chispa-carta"></div></div>
+    <div class="chispa-cuerpo" data-c="detalles" hidden><p class="chispa-nota">Decir algo sin tener que encontrar las palabras.</p>
+      <input type="text" id="det-nota" maxlength="${NOTA_MAX}" placeholder="Unas palabras para acompañarlo (opcional)" autocomplete="off">
+      <div class="detalles-rejilla">${DETALLES.map((d) => { const ok = abre(d.tono); return `<button type="button" class="det ${ok ? '' : 'candado'}" data-det="${d.id}" title="${ok ? esc(d.n) : 'Se abre cuando los dos elijan coqueteo'}"><span>${d.i}</span>${esc(d.n)}${ok ? '' : ' <i>🔒</i>'}</button>`; }).join('')}</div></div>
+    <div class="chispa-cuerpo" data-c="invitar" hidden><p class="chispa-nota">Proponle verse. ${n} tendrá tres respuestas listas: sí, otro día, o seguir platicando aquí. <b>Decir que no también es fácil.</b></p>
+      <div class="planes">${PLANES.map(([id, i, nn], k) => `<button type="button" class="plan ${k === 0 ? 'on' : ''}" data-plan="${id}">${i} ${esc(nn)}</button>`).join('')}</div>
+      <input type="text" id="cita-que" maxlength="60" placeholder="¿Qué propones?" hidden>
+      <div class="cita-campos"><input type="text" id="cita-donde-c" maxlength="80" placeholder="¿Dónde? (opcional)"><input type="datetime-local" id="cita-cuando-c"></div>
+      <div class="carta-acc"><button type="button" class="boton boton-chico" id="cita-mandar-c">Mandar la invitación</button></div></div>`;
+  $$('.ch-tabs button', p).forEach((b) => b.onclick = () => { $$('.ch-tabs button', p).forEach((x) => x.classList.toggle('on', x === b)); $$('.chispa-cuerpo', p).forEach((c) => c.hidden = c.dataset.c !== b.dataset.t); });
+  const sacar = (mazoId) => {
+    const m = MAZO[mazoId], libres = m.cartas.filter(([id]) => !usadas.has(id)); if (!libres.length) return;
+    const [id] = libres[Math.floor(Math.random() * libres.length)], C = CARTA[id], z = $('#chispa-carta');
+    z.innerHTML = `<div class="carta-previa"><small>${m.i} ${esc(m.n)}</small><b>${C.tipo === 'ab' ? `${esc(C.a)} <i>o</i> ${esc(C.b)}` : esc(C.t)}</b><div class="carta-acc"><button type="button" class="boton boton-chico" id="carta-va">Mandar esta carta</button><button type="button" class="boton boton-claro boton-chico" id="carta-otra">Otra</button></div></div>`;
+    z.scrollIntoView({ block: 'nearest' });
+    $('#carta-otra').onclick = () => sacar(mazoId);
+    $('#carta-va').onclick = async () => { cerrarPaneles(); try { await mandar({ tipo: 'carta', carta: id, texto: C.t }); } catch {} };
+  };
+  $$('[data-mazo]', p).forEach((b) => b.onclick = () => { if (b.classList.contains('candado')) { cerrarPaneles(); abrirTono(); return; } sacar(b.dataset.mazo); });
+  $$('[data-det]', p).forEach((b) => b.onclick = async () => {
+    if (b.classList.contains('candado')) { cerrarPaneles(); abrirTono(); return; }
+    const D = DETALLE[b.dataset.det], nota = $('#det-nota').value.trim();
+    if (D.nota && !nota) { $('#det-nota').placeholder = D.nota; $('#det-nota').focus(); avisar('Dile cuál: escríbela arriba y toca de nuevo.'); return; }
+    cerrarPaneles(); try { await mandar({ tipo: 'detalle', detalle: D.id, nota, texto: `${D.i} ${D.n}` }); efecto(D.e); } catch {}
+  });
+  let plan = 'cafe';
+  $$('[data-plan]', p).forEach((b) => b.onclick = () => { plan = b.dataset.plan; $$('[data-plan]', p).forEach((x) => x.classList.toggle('on', x === b)); $('#cita-que').hidden = plan !== 'otro'; if (plan === 'otro') $('#cita-que').focus(); });
+  $('#cita-mandar-c').onclick = async () => {
+    const que = $('#cita-que').value.trim(); if (plan === 'otro' && !que) { avisar('Cuéntale qué propones.'); $('#cita-que').focus(); return; }
+    const cuerpo = { tipo: 'cita', plan, que, donde: $('#cita-donde-c').value.trim(), cuando: $('#cita-cuando-c').value, texto: `📅 ${plan === 'otro' ? que : PLAN[plan].n}` };
+    cerrarPaneles(); try { await mandar(cuerpo); } catch {}
+  };
+}
+// Lo que ya es de los dos: fotos, videos, audios, cartas abiertas, planes y momentos
+async function abrirAlbum() {
+  const otra = CH.otra, n = esc(nombreOtra());
+  const h = abrirHoja(`Nuestro álbum`, `<p class="sub">Todo lo que ya es de ustedes dos, en un solo lugar. Solo ustedes lo ven.</p><div id="album"><p class="vacio">Cargando…</p></div>`);
+  h.cuerpo.classList.add('ancho');
+  try {
+    const d = await api(`/api/charla/${encodeURIComponent(otra)}/album`), ruta = (id) => `/api/charla/${encodeURIComponent(otra)}/archivo/${id}`;
+    const vis = d.archivos.filter((a) => /^(image|video)\//.test(a.mime)), aud = d.archivos.filter((a) => /^audio\//.test(a.mime)), doc = d.archivos.filter((a) => !/^(image|video|audio)\//.test(a.mime));
+    const sec = (t, cuenta, html) => `<h3 class="album-t">${t} <span class="chip gris">${cuenta}</span></h3>${html}`;
+    $('#album', h.cuerpo).innerHTML = (!d.archivos.length && !d.cartas.length && !d.planes.length ? `<p class="vacio">Todavía está vacío. Aquí se va a ir juntando lo que se manden: fotos, videos, audios, las cartas que abran y los planes que hagan.</p>` : '') +
+      (vis.length ? sec('📷 Fotos y videos', vis.length, `<div class="album-rejilla">${vis.map((a) => /^image\//.test(a.mime) ? `<a href="${ruta(a.id)}" data-visor="${ruta(a.id)}" data-nombre="${esc(a.nombre)}"><img src="${ruta(a.id)}${a.vista ? '?vista=1' : ''}" alt="" loading="lazy"></a>` : `<a href="#" data-ir-album="${a.id}" class="vid">${a.vista ? `<img src="${ruta(a.id)}?vista=1" alt="" loading="lazy">` : ''}<span>▶ ${a.duracion ? duracionTxt(a.duracion) : 'Video'}</span></a>`).join('')}</div>`) : '') +
+      (aud.length ? sec('🎵 Audios y notas de voz', aud.length, aud.map((a) => `<div class="album-audio"><small>${a.mio ? 'Tú' : n} · ${diaDe(a.creado)}${a.nombre && a.nombre !== 'Nota de voz' ? ' · ' + esc(a.nombre) : ''}</small><audio controls preload="none" src="${ruta(a.id)}"></audio></div>`).join('')) : '') +
+      (d.cartas.length ? sec('🎴 Cartas que ya abrieron', d.cartas.length, d.cartas.map((c) => { const C = CARTA[c.carta]; if (!C) return ''; const v = (x) => C.tipo === 'ab' ? esc(x === 'a' ? C.a : C.b) : esc(x); return `<div class="album-carta"><b>${esc(C.t)}</b><div><small>Tú</small>${v(c.mia)}</div><div><small>${n}</small>${v(c.suya)}</div></div>`; }).join('')) : '') +
+      (d.planes.length ? sec('📅 Planes', d.planes.length, d.planes.map((c) => `<div class="album-carta"><b>${(PLAN[c.plan] || PLAN.otro).i} ${esc(c.que)}</b><div>${c.donde ? '📍 ' + esc(c.donde) + ' · ' : ''}${c.cuando ? '🕒 ' + esc(new Date(c.cuando).toLocaleString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' })) : 'sin fecha todavía'}</div></div>`).join('')) : '') +
+      (doc.length ? sec('📎 Archivos', doc.length, doc.map((a) => `<a class="ch-doc" href="${ruta(a.id)}">📄 ${esc(a.nombre)} <small>${legible(a.tamano)}</small></a>`).join('')) : '') +
+      sec('🗓️ Su historia', d.hitos.length + 1, `<ul class="album-hitos"><li><b>Se abrió la puerta</b><span>${diaDe(d.desde)}</span></li>${d.hitos.map((x) => `<li><b>${esc(x.texto)}</b><span>${diaDe(x.creado)}</span></li>`).join('')}</ul>`);
+    $('#album', h.cuerpo).onclick = (e) => {
+      const vz = e.target.closest('[data-visor]'); if (vz) { e.preventDefault(); abrirVisor(vz.dataset.visor, vz.dataset.nombre); return; }
+      const ia = e.target.closest('[data-ir-album]'); if (ia) { e.preventDefault(); h.cerrar(); irAMensaje(Number(ia.dataset.irAlbum)); }
+    };
+  } catch (e) { $('#album', h.cuerpo).innerHTML = `<p class="vacio">${esc(e.message)}</p>`; }
+}
+// Su carta, frase por frase: tocar una frase es empezar a platicar de ella
+function abrirSuCarta() {
+  const o = CH.datos?.otra; if (!o) return;
+  const frases = (t) => (String(t || '').match(/[^.!?…\n]+[.!?…]*["»”)]?\s*|\n+/g) || []).map((f) => (/^\n+$/.test(f) ? '<br><br>' : f.trim().length < 6 ? esc(f) : `<span class="frase" data-frase="${esc(f.trim())}">${esc(f)}</span>`)).join('');
+  const h = abrirHoja(`La carta de ${esc(o.nombre)}`, `${o.carta ? `<p class="chispa-nota" style="margin-top:0">Toca una frase para decirle algo sobre ella.</p><div class="carta">${frases(o.carta)}</div>` : '<p class="vacio">Todavía no hay carta.</p>'}${o.malinterpretan ? `<p class="entender"><b>Lo que le gustaría que entendieras desde el día uno:</b> ${frases(o.malinterpretan)}</p>` : ''}${o.martes ? `<h3 style="margin:16px 0 6px">Su martes ideal dentro de 10 años</h3><p style="color:var(--tinta-2)">${frases(o.martes)}</p>` : ''}`);
+  h.cuerpo.onclick = (e) => { const f = e.target.closest('[data-frase]'); if (!f) return; h.cerrar(); ponerFrase(f.dataset.frase); };
+}
+function ponerFrase(frase) {
+  quitarCita(); CH.frase = frase;
+  const c = $('#ch-citando'); c.hidden = false; c.innerHTML = `<span>💬 Sobre lo que escribió ${esc(nombreOtra())}: «${esc(frase.slice(0, 120))}${frase.length > 120 ? '…' : ''}»</span><button type="button" id="ch-quitar-cita" aria-label="Quitar">×</button>`;
+  $('#ch-quitar-cita').onclick = quitarCita; const t = $('#ch-texto'); t.placeholder = 'Dile qué te hizo pensar…'; t.focus();
+}
+// Una pausa amable antes de mandar algo subido de tono: coquetear no es lo mismo que pedir de más
+function pausaAmable(texto) {
+  return new Promise((res) => {
+    const h = abrirHoja('Antes de mandarlo', `<p class="sub">${CH.datos?.tono?.comun === 'coqueteo' ? `Coquetear no es lo mismo que esto. Si ${esc(nombreOtra())} no lo pidió, un mensaje así casi siempre incomoda en vez de acercar.` : `El tono de esta charla todavía no es de coqueteo. Un mensaje así, sin que ${esc(nombreOtra())} lo haya elegido, casi siempre incomoda en vez de acercar.`}</p><div class="carta" style="font-size:15px">${esc(texto.slice(0, 300))}</div>
+      <div class="acciones" style="margin-top:14px"><button class="boton" id="pa-cambiar">Mejor lo cambio</button><button class="boton boton-fantasma" id="pa-mandar">Mandarlo así</button></div>`);
+    let dicho = false; const fin = (v) => { if (dicho) return; dicho = true; h.cerrar(); res(v); };
+    $('#pa-cambiar', h.cuerpo).onclick = () => fin(false); $('#pa-mandar', h.cuerpo).onclick = () => fin(true);
+    h.velo.addEventListener('click', (e) => { if (e.target === h.velo || e.target.classList.contains('cerrar')) fin(false); });
+  });
+}
+
 /* ═══ AQUÍ MANDA ELLA ═════════════════════════════════════════════════════
    Lo que ella decide (y lo básico que tiene cualquier persona): permisos de
    la charla, cerrar, borrar, bloquear, reportar, modo discreta, «decido
@@ -1191,6 +1400,7 @@ function puertaCerrada(otra) {
   refrescarVista();
 }
 const avisarCandado = () => avisar(`${CH.datos?.otra?.nombre || 'Esta persona'} todavía no recibe fotos, videos, notas de voz ni archivos aquí. Eso lo decide ${CH.datos?.ella?.meMandan ? 'ella' : CH.datos?.otra?.nombre || 'esa persona'}.`, 4200);
+const avisoK = () => `cupido.mando.visto.${V.persona.id}.${CH.otra}`, visto = (k) => { try { return !!localStorage.getItem(k); } catch { return false; } };
 // Los candados de la charla, a la vista: qué no se puede todavía y de quién es el turno
 function pintarCandados() {
   const d = CH.datos, e = d?.ella, t = $('#ch-turno'); if (!e || !t) return;
@@ -1198,9 +1408,10 @@ function pintarCandados() {
   let html = '';
   if (e.insistencia && e.insistencia.van >= e.insistencia.tope) html = `<span>✋ Le toca a <b>${esc(d.otra.nombre)}</b>. Ya le escribiste ${e.insistencia.tope} veces sin respuesta, y aquí nadie insiste.</span>`;
   else if (e.insistencia && e.insistencia.van === e.insistencia.tope - 1) html = `<span>Te queda <b>un mensaje</b> antes de que le toque a ${esc(d.otra.nombre)}. Aquí nadie insiste.</span>`;
-  else if (e.mando && (!e.controles.recibir_medios || !e.controles.mis_medios)) html = `<span>👑 Tú decides: ${[!e.controles.recibir_medios ? `${esc(d.otra.nombre)} no puede mandarte fotos ni archivos` : '', !e.controles.mis_medios ? 'tu foto, tu voz y tu video siguen guardados' : ''].filter(Boolean).join(' · ')}.</span><button type="button" class="enlace" id="ch-turno-abrir">Cambiar</button>`;
+  else if (e.mando && (!e.controles.recibir_medios || !e.controles.mis_medios) && !visto(avisoK())) html = `<span>👑 Tú decides: ${[!e.controles.recibir_medios ? `${esc(d.otra.nombre)} no puede mandarte fotos ni archivos` : '', !e.controles.mis_medios ? 'tu foto, tu voz y tu video siguen guardados' : ''].filter(Boolean).join(' · ')}.</span><span class="turno-acc"><button type="button" class="enlace" id="ch-turno-abrir">Cambiar</button><button type="button" class="enlace" id="ch-turno-ok" title="No volver a mostrar en esta charla">Entendido</button></span>`;
   t.hidden = !html; t.innerHTML = html; t.classList.toggle('alto', !!(e.insistencia && e.insistencia.van >= e.insistencia.tope));
   const a = $('#ch-turno-abrir'); if (a) a.onclick = abrirMando;
+  const ok = $('#ch-turno-ok'); if (ok) ok.onclick = () => { try { localStorage.setItem(avisoK(), '1'); } catch {} t.hidden = true; };
 }
 // El menú 👑 de la charla: permisos y las cuatro salidas
 function abrirMando() {
@@ -1312,6 +1523,7 @@ function seccionElla() {
         <li><span class="i si">✓</span><span><b>Qué recibes.</b> Él no puede mandarte fotos, videos, notas de voz ni archivos hasta que lo permites.</span></li>
         <li><span class="i si">✓</span><span><b>Qué enseñas.</b> Tu foto, tu voz y tu video los enciendes tú. Abrir la puerta no los entrega.</span></li>
         <li><span class="i si">✓</span><span><b>Él no insiste.</b> Después de ${L.insistencia} mensajes seguidos sin respuesta, el sistema no le deja mandar otro.</span></li>
+        <li><span class="i si">✓</span><span><b>El tono lo pones tú también.</b> Amistad, conocernos o coqueteo: la charla toma el más tranquilo de los dos, y lo coqueto se enciende solo si tú lo eliges.</span></li>
         <li><span class="i si">✓</span><span><b>Lo que compartes, lo puedes guardar de nuevo.</b> Cada elemento de tu perfil tiene su ✕.</span></li>
         <li><span class="i si">✓</span><span><b>Cuatro salidas:</b> cerrar la puerta (sin castigo), borrar la charla, bloquear y reportar. Él recibe el mismo aviso en las cuatro.</span></li>
         <li><span class="i si">✓</span><span><b>Lo que ves de él</b> antes de decidir: cuánto lleva aquí, con cuántas personas conversa y cuántas mujeres lo han bloqueado.</span></li>
@@ -1347,6 +1559,7 @@ function engancharElla() {
   // el aviso para alguien de confianza: se arma aquí y sale del teléfono; Cupido no lo guarda
   const texto = () => { const q = $('#cita-quien').value || 'alguien de Cupido', dn = $('#cita-donde').value.trim(), cu = $('#cita-cuando').value; const f = cu ? new Date(cu).toLocaleString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', hour: 'numeric', minute: '2-digit' }) : ''; return `Voy a ver a ${q}, a quien conocí en Cupido Algorítmico${dn ? `, en ${dn}` : ''}${f ? `, el ${f}` : ''}. Te escribo cuando llegue y cuando me vaya. Si no sabes de mí, márcame.`; };
   const pintar = () => { $('#cita-texto').textContent = texto(); };
+  try { const c = JSON.parse(sessionStorage.getItem('cupido.cita') || 'null'); if (c) { sessionStorage.removeItem('cupido.cita'); const q = $('#cita-quien'); [...q.options].forEach((o) => { if (o.textContent === c.quien) q.value = o.value || o.textContent; }); $('#cita-donde').value = c.donde || ''; $('#cita-cuando').value = c.cuando || ''; setTimeout(() => $('.cita-aviso')?.scrollIntoView({ block: 'center' }), 200); } } catch {}
   ['cita-quien', 'cita-donde', 'cita-cuando'].forEach((id) => { $('#' + id).oninput = pintar; $('#' + id).onchange = pintar; }); pintar();
   $('#cita-copiar').onclick = async () => { try { await navigator.clipboard.writeText(texto()); avisar('Copiado. Pégalo en un mensaje a quien tú quieras.'); } catch { avisar('No se pudo copiar. Selecciona el texto y cópialo a mano.'); } };
   $('#cita-mandar').onclick = async () => { if (navigator.share) { try { await navigator.share({ text: texto() }); } catch {} } else $('#cita-copiar').click(); };

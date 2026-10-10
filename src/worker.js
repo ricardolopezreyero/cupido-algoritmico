@@ -16,7 +16,7 @@ import { verPrograma, apoyar, confirmarApoyo, ajustarPrograma, aportesAdmin, dis
 import { limpiarPrecioJusto, REVISION_DIAS } from './precios.js';
 import { generarSonido, servirSonido, estadoSonidos } from './sonidos.js';
 import { avance } from '../public/js/preguntas.js';
-import { misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, retirar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
+import { cambiarTono, responderChispa, verAlbum, misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, retirar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
 import { empezarSubida, subirParte, subirVista, terminarSubida, cancelarSubida, limpiarSubidas } from './subidas.js';
 import { esHombre, esAdmin, ponerControl, cerrarPuerta, bloquear, desbloquear, agregarEvitar, quitarEvitar, seguridadAdmin, accionAdmin } from './ella.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
@@ -207,6 +207,10 @@ async function api(req, env, ctx, url) {
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/archivo\/(\d+)$/)) && metodo === 'GET') { if (!yo) return new Response('Sin sesión', { status: 401 }); return await servirAdjunto(env, req, yo.P.id, x[1], Number(x[2])); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/liberar$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 4000); const r = await liberar(env, yo.P.id, x[1], b.elementos); return r.error ? error(r.error, r.status) : json(r); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/perfil$/)) && metodo === 'GET') { if (!yo) return sinSesion(); const r = await perfilCompartido(env, yo.P.id, x[1]); return r ? json(r) : error('No hay charla', 404); }
+  /* ── La chispa: el tono (dos síes), responder cartas e invitaciones, y el álbum ── */
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/tono$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await cambiarTono(env, yo.P.id, x[1], b.tono); return r.error ? error(r.error, r.status) : json(r); }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/responder$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 6000); const r = await responderChispa(env, yo.P.id, x[1], b.mensaje, b.valor); return r.error ? error(r.error, r.status) : json(r); }
+  if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/album$/)) && metodo === 'GET') { if (!yo) return sinSesion(); const r = await verAlbum(env, yo.P.id, x[1]); return r ? json(r) : error('No hay charla', 404); }
   /* ── Aquí manda ella: controles de la charla, cerrar, bloquear, reportar y «no cruzarme con» ── */
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/control$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await ponerControl(env, yo.P, x[1], String(b.k || ''), !!b.v); return r.error ? error(r.error, r.status) : json(r); }
   if ((x = m(/^\/api\/charla\/([a-z0-9]+)\/retirar$/)) && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 4000); const r = await retirar(env, yo.P.id, x[1], b.elementos); return r.error ? error(r.error, r.status) : json(r); }

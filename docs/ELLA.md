@@ -22,6 +22,8 @@ Cupido Algorítmico está hecho para que una mujer encuentre a la persona correc
 
 **Lo que compartes, lo puedes retirar.** Tu perfil se libera por elementos y con tu confirmación. Si cambias de opinión, lo guardas de nuevo y él deja de verlo.
 
+**El coqueteo también se abre con dos síes.** Cada charla tiene un tono: amistad, conocernos o coqueteo. Tú eliges el tuyo en privado y la charla toma el más tranquilo de los dos. Él no ve lo que elegiste, y lo coqueto no se enciende hasta que tú también lo eliges. Lo bajas cuando quieras, sin dar explicaciones. Y si terminan siendo amigos, también es un buen final.
+
 **Modo discreta.** Él no ve si estás en línea, cuándo entraste por última vez, si ya leíste ni si estás escribiendo.
 
 **No cruzarme con.** Escribe el correo de las personas con las que no quieres coincidir nunca: un ex, alguien del trabajo, un familiar. El motor no los cruza contigo, y nadie se entera de que los pusiste ahí.

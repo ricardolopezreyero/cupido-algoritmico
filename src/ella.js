@@ -102,8 +102,11 @@ export async function ponerControl(env, P, otraId, k, v) {
 export async function sinRespuesta(env, c, yo, otraId) {
   return (await env.DB.prepare(
     `SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND de = ? AND auto = 0
-     AND id > COALESCE((SELECT MAX(id) FROM mensajes WHERE a = ? AND b = ? AND de = ? AND auto = 0), 0)`)
-    .bind(c.a, c.b, yo, c.a, c.b, otraId).first()).n;
+     AND id > COALESCE((SELECT MAX(id) FROM mensajes WHERE a = ? AND b = ? AND de = ? AND auto = 0), 0)
+     AND creado > COALESCE((SELECT MAX(r.creado) FROM respuestas r JOIN mensajes m ON m.id = r.mensaje WHERE m.a = ? AND m.b = ? AND r.persona = ?), '')
+     AND creado > COALESCE((SELECT MAX(r.creado) FROM reacciones r JOIN mensajes m ON m.id = r.mensaje WHERE m.a = ? AND m.b = ? AND r.persona = ?), '')`)
+    // contestar una carta o reaccionar también es responder: ella ya dio señal
+    .bind(c.a, c.b, yo, c.a, c.b, otraId, c.a, c.b, otraId, c.a, c.b, otraId).first()).n;
 }
 
 /* ── el filtro del motor: pares que nunca se cruzan (bloqueos y «no cruzarme con») ── */

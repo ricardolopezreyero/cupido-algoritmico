@@ -14,6 +14,7 @@ import { ESQUEMA_CHARLA, abrirCharla, misCharlas } from './charla.js';
 import { ESQUEMA_CORREOS, correoA } from './correos.js';
 import { ESQUEMA_PROGRAMA, sembrarPrograma } from './programa.js';
 import { ESQUEMA_SUBIDAS, espacioDe } from './subidas.js';
+import { ESQUEMA_CHISPA } from './chispa.js';
 import { ESQUEMA_ELLA, filtroElla, ajustesDe, manda, control, senalesPara, vistaElla } from './ella.js';
 
 export const _RLR = 'Ricardo López Reyero';
@@ -58,6 +59,7 @@ const ESQUEMA = [
   ...ESQUEMA_PROGRAMA,
   ...ESQUEMA_ELLA,
   ...ESQUEMA_SUBIDAS,
+  ...ESQUEMA_CHISPA,
   `CREATE INDEX IF NOT EXISTS idx_pares_pct ON pares(pct)`,
   `CREATE INDEX IF NOT EXISTS idx_avisos_persona ON avisos(persona, leido)`,
   `CREATE INDEX IF NOT EXISTS idx_articulos_estado ON articulos(estado, creado)`,
@@ -77,6 +79,7 @@ export async function asegurar(env) {
   // Aquí manda ella: las puertas y las charlas se pueden cerrar (y quién las cerró)
   try { await env.DB.prepare(`ALTER TABLE puertas ADD COLUMN cerro TEXT`).run(); await env.DB.prepare(`ALTER TABLE puertas ADD COLUMN cerrada TEXT`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN cerrada TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN cerro TEXT`).run(); } catch { /* ya existen */ }
+  try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN tono_a TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN tono_b TEXT`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE medios ADD COLUMN vista INTEGER NOT NULL DEFAULT 0`).run(); } catch { /* ya existe */ }
   await sembrarPrograma(env);
   await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_personas_correo ON personas(correo)`).run();

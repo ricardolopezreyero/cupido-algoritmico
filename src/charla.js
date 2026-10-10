@@ -15,6 +15,7 @@ import { ELEMENTOS, ELEMENTO } from '../public/js/elementos.js';
 import { avisarVivo, presenciaVivo } from './viva.js';
 import { correoA } from './correos.js';
 import { manda, esHombre, ajustesDe, control, controlesDe, sinRespuesta, INSISTENCIA } from './ella.js';
+import { TIPOS_CHISPA, tonoDe, ponerTono, prepararChispa, trasEnviarChispa, responder, juegoDe, album } from './chispa.js';
 
 // Si la otra persona no está en el tablero, avísale por correo (máximo uno por hora por charla)
 async function correoSiAusente(env, c, yo, otraId, tipo, datos) {
@@ -86,6 +87,7 @@ export async function borrarCharlasDe(env, id) {
     env.DB.prepare(`DELETE FROM liberaciones WHERE persona = ? OR otra = ?`).bind(id, id),
     env.DB.prepare(`DELETE FROM reacciones WHERE mensaje NOT IN (SELECT id FROM mensajes)`),
     env.DB.prepare(`DELETE FROM controles WHERE persona = ? OR otra = ?`).bind(id, id),
+    env.DB.prepare(`DELETE FROM respuestas WHERE mensaje NOT IN (SELECT id FROM mensajes)`),
   ]);
 }
 
@@ -106,7 +108,7 @@ export async function misCharlas(env, yo) {
     const leido = c.a === yo ? c.leido_a : c.leido_b;
     const ult = await env.DB.prepare(`SELECT id, de, tipo, texto, creado FROM mensajes WHERE a = ? AND b = ? ORDER BY id DESC LIMIT 1`).bind(c.a, c.b).first();
     const nuevos = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND id > ? AND de != ?`).bind(c.a, c.b, leido, yo).first()).n;
-    lista.push({ otra: otraId, nombre: nom(O), color: O.color, nuevos, ultimo: ult ? { texto: ult.tipo === 'archivo' ? '📎 ' + (ult.texto || 'Archivo') : ult.tipo === 'gif' ? '🎞️ GIF' : ult.texto, mio: ult.de === yo, creado: ult.creado } : null, orden: ult?.creado || c.creada });
+    lista.push({ otra: otraId, nombre: nom(O), color: O.color, nuevos, ultimo: ult ? { texto: vistaDe(ult), mio: ult.de === yo, creado: ult.creado } : null, orden: ult?.creado || c.creada });
   }
   // orden: no leídos primero, luego por último mensaje
   return lista.sort((x, y) => (y.nuevos > 0) - (x.nuevos > 0) || String(y.orden).localeCompare(String(x.orden)));
@@ -114,7 +116,10 @@ export async function misCharlas(env, yo) {
 
 /* ── la charla completa (o solo lo nuevo) ────────────────────────────────── */
 const VENTANA = 80;
-const vistaDe = (m) => m.tipo === 'archivo' ? '📎 ' + (m.texto || 'Archivo') : m.tipo === 'gif' ? '🎞️ GIF' : String(m.texto || '').slice(0, 120);
+function vistaDe(m) {
+  const t = String(m.texto || '').slice(0, 120);
+  return m.tipo === 'archivo' ? '📎 ' + (m.texto || 'Archivo') : m.tipo === 'gif' ? '🎞️ GIF' : m.tipo === 'carta' ? '🎴 ' + t : m.tipo === 'detalle' ? '🎁 ' + t : m.tipo === 'cita' ? '📅 ' + t : m.tipo === 'borrado' ? 'Mensaje borrado' : t;
+}
 async function conCitas(env, c, msgs) {
   const ids = [...new Set(msgs.map((m) => m.responde_a).filter(Boolean))];
   if (!ids.length) return msgs;
@@ -159,44 +164,75 @@ export async function verCharla(env, yo, otraId, despues = 0, { antes = 0, todo 
     controles: await controlesDe(env, Yo, O),
     puedoMedios: await control(env, O, Yo, 'recibir_medios'),
     veMisMedios: await control(env, Yo, O, 'mis_medios'),
-    insistencia: meMandan ? { van: await sinRespuesta(env, c, yo, otraId), tope: INSISTENCIA } : null,
+    insistencia: meMandan ? { van: await sinRespuesta(env, c, yo, otraId), tope: topeInsistencia(O) } : null,
   };
+  const juego = await juegoDe(env, c, yo); // cartas e invitaciones: cambian sobre mensajes viejos, como las reacciones
   const guardados = (await env.DB.prepare(`SELECT g.mensaje FROM guardados g JOIN mensajes m ON m.id = g.mensaje WHERE g.persona = ? AND m.a = ? AND m.b = ?`).bind(yo, c.a, c.b).all()).results.map((g) => g.mensaje);
   const total = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND tipo != 'sistema'`).bind(c.a, c.b).first()).n;
-  return { otra: { id: otraId, nombre: nom(O), nombreCompleto: O.nombre, color: O.color, carta: O.r.carta || '', martes: O.r.martes || '', malinterpretan: O.r.malinterpretan || '', enLinea, ultimaVez }, mensajes: msgs, hayMas, otroEscribiendo, compartido: { mios, suyos }, reacciones: reac, vistoHasta, miLeido, guardados, total, desde: c.creada, ella };
+  return { otra: { id: otraId, nombre: nom(O), nombreCompleto: O.nombre, color: O.color, carta: O.r.carta || '', martes: O.r.martes || '', malinterpretan: O.r.malinterpretan || '', enLinea, ultimaVez }, mensajes: msgs, hayMas, otroEscribiendo, compartido: { mios, suyos }, reacciones: reac, vistoHasta, miLeido, guardados, total, desde: c.creada, ella, tono: tonoDe(c), juego: juego.estados, cartasUsadas: juego.usadas };
 }
 
-export async function enviar(env, yo, otraId, { texto, tipo = 'texto', gif, respondeA } = {}) {
+export async function enviar(env, yo, otraId, b = {}) {
+  let { texto, tipo = 'texto', gif, respondeA } = b;
   const c = await charlaDe(env, yo, otraId);
   if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
-  let t = limpiarTexto(texto), archivo = null;
+  let t = limpiarTexto(texto), archivo = null, chispa = null;
   let cita = null;
   if (respondeA) { cita = await env.DB.prepare(`SELECT id FROM mensajes WHERE id = ? AND a = ? AND b = ? AND tipo != 'sistema'`).bind(Number(respondeA), c.a, c.b).first(); if (!cita) return { error: 'Ese mensaje no está en esta charla', status: 400 }; }
-  if (tipo === 'sticker') { if (!/^\p{Extended_Pictographic}[\p{Extended_Pictographic}\u200d\ufe0f]{0,10}$/u.test(t)) return { error: 'Sticker inválido', status: 400 }; }
+  if (TIPOS_CHISPA.includes(tipo)) { // una carta, un detalle o una invitación (src/chispa.js)
+    chispa = await prepararChispa(env, c, yo, otraId, b); if (chispa.error) return chispa;
+    t = chispa.texto; archivo = JSON.stringify(chispa.archivo);
+  }
+  else if (tipo === 'sticker') { if (!/^\p{Extended_Pictographic}[\p{Extended_Pictographic}\u200d\ufe0f]{0,10}$/u.test(t)) return { error: 'Sticker inválido', status: 400 }; }
   else if (tipo === 'gif') {
     const url = String(gif?.url || ''), preview = String(gif?.preview || url);
     if (!/^https:\/\/(media\.tenor\.com|c\.tenor\.com|media[0-9]*\.giphy\.com)\//.test(url)) return { error: 'GIF inválido', status: 400 };
     archivo = JSON.stringify({ url, preview, ancho: Number(gif?.ancho) || null, alto: Number(gif?.alto) || null }); t = 'GIF';
-  } else { tipo = 'texto'; if (!t) return { error: 'Escribe algo', status: 400 }; }
+  } else {
+    tipo = 'texto'; if (!t) return { error: 'Escribe algo', status: 400 };
+    // comentar una frase de su carta: la frase tiene que estar, tal cual, en lo que la otra persona escribió
+    if (b.frase) { const plano = (x) => String(x || '').replace(/\s+/g, ' ').trim(), f = plano(b.frase).slice(0, 300), O = await persona(env, otraId); if (f.length >= 6 && [O?.r.carta, O?.r.martes, O?.r.malinterpretan].some((x) => plano(x).includes(f))) archivo = JSON.stringify({ frase: f }); }
+  }
   const ritmo = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND de = ? AND creado > datetime('now', '-60 seconds')`).bind(c.a, c.b, yo).first()).n;
   if (ritmo >= 40) return { error: 'Vas muy rápido. Respira un segundo.', status: 429 };
   const candado = await candadoDeElla(env, c, yo, otraId, false); if (candado) return candado;
   const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo, responde_a) VALUES (?, ?, ?, ?, ?, ?, ?)`).bind(c.a, c.b, yo, tipo, t, archivo, cita ? cita.id : null).run();
-  await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo, vista: tipo === 'sticker' ? t : tipo === 'gif' ? '🎞️ GIF' : t.slice(0, 80), excepto: yo });
+  if (chispa) await trasEnviarChispa(env, r.meta.last_row_id, await persona(env, otraId), chispa);
+  await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo, vista: chispa ? chispa.vista : tipo === 'sticker' ? t : tipo === 'gif' ? '🎞️ GIF' : t.slice(0, 80), excepto: yo });
   await hitoPorCantidad(env, c);
-  await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: tipo === 'texto' ? t.slice(0, 140) : tipo === 'sticker' ? t : 'Te mandó un GIF' });
+  await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: chispa ? chispa.correo : tipo === 'texto' ? t.slice(0, 140) : tipo === 'sticker' ? t : 'Te mandó un GIF' });
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'escribe_a' : 'escribe_b'} = NULL, ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
   return { ok: true, id: r.meta.last_row_id };
 }
 
+// Una persona ficticia del demo no contesta: ahí el tope es más alto para que el visitante pueda probar la charla
+const topeInsistencia = (O) => (O?.origen === 'demo' ? 12 : INSISTENCIA);
 // Aquí manda ella: frente a ella, él no insiste ni manda archivos sin permiso
 async function candadoDeElla(env, c, yo, otraId, esArchivo) {
   const [Yo, O] = [await persona(env, yo), await persona(env, otraId)];
   if (esArchivo && !(await control(env, O, Yo, 'recibir_medios')))
     return { error: `${nom(O)} todavía no recibe fotos, videos, notas de voz ni archivos en esta charla. Eso lo decide ${nom(O)}.`, status: 403 };
-  if (manda(O, Yo) && (await sinRespuesta(env, c, yo, otraId)) >= INSISTENCIA)
-    return { error: `Ya le escribiste ${INSISTENCIA} veces sin respuesta. Ahora le toca a ${nom(O)}: aquí nadie insiste.`, status: 429 };
+  if (manda(O, Yo) && (await sinRespuesta(env, c, yo, otraId)) >= topeInsistencia(O))
+    return { error: `Ya le escribiste ${topeInsistencia(O)} veces sin respuesta. Ahora le toca a ${nom(O)}: aquí nadie insiste.`, status: 429 };
   return null;
+}
+
+/* ── la chispa: el tono, responder cartas e invitaciones, y el álbum ─────── */
+export async function cambiarTono(env, yo, otraId, tono) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
+  return ponerTono(env, c, yo, String(tono || ''));
+}
+export async function responderChispa(env, yo, otraId, mensaje, valor) {
+  const c = await charlaDe(env, yo, otraId);
+  if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
+  const r = await responder(env, c, yo, await persona(env, yo), mensaje, valor);
+  if (r.correo) { await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: r.correo }); delete r.correo; }
+  return r;
+}
+export async function verAlbum(env, yo, otraId) {
+  const c = await charlaDe(env, yo, otraId);
+  return c ? album(env, c, yo) : null;
 }
 
 export async function escribiendo(env, yo, otraId) {

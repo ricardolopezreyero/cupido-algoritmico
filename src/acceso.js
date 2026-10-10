@@ -112,6 +112,13 @@ async function limpiarDemo(env) {
       env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(p.a, p.b, `${O.nombre.split(' ')[0]} compartió: ${SUAVES.map((e) => `${ELEMENTO[e].i} ${ELEMENTO[e].n}`).join(' · ')}`),
       env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, ?, 'texto', ?)`).bind(p.a, p.b, otra, 'Leí tu carta dos veces. Lo de "el celular lejos cuando hablemos" me dio paz. ¿Cómo fue tu martes hoy?'),
     ]);
+    // la chispa del demo: ella ya eligió coqueteo (si el visitante también lo elige, se enciende al instante)
+    // y dejó dos cartas contestadas: se abren en cuanto él responda
+    await env.DB.prepare(`UPDATE charlas SET ${otra === p.a ? 'tono_a' : 'tono_b'} = 'coqueteo' WHERE a = ? AND b = ?`).bind(p.a, p.b).run();
+    for (const [carta, texto, valor] of [['p01', 'Café por la mañana o Vino por la noche', 'a'], ['c06', '¿Cómo es un domingo perfecto para ti?', 'Despertar sin alarma, desayuno largo con música bajita, caminar sin rumbo y terminar el día cocinando algo rico con alguien que me caiga muy bien.']]) {
+      const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo) VALUES (?, ?, ?, 'carta', ?, ?)`).bind(p.a, p.b, otra, texto, JSON.stringify({ carta })).run();
+      await env.DB.prepare(`INSERT OR REPLACE INTO respuestas (mensaje, persona, valor) VALUES (?, ?, ?)`).bind(r.meta.last_row_id, otra, valor).run();
+    }
   }
 }
 

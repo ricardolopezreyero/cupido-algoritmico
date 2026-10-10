@@ -1030,3 +1030,112 @@ html[data-tipo="moderna"] h1, html[data-tipo="moderna"] h2, html[data-tipo="mode
 .espacio .pista { height: 10px; border-radius: 99px; background: var(--rosa-suave); overflow: hidden; }
 .espacio .relleno { height: 100%; width: 0; background: var(--rosa); border-radius: 99px; transition: width .9s cubic-bezier(.16, 1, .3, 1); }
 .espacio span { color: var(--gris); font-size: 14px; }
+
+/* ═══ La chispa: tono, cartas, detalles, invitación y álbum · RLR ═════════ */
+.ch-tono { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: -4px 0 12px; }
+.ch-tono button { display: inline-flex; gap: 8px; align-items: center; border: 1px solid var(--linea); background: var(--blanco); border-radius: 999px; padding: 6px 14px 6px 10px; font: 13.5px var(--sans); color: var(--tinta-2); cursor: pointer; }
+.ch-tono button span { font-size: 17px; }
+.ch-tono button b { color: var(--tinta); }
+.ch-tono button:hover { border-color: var(--rosa-linea); }
+.ch-tono button.tono-coqueteo { background: linear-gradient(135deg, #fff3d6, #fde8ec); border-color: #f0c9d2; }
+.ch-tono small { color: var(--gris); font-size: 12.5px; }
+.ch-h.chispa-btn { background: linear-gradient(135deg, #fff3d6, #fde8ec); }
+.mando-salida.elegido { border-color: var(--rosa); background: var(--rosa-suave); }
+
+.msg.chispa { align-self: center; align-items: stretch; width: min(100%, 440px); max-width: 100%; padding-left: 0; }
+.msg.chispa .globo { white-space: normal; background: var(--blanco) !important; color: var(--tinta) !important; border: 1px solid var(--rosa-linea); border-radius: 18px !important; padding: 14px 16px; box-shadow: 0 6px 18px rgba(214, 69, 95, .07); }
+.msg.chispa .cuando { text-align: center; }
+.msg.chispa .reacs { justify-content: center; }
+.msg.chispa.mio .reac-btn { left: auto; right: -26px; }
+.carta-cab { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.carta-cab span { font: 700 12px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--rosa-osc); }
+.carta-cab small { color: var(--gris); font-size: 12px; }
+.msg.chispa h4 { margin: 0 0 10px; font: 600 19px/1.3 var(--serif); color: var(--tinta); }
+.abs { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: stretch; }
+.abs .o-sep { align-self: center; font: italic 14px var(--serif); color: var(--gris); }
+.ab { position: relative; display: flex; flex-direction: column; justify-content: center; gap: 6px; text-align: center; border: 1px solid var(--linea); background: #faf8f6; border-radius: 14px; padding: 14px 10px; font: 600 14.5px/1.3 var(--sans); color: var(--tinta); min-height: 64px; }
+button.ab { cursor: pointer; transition: transform .15s, border-color .15s, background .15s; }
+button.ab:hover { border-color: var(--rosa); background: var(--rosa-suave); transform: translateY(-1px); }
+.ab.yo, .ab.el { border-color: var(--rosa); background: var(--rosa-suave); }
+.ab.yo.el { background: linear-gradient(135deg, #fff3d6, #fde8ec); border-color: #e9b9c4; }
+.ab .quien { display: flex; gap: 4px; justify-content: center; flex-wrap: wrap; }
+.ab .quien i { font: 700 11px var(--sans); font-style: normal; background: var(--rosa); color: #fff; border-radius: 999px; padding: 2px 8px; }
+.ab .quien i.o { background: var(--tinta); }
+.carta-pie { margin: 10px 0 0; font-size: 12.5px; line-height: 1.45; color: var(--gris); text-align: center; }
+.carta-pie.igual { color: var(--rosa-osc); font-weight: 700; font-size: 13.5px; }
+.carta-pie a { color: var(--rosa-osc); }
+.msg.chispa textarea, .chispa-cuerpo input[type=text], .chispa-cuerpo input[type=datetime-local] { width: 100%; border: 1px solid var(--linea); border-radius: 12px; padding: 10px 12px; font: 15px/1.45 var(--sans); color: var(--tinta); background: #faf8f6; resize: vertical; }
+.msg.chispa textarea:focus, .chispa-cuerpo input:focus { outline: 0; border-color: var(--rosa); background: var(--blanco); }
+.carta-acc { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.resp { white-space: pre-wrap; border-radius: 12px; padding: 10px 12px; font-size: 14.5px; line-height: 1.5; margin-top: 6px; background: #faf8f6; border: 1px solid var(--linea); }
+.resp small { display: block; font: 700 11px var(--sans); letter-spacing: .05em; text-transform: uppercase; color: var(--gris); margin-bottom: 3px; }
+.resp.mia { background: var(--rosa-suave); border-color: var(--rosa-linea); }
+.resp.cerrada { color: var(--gris); border-style: dashed; text-align: center; font-size: 13px; }
+.msg.chispa.revelada .globo { animation: cartaAbre .9s var(--ease); }
+@keyframes cartaAbre { 0% { transform: rotateX(70deg) scale(.96); } 60% { transform: rotateX(-6deg) scale(1.02); } 100% { transform: none; } }
+.cita-datos { margin: 0; font-size: 14.5px; line-height: 1.6; color: var(--tinta-2); }
+.cita-resps { display: grid; gap: 6px; margin-top: 10px; }
+.cita-resps .ab { min-height: 0; padding: 10px 12px; flex-direction: row; justify-content: flex-start; gap: 8px; text-align: left; font-weight: 500; }
+.msg.chispa.t-detalle .globo { text-align: left; background: linear-gradient(135deg, #fffaf0, #fdeef1) !important; border-color: #f3d6dc; }
+.detalle { display: flex; gap: 14px; align-items: center; }
+.det-ico { font-size: 46px; line-height: 1; animation: detLlega .8s var(--ease); }
+@keyframes detLlega { 0% { transform: scale(.3) rotate(-18deg); opacity: 0; } 70% { transform: scale(1.15) rotate(6deg); opacity: 1; } 100% { transform: none; } }
+.detalle b { display: block; font: 600 16.5px/1.3 var(--serif); }
+.detalle span { display: block; margin-top: 3px; font-size: 14px; color: var(--tinta-2); word-break: break-word; }
+.msg.latido .globo { animation: latido .6s var(--ease); }
+@keyframes latido { 0% { transform: scale(1); } 35% { transform: scale(1.06); } 100% { transform: scale(1); } }
+.frase-cita { font-family: var(--serif); font-style: italic; }
+.frase-cita b { display: block; font: 700 11px var(--sans); font-style: normal; letter-spacing: .04em; text-transform: uppercase; opacity: .8; margin-bottom: 2px; }
+.carta .frase, .entender .frase, .modal .frase { cursor: pointer; border-radius: 4px; transition: background .15s; }
+.modal .frase:hover { background: #fde8ec; }
+.ch-efecto { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 5; }
+.ch-efecto i { position: absolute; bottom: -50px; font-style: normal; opacity: 0; animation: flota 2.6s ease-out forwards; }
+@keyframes flota { 0% { transform: translate(0, 0) scale(.6); opacity: 0; } 12% { opacity: 1; } 100% { transform: translate(var(--dx, 0), -620px) scale(1.15); opacity: 0; } }
+
+/* el panel ✨ */
+.ch-panel[data-cual="chispa"] { max-height: 340px; }
+.chispa-cuerpo { padding: 10px 12px 14px; }
+.chispa-nota { margin: 0 0 10px; font-size: 13px; line-height: 1.45; color: var(--tinta-2); }
+.mazos { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+.mazo { display: flex; gap: 10px; align-items: center; text-align: left; border: 1px solid var(--linea); background: var(--blanco); border-radius: 14px; padding: 10px 12px; cursor: pointer; font: inherit; color: var(--tinta); }
+.mazo:hover:not(:disabled) { border-color: var(--rosa); background: var(--rosa-suave); }
+.mazo:disabled { opacity: .5; cursor: default; }
+.mazo > span { font-size: 24px; }
+.mazo b { display: block; font-size: 14.5px; } .mazo small { display: block; font-size: 12px; color: var(--gris); line-height: 1.35; }
+.mazo.candado, .det.candado { background: #faf8f6; border-style: dashed; color: var(--gris); }
+.carta-previa { margin-top: 10px; border: 1px solid var(--rosa-linea); background: linear-gradient(135deg, #fffaf0, #fdeef1); border-radius: 16px; padding: 14px 16px; }
+.carta-previa small { display: block; font: 700 11.5px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: var(--rosa-osc); margin-bottom: 4px; }
+.carta-previa b { display: block; font: 600 18px/1.3 var(--serif); }
+.carta-previa b i { font-weight: 400; color: var(--gris); }
+.detalles-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(118px, 1fr)); gap: 6px; margin-top: 8px; }
+.det { display: flex; flex-direction: column; align-items: center; gap: 4px; border: 1px solid var(--linea); background: var(--blanco); border-radius: 14px; padding: 10px 6px; font: 12.5px/1.25 var(--sans); color: var(--tinta); cursor: pointer; text-align: center; }
+.det span { font-size: 26px; line-height: 1; }
+.det i { font-style: normal; font-size: 11px; }
+.det:hover { border-color: var(--rosa); background: var(--rosa-suave); }
+.planes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 8px; }
+.plan { border: 1px solid var(--linea); background: var(--blanco); border-radius: 999px; padding: 7px 12px; font: 13.5px var(--sans); color: var(--tinta); cursor: pointer; }
+.plan.on { border-color: var(--rosa); background: var(--rosa-suave); color: var(--rosa-osc); font-weight: 600; }
+.chispa-cuerpo .cita-campos { grid-template-columns: 1.4fr 1fr; margin: 8px 0 0; }
+#cita-que { margin-bottom: 0; }
+
+/* el álbum */
+.modal.ancho { width: min(820px, 100%); }
+.album-t { margin: 20px 0 8px; font-size: 16px; display: flex; gap: 8px; align-items: center; }
+.album-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 6px; }
+.album-rejilla a { position: relative; display: block; aspect-ratio: 1; border-radius: 12px; overflow: hidden; background: #f1ece8; }
+.album-rejilla img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.album-rejilla a.vid span { position: absolute; left: 6px; bottom: 6px; font: 600 12px var(--sans); color: #fff; background: rgba(0, 0, 0, .55); border-radius: 999px; padding: 3px 8px; }
+.album-audio { display: grid; gap: 4px; margin-bottom: 8px; }
+.album-audio small { color: var(--gris); font-size: 12px; }
+.album-audio audio { width: 100%; height: 38px; }
+.album-carta { border: 1px solid var(--linea); border-radius: 14px; padding: 12px 14px; margin-bottom: 8px; background: #faf8f6; }
+.album-carta b { display: block; font: 600 16px/1.3 var(--serif); margin-bottom: 6px; }
+.album-carta div { font-size: 14px; line-height: 1.5; color: var(--tinta-2); white-space: pre-wrap; margin-top: 4px; }
+.album-carta small { font: 700 11px var(--sans); letter-spacing: .05em; text-transform: uppercase; color: var(--gris); margin-right: 8px; }
+.album-hitos { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.album-hitos li { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; border-left: 3px solid var(--rosa-linea); padding: 4px 0 4px 12px; }
+.album-hitos li span { color: var(--gris); white-space: nowrap; font-size: 12.5px; }
+@media (max-width: 560px) { .abs { grid-template-columns: 1fr; } .abs .o-sep { justify-self: center; } .chispa-cuerpo .cita-campos { grid-template-columns: 1fr; } .msg.chispa.mio .reac-btn { right: 4px; top: 4px; } }
+
+.turno-acc { display: inline-flex; gap: 14px; }
+@media (max-width: 720px) { .ch-turno { font-size: 12px; padding: 6px 10px; } }

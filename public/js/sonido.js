@@ -11,7 +11,7 @@ const _k = 'EYE', _rev = 181218;
 
 // Catálogo: id → { f: familia, v: volumen relativo, tono: respaldo por código [Hz, Hz…] }
 export const FAMILIAS = {
-  charla: { n: 'Charla', d: 'Mensajes que llegan, que mandas, reacciones y notas de voz' },
+  charla: { n: 'Charla', d: 'Mensajes que llegan, que mandas, reacciones, notas de voz, cartas y detalles' },
   coincidencias: { n: 'Coincidencias y puertas', d: 'Cuando alguien cruza el 90 %, tu sí y la puerta que se abre' },
   logros: { n: 'Logros e hitos', d: 'Cuando desbloqueas algo o la charla cruza una marca' },
   interfaz: { n: 'Interfaz', d: 'Toques, guardado, cambios de estilo y avisos' },
@@ -25,6 +25,9 @@ export const SONIDOS = {
   voz_inicio:   { f: 'charla',        v: 0.6,  tono: [660, 880] },
   voz_fin:      { f: 'charla',        v: 0.6,  tono: [880, 660] },
   en_linea:     { f: 'charla',        v: 0.4,  tono: [1047] },
+  detalle:      { f: 'charla',        v: 0.85, tono: [1047, 1319, 1568, 2093] },
+  carta:        { f: 'charla',        v: 0.7,  tono: [880, 1175, 1480] },
+  tono:         { f: 'coincidencias', v: 0.95, tono: [659, 880, 1109, 1319, 1760] },
   coincidencia: { f: 'coincidencias', v: 1,    tono: [784, 988, 1175, 1568] },
   si:           { f: 'coincidencias', v: 0.8,  tono: [988, 1319] },
   puerta:       { f: 'coincidencias', v: 1,    tono: [523, 659, 784, 1047, 1319] },
