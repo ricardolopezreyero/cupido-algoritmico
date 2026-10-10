@@ -49,7 +49,9 @@ try {
     guarda(`${dir}/liga-ella.png`, await evalua(`return P.pintar(document.createElement('canvas'), { frase: 'manda-ella', formato: 'liga', c: 'arriba', e: 'Nadie te ve. Nadie te escribe sin tu sí. Tu foto la enseñas tú, cuando quieras.' }).toDataURL('image/png');`));
     guarda(`${dir}/liga-gratis.png`, await evalua(`return P.pintar(document.createElement('canvas'), { frase: 'gratis', formato: 'liga', c: 'arriba', e: 'Todo Cupido, sin anuncios y sin letra chica.' }).toDataURL('image/png');`));
     // las insignias para páginas (se pintan al doble para pantallas finas)
-    for (const tinta of ['negro', 'blanco']) guarda(`${dir}/insignia-${tinta === 'negro' ? 'clara' : 'oscura'}.png`, await evalua(`return P.pintarInsignia(document.createElement('canvas'), '${tinta}').toDataURL('image/png');`));
+    for (const color of ['clara', 'oscura', 'rosa']) guarda(`${dir}/insignia-${color}.png`, await evalua(`return P.pintarInsignia(document.createElement('canvas'), '${color}').toDataURL('image/png');`));
+    // la misma imagen de la liga en negro y en rosa, para quien la pega en su página con otro color
+    for (const fondo of ['negro', 'rosa']) guarda(`${dir}/liga-${fondo}.png`, await evalua(`return P.pintar(document.createElement('canvas'), { frase: 'no-app', formato: 'liga', fondo: '${fondo}', c: 'arriba', e: 'Respondes 43 preguntas una sola vez. Si alguien cruza el 90 % contigo, les avisamos a los dos.' }).toDataURL('image/png');`));
     for (const p of ['rosa', 'blanco', 'negro']) guarda(`${dir}/perfil-${p}.png`, await evalua(`return P.pintarPerfil(document.createElement('canvas'), '${p}', 1080).toDataURL('image/png');`));
   } else if (modo === 'hojas') {
     const dir = destino || 'hojas'; mkdirSync(dir, { recursive: true });

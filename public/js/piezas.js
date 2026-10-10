@@ -378,16 +378,17 @@ export function pintarLogo(lienzo, { tinta = 'negro', solo = false, una = false,
   return lienzo;
 }
 
-// La insignia para páginas: una pastilla con el corazón, del tamaño de un botón de tienda (se pinta al doble)
-export function pintarInsignia(lienzo, tinta = 'negro', esc = 2) {
-  const W = 292, H = 72, claro = tinta !== 'blanco', bg = claro ? '#ffffff' : '#0e0e0e', tx = claro ? '#111111' : '#ffffff';
+// La insignia para páginas: una pastilla con el corazón, del tamaño de un botón de tienda (se pinta al doble). Tres colores: clara, oscura y rosa.
+export function pintarInsignia(lienzo, color = 'clara', esc = 2) {
+  const C = { clara: { bg: '#ffffff', tx: '#111111', sub: '#5a5a5a', orilla: '#111111', cor: ROSA }, oscura: { bg: '#0e0e0e', tx: '#ffffff', sub: '#b4b4b4', orilla: '#4a4a4a', cor: ROSA }, rosa: { bg: ROSA, tx: '#ffffff', sub: 'rgba(255,255,255,.9)', orilla: ROSA, cor: '#ffffff' } }[color === 'negro' ? 'clara' : color === 'blanco' ? 'oscura' : color] || null;
+  const K = C || { bg: '#ffffff', tx: '#111111', sub: '#5a5a5a', orilla: '#111111', cor: ROSA }, W = 292, H = 72;
   lienzo.width = W * esc; lienzo.height = H * esc; const ctx = lienzo.getContext('2d'); ctx.setTransform(esc, 0, 0, esc, 0, 0);
   ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(1, 1, W - 2, H - 2, 16); else ctx.rect(1, 1, W - 2, H - 2);
-  ctx.fillStyle = bg; ctx.fill(); ctx.strokeStyle = claro ? '#111111' : '#4a4a4a'; ctx.lineWidth = 1.5; ctx.stroke();
-  corazon(ctx, 18, 17, 38, ROSA, bg);
+  ctx.fillStyle = K.bg; ctx.fill(); ctx.strokeStyle = K.orilla; ctx.lineWidth = 1.5; ctx.stroke();
+  corazon(ctx, 18, 17, 38, K.cor, K.bg);
   ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
-  ctx.font = sans(11.5, 600); ctx.fillStyle = claro ? '#5a5a5a' : '#b4b4b4'; ctx.fillText('Encuentra a tu pareja en', 68, 28);
-  ctx.font = serif(21.5); ctx.fillStyle = tx; ctx.fillText(NOMBRE, 67, 53);
+  ctx.font = sans(11.5, 600); ctx.fillStyle = K.sub; ctx.fillText('Encuentra a tu pareja en', 68, 28);
+  ctx.font = serif(21.5); ctx.fillStyle = K.tx; ctx.fillText(NOMBRE, 67, 53);
   return lienzo;
 }
 

@@ -78,9 +78,10 @@ const bajar = (blob, nombre) => { const a = document.createElement('a'); a.href 
 const respiro = () => new Promise((ok) => { const c = new MessageChannel(); c.port1.onmessage = () => ok(); c.port2.postMessage(0); });
 const ICONO_BOTON = (punto) => `<svg width="20" height="20" viewBox="14 16 36 36" aria-hidden="true"><path d="M32 50s-16-9.6-16-21.3C16 22.7 20.3 18 25.9 18c2.7 0 5 1.2 6.1 3.2C33.1 19.2 35.4 18 38.1 18 43.7 18 48 22.7 48 28.7 48 40.4 32 50 32 50z" fill="${punto[0]}"/><circle cx="32" cy="30" r="3.2" fill="${punto[1]}"/></svg>`;
 const BOTONES = {
-  negro: { n: 'Negro', css: 'background:#111;color:#fff', ico: ['#d6455f', '#111'] },
-  blanco: { n: 'Blanco', css: 'background:#fff;color:#111;border:1.5px solid #111', ico: ['#d6455f', '#fff'] },
-  rosa: { n: 'Rosa', css: 'background:#d6455f;color:#fff', ico: ['#fff', '#d6455f'] },
+  // un solo color manda en las cuatro piezas: el botón, la insignia, la tarjeta y la imagen
+  negro: { n: 'Negro', css: 'background:#111;color:#fff', ico: ['#d6455f', '#111'], insignia: 'oscura', imagen: 'liga-negro.png', orilla: '#0e0e0e' },
+  blanco: { n: 'Blanco', css: 'background:#fff;color:#111;border:1.5px solid #111', ico: ['#d6455f', '#fff'], insignia: 'clara', imagen: 'liga.png', orilla: '#e6e6e6' },
+  rosa: { n: 'Rosa', css: 'background:#d6455f;color:#fff', ico: ['#fff', '#d6455f'], insignia: 'rosa', imagen: 'liga-rosa.png', orilla: '#d6455f' },
 };
 
 export async function montarCompartir(raiz, op = {}) {
@@ -90,7 +91,7 @@ export async function montarCompartir(raiz, op = {}) {
   const liga = codigo ? `${base}/i/${codigo}` : base;                    // adonde llevan los botones y los textos
   const leida = codigo ? `${P.CASA}/i/${codigo}` : P.CASA;               // lo que se lee en una pieza con «mi liga»
   const tocar = op.tocar || (() => {});
-  const E = { serie: 'todas', formato: 'retrato', fondo: 'blanco', red: 'instagram', boton: 'negro', tarjeta: 'blanco' };
+  const E = { serie: 'todas', formato: 'retrato', fondo: 'blanco', red: 'instagram', boton: 'negro' };
   try { const g = JSON.parse(localStorage.getItem(LLAVE) || '{}'); if (P.FORMATOS.some((f) => f.id === g.formato)) E.formato = g.formato; if (P.FONDO[g.fondo]) E.fondo = g.fondo; } catch {}
   const recordar = () => { try { localStorage.setItem(LLAVE, JSON.stringify({ formato: E.formato, fondo: E.fondo })); } catch {} };
   const llenar = (x) => x.replaceAll('{liga}', liga).replaceAll('{etiquetas}', ETIQUETAS);
@@ -107,9 +108,9 @@ export async function montarCompartir(raiz, op = {}) {
     const B = BOTONES[E.boton], img = `${base}/img/compartir`;
     return {
       boton: `<a href="${liga}" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:10px;padding:13px 22px;border-radius:999px;${B.css};font:600 16px/1 system-ui,-apple-system,'Segoe UI',sans-serif;text-decoration:none">${ICONO_BOTON(B.ico)}Encuentra a tu pareja en Cupido</a>`,
-      insignia: `<a href="${liga}" target="_blank" rel="noopener"><img src="${img}/insignia-${E.boton === 'negro' ? 'oscura' : 'clara'}.png" width="292" height="72" alt="Encuentra a tu pareja en Cupido Algorítmico" style="border:0"></a>`,
-      tarjeta: `<iframe src="${base}/incrustar?fondo=${E.tarjeta}${codigo ? '&i=' + codigo : ''}" title="Cupido Algorítmico" loading="lazy" style="width:100%;max-width:380px;height:430px;border:0;border-radius:18px"></iframe>`,
-      imagen: `<a href="${liga}" target="_blank" rel="noopener"><img src="${img}/liga.png" width="600" height="315" alt="Cupido Algorítmico: no es una app de citas" style="max-width:100%;height:auto;border:1px solid #e6e6e6;border-radius:12px"></a>`,
+      insignia: `<a href="${liga}" target="_blank" rel="noopener"><img src="${img}/insignia-${B.insignia}.png" width="292" height="72" alt="Encuentra a tu pareja en Cupido Algorítmico" style="border:0"></a>`,
+      tarjeta: `<iframe src="${base}/incrustar?fondo=${E.boton}${codigo ? '&i=' + codigo : ''}" title="Cupido Algorítmico" loading="lazy" style="width:100%;max-width:380px;height:430px;border:0;border-radius:18px"></iframe>`,
+      imagen: `<a href="${liga}" target="_blank" rel="noopener"><img src="${img}/${B.imagen}" width="600" height="315" alt="Cupido Algorítmico: no es una app de citas" style="max-width:100%;height:auto;border:1px solid ${B.orilla};border-radius:12px"></a>`,
     };
   };
 
@@ -250,7 +251,7 @@ export async function montarCompartir(raiz, op = {}) {
     $('#cmp-codigos', raiz).innerHTML =
       fila('boton', 'Botón', 'Solo HTML: no carga nada de fuera.', c.boton)
       + fila('insignia', 'Insignia', 'Una imagen chica, como las de las tiendas de apps.', c.insignia)
-      + fila('tarjeta', 'Tarjeta con frase', `Una frase distinta cada día, con su botón. <span class="cmp-seg chico">${P.FONDOS.map((f) => `<button data-a="tarjeta" data-f="${f.id}" class="${f.id === E.tarjeta ? 'on' : ''}">${f.n}</button>`).join('')}</span>`, c.tarjeta)
+      + fila('tarjeta', 'Tarjeta con frase', 'Una frase distinta cada día, con su botón.', c.tarjeta)
       + fila('imagen', 'Imagen con liga', 'La misma imagen que sale al pegar la liga en WhatsApp.', c.imagen);
     $$('.cmp-cod-vista img', raiz).forEach((i) => i.setAttribute('data-priv-no', ''));   // son de la marca, no de una persona: «Ocultar fotos» no las toca
     $$('.cmp-cod-vista a', raiz).forEach((x) => x.addEventListener('click', (e) => e.preventDefault()));   // aquí son muestra: no sacan a nadie de la página
@@ -490,7 +491,6 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
       return abrirTaller({ frase: 'no-app', formato: f });
     }
     if (a === 'boton') { E.boton = b.dataset.b; marcar('#cmp-boton', 'b', E.boton); return pintarCodigos(); }
-    if (a === 'tarjeta') { E.tarjeta = b.dataset.f; return pintarCodigos(); }
     if (a === 'copiar-codigo') return copiar(codigos()[b.dataset.c], 'Código copiado. Pégalo en tu página.');
     if (a === 'color') return copiar(b.dataset.h, `${b.dataset.h} copiado.`);
     if (a === 'logo') {
