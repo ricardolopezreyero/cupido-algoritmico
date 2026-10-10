@@ -179,6 +179,28 @@ function derivados() {
   return { esperanMi, miSi, abiertas, miNo, cerradas, logros, pasos, nuevos: V.avisos.filter((a) => !a.leido).length };
 }
 
+// A quién le habla el tablero: a ella, de control; a él, de llegar completo; a los demás, sin género
+const VIA = () => { const g = V.persona.genero, b = V.misRespuestas?.busca || []; return !g ? 'par' : g === 'hombre' ? (b.includes('mujer') ? 'el' : 'par') : (b.includes('hombre') ? 'ella' : 'par'); };
+const TV = (ella, el, par) => { const v = VIA(); return v === 'ella' ? ella : v === 'el' ? el : par; };
+// Tu perfil, completo: lo que falta, dicho sin regañar. Desaparece cuando ya está todo.
+function perfilCompleto() {
+  const P = V.persona, r = V.misRespuestas || {}, m = V.misMedios || {}, listo = !!P.completo, cl = V.claridad?.pct || 0;
+  const espera = 'Se abre al terminar tus preguntas';
+  const it = [
+    { i: '📝', t: 'Tus 43 preguntas', d: listo ? 'Estás en el matching' : `Vas en ${P.avance.pct} %`, ok: listo, a: '/cuestionario', ax: P.avance.pct ? 'Seguir' : 'Empezar' },
+    { i: '✉️', t: 'Tu carta', d: 'Lo primero que se lee de ti', si: 'Escrita', ok: String(r.carta || '').trim().length > 80, a: '/cuestionario?p=33', ax: 'Escribirla' },
+    { i: '🔎', t: 'Abiertas con ejemplos', d: listo ? (cl >= 80 ? 'El motor te conoce bien' : `El motor te conoce al ${cl} %`) : espera, ok: listo && cl >= 80, a: '#claridad', ax: 'Ver cuáles', cerrado: !listo },
+    { i: '📷', t: 'Tu foto', si: TV('Guardada: la enseñas tú cuando quieras', 'Lista para cuando ella abra la puerta', 'Lista'), d: listo ? TV('La enseñas tú, cuando quieras', 'Llega al final, cuando ella abre la puerta', 'Solo la ve quien abra una puerta contigo') : espera, ok: !!m.foto, a: '#medios', ax: 'Subirla', cerrado: !listo },
+    { i: '🎙️', t: 'Tu voz', si: 'Lista', d: listo ? 'Un saludo de medio minuto' : espera, ok: !!m.audio, a: '#medios', ax: 'Grabarla', cerrado: !listo },
+    { i: '🎬', t: 'Tu video', si: 'Listo', d: listo ? 'Para quien ya llegó hasta ahí' : espera, ok: !!m.video, a: '#medios', ax: 'Subirlo', cerrado: !listo },
+  ];
+  const hechos = it.filter((x) => x.ok).length;
+  if (hechos === it.length) return '';
+  return `<section class="tarjeta completo" style="margin-bottom:16px"><div class="completo-cab">${anillo(Math.round(100 * hechos / it.length), 'completo')}<div><h2>${hechos ? `Tu perfil: ${hechos} de ${it.length}` : `Qué gusto${P.nombreCorto ? ', ' + esc(P.nombreCorto) : ''}. Esto es lo que sigue`}</h2>
+    <p class="sub">${listo ? '' : TV('Tu filtro se enciende al terminar tus preguntas. ', 'El motor te presenta en cuanto termines tus preguntas. ', 'El motor te cruza en cuanto termines tus preguntas. ')}${TV('Nada de esto se enseña sin que tú lo decidas. Tenerlo listo es llegar al día de la puerta con todo a tu favor.', 'Es lo que ella conoce de ti cuando la puerta se abre. Completo, llegas completo.', 'Entre más completo, mejor te conoce el motor y mejor te conoce quien abra una puerta contigo.')}</p></div></div>
+    <div class="completo-lista">${it.map((x) => `<a class="completo-item ${x.ok ? 'ok' : x.cerrado ? 'cerrado' : 'falta'}" ${x.ok || x.cerrado ? '' : `href="${x.a}"`}><span class="ico">${x.i}</span><span class="txt"><b>${x.t}</b><small>${esc(x.ok && x.si ? x.si : x.d)}</small></span><span class="estado">${x.ok ? '✓' : x.cerrado ? '🔒' : x.ax + ' →'}</span></a>`).join('')}</div></section>`;
+}
+
 const miAvatar = (P, clase = '') => V.misMedios?.foto ? `<img class="avatar foto ${clase}" src="${esc(V.misMedios.foto.mini || V.misMedios.foto.url)}" alt="">` : avatar(P.nombre === 'Sin nombre' ? '♥' : P.nombre, P.color, clase);
 const avatarDe = (r, clase = '') => r.medios?.foto ? `<img class="avatar foto ${clase}" src="${esc(r.medios.foto.mini || r.medios.foto.url)}" alt="${esc(r.nombre)}">` : avatar(r.nombre, r.color, clase);
 
@@ -256,10 +278,10 @@ const SECCIONES = {
     const estado = !P.completo ? ['ambar', 'Tu perfil aún no entra al matching'] : P.estado === 'pausada' ? ['ambar', 'Tu perfil está en pausa'] : ['ok', 'En el matching'];
     return cabeza(`Hola${P.nombreCorto ? ', ' + esc(P.nombreCorto) : ''}.`, `<span class="chip ${estado[0]}">${estado[1]}</span> &nbsp;Tu búsqueda, en una sola pantalla.`,
       d.esperanMi.length ? `<a class="boton" href="#aceptaciones">Responder ${d.esperanMi.length} ${d.esperanMi.length === 1 ? 'coincidencia' : 'coincidencias'}</a>` : !P.completo ? `<a class="boton" href="/cuestionario">Responder mi cuestionario</a>` : `<a class="boton boton-claro" href="#coincidencias">Ver coincidencias</a>`) +
-      (!DEMO() && !P.completo ? `<div class="cinta-demo" style="background:var(--rosa-suave);border-color:var(--rosa-linea);color:var(--tinta-2)"><span>✨</span><span><b>Bienvenido${P.nombreCorto ? ', ' + esc(P.nombreCorto) : ''}.</b> Tu tablero se llena conforme respondes. Si quieres ver todo lo que puedes hacer aquí, el recorrido dura dos minutos.</span><a class="boton boton-claro boton-chico" href="/bienvenida">Ver el recorrido</a></div>` : '') +
       (P.estado === 'revision' ? `<div class="cinta-demo"><span>🛡️</span><span><b>Tu cuenta está en revisión.</b> Recibimos reportes sobre ti. Mientras una persona del equipo los revisa, sales del matching: no aparecen coincidencias nuevas. Tus charlas abiertas siguen.</span><a class="boton boton-claro boton-chico" href="#ella">Las reglas de la casa</a></div>` : '') +
       (DEMO() ? `<div class="cinta-demo"><span>🎛️</span><span><b>Estás en la cuenta demo</b>, viendo el tablero de ${esc(P.nombre)}, una persona ficticia. Todo lo que ves es real en el sistema: coincidencias, puertas, avisos. Así verías el tuyo.</span><button class="boton boton-chico" id="crear-cuenta">Quiero mi propia cuenta</button></div>` : '') + `
-      <p class="gratis-linea">🤍 Todo Cupido es gratis durante 2026 y 2027, sin anuncios y sin letra chica. <a href="#apoyar">Ver el programa</a></p>
+      <p class="gratis-linea">🤍 Aquí no hay publicidad, ni la habrá. Y todo Cupido es gratis durante 2026 y 2027, sin letra chica. <a href="#apoyar">Ver el programa</a></p>
+      ${P.completo ? '' : perfilCompleto()}
       <div class="banda">
         <div class="rosa"><b>${c.length}</b><span>coincidencias<br>arriba del ${V.umbral} %</span></div>
         <div><b>${d.esperanMi.length}</b><span>esperan<br>tu respuesta</span></div>
@@ -268,6 +290,7 @@ const SECCIONES = {
         <div><b>${V.pool.compatibles}</b><span>pasan los filtros<br>de los dos</span></div>
         <div><b>${V.claridad.pct}<small style="font-size:18px"> %</small></b><span>qué tan bien<br>te conoce</span></div>
       </div>
+      ${P.completo ? perfilCompleto() : ''}
       <section class="tarjeta"><h2>Tu camino</h2><p class="sub">Cinco pasos. Los primeros dependen de ti; el último, de los dos.</p>
         <div class="camino">${d.pasos.map((p, i) => `<div class="paso-c ${p.ok ? 'hecho' : i === actual ? 'actual' : ''}"><div class="bola">${p.ok ? '✓' : p.i}</div><div><b>${p.t}</b><span>${p.d}</span></div></div>`).join('')}</div>
       </section>

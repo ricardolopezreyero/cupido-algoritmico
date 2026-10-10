@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>El recorrido · Cupido Algorítmico</title>
-<meta name="description" content="Nueve pantallas, a tu ritmo y al ritmo de Cupido: cómo funciona y qué puedes hacer adentro.">
+<meta name="description" content="Ocho pantallas, a tu ritmo: Cupido te pregunta quién llega y te cuenta lo que te toca a ti. Sin publicidad, nunca.">
 <meta name="author" content="Ricardo López Reyero">
 <meta name="rev" content="181218">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="/css/cupido.css">
 </head>
 <body data-author="RLR" class="bienvenida-body">
-<!-- Cupido Algorítmico · El recorrido (onboarding obligatorio, a ritmo de Cupido) · RLR · Ricardo López Reyero -->
+<!-- Cupido Algorítmico · El recorrido (onboarding obligatorio, a ritmo de Cupido): a ella le habla de control; a él, de llegar completo · RLR · Ricardo López Reyero -->
 <header class="barra"><div class="envoltura barra-in">
   <a class="marca" href="/" id="marca"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a>
   <span class="pildora-demo" id="pildora-repaso" hidden>REPASO</span>
@@ -34,166 +34,262 @@
 </main>
 
 <script type="module">
-// RLR · el recorrido: diez pantallas; tres segundos mínimo en cada una; sin salida la primera vez; el avance se guarda
+// RLR · el recorrido: ocho pantallas; primero pregunta quién llega y de ahí le habla a esa persona.
+// · A ella: nadie te ve hasta que dices que sí, y aquí mandas tú (y deja listos sus candados).
+// · A él: el motor te cruza con todas, y solo presenta a quien conoce completo (y acepta la regla tocándola).
+// · A los dos, sin regañar: completo y con ejemplos. Se enseña con los números del motor, no con un «debes».
+// Tres segundos mínimo en cada pantalla; sin salida la primera vez; el avance y lo elegido se guardan.
 import { $, $$, esc, api } from '/js/ui.js';
 import { tocar, precargar } from '/js/sonido.js';
-precargar(['paso', 'bienvenida', 'toque', 'puerta', 'si', 'coincidencia', 'mensaje', 'estilo']);
+precargar(['paso', 'bienvenida', 'toque', 'puerta', 'si', 'mensaje', 'guardado']);
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const q = new URLSearchParams(location.search);
 const luego = q.get('luego');
 const repaso = q.get('repaso') === '1';
 const ESPERA = 3; // segundos mínimos por pantalla, el ritmo de Cupido
-let sesion = null; // { demo, completo, ficticia, nombre, ajustes } o null sin cuenta
-try { const v = await api('/api/yo'); sesion = { demo: !!v.sesion?.demo, completo: !!v.persona?.completo, ficticia: v.persona?.origen === 'demo', nombre: v.persona?.nombreCorto || '', ajustes: v.ajustes || {} }; } catch {}
-const real = sesion && !sesion.demo;
-const LLAVE_DEMO = 'cupido.bienvenida.demo';
-const leerDemo = () => { try { return JSON.parse(localStorage.getItem(LLAVE_DEMO) || '{}'); } catch { return {}; } };
-const guardarDemo = (o) => { try { localStorage.setItem(LLAVE_DEMO, JSON.stringify({ ...leerDemo(), ...o })); } catch {} };
-const yaHecho = real ? !!sesion.ajustes.bienvenida : !!leerDemo().hecho;
+let sesion = null; // { demo, completo, nombre, ajustes } o null sin cuenta
+let V = null;
+try { V = await api('/api/yo'); sesion = { demo: !!V.sesion?.demo, completo: !!V.persona?.completo, nombre: V.persona?.nombreCorto || '', ajustes: V.ajustes || {} }; } catch {}
+const real = !!sesion && !sesion.demo;
+const LLAVE = 'cupido.bienvenida.demo';
+const leerL = () => { try { return JSON.parse(localStorage.getItem(LLAVE) || '{}'); } catch { return {}; } };
+const guardarL = (o) => { try { localStorage.setItem(LLAVE, JSON.stringify({ ...leerL(), ...o })); } catch {} };
+const L0 = leerL();
+const yaHecho = real ? !!sesion.ajustes.bienvenida : !!L0.hecho;
+const soloLeer = real && sesion.completo; // quien ya está en el matching repasa: aquí no se le cambia nada de su cuestionario
 const reducido = matchMedia('(prefers-reduced-motion: reduce)').matches;
 if (repaso || yaHecho) { $('#pildora-repaso').hidden = false; $('#volver-tablero').hidden = !sesion; }
 else { $('#marca').removeAttribute('href'); $('#marca').style.cursor = 'default'; } // la primera vez no hay salida: ni la marca lleva a otro lado
 
-/* ── las diez pantallas ────────────────────────────────────────────────── */
-const PASOS = [
-  { id: 'que', eyebrow: 'Qué es Cupido', t: 'No es una app de citas. Es un sistema de <em>detección</em> de parejas.', p: 'No vas a ver perfiles, ni fotos, ni a deslizar a nadie. Respondes con la verdad una sola vez y un motor busca, entre todas las personas que buscan lo mismo que tú, a quien de verdad embona contigo. Solo te avisa cuando vale la pena. Lo demás es silencio, y el silencio también es servicio.',
-    demo: `<div class="bv-que"><div class="bv-no"><span>📱 Deslizar</span><span>🖼️ Perfiles</span><span>📣 Anuncios</span><span>⏳ Perder el tiempo</span></div><div class="bv-flecha-abajo">↓</div><div class="bv-si"><b>Tu verdad + un motor + silencio hasta el 90 %</b></div></div>`,
-    nota: 'Tú pon la verdad. Nosotros ponemos la lógica. El amor lo ponen ustedes dos.' },
-  { id: 'verdad', eyebrow: 'Las 43 preguntas', t: 'Respondes <em>una sola vez</em>, con ejemplos, no con adjetivos.', p: 'Son 43 preguntas en diez categorías: lo que eres y lo que necesitas. Las de opción se responden con un toque; las abiertas las puedes <b>dictar con el micrófono</b> y, si quieres, el <b>pincel</b> las reacomoda con tus mismas palabras. Se guardan solas. Puedes parar y volver cuando quieras.',
-    demo: `<div class="bv-pregunta" id="bv-pregunta"><div class="bv-p-n">Pregunta <b>14</b> de 43</div><h3 id="bv-p-t"></h3><div class="bv-opciones" id="bv-p-o"></div><div class="bv-herr"><span>🎤 Dictar</span><span>🖌️ Pulir</span></div><div class="bv-guardado">Guardado ✓</div></div>`,
-    nota: 'Toca una opción. Así de rápido va, y nadie te apura.' },
-  { id: 'motor', eyebrow: 'El motor', t: 'Te cruza en <em>las dos direcciones</em>.', p: 'Lo que tú necesitas contra lo que la otra persona da natural, y al revés. Diez dimensiones: visión de vida, familia, valores, conflicto y reparación, afecto, intimidad, fe, vida cotidiana, personalidad y lo que promete su carta. Tus innegociables eliminan pares completos; y lo que para ti es esencial pesa más en tu lado del cálculo.',
-    demo: `<div class="bv-motor"><div class="bv-av a">T</div><div class="bv-flechas"><span class="f1">→</span><span class="f2">←</span></div><div class="bv-av b">?</div></div><div class="bv-dims" id="bv-dims"></div>`,
-    nota: 'Si solo funciona para uno, se hunde. Nada compensa una dimensión hundida.' },
-  { id: 'silencio', eyebrow: 'El silencio', t: 'Solo te avisamos <em>arriba del 90 %</em>.', p: 'Abajo de eso no ves nada, y no es que fallaras: te estamos ahorrando años con las personas incorrectas. Cuando suene tu teléfono, va en serio, y le suena a la otra persona en el mismo instante. Mientras tanto, tu tablero te dice cómo va tu búsqueda y qué filtros tuyos te están dejando fuera.',
-    demo: `<div class="bv-lista" id="bv-lista"></div>`,
-    nota: 'Una sola cruzó el umbral. Es la única que vas a ver.' },
-  { id: 'puerta', eyebrow: 'La puerta', t: 'Se abre solo con <em>dos síes</em>.', p: 'Te avisamos que hay alguien al 90 % o más, pero no te dejamos entrar. Tú dices sí o no; la otra persona también. <b>Nadie se entera nunca de un no.</b> Si los dos dicen que sí, la puerta se abre para ambos en el mismo momento. Y abrir una puerta está incluido: todo Cupido es gratis durante 2026 y 2027.',
-    demo: `<div class="bv-puerta"><div class="puerta" id="bv-p"><div class="marco"></div><div class="luz"></div><div class="hoja"></div><span class="candado">🔒</span></div><div class="bv-sies"><button class="boton" id="bv-si-a">Tú: sí, quiero conocer</button><button class="boton boton-claro" id="bv-si-b" disabled>La otra persona: …</button></div><p class="bv-puerta-txt" id="bv-puerta-txt">Tu sí queda guardado. Nadie lo ve hasta que haya dos.</p></div>`,
-    nota: 'Toca tu sí y luego el suyo. Mira lo que pasa.' },
-  { id: 'charla', eyebrow: 'La charla', t: 'Nace sola, y el primer <em>hola</em> ya está dicho.', p: 'Cuando la puerta se abre, el sistema manda un hola de parte de cada uno para que nadie tenga que dar el primer paso. La charla es en vivo: ves cuando la otra persona escribe, si está en línea, y "visto". Texto, emojis, fotos, video y audio en alta calidad, notas de voz, responder citando, guardar y buscar. Y <b>la chispa</b>: cartas que se abren solo cuando los dos respondieron, detalles como una flor o un café, invitar a salir con tres respuestas cómodas, llamadas de voz sin dar el número, y un tono (amistad, conocernos o coqueteo) que sube únicamente cuando los dos quieren. Sin anuncios, nunca. Solo ustedes dos.',
-    demo: `<div class="bv-chat" id="bv-chat"></div><div class="bv-escribe" id="bv-escribe" hidden><span></span><span></span><span></span></div>`,
-    nota: 'Lo primero que conoces de la otra persona es su carta, no su foto.' },
-  { id: 'confianza', eyebrow: 'La confianza', t: 'Cada quien libera su perfil <em>a su ritmo</em>.', p: 'Nadie ve tus respuestas por abrir una puerta. Las compartes por elementos, con tu confirmación: seis suaves que se proponen de entrada (quién eres, visión de vida, personalidad, afecto, vida cotidiana, profundidad) y cuatro sensibles que liberas después, uno por uno: fe e hijos, valores y dinero, conflicto, intimidad. Lo sensible se pregunta dos veces, y ella puede guardar de nuevo lo que compartió cuando quiera.',
-    demo: `<div class="bv-elementos" id="bv-elementos"></div>`,
-    nota: 'Toca un candado para ver cómo se libera un elemento.' },
-  { id: 'rostro', eyebrow: 'Al final, cómo te ves', t: 'Tu foto, tu voz y tu video llegan <em>al final</em>.', p: 'Se suben solo cuando tu cuestionario está al 100 %, y la otra persona los ve únicamente si hay una puerta abierta entre ustedes; ella, además, decide en qué momento los enseña. Primero quién eres, al final cómo te ves. El servidor lo verifica cada vez: tus archivos no aparecen en ninguna lista, nunca.',
-    demo: `<div class="bv-rostro" id="bv-rostro"><div class="paso-r" data-k="0"><span>📝</span>Cuestionario al 100 %</div><div class="paso-r" data-k="1"><span>🔓</span>Puerta abierta</div><div class="paso-r" data-k="2"><span>🎙️</span>Su voz</div><div class="paso-r" data-k="3"><span>🎬</span>Su video</div><div class="paso-r" data-k="4"><span>📷</span>Su foto</div></div>`,
-    nota: 'En ese orden, siempre. Nadie elige a nadie por una foto.' },
-  { id: 'ella', eyebrow: 'La regla de la casa', t: 'Aquí <em>manda ella</em>.', p: 'Cupido está hecho para que una mujer encuentre a la persona correcta: segura, cómoda y en control. <b>Si ella bloquea, queda bloqueado. Si diez mujeres distintas bloquean al mismo hombre, queda fuera para siempre.</b> Ella decide qué recibe y cuándo enseña su foto; él no puede insistir. Y cualquiera de los dos puede cerrar la puerta cuando quiera, sin dar explicaciones y sin castigo: cerrar no es bloquear. Al seguir, aceptas esta regla.',
-    demo: `<div class="bv-ella" id="bv-ella"><div class="bv-poder"><span>🖼️</span>Su foto, su voz y su video: los enseña ella</div><div class="bv-poder"><span>📎</span>Él no manda archivos hasta que ella lo permite</div><div class="bv-poder"><span>✋</span>Cinco mensajes sin respuesta, y a él le toca esperar</div><div class="bv-poder"><span>📞</span>Llamarle por voz: solo cuando ella lo autoriza</div><div class="bv-poder"><span>🚪</span>Cerrar la puerta: sin motivo y sin castigo</div><div class="bv-poder"><span>⛔</span>Bloquear: nunca se vuelven a cruzar</div><div class="ella-contador" id="bv-diez"></div><p class="bv-puerta-txt" id="bv-diez-txt">Diez mujeres distintas.</p></div>`,
-    nota: 'Un lugar donde ellas se sienten seguras es el único donde una mujer seria contesta en serio.' },
-  { id: 'tablero', eyebrow: 'Tu tablero y tu palabra', t: 'Tu búsqueda, <em>a tu ritmo</em>. Y todo gratis.', p: 'Tu camino en cinco pasos, tus logros, cómo se ve tu vida hoy, tu estilo, pausa cuando estés conociendo a alguien. Sin contraseña: tu correo es tu llave. Lo íntimo solo lo lee el motor. Y <b>todo Cupido es gratis durante 2026 y 2027</b>, sin anuncios. Lo que más ayuda es que compartas Cupido con alguien que busque en serio.',
-    demo: `<div class="bv-tablero"><div class="bv-t-lat"><span>🏠 Inicio</span><span>💘 Coincidencias</span><span>🤝 Aceptaciones</span><span>💬 Charlas</span><span>🧭 Mi vida hoy</span><span>📷 Foto, voz y video</span><span>🎨 Mi estilo</span><span>🤍 Apoyar a Cupido</span></div><div class="bv-t-cont"><div class="bv-camino" id="bv-camino"></div><div class="bv-colores" id="bv-colores"></div><p class="bv-gratis">🤍 Gratis en 2026 y 2027 · sin anuncios · sin letra chica</p></div></div>`,
-    nota: 'Toca un color: el tablero es tuyo hasta en eso.' },
-];
+/* ── quién llega: con esto se elige la voz de todo lo demás ────────────── */
+const GENEROS = ['mujer', 'hombre', 'nobinaria'];
+const yo = real
+  ? { nombre: sesion.nombre, genero: V.misRespuestas?.genero || V.persona?.genero || '', busca: [...(V.misRespuestas?.busca || [])], primero: !!V.ella?.primero, discreta: !!V.ella?.discreta }
+  : { nombre: L0.nombre || '', genero: L0.genero || '', busca: [...(L0.busca || [])], primero: !!L0.primero, discreta: !!L0.discreta };
+// Lo que alguien eligió como visita se le respeta al crear su cuenta
+if (real && !yo.genero && GENEROS.includes(L0.genero)) { yo.genero = L0.genero; yo.busca = [...(L0.busca || [])]; yo.nombre = yo.nombre || L0.nombre || ''; yo.primero = !!L0.primero; yo.discreta = !!L0.discreta; }
+const yaAcepto = real && !!V.ella?.reglas; // él ya aceptó la regla antes: en el repaso no se le vuelve a pedir
+let acepto = [yaAcepto, yaAcepto, yaAcepto]; // los tres compromisos de él
+// 'ella': quien no es hombre y busca hombres (manda) · 'el': hombre que busca mujeres · 'par': todos los demás
+const via = () => (!yo.genero ? 'par' : yo.genero === 'hombre' ? (yo.busca.includes('mujer') ? 'el' : 'par') : (yo.busca.includes('hombre') ? 'ella' : 'par'));
+const N = 8;
+
+/* ── las ocho pantallas ────────────────────────────────────────────────── */
+const tachados = (no, si) => `<div class="bv-que"><div class="bv-no">${no.map((x) => `<span>${x}</span>`).join('')}</div><div class="bv-flecha-abajo">↓</div><div class="bv-si"><b>${si}</b></div></div>`;
+const puertaDemo = (otro) => `<div class="bv-puerta"><div class="puerta" id="bv-p"><div class="marco"></div><div class="luz"></div><div class="hoja"></div><span class="candado">🔒</span></div><div class="bv-sies"><button class="boton" id="bv-si-a">Tú: sí, quiero conocer</button><button class="boton boton-claro" id="bv-si-b" disabled data-otro="${otro}">${otro}: …</button></div><p class="bv-puerta-txt" id="bv-puerta-txt">Tu sí queda guardado. Nadie lo ve hasta que haya dos.</p></div>`;
+function pasos() {
+  const v = via(), n = esc(yo.nombre || '');
+  const T = (ella, el, par) => (v === 'ella' ? ella : v === 'el' ? el : par);
+  return [
+    { id: 'quien', eyebrow: 'Para hablarte a ti', t: 'Antes de contarte nada: <em>¿quién llega?</em>',
+      p: 'Cupido no le habla igual a todo el mundo. Dinos quién eres y a quién buscas, y te contamos lo que te toca a ti. Son las dos primeras respuestas de tu cuestionario: ya no te las volvemos a preguntar.',
+      demo: `<div class="bv-form"><label class="bv-campo"><span>¿Cómo te llamamos?</span><input id="q-nombre" maxlength="40" placeholder="Solo tu nombre de pila" autocomplete="given-name" value="${n}" ${soloLeer ? 'disabled' : ''}></label>
+        <div class="bv-campo"><span>Soy</span><div class="bv-ops" id="q-genero">${[['mujer', 'Mujer'], ['hombre', 'Hombre'], ['nobinaria', 'Persona no binaria']].map(([c, l]) => `<button type="button" data-v="${c}" class="${yo.genero === c ? 'sel' : ''}" ${soloLeer ? 'disabled' : ''}>${l}</button>`).join('')}</div></div>
+        <div class="bv-campo"><span>Busco</span><div class="bv-ops" id="q-busca">${[['hombre', 'Hombres'], ['mujer', 'Mujeres'], ['nobinaria', 'Personas no binarias']].map(([c, l]) => `<button type="button" data-v="${c}" class="${yo.busca.includes(c) ? 'sel' : ''}" ${soloLeer ? 'disabled' : ''}>${l}</button>`).join('')}</div><small>Puedes elegir más de una.</small></div></div>`,
+      nota: soloLeer ? 'Esto ya lo respondiste. Si cambió, se corrige en tu cuestionario.' : 'Solo tu nombre de pila. Tu apellido y tu foto llegan al final, cuando una puerta se abre.',
+      listo: () => soloLeer || (!!yo.genero && yo.busca.length > 0), falta: 'Elige para seguir' },
+
+    { id: 'promesa', eyebrow: 'Qué es Cupido',
+      t: T(`${n ? n + ', aquí' : 'Aquí'} nadie te ve <em>hasta que tú dices que sí</em>.`, `${n ? n + ', aquí' : 'Aquí'} no compites por atención. <em>Aquí te encuentran.</em>`, 'No es una app de citas. Es un sistema de <em>detección</em> de parejas.'),
+      p: T('No es una app de citas: es un sistema de detección de parejas. No hay perfiles que alguien pueda navegar ni fotos que deslizar. Nadie te encuentra buscando y nadie te escribe sin tu sí. Respondes con la verdad una sola vez, y un motor busca por ti.',
+        'No es una app de citas: es un sistema de detección de parejas. Nadie desliza tu foto ni te descarta en un segundo. El motor te cruza con todas las mujeres que están en Cupido y con cada una que llegue, sin que hagas nada más. No gana el de mejor foto: gana el que embona.',
+        'No vas a ver perfiles ni fotos, ni a deslizar a nadie. Respondes con la verdad una sola vez y un motor busca, entre todas las personas que buscan lo mismo que tú, a quien de verdad embona contigo. Solo te avisa cuando vale la pena.'),
+      demo: tachados(T(['👀 Que te vean sin permiso', '💬 Mensajes de desconocidos', '🖼️ Tu foto como anzuelo', '📣 Anuncios'], ['📱 Deslizar sin fin', '🖼️ Que te descarten por una foto', '🚀 Pagar por aparecer', '📣 Anuncios'], ['📱 Deslizar', '🖼️ Perfiles', '📣 Anuncios', '⏳ Perder el tiempo']), 'Tu verdad + un motor + silencio hasta el 90 %'),
+      nota: T('Solo llega a tu puerta quien cruzó el 90 % contigo, en las dos direcciones.', 'Tu parte es una sola: decir la verdad, completa.', 'Tú pon la verdad. Nosotros ponemos la lógica. El amor lo ponen ustedes dos.') },
+
+    { id: 'silencio', eyebrow: 'El motor y el silencio', t: 'Solo suena <em>arriba del 90&nbsp;%</em>.',
+      p: T('El motor cruza lo que tú necesitas contra lo que él da natural, y al revés: tiene que funcionar para los dos. Abajo del 90 % no ves nada, y nadie te ve a ti. No es que algo falle: te estamos ahorrando años con las personas incorrectas.',
+        'El motor cruza lo que tú necesitas contra lo que ella da natural, y al revés: tiene que funcionar para los dos. Abajo del 90 % hay silencio, y el silencio no es rechazo: nadie te vio y dijo que no. Cuando suene, va en serio.',
+        'El motor cruza lo que tú necesitas contra lo que la otra persona da natural, y al revés: tiene que funcionar para los dos. Abajo del 90 % no ves nada, y no es que algo falle: te estamos ahorrando años con las personas incorrectas.'),
+      demo: `<div class="bv-motor"><div class="bv-av a">${n ? esc(yo.nombre[0].toUpperCase()) : 'T'}</div><div class="bv-flechas"><span class="f1">→</span><span class="f2">←</span></div><div class="bv-av b">?</div></div><div class="bv-lista" id="bv-lista"></div>`,
+      nota: 'De seis cruces, uno pasó el umbral. Es el único del que te vas a enterar.' },
+
+    { id: 'puerta', eyebrow: 'La puerta',
+      t: T('Se abre solo con <em>dos síes</em>. El primero puede ser el tuyo.', 'Se abre solo con <em>dos síes</em>.', 'Se abre solo con <em>dos síes</em>.'),
+      p: T('Cuando alguien cruza el 90 % contigo, tú decides: sí, o ahora no. Nadie se entera nunca de un no. Y tú eliges cómo quieres enterarte:',
+        'Te avisamos que hay alguien al 90 % o más, pero no te dejamos entrar. Tú dices sí o ahora no; ella también. Nadie se entera nunca de un no: ni del suyo, ni del tuyo. Si los dos dicen que sí, se abre para ambos en el mismo momento.',
+        'Te avisamos que hay alguien al 90 % o más, pero no te dejamos entrar. Tú dices sí o ahora no; la otra persona también. Nadie se entera nunca de un no. Si los dos dicen que sí, la puerta se abre para ambos en el mismo momento.'),
+      extra: v === 'ella' ? `<div class="bv-eleccion" id="el-primero"><button type="button" data-v="0" class="${yo.primero ? '' : 'on'}"><b>Nos avisan a los dos a la vez</b><span>Cada quien decide por su lado.</span></button><button type="button" data-v="1" class="${yo.primero ? 'on' : ''}"><b>Primero me avisan a mí</b><span>Él ni sabe que hay coincidencia hasta que yo digo que sí.</span></button></div><p class="bv-mini">Lo cambias cuando quieras en tu tablero, en «Aquí mando yo».</p>` : '',
+      demo: puertaDemo(T('Él', 'Ella', 'La otra persona')),
+      nota: 'Toca tu sí y luego el suyo. Mira lo que pasa.' },
+
+    { id: 'charla', eyebrow: 'Cuando se abre', t: 'El primer <em>hola</em> ya está dicho.',
+      p: T('Al abrirse la puerta nace una charla, y Cupido saluda por los dos: nadie tiene que dar el primer paso. Lo primero que él conoce de ti es tu carta. Tu foto, tu voz y tu video siguen guardados hasta que tú los enseñes, y tu perfil lo liberas por partes, a tu ritmo.',
+        'Al abrirse la puerta nace una charla, y Cupido saluda por los dos: nadie tiene que romper el hielo. Lo primero que conoces de ella es su carta, y lo primero que ella conoce de ti es la tuya. Lo demás se abre por partes: primero quién es cada uno, al final cómo se ve.',
+        'Al abrirse la puerta nace una charla, y Cupido saluda por los dos: nadie tiene que dar el primer paso. Lo primero que conocen es su carta; al final, su foto. Cada quien libera su perfil por partes, a su ritmo.'),
+      demo: `<div class="bv-chat" id="bv-chat"></div><div class="bv-escribe" id="bv-escribe" hidden><span></span><span></span><span></span></div><div class="bv-rostro" id="bv-rostro"><div class="paso-r" data-k="0"><span>✉️</span>La carta</div><div class="paso-r" data-k="1"><span>🧭</span>Quién es</div><div class="paso-r" data-k="2"><span>🎙️</span>La voz</div><div class="paso-r" data-k="3"><span>📷</span>La foto</div></div>`,
+      nota: 'En ese orden, siempre. Nadie elige a nadie por una foto.' },
+
+    { id: 'regla', eyebrow: 'La regla de la casa',
+      t: T('Aquí <em>mandas tú</em>.', 'Aquí <em>manda ella</em>. Y eso te conviene.', 'Aquí <em>manda ella</em>.'),
+      p: T('Cupido está hecho para que tú encuentres a la persona correcta con seguridad, a gusto y en control. Todo lo de la derecha ya es tuyo desde hoy, sin pedirlo. Y hay dos cosas más que puedes dejar listas ahora:',
+        'Un lugar donde ellas se sienten seguras es el único donde una mujer seria contesta en serio, se queda y se deja conocer. Eso es lo que viniste a buscar. A cambio, al entrar aceptas tres cosas. Tócalas para aceptarlas:',
+        'Cupido está hecho para que una mujer encuentre a la persona correcta, segura y en control. Si ella bloquea a un hombre, queda bloqueado; si diez mujeres distintas bloquean al mismo, queda fuera para siempre. Y cualquiera puede cerrar una puerta cuando quiera, sin dar explicaciones. Al seguir, aceptas esta regla.'),
+      extra: v === 'ella' ? `<div class="bv-ajustes"><button type="button" class="bv-int ${yo.discreta ? 'on' : ''}" id="int-discreta" aria-pressed="${yo.discreta}"><i></i><span><b>🌙 Modo discreta</b><small>Él no ve si estás en línea, cuándo entraste ni si ya leíste.</small></span></button>
+        <details class="bv-evitar"><summary>🚫 Hay alguien con quien no quiero cruzarme</summary><div><p>El correo de un ex, de alguien del trabajo, de un familiar. El motor no los cruza contigo, y nadie se entera de que lo pusiste.</p>${real ? '<div class="fila"><input type="email" id="ev-correo" placeholder="su@correo.com" maxlength="254" autocomplete="off"><button type="button" class="boton boton-chico" id="ev-ok">Agregar</button></div><p class="bv-mini" id="ev-res"></p>' : '<p class="bv-mini">Se guarda con tu cuenta. Lo encuentras en tu tablero, en «Aquí mando yo».</p>'}</div></details></div>` : '',
+      demo: v === 'ella' ? `<div class="bv-ella" id="bv-ella">${[['🖼️', 'Tu foto, tu voz y tu video: los enseñas tú, cuando quieras'], ['📎', 'Él no te manda fotos ni archivos hasta que tú lo permites'], ['📞', 'No puede llamarte hasta que tú lo autorizas'], ['✋', 'Cinco mensajes sin respuesta, y a él le toca esperar'], ['🚪', 'Cierras la puerta cuando quieras, sin dar motivo'], ['⛔', 'Si bloqueas, queda bloqueado']].map(([i, t]) => `<div class="bv-poder"><span>${i}</span>${t}</div>`).join('')}<div class="ella-contador" id="bv-diez"></div><p class="bv-puerta-txt" id="bv-diez-txt">Diez mujeres distintas.</p></div>`
+        : v === 'el' ? `<div class="bv-compromisos" id="bv-comp">${[['Un no es un no.', 'Si ella bloquea, quedo bloqueado. Si diez mujeres distintas me bloquean, salgo para siempre.'], ['Yo no insisto.', 'Después de cinco mensajes sin respuesta, me toca esperar.'], ['Ella marca el ritmo.', 'Su foto, los archivos y las llamadas llegan cuando ella los enciende.']].map(([a, b], k) => `<button type="button" data-k="${k}" class="${acepto[k] ? 'on' : ''}" aria-pressed="${acepto[k]}"><i></i><span><b>${a}</b><small>${b}</small></span></button>`).join('')}</div><p class="bv-puerta-txt" id="comp-txt"></p>`
+        : `<div class="bv-ella" id="bv-ella">${[['🖼️', 'Su foto, su voz y su video: los enseña ella'], ['📎', 'Él no manda archivos hasta que ella lo permite'], ['✋', 'Cinco mensajes sin respuesta, y a él le toca esperar'], ['🚪', 'Cerrar la puerta: sin motivo y sin castigo, para cualquiera'], ['⛔', 'Bloquear: nunca se vuelven a cruzar']].map(([i, t]) => `<div class="bv-poder"><span>${i}</span>${t}</div>`).join('')}<div class="ella-contador" id="bv-diez"></div><p class="bv-puerta-txt" id="bv-diez-txt">Diez mujeres distintas.</p></div>`,
+      nota: T('Todo esto vive en tu tablero, en «Aquí mando yo». Cerrar no es bloquear: son botones distintos.', 'Tú también puedes cerrar una puerta, bloquear y reportar.', 'Un lugar donde ellas se sienten seguras es el único donde una mujer seria contesta en serio.'),
+      listo: () => v !== 'el' || acepto.every(Boolean), falta: 'Toca las tres para seguir' },
+
+    { id: 'limpio', eyebrow: 'La palabra de la casa', t: 'Aquí no hay publicidad. <em>Ni una. Ni la habrá.</em>',
+      p: 'No vendemos tu atención, nadie paga por aparecer primero y tus respuestas no se venden ni se comparten: lo íntimo solo lo lee el motor. Cupido es gratis en 2026 y 2027 y se sostiene con apoyos voluntarios. Nada de lo que se paga compra una ventaja.',
+      demo: tachados(['📣 Anuncios', '🚀 Pagar por aparecer primero', '🛒 Tus respuestas en venta'], 'Solo tú, tu verdad y quien cruce el 90 % contigo'),
+      nota: 'Si algún día ves un anuncio aquí, algo salió muy mal. Avísanos.' },
+
+    { id: 'nitidez', eyebrow: 'Tu parte',
+      t: T('Tu verdad completa <em>es tu filtro</em>.', 'El motor solo presenta <em>a quien conoce completo</em>.', 'Tu parte es una sola: <em>la verdad, completa</em>.'),
+      p: T('Son 43 preguntas, una sola vez. Hasta que no estén las de opción y tu carta, el motor no te cruza con nadie. Y las abiertas son las que afinan: contadas con ejemplos, el motor sabe a quién dejar llegar a tu puerta y a quién no. Lo que dejas en una línea, no lo adivina.',
+        'Son 43 preguntas, una sola vez. Mientras falte una de opción o tu carta, no entras: no llegas a nadie. Y las abiertas deciden qué tan lejos llegas: contadas con ejemplos, el motor te presenta completo ante cada mujer que busca lo que tú eres.',
+        'Son 43 preguntas, una sola vez. Hasta que no estén las de opción y tu carta, el motor no te cruza con nadie. Y las abiertas, contadas con ejemplos y no con adjetivos, son las que hacen que te conozca de verdad.'),
+      extra: cta(),
+      demo: `<div class="bv-nit"><p class="bv-nit-t">Alguien embona contigo al <b>96 %</b>. ¿Se enteran?</p><div class="bv-nit-ops" id="nit-ops"><button type="button" data-q="85">Una línea por respuesta</button><button type="button" data-q="92">Lo justo</button><button type="button" data-q="100">Con ejemplos de tu vida</button></div>
+        <div class="bv-nit-retrato"><span class="bv-av a" id="nit-av">${n ? esc(yo.nombre[0].toUpperCase()) : 'T'}</span><div><small>Así te ve el motor</small><b id="nit-ve"></b></div></div>
+        <div class="bv-nit-barra"><div class="relleno" id="nit-r"></div><i></i><em>90 %</em></div><p class="bv-nit-res" id="nit-res"></p></div>`,
+      nota: 'La misma persona y el mismo cruce. Lo único que cambia es cuánto contaste. Así lo calcula el motor.' },
+  ];
+}
 
 /* ── estado: dónde vas, y se guarda ─────────────────────────────────────── */
-let i = 0;
-if (!repaso && !yaHecho) i = Math.max(0, Math.min(PASOS.length - 1, real ? Number(sesion.ajustes.bienvenida_paso || 0) : Number(leerDemo().paso || 0)));
+let i = 0, PASO = null, tiempo = false, textoSig = 'Siguiente →';
+if (!repaso && !yaHecho) {
+  i = Math.max(0, Math.min(N - 1, real ? Number(sesion.ajustes.bienvenida_paso || 0) : Number(L0.paso || 0)));
+  // quien ya lo recorrió como visita y acaba de crear su cuenta no lo repite: entra directo a la regla de la casa, que sí se acepta con cuenta
+  if (real && i === 0 && L0.hecho && yo.genero && yo.busca.length) { i = 5; guardarQuien(); guardarElla(); }
+}
 let timers = [], reloj = null, auto = false, autoT = null;
 const lienzo = $('#bv-lienzo');
 function limpiar() { timers.forEach(clearTimeout); timers = []; }
 const luegoDe = (ms, fn) => timers.push(setTimeout(fn, reducido ? 0 : ms));
-async function guardarPaso() { if (real) { try { await api('/api/yo/ajustes', { bienvenida_paso: i }); } catch {} } else guardarDemo({ paso: i }); }
+async function guardarPaso() { if (real) { try { await api('/api/yo/ajustes', { bienvenida_paso: i }); } catch {} } else guardarL({ paso: i }); }
+// Lo que dijo en la primera pantalla son sus dos primeras respuestas: llegan contestadas al cuestionario
+async function guardarQuien() {
+  guardarL({ nombre: yo.nombre, genero: yo.genero, busca: yo.busca });
+  if (real && !soloLeer && yo.genero) { try { await api('/api/cuestionario', { nombre: yo.nombre, respuestas: { genero: yo.genero, busca: yo.busca } }); } catch {} }
+}
+async function guardarElla() {
+  guardarL({ primero: yo.primero, discreta: yo.discreta });
+  if (real && via() === 'ella') { try { await api('/api/yo/ajustes', { primero: yo.primero, discreta: yo.discreta }); } catch {} }
+}
 
 function pintar(dir = 1) {
-  limpiar(); clearInterval(reloj);
-  const p = PASOS[i], final = i === PASOS.length - 1;
+  limpiar(); clearInterval(reloj); clearTimeout(autoT);
+  const P = pasos(); PASO = P[i];
+  const p = PASO, final = i === N - 1;
   lienzo.innerHTML = `<section class="bv-paso ${dir > 0 ? 'entra' : 'entra-atras'}">
-    <div class="bv-texto"><p class="eyebrow">Paso ${i + 1} de ${PASOS.length} · ${p.eyebrow}</p><h1>${p.t}</h1><p class="lead">${p.p}</p>${final ? cta() : ''}</div>
+    <div class="bv-texto"><p class="eyebrow">Paso ${i + 1} de ${N} · ${p.eyebrow}</p><h1>${p.t}</h1><p class="lead">${p.p}</p>${p.extra || ''}</div>
     <div class="bv-demo"><div class="bv-demo-in">${p.demo}</div><p class="bv-nota">${p.nota}</p></div>
   </section>`;
-  $('#bv-relleno').style.width = ((i + 1) / PASOS.length * 100) + '%';
-  $('#bv-puntos').innerHTML = PASOS.map((x, k) => `<span class="${k === i ? 'on' : k < i ? 'hecho' : ''}" aria-label="Paso ${k + 1}"></span>`).join('');
+  $('#bv-relleno').style.width = ((i + 1) / N * 100) + '%';
+  $('#bv-puntos').innerHTML = P.map((x, k) => `<span class="${k === i ? 'on' : k < i ? 'hecho' : ''}" aria-label="Paso ${k + 1}"></span>`).join('');
   $('#bv-atras').disabled = i === 0;
-  $('#bv-sig-txt').textContent = final ? (real ? 'Entrar a Cupido →' : sesion ? 'Ir a mi tablero →' : 'Empezar →') : 'Siguiente →';
+  textoSig = final ? (real ? (sesion.completo ? 'Ir a mi tablero →' : 'Empezar mis 43 preguntas →') : sesion ? 'Ir al tablero demo →' : 'Crear mi cuenta →') : 'Siguiente →';
   document.title = `${p.eyebrow} · El recorrido · Cupido Algorítmico`;
   (DEMOS[p.id] || (() => {}))();
   window.scrollTo(0, 0);
   guardarPaso();
   cuentaRegresiva(final);
 }
-// Tres segundos mínimo en cada pantalla: el botón se enciende cuando el reloj llega a cero
+// El botón se enciende cuando pasaron los tres segundos y, donde hay algo que elegir, cuando ya se eligió
+const puede = () => tiempo && (!PASO.listo || PASO.listo());
+function refrescar() {
+  const sig = $('#bv-sig');
+  sig.disabled = !puede(); sig.classList.toggle('esperando', !tiempo);
+  $('#bv-sig-txt').textContent = tiempo && !puede() ? (PASO.falta || 'Elige para seguir') : textoSig;
+  if (tiempo) $('#bv-seg').textContent = puede() ? '✓' : '·';
+}
 function cuentaRegresiva(final) {
-  const sig = $('#bv-sig'), seg = $('#bv-seg'), arco = $('#bv-reloj .arco');
-  let t = ESPERA; sig.disabled = true; sig.classList.add('esperando'); seg.textContent = t;
+  const seg = $('#bv-seg'), arco = $('#bv-reloj .arco');
+  let t = ESPERA; tiempo = false; seg.textContent = t; refrescar();
   arco.style.transition = 'none'; arco.style.strokeDashoffset = '0';
   requestAnimationFrame(() => { arco.style.transition = `stroke-dashoffset ${ESPERA}s linear`; arco.style.strokeDashoffset = String(2 * Math.PI * 15.5); });
   reloj = setInterval(() => {
     t--; seg.textContent = Math.max(0, t);
-    if (t <= 0) { clearInterval(reloj); sig.disabled = false; sig.classList.remove('esperando'); seg.textContent = '✓'; tocar('toque', { fuerza: 0.6 }); if (auto && !final) autoT = setTimeout(() => { if (auto) $('#bv-sig').click(); }, 350); }
+    if (t <= 0) { clearInterval(reloj); tiempo = true; refrescar(); if (puede()) tocar('toque', { fuerza: 0.6 }); if (auto && !final && puede()) autoT = setTimeout(() => { if (auto) $('#bv-sig').click(); }, 350); }
   }, 1000);
 }
-$('#bv-sig').onclick = () => { if ($('#bv-sig').disabled) return; clearTimeout(autoT); if (i === PASOS.length - 1) { tocar('bienvenida'); setTimeout(irseAlFinal, 900); } else { tocar('paso'); i++; pintar(1); } };
+$('#bv-sig').onclick = async () => {
+  if ($('#bv-sig').disabled) return; clearTimeout(autoT);
+  if (PASO.id === 'quien') { yo.nombre = ($('#q-nombre')?.value || '').trim().slice(0, 40); guardarQuien(); }
+  if (i === N - 1) { tocar('bienvenida'); setTimeout(irseAlFinal, 900); } else { tocar('paso'); i++; pintar(1); }
+};
 $('#bv-atras').onclick = () => { if (i > 0) { clearTimeout(autoT); i--; pintar(-1); } };
-$('#bv-play').onclick = () => { auto = !auto; $('#bv-play').classList.toggle('on', auto); $('#bv-play').querySelector('span').textContent = auto ? 'En automático' : 'Automático'; if (auto && !$('#bv-sig').disabled && i < PASOS.length - 1) $('#bv-sig').click(); };
-document.addEventListener('keydown', (e) => { if (e.key === 'ArrowRight' || e.key === 'Enter') $('#bv-sig').click(); if (e.key === 'ArrowLeft') $('#bv-atras').click(); });
+$('#bv-play').onclick = () => { auto = !auto; $('#bv-play').classList.toggle('on', auto); $('#bv-play').querySelector('span').textContent = auto ? 'En automático' : 'Automático'; if (auto && !$('#bv-sig').disabled && i < N - 1) $('#bv-sig').click(); };
+document.addEventListener('keydown', (e) => { if (e.target.matches('input') && e.key !== 'Enter') return; if (e.key === 'ArrowRight' || e.key === 'Enter') $('#bv-sig').click(); if (e.key === 'ArrowLeft') $('#bv-atras').click(); });
 let tx = null;
-lienzo.addEventListener('touchstart', (e) => { tx = e.touches[0].clientX; }, { passive: true });
+lienzo.addEventListener('touchstart', (e) => { tx = e.target.closest('button, input, summary') ? null : e.touches[0].clientX; }, { passive: true });
 lienzo.addEventListener('touchend', (e) => { if (tx == null) return; const dx = e.changedTouches[0].clientX - tx; if (Math.abs(dx) > 60) (dx < 0 ? $('#bv-sig') : $('#bv-atras')).click(); tx = null; });
 
 function cta() {
-  if (real) return `<div class="bv-cta"><span class="nota-entrar" style="margin:0;text-align:left">${sesion.completo ? 'Tu tablero te espera.' : 'Lo que sigue: tus 43 preguntas. Se guardan solas; puedes parar cuando quieras.'}</span></div>`;
+  if (real) return `<div class="bv-cta"><span class="nota-entrar" style="margin:0;text-align:left">${sesion.completo ? 'Tu tablero te espera.' : 'Las de opción van con un toque; las abiertas las puedes dictar. Se guarda solo: puedes parar y volver cuando quieras.'}</span></div>`;
   if (sesion) return `<div class="bv-cta"><span class="nota-entrar" style="margin:0;text-align:left">Vas a entrar a la cuenta demo: el tablero de una persona ficticia, con todo lo que acabas de ver.</span></div>`;
-  return `<div class="bv-cta"><a class="boton boton-claro" href="/entrar">Crear mi cuenta con mi correo</a><a class="boton boton-claro" href="/demo">Ver el demo primero</a></div>`;
+  return `<div class="bv-cta"><a class="boton boton-claro" href="/demo">Ver el demo primero</a></div>`;
 }
 async function irseAlFinal() {
   if (real) { try { await api('/api/yo/ajustes', { bienvenida: true, reglas: true }); } catch {} location.href = luego === 'cuestionario' || !sesion.completo ? '/cuestionario' : '/persona'; }
-  else if (sesion) { guardarDemo({ hecho: true, fecha: new Date().toISOString() }); location.href = '/persona'; }
-  else { guardarDemo({ hecho: true, fecha: new Date().toISOString() }); location.href = '/entrar'; }
+  else if (sesion) { guardarL({ hecho: true, fecha: new Date().toISOString() }); location.href = '/persona'; }
+  else { guardarL({ hecho: true, fecha: new Date().toISOString() }); location.href = '/entrar'; }
 }
 
-/* ── las mini-demos (cada pantalla se mueve) ────────────────────────────── */
+/* ── lo que se mueve y lo que se elige en cada pantalla ─────────────────── */
 const DEMOS = {
-  que() { $$('.bv-no span').forEach((s, k) => luegoDe(300 + k * 350, () => s.classList.add('tachado'))); luegoDe(1900, () => $('.bv-si')?.classList.add('on')); },
-  verdad() {
-    const PREG = [['¿Cómo recargas energía después de una semana pesada?', ['Solo, en silencio', 'Depende del día', 'Con gente']], ['Cuando algo de tu pareja te molesta de verdad, ¿qué haces?', ['Lo hablo con calma', 'Lo guardo y luego explota', 'Me alejo un rato']], ['¿Cómo sientes con más fuerza que te aman?', ['Tiempo de calidad', 'Palabras', 'Contacto físico']]];
-    let n = 0;
-    const mostrar = () => { const [t, o] = PREG[n % PREG.length]; $('#bv-p-t').textContent = t; $('#bv-pregunta .bv-p-n b').textContent = [14, 19, 23][n % 3]; $('#bv-p-o').innerHTML = o.map((x) => `<button type="button">${esc(x)}</button>`).join(''); $('#bv-pregunta').classList.remove('guardado'); $$('#bv-p-o button').forEach((b) => b.onclick = () => { $$('#bv-p-o button').forEach((x) => x.classList.toggle('sel', x === b)); $('#bv-pregunta').classList.add('guardado'); luegoDe(1100, () => { n++; mostrar(); }); }); };
-    mostrar(); luegoDe(2000, () => { const b = $('#bv-p-o button'); if (b && !$('#bv-pregunta').classList.contains('guardado')) b.click(); });
+  quien() {
+    $('#q-nombre').oninput = (e) => { yo.nombre = e.target.value.trim().slice(0, 40); };
+    $$('#q-genero button').forEach((b) => b.onclick = () => { yo.genero = b.dataset.v; tocar('toque'); $$('#q-genero button').forEach((x) => x.classList.toggle('sel', x === b)); refrescar(); });
+    $$('#q-busca button').forEach((b) => b.onclick = () => { const v = b.dataset.v; yo.busca = yo.busca.includes(v) ? yo.busca.filter((x) => x !== v) : [...yo.busca, v]; tocar('toque'); b.classList.toggle('sel', yo.busca.includes(v)); refrescar(); });
   },
-  motor() {
-    const D = [['Visión de vida', 96], ['Valores', 92], ['Conflicto y reparación', 88], ['Afecto', 97], ['Intimidad', 90], ['Vida cotidiana', 94]];
-    $('#bv-dims').innerHTML = D.map(([n, v]) => `<div class="bv-dim"><span>${n}</span><div class="pista"><div class="relleno" data-w="${v}"></div></div><b>${v}</b></div>`).join('') + `<div class="bv-total">Los dos lados, juntos: <b id="bv-total">0</b> %</div>`;
-    luegoDe(150, () => $$('#bv-dims .relleno').forEach((r) => r.style.width = r.dataset.w + '%'));
-    let v = 0; const meta = 94; const paso = () => { v = Math.min(meta, v + 2); $('#bv-total').textContent = v; if (v < meta) luegoDe(40, paso); }; luegoDe(400, paso);
-  },
+  promesa() { $$('.bv-no span').forEach((s, k) => luegoDe(300 + k * 350, () => s.classList.add('tachado'))); luegoDe(1900, () => $('.bv-si')?.classList.add('on')); },
+  limpio() { DEMOS.promesa(); },
   silencio() {
-    const L = [71, 78, 84, 88, 92, 66];
-    $('#bv-lista').innerHTML = L.map((v, k) => `<div class="bv-par ${v >= 90 ? 'suena' : 'calla'}" style="animation-delay:${k * 160}ms"><span class="pct">${v} %</span><span>${v >= 90 ? '🔔 Te avisamos a ti y a esa persona, a la vez' : 'silencio'}</span></div>`).join('');
+    const Ls = [71, 78, 84, 88, 92, 66];
+    $('#bv-lista').innerHTML = Ls.map((v, k) => `<div class="bv-par ${v >= 90 ? 'suena' : 'calla'}" style="animation-delay:${k * 160}ms"><span class="pct">${v} %</span><span>${v >= 90 ? '🔔 Aquí sí: te avisamos' : 'silencio'}</span></div>`).join('');
   },
   puerta() {
-    const A = $('#bv-si-a'), B = $('#bv-si-b'), P = $('#bv-p'), T = $('#bv-puerta-txt');
-    const suyo = () => { B.disabled = true; B.textContent = 'Sí 🤍'; P.classList.add('abierta'); tocar('puerta'); T.innerHTML = '<b>Se abrió la puerta.</b> Para los dos, en el mismo instante. Y si alguien hubiera dicho que no, el otro jamás lo sabría.'; };
-    A.onclick = () => { A.disabled = true; tocar('si'); A.textContent = 'Tu sí está guardado 🤍'; T.textContent = 'Nadie lo ve todavía. La otra persona también está decidiendo…'; luegoDe(1400, () => { B.disabled = false; B.textContent = 'La otra persona: sí, quiero conocer'; B.classList.remove('boton-claro'); T.textContent = 'Toca su sí.'; }); B.onclick = suyo; };
+    const A = $('#bv-si-a'), B = $('#bv-si-b'), Pu = $('#bv-p'), T = $('#bv-puerta-txt'), otro = B.dataset.otro;
+    const suyo = () => { B.disabled = true; B.textContent = 'Sí 🤍'; Pu.classList.add('abierta'); tocar('puerta'); T.innerHTML = '<b>Se abrió la puerta.</b> Para los dos, en el mismo instante. Y si alguien hubiera dicho que no, el otro jamás lo sabría.'; };
+    A.onclick = () => { A.disabled = true; tocar('si'); A.textContent = 'Tu sí está guardado 🤍'; T.textContent = 'Nadie lo ve todavía. Del otro lado también se está decidiendo…'; luegoDe(1400, () => { B.disabled = false; B.textContent = `${otro}: sí, quiero conocer`; B.classList.remove('boton-claro'); T.textContent = 'Toca su sí.'; }); B.onclick = suyo; };
     luegoDe(2600, () => { if (!A.disabled) A.click(); luegoDe(2200, () => { if (!B.disabled) B.click(); }); });
+    // ella elige cómo quiere enterarse; se guarda al tocarlo
+    $$('#el-primero button').forEach((b) => b.onclick = () => { yo.primero = b.dataset.v === '1'; $$('#el-primero button').forEach((x) => x.classList.toggle('on', x === b)); tocar('guardado'); guardarElla(); });
   },
   charla() {
     const chat = $('#bv-chat'), esc2 = $('#bv-escribe');
     const burb = (mio, t, extra = '') => `<div class="bv-b ${mio ? 'mio' : 'suyo'}">${esc(t)}${extra}</div>`;
-    const guion = [[true, 'Hola, Mariana 👋', '<small>saludo automático</small>'], [false, 'Hola, Diego 👋', '<small>saludo automático</small>'], [false, 'Leí tu carta dos veces. ¿Cómo fue tu martes?', ''], [true, 'Largo, pero bonito. Te cuento con una nota de voz 🎤', '<small>Visto ✓✓</small>']];
-    guion.forEach(([m, t, x], k) => luegoDe(400 + k * 1100, () => { if (k === 2) esc2.hidden = true; if (!m) tocar('mensaje', { fuerza: 0.6 }); chat.insertAdjacentHTML('beforeend', burb(m, t, x)); chat.scrollTop = chat.scrollHeight; }));
-    luegoDe(1700, () => { esc2.hidden = false; });
+    const guion = [[false, 'Hola 👋', '<small>saludo automático</small>'], [true, 'Hola 👋', '<small>saludo automático</small>'], [false, 'Leí tu carta dos veces. ¿Cómo fue tu martes?', ''], [true, 'Largo, pero bonito. Te cuento con una nota de voz 🎤', '<small>Visto ✓✓</small>']];
+    guion.forEach(([m, t, x], k) => luegoDe(400 + k * 1000, () => { if (k === 2) esc2.hidden = true; if (!m) tocar('mensaje', { fuerza: 0.6 }); chat.insertAdjacentHTML('beforeend', burb(m, t, x)); chat.scrollTop = chat.scrollHeight; }));
+    luegoDe(1600, () => { esc2.hidden = false; });
+    $$('.paso-r').forEach((el, k) => luegoDe(4300 + k * 450, () => el.classList.add('on')));
   },
-  confianza() {
-    const E = [['🧭', 'Quién soy', true], ['🌅', 'Visión de vida', true], ['⚡', 'Personalidad', true], ['🤍', 'Afecto', true], ['🏠', 'Vida cotidiana', true], ['🪞', 'Profundidad', true], ['⚖️', 'Valores y dinero', false], ['🔥', 'Conflicto', false], ['🕯️', 'Fe e hijos', false], ['🔐', 'Intimidad', false]];
-    $('#bv-elementos').innerHTML = E.map(([ic, n, s], k) => `<button type="button" class="bv-el ${s ? '' : 'sensible'}" data-k="${k}"><span>🔒</span>${n}${s ? '' : ' <small>sensible</small>'}</button>`).join('');
-    $$('.bv-el').forEach((b) => b.onclick = () => { if (b.classList.contains('on')) return; b.classList.add('on'); b.querySelector('span').textContent = E[Number(b.dataset.k)][0]; });
-    [0, 1, 2].forEach((k, j) => luegoDe(900 + j * 500, () => $$('.bv-el')[k]?.click()));
+  regla() {
+    $$('#bv-ella .bv-poder').forEach((el, k) => luegoDe(250 + k * 340, () => el.classList.add('on')));
+    const c = $('#bv-diez'), t = $('#bv-diez-txt');
+    if (c) { c.innerHTML = Array.from({ length: 10 }, (_, k) => `<i>${k + 1}</i>`).join('');
+      $$('i', c).forEach((el, k) => luegoDe(2400 + k * 160, () => { el.classList.add('on'); if (k === 9) { c.classList.add('fuera'); t.innerHTML = via() === 'ella' ? '<b>Y si diez mujeres distintas lo bloquean, sale para siempre.</b>' : '<b>Fuera para siempre.</b> Nadie bloquea a un desconocido: solo cuenta quien cruzó el 90 % con él y abrió la puerta.'; } })); }
+    // él: acepta la regla tocándola
+    const txt = $('#comp-txt');
+    const pintaComp = () => { if (!txt) return; const k = acepto.filter(Boolean).length; txt.innerHTML = k === 3 ? '<b>Hecho.</b> Nadie bloquea a un desconocido: solo cuenta quien cruzó el 90 % contigo y abrió la puerta. Y que una charla no funcione no es un bloqueo.' : `Aceptadas: <b>${k} de 3</b>.`; };
+    $$('#bv-comp button').forEach((b) => b.onclick = () => { const k = Number(b.dataset.k); acepto[k] = !acepto[k]; b.classList.toggle('on', acepto[k]); b.setAttribute('aria-pressed', acepto[k]); tocar(acepto[k] ? 'si' : 'toque'); pintaComp(); refrescar(); });
+    pintaComp();
+    // ella: sus dos candados opcionales
+    const d = $('#int-discreta');
+    if (d) d.onclick = () => { yo.discreta = !yo.discreta; d.classList.toggle('on', yo.discreta); d.setAttribute('aria-pressed', yo.discreta); tocar('guardado'); guardarElla(); };
+    const ok = $('#ev-ok');
+    if (ok) { const mandar = async () => { const inp = $('#ev-correo'), res = $('#ev-res'), c = inp.value.trim(); if (!c) return; ok.disabled = true;
+      try { await api('/api/ella/evitar', { correo: c }); inp.value = ''; res.textContent = 'Listo. El motor ya no los cruza, y nadie se entera. Puedes agregar otro.'; tocar('guardado'); } catch (e) { res.textContent = e.message; }
+      ok.disabled = false; };
+      ok.onclick = mandar; $('#ev-correo').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); e.stopPropagation(); mandar(); } }); }
   },
-  ella() {
-    $$('#bv-ella .bv-poder').forEach((el, k) => luegoDe(250 + k * 380, () => el.classList.add('on')));
-    const c = $('#bv-diez'), t = $('#bv-diez-txt'); c.innerHTML = Array.from({ length: 10 }, (_, k) => `<i>${k + 1}</i>`).join('');
-    $$('i', c).forEach((el, k) => luegoDe(2300 + k * 170, () => { el.classList.add('on'); if (k === 9) { c.classList.add('fuera'); t.innerHTML = '<b>Fuera para siempre.</b> Nadie bloquea a un desconocido: solo cuenta quien cruzó el 90 % con él y abrió la puerta.'; } }));
-  },
-  rostro() { $$('.paso-r').forEach((el, k) => luegoDe(400 + k * 550, () => el.classList.add('on'))); },
-  tablero() {
-    const C = [['📝', 'Responder'], ['⚙️', 'Matching'], ['💘', 'Coincidencia'], ['🤍', 'Tu sí'], ['🔓', 'Puerta abierta']];
-    $('#bv-camino').innerHTML = C.map(([ic, t], k) => `<div class="bv-c" style="animation-delay:${k * 260}ms"><div>${ic}</div><span>${t}</span></div>`).join('');
-    const COL = [['#d6455f', 'Rosa'], ['#8e2043', 'Vino'], ['#2f55c9', 'Azul'], ['#1f8a7a', 'Verde']];
-    $('#bv-colores').innerHTML = `<span>Tu estilo:</span>` + COL.map(([c, n]) => `<button type="button" style="background:${c}" title="${n}"></button>`).join('');
-    $$('#bv-colores button').forEach((b) => b.onclick = () => { tocar('estilo'); document.documentElement.style.setProperty('--rosa', b.style.background); document.documentElement.style.setProperty('--rosa-osc', b.style.background); $$('#bv-colores button').forEach((x) => x.classList.toggle('on', x === b)); });
+  nitidez() {
+    const R = { 85: [82, 'Borroso', 5, 'Silencio. Embonan, pero el motor no alcanza a verlo.'], 92: [88, 'A medias', 2, 'Casi. Se quedan a dos puntos de enterarse.'], 100: [96, 'Con nitidez', 0, '🔔 Les avisamos a los dos.'] };
+    let tocado = false;
+    const poner = (qv, deUsuario) => { const [pct, ve, blur, msg] = R[qv]; if (deUsuario) { tocado = true; tocar('toque'); }
+      $$('#nit-ops button').forEach((b) => b.classList.toggle('sel', Number(b.dataset.q) === qv));
+      $('#nit-av').style.filter = `blur(${blur}px)`; $('#nit-ve').textContent = ve;
+      const r = $('#nit-r'); r.style.width = pct + '%'; r.classList.toggle('pasa', pct >= 90);
+      $('#nit-res').innerHTML = `<b>${pct} %</b> · ${msg}`; $('#nit-res').classList.toggle('pasa', pct >= 90); };
+    $$('#nit-ops button').forEach((b) => b.onclick = () => poner(Number(b.dataset.q), true));
+    poner(85); [92, 100].forEach((qv, k) => luegoDe(1500 + k * 1500, () => { if (!tocado) poner(qv); }));
   },
 };
 pintar(1);

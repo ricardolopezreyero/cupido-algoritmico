@@ -175,7 +175,7 @@ export const CORREOS = {
         despues: [candado(minutos)],
         nota: 'Te vamos a avisar por correo de todo lo que pase. Lo que no quieras saber, lo apagas en tu tablero, en «Mis correos».' } }) },
   matching: { cat: 'busqueda', reenvio: true, cuando: 'Al terminar el cuestionario: el motor ya cruzó a la persona. Le dice qué le falta subir.', muestra: () => ({ pares: 21, nuevas: 0, tengo: { foto: true, voz: false, video: false } }),
-    prepara: async (env, P) => { const m = await mediosDe(env, P.id); return { tengo: { foto: !!m.foto, voz: !!m.voz, video: !!m.video } }; },
+    prepara: async (env, P) => { const m = await mediosDe(env, P.id); return { tengo: { foto: !!m.foto, voz: !!m.audio, video: !!m.video } }; },
     arma: (env, { P, pares, nuevas, tengo }) => {
       const faltan = tengo ? [['foto', 'mi foto'], ['voz', 'mi voz'], ['video', 'mi video']].filter(([k]) => !tengo[k]).map(([, n]) => n) : [], falta = faltan.length > 0;
       const juntar = (l) => (l.length > 1 ? l.slice(0, -1).join(', ') + ' y ' + l[l.length - 1] : l[0]);
@@ -198,6 +198,7 @@ export const CORREOS = {
       contenido: { tono: 'sol', figura: { tipo: 'barra', pct, pie: 'de tu cuestionario' }, eyebrow: 'Tu cuestionario', titulo: !pct ? 'Tus 43 preguntas te esperan.' : faltan === 1 ? 'Te falta una pregunta.' : `Te faltan ${faltan} preguntas.`, sub: pct ? 'Todo sigue exactamente donde lo dejaste.' : 'Se contestan una sola vez, y a tu ritmo.', vista: pct ? 'Todo sigue donde lo dejaste. Sin ellas, el motor todavía no te ve.' : 'Se contestan una sola vez. Sin ellas, el motor todavía no te ve.',
         cuerpo: [
           p(`${hola(P)} ${pct >= 50 ? 'Ya hiciste la mayor parte.' : pct ? 'Ya empezaste, que es lo más difícil.' : 'Tu cuenta ya está lista; falta lo que la hace funcionar.'} Sin ${pct ? 'las que faltan' : 'tus respuestas'} el motor no puede cruzarte con nadie: todavía no te ve.`),
+          ...(segun(P, [aviso('🚪', '<b>Tu filtro todavía no se enciende.</b> Mientras tanto nadie llega a tu puerta: ni quien no debía, ni quien sí.')], [aviso('🏹', '<b>Todavía no llegas a nadie.</b> En cuanto termines, el motor te cruza con todas las personas que buscan lo que tú eres.')], [])),
           lista([{ ico: '⏸️', txt: '<b>No tiene que ser de corrido</b>', sub: 'Contestas unas cuantas, cierras y sigues otro día. Todo se guarda.' }, { ico: '🎙️', txt: '<b>Las de párrafo se pueden dictar</b>', sub: 'Tocas el micrófono y hablas, como si le contaras a alguien.' }, { ico: '🤫', txt: '<b>Nadie lee tus respuestas</b>', sub: 'Las cruza el motor. Ninguna persona navega perfiles aquí.' }]),
         ],
         boton: { txt: pct ? 'Seguir donde iba' : 'Empezar mi cuestionario', url: `${BASE(env)}/cuestionario` }, nota: 'Este recordatorio se manda una sola vez. No te vamos a insistir.' } }) },

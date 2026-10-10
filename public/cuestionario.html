@@ -38,6 +38,30 @@ let nombre = '';
 let R = {};
 let idx = 0, cola = [], pendientesEnvio = {}, tEnvio = null, enviando = false;
 
+// A quién le hablamos: a ella, de su filtro; a él, de llegar completo; a los demás, sin género
+const via = () => (!R.genero ? 'par' : R.genero === 'hombre' ? ((R.busca || []).includes('mujer') ? 'el' : 'par') : ((R.busca || []).includes('hombre') ? 'ella' : 'par'));
+const T = (ella, el, par) => { const v = via(); return v === 'ella' ? ella : v === 'el' ? el : par; };
+// Una línea al entrar a cada bloque: acompaña, no regaña
+const VOZ = {
+  1: () => T('Empezamos por lo que no negocias. Con esto el motor sabe a quién ni siquiera acercarte.', 'Empezamos por lo que no se negocia. Con esto el motor sabe ante quién sí presentarte.', 'Empezamos por lo que no se negocia.'),
+  2: () => 'Hacia dónde va tu vida. Dos personas pueden quererse y caminar a lugares distintos.',
+  3: () => 'No lo que crees: lo que haces un martes cualquiera.',
+  4: () => 'Cómo eres en un día normal, no en tu mejor día.',
+  5: () => 'El bloque que más pesa en el motor. Aquí una respuesta bonita y falsa te cruza con la persona equivocada.',
+  6: () => 'Cómo das cariño y cómo necesitas recibirlo. No hay forma correcta: hay la tuya.',
+  7: () => 'Lo de todos los días: dinero, casa, tiempo. Lo que casi nadie pregunta a tiempo.',
+  8: () => T('Tus palabras. Contadas con ejemplos, el motor filtra mucho mejor por ti.', 'Tus palabras. Contadas con ejemplos, el motor te presenta completo; en una línea, te quedas a medio ver.', 'Tus palabras. Contadas con ejemplos, el motor te conoce de verdad.'),
+  9: () => 'Esto solo lo lee el motor. Nadie más lo ve mientras tú no lo decidas.',
+  10: () => 'Las últimas. Lo que piensas de ti cuando nadie te está viendo.',
+};
+// Debajo de cada respuesta abierta: qué tan nítido va quedando (no bloquea, solo acompaña)
+function nitidez(id, v) {
+  const el = $(`[data-nit="${id}"]`); if (!el) return;
+  const n = String(v || '').trim().length;
+  const [c, t] = n === 0 ? ['', 'Con un ejemplo de tu vida, el motor te lee mucho mejor.'] : n < 60 ? ['', 'Va empezando. Un caso concreto lo vuelve nítido.'] : n < 220 ? ['medio', 'Va tomando forma.'] : ['ok', 'Así sí te conoce ✓'];
+  el.className = 'q-nit ' + c; el.textContent = t;
+}
+
 const INTERS = {
   inicio: null,
   b19: { grande: '🫁', h: 'Llevas más de la mitad ✓', p: ['Las siguientes 4 preguntas son las más importantes del cuestionario — y las menos cómodas.', 'Si quieres, toma aire o sigue mañana: todo está guardado.'], btn: 'Continuar' },
@@ -110,13 +134,19 @@ async function inicio() {
   if (sesion.demo) { let b = {}; try { b = JSON.parse(localStorage.getItem('cupido.bienvenida.demo') || '{}'); } catch {} if (!b.hecho) { location.replace('/bienvenida?luego=cuestionario'); return; } }
   if (ficticia) return pantallaDemo(previo);
   const hechas = PREGUNTAS.filter(contestada).length;
-  const empezado = hechas > 0;
+  // lo que respondió en el recorrido (quién es y a quién busca) ya cuenta, pero todavía no «empezó» el cuestionario
+  const empezado = hechas > 1 || lleno(R.edad);
   app.innerHTML = `<div class="intermedio">
     <div class="grande">💘</div>
-    <h2>${empezado ? `Hola de nuevo${nombre ? ', ' + esc(nombre) : ''}` : 'Antes de empezar'}</h2>
-    ${empezado ? `<p>Llevas <b>${hechas} de 43</b> preguntas. Todo sigue exactamente donde lo dejaste.</p>` : `
-      <p>Son <b>43 preguntas</b> (33 base + 10 del módulo profundo). A la mayoría le toma entre 40 y 60 minutos hacerlo bien — no tiene que ser de corrido.</p>
-      <p><b>Todo se guarda solo</b> en tu cuenta${sesion.correo ? ` (${esc(sesion.correo)})` : ''}: puedes parar y volver cuando quieras, desde cualquier dispositivo. No hay respuestas correctas: hay respuestas tuyas.</p>`}
+    <h2>${empezado ? `Hola de nuevo${nombre ? ', ' + esc(nombre) : ''}` : `Ahora sí${nombre ? ', ' + esc(nombre) : ''}: tus 43 preguntas`}</h2>
+    ${empezado ? `<p>Llevas <b>${hechas} de 43</b>. Todo sigue exactamente donde lo dejaste.</p>
+      <p>${T('Cuando termines, tu filtro se enciende: solo llega a tu puerta quien cruce el 90 % contigo.', 'Cuando termines, el motor te cruza con todas. Mientras tanto, todavía no llegas a nadie.', 'Cuando termines, el motor te cruza con todas las personas que buscan lo mismo que tú.')}</p>` : `
+      <p>${lleno(R.genero) ? 'Lo que nos dijiste en el recorrido ya está guardado: empiezas con ventaja.' : 'No hay respuestas correctas: hay respuestas tuyas.'}</p>
+      <div class="cuest-tips">
+        <div><span>👆</span><div><b>Las de opción van con un toque.</b><small>Sin ellas y sin tu carta, el motor todavía no te cruza con nadie.</small></div></div>
+        <div><span>🎤</span><div><b>Las abiertas, con ejemplos de tu vida.</b><small>${T('Ahí el motor aprende a filtrar por ti. Puedes dictarlas.', 'Ahí el motor aprende a presentarte. Puedes dictarlas.', 'Ahí el motor te conoce de verdad. Puedes dictarlas.')}</small></div></div>
+        <div><span>⏸️</span><div><b>No tiene que ser de corrido.</b><small>A la mayoría le toma entre 40 y 60 minutos, en una o varias sentadas. Todo se guarda solo${sesion.correo ? ` en tu cuenta (${esc(sesion.correo)})` : ''}.</small></div></div>
+      </div>`}
     <div class="tarjeta" style="text-align:left;margin:22px auto;max-width:480px">
       <div class="campo" style="margin:0"><label for="nombre">¿Cómo quieres que te llamemos?</label>
       <input id="nombre" maxlength="40" placeholder="Solo tu nombre de pila" value="${esc(nombre)}">
@@ -125,6 +155,7 @@ async function inicio() {
     <div class="navega" style="justify-content:center">
       <button class="boton" id="empezar" style="margin-left:0">${empezado ? 'Seguir donde iba →' : 'Empezar →'}</button>
     </div>
+    <p class="nota-entrar">Sin publicidad, nunca. Lo íntimo solo lo lee el motor.</p>
   </div>`;
   $('#empezar').onclick = () => {
     nombre = $('#nombre').value.trim();
@@ -170,6 +201,7 @@ function pintar() {
     .filter(([k]) => p.help[k]).map(([k, t]) => `<details><summary>${t}</summary><div class="cuerpo">${p.help[k]}</div></details>`).join('') : '';
   app.innerHTML = `
     <div class="q-bloque">Bloque ${p.b} · ${esc(BLOQUES[p.b])}</div>
+    ${PREGUNTAS.find((x) => x.b === p.b).n === p.n && VOZ[p.b] ? `<p class="q-voz">${esc(VOZ[p.b]())}</p>` : ''}
     <h1 class="q-titulo">${esc(p.t)}</h1>
     ${p.note ? `<p class="q-nota">${esc(p.note)}</p>` : ''}
     <div class="ayudas" style="margin-top:16px">${ayudas}</div>
@@ -202,7 +234,7 @@ function parte(pt) {
     const orden = Array.isArray(v) ? v : [];
     dentro = `<div class="escala-ext" style="margin:0 0 8px"><span>Toca en orden. Vuelve a tocar para quitar.</span></div><div class="opciones rank">${pt.o.map(([c, l]) => { const i = orden.indexOf(c); return `<button class="opcion ${i >= 0 ? 'sel' : ''}" data-rank="${pt.id}" data-v="${c}"><span class="num ${i >= 0 ? '' : 'vacio'}">${i >= 0 ? i + 1 : '·'}</span>${esc(l)}</button>`; }).join('')}</div>`;
   } else if (pt.k === 'text') {
-    dentro = `<textarea data-txt="${pt.id}" style="min-height:${pt.min ? Math.max(90, pt.min) : 150}px" placeholder="Escribe con calma. Aquí no hay prisa.">${esc(v || '')}</textarea>`;
+    dentro = `<textarea data-txt="${pt.id}" style="min-height:${pt.min ? Math.max(90, pt.min) : 150}px" placeholder="Escribe con calma. Aquí no hay prisa.">${esc(v || '')}</textarea><div class="q-nit" data-nit="${pt.id}"></div>`;
   } else if (pt.k === 'num') {
     dentro = `<input type="number" inputmode="numeric" min="${pt.min}" max="${pt.max}" data-num="${pt.id}" value="${v ?? ''}" style="max-width:140px">`;
   } else if (pt.k === 'fecha') {
@@ -238,7 +270,7 @@ function enlazarPartes(p) {
     o = o.includes(b.dataset.v) ? o.filter((x) => x !== b.dataset.v) : [...o, b.dataset.v];
     poner(id, o); repintarPartes(p);
   });
-  $$('[data-txt]').forEach((t) => { t.oninput = () => poner(t.dataset.txt, t.value, false); dictable(t, { contexto: p.t, api, avisar, alCambiar: (v) => poner(t.dataset.txt, v, false) }); });
+  $$('[data-txt]').forEach((t) => { nitidez(t.dataset.txt, t.value); t.oninput = () => { poner(t.dataset.txt, t.value, false); nitidez(t.dataset.txt, t.value); }; dictable(t, { contexto: p.t, api, avisar, alCambiar: (v) => { poner(t.dataset.txt, v, false); nitidez(t.dataset.txt, v); } }); });
   $$('[data-num]').forEach((t) => t.oninput = () => poner(t.dataset.num, t.value === '' ? null : Number(t.value), false));
   $$('[data-fecha]').forEach((t) => t.oninput = () => {
     const id = t.dataset.fecha, g = (k) => $(`[data-fecha="${id}"][data-p="${k}"]`).value;
@@ -270,19 +302,26 @@ async function fin() {
   const faltanEst = PARTES.filter((pt) => pt.k !== 'text' && !pt.opcional && !(pt.si && R[pt.si.id] !== pt.si.v) && !lleno(R[pt.id]));
   const hechas = PREGUNTAS.filter(contestada).length;
   tocar(av.listo ? 'coincidencia' : 'logro');
+  const cartaFalta = !lleno(R.carta);
+  const primeraQueFalta = faltanEst.length ? faltanEst[0].n : cartaFalta ? PARTES.find((pt) => pt.id === 'carta').n : null;
+  const pregFaltan = new Set(faltanEst.map((pt) => pt.n)).size; // se cuentan preguntas, no partes: es lo que la persona ve
+  const cuantasFaltan = `${pregFaltan ? `<b>${pregFaltan}</b> ${pregFaltan === 1 ? 'pregunta' : 'preguntas'} de opción${cartaFalta ? ' y ' : ''}` : ''}${cartaFalta ? '<b>tu carta</b>' : ''}`;
   app.innerHTML = `<div class="intermedio">
     <div class="grande">${av.listo ? '💘' : '🌱'}</div>
-    <h2>${av.listo ? 'Entraste al matching' : 'Así va tu cuestionario'}</h2>
+    <h2>${av.listo ? 'Entraste al matching' : T('Tu filtro todavía no se enciende', 'Todavía no llegas a nadie', 'Así va tu cuestionario')}</h2>
     <p>Respondiste <b>${hechas} de 43</b> preguntas.</p>
     ${av.listo
-      ? `<p>El motor ya te cruzó con todo el demo${r?.cruce ? `: <b>${r.cruce.pares}</b> ${r.cruce.pares === 1 ? 'par evaluado' : 'pares evaluados'}${r.cruce.nuevas ? ` y <b>${r.cruce.nuevas}</b> ${r.cruce.nuevas === 1 ? 'coincidencia' : 'coincidencias'} arriba del 90 %` : ''}` : ''}. Y luego: silencio — hasta que alguien supere el 90 %.</p>
-         <a class="boton" href="/persona">Ver mi tablero →</a>
-         <p class="nota-entrar">Tu entrada al matching está incluida: todo Cupido es gratis durante 2026 y 2027.</p>`
-      : `<p>Para entrar al matching faltan <b>${faltanEst.length}</b> respuestas de opción${lleno(R.carta) ? '' : ' y tu carta (P33)'}. Las abiertas pueden esperar, pero cuentan: sin ellas el algoritmo te conoce menos.</p>`}
-    ${av.listo ? '' : `<p><a class="boton boton-claro" href="/persona">Ir a mi tablero</a></p>`}
+      ? `<p>El motor ya te cruzó con todas las personas que buscan lo mismo que tú${r?.cruce ? `: <b>${r.cruce.pares}</b> ${r.cruce.pares === 1 ? 'par evaluado' : 'pares evaluados'}${r.cruce.nuevas ? ` y <b>${r.cruce.nuevas}</b> ${r.cruce.nuevas === 1 ? 'coincidencia' : 'coincidencias'} arriba del 90 %` : ''}` : ''}. Y ahora, silencio: hasta que alguien cruce el 90 % contigo.</p>
+         <p>${T('Lo que sigue, cuando quieras: tu foto, tu voz y tu video. Se quedan guardados, y los enseñas tú, a quien tú decidas.', 'Lo que sigue: tu foto, tu voz y tu video. Es lo que ella conoce cuando la puerta se abre: que te encuentre completo.', 'Lo que sigue: tu foto, tu voz y tu video. Solo los ve quien abra una puerta contigo.')}</p>
+         <div class="navega" style="justify-content:center;flex-wrap:wrap"><a class="boton" href="/persona" style="margin-left:0">Ver mi tablero →</a><a class="boton boton-claro" href="/persona#medios">Dejar lista mi foto y mi voz</a></div>
+         <p class="nota-entrar">Tu entrada al matching está incluida: todo Cupido es gratis durante 2026 y 2027, y sin publicidad.</p>`
+      : `<p>Para entrar al matching ${pregFaltan + (cartaFalta ? 1 : 0) === 1 ? 'falta' : 'faltan'} ${cuantasFaltan}. ${T('Mientras tanto nadie llega a tu puerta: ni quien no debía, ni quien sí.', 'En cuanto estén, el motor te cruza con todas.', 'En cuanto estén, el motor te cruza.')}</p>
+         <p style="font-size:14.5px;color:var(--tinta-2)">Las abiertas pueden esperar, pero cuentan: contadas con ejemplos, el motor te conoce mucho mejor.</p>
+         <div class="navega" style="justify-content:center;flex-wrap:wrap">${primeraQueFalta ? `<button class="boton" id="ir-falta" style="margin-left:0">Ir a la primera que falta →</button>` : ''}<a class="boton boton-claro" href="/persona">Seguir después</a></div>`}
     <p style="font-size:14px;color:var(--gris)">Toca cualquier pregunta para revisarla o editarla:</p>
   </div>
   <div>${PREGUNTAS.map((p) => `<div class="resumen-item" data-n="${p.n}"><span class="${contestada(p) ? 'ok' : 'pend'}">${contestada(p) ? '✓' : '○'}</span><span style="min-width:28px;color:var(--gris)">${p.n}.</span><span>${esc(p.t)}</span></div>`).join('')}</div>`;
+  const irFalta = $('#ir-falta'); if (irFalta) irFalta.onclick = () => { idx = cola.findIndex((c) => c.t === 'q' && c.q.n === primeraQueFalta); pintar(); };
   $$('.resumen-item').forEach((el) => el.onclick = () => { idx = cola.findIndex((c) => c.t === 'q' && c.q.n === Number(el.dataset.n)); pintar(); });
 }
 

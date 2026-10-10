@@ -50,6 +50,7 @@ Detalle completo, incluida la revisión de lo sexual y lo espiritual: **[MODELO.
 - [`MODELO.md`](MODELO.md) — Cómo se calcula el porcentaje, por qué 90 % y por qué la puerta.
 - [`EXPERIENCIA.md`](EXPERIENCIA.md) — La experiencia de respuesta y la primera impresión multimedia.
 - [`docs/RUTA.md`](docs/RUTA.md) — **La lista completa** de lo que falta, priorizada.
+- [`docs/RECORRIDO.md`](docs/RECORRIDO.md) — **El recorrido**: cómo recibe Cupido a cada persona, con una voz para ella y otra para él.
 - [`docs/CORREOS.md`](docs/CORREOS.md) — **Los correos**: las reglas, los tonos, los 22 correos y cómo se revisan (Gmail corta a los 102 KB; el nuestro más pesado anda en 14).
 - `public/js/preguntas.js` — el cuestionario v2 (fuente única de verdad).
 - `public/js/motor.js` — el motor de compatibilidad v2 (lo usan el servidor y el navegador).
