@@ -293,7 +293,7 @@ export async function montarCompartir(raiz, op = {}) {
             <button class="boton" data-a="t-bajar">⬇ Descargar</button>
             ${navigator.canShare ? '<button class="boton boton-claro" data-a="t-compartir">📤 Compartir</button>' : ''}
             ${window.ClipboardItem ? '<button class="boton boton-claro" data-a="t-copiar">📋 Copiar imagen</button>' : ''}
-            ${P.tipoDeVideo() ? '<button class="boton boton-claro" data-a="t-video" title="Las palabras van apareciendo. Para TikTok, Reels y Shorts.">🎬 En video</button>' : ''}
+            ${P.tipoDeVideo() ? '<button class="boton boton-claro" data-a="t-video" title="Las palabras van apareciendo. Para TikTok, Reels y Shorts.">🎬 Descargar video</button><button class="boton boton-claro" data-a="t-video-compartir" hidden>📤 Compartir video</button>' : ''}
           </div>
           <div class="cmp-acompana"><div class="cmp-texto-cab"><b>Texto para acompañarla</b><button class="boton boton-claro boton-chico" data-a="t-texto">Copiar</button></div><p id="t-texto"></p></div>
         </div></div>`;
@@ -326,7 +326,8 @@ export async function montarCompartir(raiz, op = {}) {
     P.pintar(lienzo, receta); const F = P.FORMATO[receta.formato]; lienzo.style.aspectRatio = `${F.w}/${F.h}`; lienzo.parentElement.className = `cmp-marco ${F.w > F.h * 1.2 ? 'ancho' : F.h > F.w * 1.5 ? 'alto' : ''}`;
     // la imagen se deja lista de una vez: así «Compartir» y «Copiar» responden al toque (Safari no espera)
     const clave = JSON.stringify(receta); T.clave = clave; T.blob = P.aBlob(lienzo); T.blob.catch(() => {});
-    const bv = $('[data-a="t-video"]', velo); if (bv && (!T.video || T.video.clave !== clave)) { T.video = null; bv.textContent = '🎬 En video'; }
+    const bv = $('[data-a="t-video"]', velo), bc = $('[data-a="t-video-compartir"]', velo);
+    if (bv && (!T.video || T.video.clave !== clave)) { T.video = null; bv.textContent = '🎬 Descargar video'; if (bc) bc.hidden = true; }
     const tx = $('#t-texto', velo); if (tx) tx.innerHTML = esc(textoDe(receta)).replace(/\n/g, '<br>');
   }
 
@@ -517,19 +518,21 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
       catch { avisar('Este navegador no deja copiar imágenes. Usa «Descargar».'); }
       return;
     }
+    if (a === 't-video-compartir') {   // compartir es aparte de descargar: abre la hoja del sistema con el video ya grabado
+      if (!T.video) return; try { await navigator.share({ files: [T.video.archivo], text: textoDe(recetaTaller()) }); tocar('logro'); } catch {} return;
+    }
     if (a === 't-video') {
-      const receta = recetaTaller(), clave = JSON.stringify(receta);
-      // En el teléfono son dos toques: el primero graba, el segundo abre «guardar o mandar» (el sistema pide un toque fresco para eso)
-      if (T.video && T.video.clave === clave) { try { await navigator.share({ files: [T.video.archivo], text: textoDe(receta) }); tocar('logro'); } catch {} return; }
+      const receta = recetaTaller(), clave = JSON.stringify(receta), bc = $('[data-a="t-video-compartir"]', velo);
+      if (T.video && T.video.clave === clave) { bajar(T.video.archivo, T.video.archivo.name); return tocar('guardado'); }   // ya está grabado: se vuelve a bajar sin esperar
       T.grabando = true; velo.classList.add('grabando');
       try {
         const v = await P.grabarVideo($('#cmp-lienzo', velo), receta, (p) => { b.textContent = `Grabando… ${Math.round(p * 100)} %`; });
         const archivo = new File([v.blob], P.nombreDe(receta).replace(/\.png$/, '.' + v.ext), { type: v.blob.type });
-        if (navigator.canShare?.({ files: [archivo] })) { T.video = { clave, archivo }; b.textContent = '📤 Guardar o mandar el video'; avisar('Video listo. Toca otra vez para guardarlo o mandarlo.', 5000); }
-        else { bajar(archivo, archivo.name); b.textContent = '🎬 En video'; avisar(v.ext === 'mp4' ? 'Video descargado. Va sin sonido: la música la pones tú en tu red.' : 'Video descargado en WebM. Desde Chrome o Safari sale en MP4.', 6000); }
-        tocar('logro');
-      } catch (err) { b.textContent = '🎬 En video'; avisar('No se pudo grabar el video: ' + err.message); }
-      finally { T.grabando = false; velo.classList.remove('grabando'); T.blob = P.aBlob($('#cmp-lienzo', velo)); T.blob.catch(() => {}); }
+        T.video = { clave, archivo }; bajar(archivo, archivo.name);
+        if (bc) bc.hidden = !navigator.canShare?.({ files: [archivo] });
+        avisar(v.ext === 'mp4' ? 'Video descargado. Va sin sonido: la música la pones tú en tu red.' : 'Video descargado en WebM. Desde Chrome o Safari sale en MP4.', 6000); tocar('logro');
+      } catch (err) { avisar('No se pudo grabar el video: ' + err.message); }
+      finally { b.textContent = '🎬 Descargar video'; T.grabando = false; velo.classList.remove('grabando'); T.blob = P.aBlob($('#cmp-lienzo', velo)); T.blob.catch(() => {}); }
       return;
     }
     if (a === 't-compartir') {
