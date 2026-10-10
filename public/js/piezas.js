@@ -24,6 +24,7 @@ export const ROSA = '#d6455f';
 
 import { SERIES, FRASES, FRASE, SERIE, VIDEOS, musicaDe } from '/js/frases.js';
 export { SERIES, FRASES, FRASE, SERIE, VIDEOS, musicaDe };   // las frases viven en su propio archivo
+export { ORDEN, POR_DIA } from './orden.js';   // y el orden en que conviene publicarlas, en el suyo
 
 /* ── las medidas de cada red ──────────────────────────────────────────────
    u = cuánto crecen la marca y la letra chica respecto al cuadrado

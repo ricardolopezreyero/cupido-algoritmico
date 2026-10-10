@@ -108,7 +108,7 @@ export async function montarCompartir(raiz, op = {}) {
     try { await navigator.clipboard.writeText(txt); } catch { const t = document.createElement('textarea'); t.value = txt; t.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch {} t.remove(); }
     tocar('guardado'); avisar(msj);
   };
-  const textoDe = (r) => { const R = P.completar(r); return `${R.g ? P.sinMarcas(R.g) + ' ' : ''}${P.sinMarcas((R.n ? R.n + ' ' : '') + R.t)}${R.e ? ' ' + R.e : ''}\n\nCupido Algorítmico: no es una app de citas. Gratis y sin anuncios.\n${liga}`; };
+  const textoDe = (r) => { const R = P.completar(r), fuente = P.FRASE[r.frase]?.f; return `${R.g ? P.sinMarcas(R.g) + ' ' : ''}${P.sinMarcas((R.n ? R.n + ' ' : '') + R.t)}${R.e ? ' ' + R.e : ''}${fuente ? `\nFuente: ${fuente}` : ''}\n\nCupido Algorítmico: no es una app de citas. Gratis y sin anuncios.\n${liga}`; };
 
   /* ── el código para páginas ── */
   const codigos = () => {
@@ -147,13 +147,14 @@ export async function montarCompartir(raiz, op = {}) {
     <section class="tarjeta" id="cmp-galeria">
       <div class="cmp-cab"><div><h2>Galería</h2><p class="sub">${P.FRASES.length} frases para publicar y ${P.VIDEOS.length} videos cortitos, listos para descargar. Texto negro, fondo blanco y el corazón de Cupido como único color.</p></div>
         <div class="acciones"><button class="boton boton-chico" data-a="azar">🎲 Una al azar</button><button class="boton boton-claro boton-chico" data-a="mia">✍️ Con mi frase</button></div></div>
-      <div class="cmp-modos" id="cmp-modos"><button data-a="modo" data-m="imagenes" class="on">🖼 Imágenes <small>${P.FRASES.length}</small></button><button data-a="modo" data-m="videos">🎬 Videos <small>${P.VIDEOS.length}</small></button></div>
+      <div class="cmp-modos" id="cmp-modos"><button data-a="modo" data-m="imagenes" class="on">🖼 Imágenes <small>${P.FRASES.length}</small></button><button data-a="modo" data-m="videos">🎬 Videos <small>${P.VIDEOS.length}</small></button><button data-a="modo" data-m="cuenta" title="Todas las publicaciones juntas, en el orden en que conviene publicarlas">📱 La cuenta <small>${P.ORDEN.length}</small></button></div>
       <div class="cmp-series" id="cmp-series"></div>
       <div class="cmp-mandos-muro" id="cmp-mandos-muro">
         <div class="cmp-grupo"><span>Medida</span><div class="cmp-seg" id="cmp-formatos">${P.FORMATOS.map((f) => `<button data-a="formato" data-f="${f.id}" class="${f.id === E.formato ? 'on' : ''}" title="${esc(f.para)} · ${f.w} × ${f.h}"><i style="aspect-ratio:${f.w}/${f.h}"></i>${esc(f.n)}</button>`).join('')}</div></div>
         <div class="cmp-grupo"><span>Fondo</span><div class="cmp-seg" id="cmp-fondos">${P.FONDOS.map((f) => `<button data-a="fondo" data-f="${f.id}" class="${f.id === E.fondo ? 'on' : ''}"><i class="cmp-gota" style="background:${f.bg}"></i>${esc(f.n)}</button>`).join('')}</div></div>
       </div>
       <p class="cmp-para" id="cmp-para"></p>
+      <div class="cmp-perfil" id="cmp-perfil" hidden></div>
       <div class="cmp-rejilla" id="cmp-rejilla"></div>
       <div class="acciones cmp-pie-muro" id="cmp-pie-muro"></div>
     </section>
@@ -254,8 +255,12 @@ export async function montarCompartir(raiz, op = {}) {
   };
   const RONDA = { imagenes: enRonda(P.FRASES), videos: enRonda(P.VIDEOS) };
   const deModo = () => (E.modo === 'videos' ? P.VIDEOS : P.FRASES);
-  const visibles = () => (E.serie === 'todas' ? RONDA[E.modo] : deModo().filter((f) => f.s === E.serie));
-  const delMuro = (f) => (E.modo === 'videos' ? { frase: f.id, formato: 'historia', fondo: 'blanco', liga: P.CASA } : { frase: f.id, formato: E.formato, fondo: E.fondo, liga: P.CASA });
+  // «La cuenta»: todas las publicaciones en el orden del calendario (public/js/orden.js), cada una con el fondo que le toca ahí
+  const CUENTA = P.ORDEN.map((o) => P.FRASE[o.id]), FONDO_CUENTA = Object.fromEntries(P.ORDEN.map((o) => [o.id, o.fondo]));
+  const enCuenta = () => E.modo === 'cuenta', deCuenta = (id) => ({ frase: id, formato: 'retrato', fondo: FONDO_CUENTA[id] || 'blanco' });
+  const visibles = () => (enCuenta() ? CUENTA : E.serie === 'todas' ? RONDA[E.modo] : deModo().filter((f) => f.s === E.serie));
+  const delMuro = (f) => (E.modo === 'videos' ? { frase: f.id, formato: 'historia', fondo: 'blanco', liga: P.CASA } : enCuenta() ? { ...deCuenta(f.id), liga: P.CASA } : { frase: f.id, formato: E.formato, fondo: E.fondo, liga: P.CASA });
+  const turnoDe = (id) => { const i = CUENTA.findIndex((f) => f.id === id); return i < 0 ? '' : `Publicación ${i + 1} de ${CUENTA.length} · día ${Math.floor(i / P.POR_DIA) + 1}`; };
   const reloj = (s) => `0:${String(Math.round(s)).padStart(2, '0')}`;
   const cuantos = (n, uno, varios) => (n === 1 ? uno : varios.replace('#', n));
   function pintarSeries() {
@@ -277,23 +282,36 @@ export async function montarCompartir(raiz, op = {}) {
     cuadro = requestAnimationFrame(paso);
     return () => { if (!vivo) return; vivo = false; cancelAnimationFrame(cuadro); if (lienzo.isConnected) P.pintar(lienzo, receta, { ancho }); };
   }
-  let turno = 0, enMano = null;
+  let turno = 0, enMano = null; const mesaChica = document.createElement('canvas');
   async function pintarMuro() {
-    const mio = ++turno, videos = E.modo === 'videos'; enMano?.(); pintarSeries();
-    const F = P.FORMATO[videos ? 'historia' : E.formato], lista = visibles(), caja = $('#cmp-rejilla', raiz);
-    $('#cmp-mandos-muro', raiz).hidden = videos;
-    $('#cmp-para', raiz).innerHTML = videos ? '<b>Video vertical · 1080 × 1920</b> — Para TikTok, Reels, Shorts e historias. De 5 a 9 segundos. Pasa el cursor para verlo; tócalo para descargarlo, con música o sin ella.' : `<b>${esc(F.n)} · ${F.w} × ${F.h}</b> — ${esc(F.para)}`;
+    const mio = ++turno, videos = E.modo === 'videos', cuenta = enCuenta(); enMano?.(); pintarSeries();
+    const F = P.FORMATO[videos ? 'historia' : cuenta ? 'retrato' : E.formato], lista = visibles(), caja = $('#cmp-rejilla', raiz);
+    $('#cmp-mandos-muro', raiz).hidden = videos || cuenta; $('#cmp-series', raiz).hidden = cuenta;
+    const perfil = $('#cmp-perfil', raiz); perfil.hidden = !cuenta;
+    if (cuenta && !perfil.firstChild) {   // la cabecera, como la de un perfil: así se vería la cuenta ya publicada
+      const dias = Math.ceil(lista.length / P.POR_DIA);
+      perfil.innerHTML = `<canvas width="168" height="168" aria-hidden="true"></canvas><div><b>cupidoalgoritmico</b><p class="cmp-perfil-cifras"><span><b>${lista.length}</b> publicaciones</span><span><b>${dias}</b> días</span><span><b>${P.POR_DIA}</b> al día</span></p><p>No es una app de citas. 43 preguntas, una sola vez. Aquí manda ella. Gratis y sin anuncios.</p></div>`;
+    }
+    $('#cmp-para', raiz).innerHTML = videos ? '<b>Video vertical · 1080 × 1920</b> — Para TikTok, Reels, Shorts e historias. De 5 a 9 segundos. Pasa el cursor para verlo; tócalo para descargarlo, con música o sin ella.'
+      : cuenta ? '<b>Así se vería la cuenta.</b> Todas las publicaciones, en el orden en que conviene publicarlas: la de arriba a la izquierda sale primero, y cada renglón es un día. Las verdades incómodas van en negro y la regla de la casa en rosa. Toca cualquiera para descargarla.'
+        : `<b>${esc(F.n)} · ${F.w} × ${F.h}</b> — ${esc(F.para)}`;
     $('#cmp-pie-muro', raiz).innerHTML = videos
       ? `<button class="boton boton-claro boton-chico" data-a="zip-videos" data-audio="0">⬇ Bajar ${cuantos(lista.length, 'este', 'estos #')} sin audio (.zip)</button><button class="boton boton-claro boton-chico" data-a="zip-videos" data-audio="1">⬇ Bajar ${cuantos(lista.length, 'este', 'estos #')} con música (.zip)</button>`
-      : `<button class="boton boton-claro boton-chico" data-a="zip-muro">⬇ Bajar ${cuantos(lista.length, 'esta', 'estas #')} en ${F.n.toLowerCase()} (.zip)</button>`;
-    caja.className = `cmp-rejilla f-${F.id}${videos ? ' de-videos' : ''}`;
-    caja.innerHTML = lista.map((f, i) => `<button class="cmp-pieza${videos ? ' cmp-video' : ''}" data-a="abrir" data-i="${i}" style="aspect-ratio:${F.w}/${F.h}" aria-label="${esc(P.sinMarcas((f.g ? f.g + ' ' : '') + (f.n ? f.n + ' ' : '') + f.t))}"><canvas></canvas>${videos ? '<span class="cmp-play">▶ <i></i></span>' : ''}</button>`).join('');
+      : cuenta ? `<button class="boton boton-claro boton-chico" data-a="zip-muro">⬇ Bajar las ${lista.length} numeradas, en orden (.zip)</button>`
+        : `<button class="boton boton-claro boton-chico" data-a="zip-muro">⬇ Bajar ${cuantos(lista.length, 'esta', 'estas #')} en ${F.n.toLowerCase()} (.zip)</button>`;
+    caja.className = `cmp-rejilla f-${F.id}${videos ? ' de-videos' : ''}${cuenta ? ' de-cuenta' : ''}`;
+    // En la cuenta cada pieza es una imagen (no un lienzo): son cientos a la vista, y así el navegador las suelta cuando no se ven
+    caja.innerHTML = lista.map((f, i) => `<button class="cmp-pieza${videos ? ' cmp-video' : ''}" data-a="abrir" data-i="${i}" style="aspect-ratio:${F.w}/${F.h}" aria-label="${cuenta ? `${i + 1}. ` : ''}${esc(P.sinMarcas((f.g ? f.g + ' ' : '') + (f.n ? f.n + ' ' : '') + f.t))}">${cuenta ? `<img alt="" decoding="async" data-priv-no><i class="cmp-turno">${i + 1}</i>` : '<canvas></canvas>'}${videos ? '<span class="cmp-play">▶ <i></i></span>' : ''}</button>`).join('');
     await P.cargarLetras(); if (mio !== turno) return;
+    if (cuenta) P.pintarPerfil($('canvas', perfil), P.PERFILES[0].id, 168);
     const piezas = $$('.cmp-pieza', caja), punto = Math.min(2, window.devicePixelRatio || 1);
     for (let i = 0; i < piezas.length; i++) {
       if (mio !== turno) return;
       const receta = delMuro(lista[i]), ancho = Math.max(120, Math.round((piezas[i].clientWidth || 220) * punto));
-      try { P.pintar(piezas[i].firstElementChild, receta, { ancho }); if (videos) piezas[i].querySelector('.cmp-play i').textContent = reloj(P.duracionDe(receta)); } catch { /* una pieza que no se pudo pintar no detiene el muro */ }
+      try {
+        if (cuenta) piezas[i].firstElementChild.src = P.pintar(mesaChica, receta, { ancho }).toDataURL('image/png');
+        else { P.pintar(piezas[i].firstElementChild, receta, { ancho }); if (videos) piezas[i].querySelector('.cmp-play i').textContent = reloj(P.duracionDe(receta)); }
+      } catch { /* una pieza que no se pudo pintar no detiene el muro */ }
       if (i % 6 === 5) await respiro();
     }
   }
@@ -344,7 +362,7 @@ export async function montarCompartir(raiz, op = {}) {
     if (e.key === 'ArrowRight') mover(1); else if (e.key === 'ArrowLeft') mover(-1);
   };
   const suMusica = () => { if (!T.mia) T.musica = P.musicaDe(P.FRASE[T.r.frase]); };   // cada frase llega con la música de su serie; después se cambia a gusto
-  function mover(d) { if (T.mia || T.grabando) return; const l = visibles(); if (!l.length) return; T.i = ((T.i ?? 0) + d + l.length) % l.length; T.r = { ...T.r, frase: l[T.i].id, c: undefined }; suMusica(); pintarTaller(); }
+  function mover(d) { if (T.mia || T.grabando) return; const l = visibles(); if (!l.length) return; T.i = ((T.i ?? 0) + d + l.length) % l.length; T.r = { ...T.r, frase: l[T.i].id, c: undefined, ...(enCuenta() && T.vista !== 'video' ? { fondo: FONDO_CUENTA[l[T.i].id] || 'blanco' } : {}) }; suMusica(); pintarTaller(); }
   function abrirTaller(r, i = null, mia = false, vista = 'imagen') {
     const video = vista === 'video';
     T.r = { formato: video ? 'historia' : E.formato, fondo: video ? 'blanco' : E.fondo, conE: true, conLiga: true, miLiga: false, conQr: false, ...r }; T.i = i; T.mia = mia; T.vista = vista; T.oir = false; T.ajustes = false; suMusica();
@@ -381,7 +399,7 @@ export async function montarCompartir(raiz, op = {}) {
       ? `<label class="campo"><small>Tu frase <em>(Enter parte el renglón · *así* va en cursiva · ~así~ va tachado)</em></small><textarea id="t-frase" rows="3" maxlength="140" placeholder="Escribe aquí lo que quieras decir de Cupido">${esc(r.t || '')}</textarea></label>
          <label class="campo"><small>La letra chica (opcional)</small><input id="t-sub" maxlength="110" value="${esc(r.e || '')}" placeholder="Una explicación corta"></label>
          <p class="cmp-nota">Di lo que es cierto: gratis es gratis, y Cupido no promete pareja a nadie. <button class="enlace" data-a="t-frases">Volver a las frases de la casa</button></p>`
-      : `<div class="cmp-frase-cab"><span class="chip">${esc(P.SERIE[P.FRASE[r.frase]?.s]?.n || '')}</span><span class="acciones"><button class="boton boton-claro boton-chico" data-a="t-azar">🎲 Otra</button><button class="boton boton-claro boton-chico" data-a="t-mia">✍️ Escribir la mía</button></span></div>`;
+      : `<div class="cmp-frase-cab"><span class="chip">${esc(P.SERIE[P.FRASE[r.frase]?.s]?.n || '')}</span>${enCuenta() ? `<span class="cmp-turno-t">${esc(turnoDe(r.frase))}</span>` : ''}${P.FRASE[r.frase]?.f ? `<a class="cmp-fuente" href="${esc(P.FRASE[r.frase].f)}" target="_blank" rel="noopener">📎 Ver la fuente del dato</a>` : ''}<span class="acciones"><button class="boton boton-claro boton-chico" data-a="t-azar">🎲 Otra</button><button class="boton boton-claro boton-chico" data-a="t-mia">✍️ Escribir la mía</button></span></div>`;
     $('#t-musica', velo).innerHTML = video ? `<div class="cmp-grupo"><span>Música</span><div class="cmp-seg" id="t-musicas">${P.MUSICAS.map((m) => `<button data-a="t-musica" data-m="${m.id}" class="${m.id === T.musica ? 'on' : ''}">${esc(m.n)}</button>`).join('')}</div>
         <button class="cmp-oir ${T.oir ? 'on' : ''}" data-a="t-oir" aria-pressed="${T.oir}">${T.oir ? '🔊 Sonando' : '🔈 Oírla'}</button><small>Fondos suaves y sin voz, hechos para Cupido. Si prefieres la música de tu red, baja el video sin audio.</small></div>` : '';
     $('#t-acciones', velo).innerHTML = video
@@ -559,6 +577,12 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
     await paquete(`Cupido_Kit_de_Marca_${VERSION_KIT}_${sello}.zip`, t);
   }
   async function bajarMuro() {
+    if (enCuenta()) {
+      const tres = (n) => String(n).padStart(3, '0'), sello = P.sello();
+      const calendario = `CUPIDO ALGORÍTMICO · EL CALENDARIO\n${CUENTA.length} publicaciones en el orden en que conviene publicarlas: ${P.POR_DIA} por día.\nCada archivo lleva su número. Debajo de cada una va el texto para acompañarla.\n\n`
+        + CUENTA.map((f, i) => `${i % P.POR_DIA === 0 ? `════ DÍA ${Math.floor(i / P.POR_DIA) + 1} ════\n\n` : ''}${tres(i + 1)} · ${P.SERIE[f.s]?.n || ''}\n${textoDe(delMuro(f))}\n`).join('\n');
+      return paquete(`Cupido_La-cuenta_en-orden_${VERSION_KIT}_${sello}.zip`, [{ nombre: '000_calendario.txt', hacer: async () => new Blob([calendario], { type: 'text/plain' }) }, ...CUENTA.map((f, i) => { const r = delMuro(f); return { nombre: `${tres(i + 1)}_${P.nombreDe(r)}`, hacer: () => P.aBytes(P.pintar(mesa, r)) }; })]);
+    }
     const F = P.FORMATO[E.formato], lista = visibles();
     await paquete(`Cupido_${F.id}${E.serie === 'todas' ? '' : '_' + E.serie}${E.fondo === 'blanco' ? '' : '_' + E.fondo}_${VERSION_KIT}_${P.sello()}.zip`, lista.map((f) => tareaPieza('', delMuro(f))));
   }
@@ -595,8 +619,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
     if (a === 'serie') { E.serie = b.dataset.s; return pintarMuro(); }
     if (a === 'formato') { E.formato = b.dataset.f; recordar(); marcar('#cmp-formatos', 'f', E.formato); return pintarMuro(); }
     if (a === 'fondo') { E.fondo = b.dataset.f; recordar(); marcar('#cmp-fondos', 'f', E.fondo); return pintarMuro(); }
-    if (a === 'abrir') { const i = Number(b.dataset.i); return abrirTaller({ frase: visibles()[i].id }, i, false, E.modo === 'videos' ? 'video' : 'imagen'); }
-    if (a === 'azar') { const l = visibles(), i = Math.floor(Math.random() * l.length); return abrirTaller({ frase: l[i].id }, i, false, E.modo === 'videos' ? 'video' : 'imagen'); }
+    if (a === 'abrir') { const i = Number(b.dataset.i), id = visibles()[i].id; return abrirTaller(enCuenta() ? deCuenta(id) : { frase: id }, i, false, E.modo === 'videos' ? 'video' : 'imagen'); }
+    if (a === 'azar') { const l = visibles(), i = Math.floor(Math.random() * l.length); return abrirTaller(enCuenta() ? deCuenta(l[i].id) : { frase: l[i].id }, i, false, E.modo === 'videos' ? 'video' : 'imagen'); }
     if (a === 'mia') return abrirTaller({ t: 'Escribe aquí\ntu frase.', e: '', c: 'arriba' }, null, true, E.modo === 'videos' ? 'video' : 'imagen');
     if (a === 'zip-muro') return bajarMuro();
     if (a === 'zip-videos') return bajarVideos(visibles(), b.dataset.audio === '1', E.serie === 'todas' ? '' : '_' + E.serie);
@@ -672,7 +696,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
   raiz.onclick = alTocar; velo.onclick = alTocar;
 
   pintarTextos(); pintarCodigos(); await P.cargarLetras(); pintarMarca();
-  if (op.parte === 'videos') { E.modo = 'videos'; marcar('#cmp-modos', 'm', 'videos'); }
+  if (op.parte === 'videos' || op.parte === 'cuenta') { E.modo = op.parte; marcar('#cmp-modos', 'm', op.parte); }
   await pintarMuro();
   // qué videos ya vienen hechos (y cuánto pesan, para decirlo en los paquetes)
   fetch('/videos/lista.json').then((r) => (r.ok ? r.json() : {})).then((j) => {
@@ -680,7 +704,8 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
     if (!raiz.isConnected || !ids.length) return;
     $('#cmp-peso-mudos', raiz).textContent = `⬇ .zip · unos ${mb('kb')} MB`; $('#cmp-peso-sonoros', raiz).textContent = `⬇ .zip · unos ${mb('kba')} MB`;
   }).catch(() => {});
-  if (op.parte && op.parte !== 'videos') $('#cmp-' + op.parte, raiz)?.scrollIntoView({ block: 'start' });
+  if (op.parte === 'cuenta') $('#cmp-galeria', raiz)?.scrollIntoView({ block: 'start' });
+  else if (op.parte && op.parte !== 'videos') $('#cmp-' + op.parte, raiz)?.scrollIntoView({ block: 'start' });
   // si cambia el ancho (girar el teléfono, abrir el menú), el muro se vuelve a pintar a la nitidez nueva
   let anchoAntes = raiz.clientWidth, espera = null;
   const alCambiar = () => { if (!raiz.isConnected) { window.removeEventListener('resize', alCambiar); return; } clearTimeout(espera); espera = setTimeout(() => { if (Math.abs(raiz.clientWidth - anchoAntes) > 40) { anchoAntes = raiz.clientWidth; pintarMuro(); } }, 250); };

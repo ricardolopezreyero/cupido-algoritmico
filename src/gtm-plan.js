@@ -38,7 +38,7 @@ const resumen = [
     { t: 'Invitar te conviene', d: 'En una app de catálogo, cada persona nueva es competencia. Aquí no hay catálogo: cada persona nueva sube tu probabilidad. Es el único producto de pareja donde compartir es egoísta en el buen sentido, y hay que decirlo así.' },
     { t: 'El cuestionario no es el obstáculo: es el evento', d: 'Lo más pesado (contestar) se vuelve una noche con gente: la Noche de las 43. Los encuentros en grupo ya funcionan en México (Timeleft llena cenas de desconocidos en cinco ciudades) y a las mujeres les dan más seguridad que el uno a uno.' },
     { t: 'Ella llega sola; a ellos hay que traerlos', d: 'En los sistemas serios sobran mujeres y faltan hombres: en Marriage Pact cientos de mujeres se quedan sin par cada año por eso. La casa es de ella, y por lo mismo el plan cuida el equilibrio desde el primer día: cada fundadora trae a un buen hombre.' },
-    { t: 'Publicar no alcanza: alguien más tiene que decirlo', d: 'Una cuenta chica de TikTok promedia 350 vistas por video. El material propio (275 imágenes y 154 videos) sirve para que la casa se vea armada; el crecimiento viene de personas invitando, noches, creadores, prensa y comunidades.' },
+    { t: 'Publicar no alcanza: alguien más tiene que decirlo', d: 'Una cuenta chica de TikTok promedia 350 vistas por video. El material propio (325 imágenes y 154 videos) sirve para que la casa se vea armada; el crecimiento viene de personas invitando, noches, creadores, prensa y comunidades.' },
     { t: 'La confianza es el producto', d: 'Datos íntimos, mujeres y citas con desconocidos: un solo caso malo acaba con una ciudad. Por eso la fase 1 no es marketing: es privacidad, verificación, reportes y reglas escritas.' },
   ] },
 
@@ -63,7 +63,7 @@ const resumen = [
 
   { k: 'cabeza', e: 'Rápido, con poco desgaste y poco dinero', t: 'Cinco reglas para no gastar de más' },
   { k: 'lista', l: [
-    '**Lo que ya existe no se vuelve a hacer.** 275 imágenes, 154 videos, mensajes de WhatsApp, 22 correos y la app. El trabajo es repartir, no producir.',
+    '**Lo que ya existe no se vuelve a hacer.** 325 imágenes ya en orden de publicación, 154 videos, mensajes de WhatsApp, 22 correos y la app. El trabajo es repartir, no producir.',
     '**Lo que puede hacer una IA, lo hace una IA.** Más de la mitad de la lista la hace o la ayuda a hacer una IA. La persona se queda con lo que no se delega: llamar, dar la cara y llenar una sala.',
     '**Nada pagado hasta saber cuánto cuesta un perfil vivo.** Primero una prueba de tres mil pesos; solo se sube si el costo queda bajo el tope.',
     '**Una ciudad a la vez.** Abrir dos antes de encender una duplica el gasto y no acerca a nadie.',
@@ -159,7 +159,7 @@ const lanzamiento = [
     ['Lo contrario a las apps', 'Sin catálogo, sin deslizar, sin pagar por que te vean.', 'Series «contrario» y «serio»', '20 %'],
     ['Los números', 'El 90 %, el doble sí, los datos del país.', 'Series «datos», «noventa» y «cómo»; la radiografía', '15 %'],
     ['Tu ciudad se enciende', 'Cómo va tu ciudad y por qué invitar te conviene.', 'Serie «invitar», el termómetro y las piezas locales', '15 %'],
-  ], nota: 'Además, desde la primera semana, una de cada cinco piezas va dirigida a ellos (serie «él»).' },
+  ], nota: 'Además, desde la primera semana, una de cada cinco piezas va dirigida a ellos (serie «él»). El gancho de un día sí y otro no es una «verdad incómoda»: 50 frases con su fuente, que van en negro. El orden completo ya está armado en [Compartir → La cuenta](/compartir#cuenta).' },
   { k: 'tarjetas', col: 2, l: [
     { t: 'Cada perfil, igual', l: ['El mismo usuario en todas las redes.', 'La insignia como foto y la frase de una línea.', 'Una liga por red, con su código, para saber cuál trae gente.', 'Tres videos fijados: qué es, aquí manda ella y cómo se ve por dentro.', 'Doce piezas publicadas antes de anunciar nada.'] },
     { t: 'El camino de una persona', d: 'Cada paso tiene su número en la fase 1. Donde más gente se cae es donde se trabaja.', l: ['Ve una pieza o le llega un mensaje.', 'Entra a la liga y ve la portada (o la cuenta demo).', 'Deja su correo y hace el recorrido.', 'Contesta las 43, sola o en una noche.', 'Invita a tres y ve cómo va su ciudad.', 'Aviso, doble sí y charla.'] },
@@ -180,8 +180,8 @@ const lanzamiento = [
   { k: 'tabla', cab: ['Red', 'Tamaño en México', 'Para qué', 'Qué va ahí', 'Cada cuánto'], filas: [
     ['WhatsApp', '91 % de quienes usan internet', 'Donde de verdad se invita. Aquí se convierte.', 'Canal con la pregunta del día; mensajes listos para una amiga, un amigo y un grupo; ligas personales', 'Diario'],
     ['TikTok', '99 millones de adultos alcanzables (dato de la plataforma)', 'Que te vea quien no te conoce.', 'Video vertical: una pregunta, un dato, «lo contrario»', '1 al día'],
-    ['Instagram', '53.6 millones', 'Credibilidad: aquí revisa la gente si eres serio.', 'Los mismos videos, carruseles de datos e historias con pregunta', '1 + 1 + 3 al día'],
-    ['Facebook', '93.5 millones', 'La segunda vuelta, los grupos de la ciudad y las tías.', 'La imagen del día, los grupos locales y los eventos de las noches', '1 al día'],
+    ['Instagram', '53.6 millones', 'Credibilidad: aquí revisa la gente si eres serio.', 'Las tres imágenes del día en el orden de La cuenta (al muro y a historias) y el video', '3 + 1 al día'],
+    ['Facebook', '93.5 millones', 'La segunda vuelta, los grupos de la ciudad y las tías.', 'Las imágenes del día, los grupos locales y los eventos de las noches', '3 al día'],
     ['YouTube', '85 millones', 'Profundidad y buscador. Ahí viven los pódcasts.', 'Los mismos videos cortos; desde la fase 4, una conversación larga', '1 al día · 1 a la semana'],
     ['Pódcasts y radio', '—', 'Confianza prestada: lo cuenta alguien en quien ya creen.', 'Ir de invitado', '2 al mes'],
     ['Google y asistentes de IA', '—', 'Quien ya está buscando «app para relación seria».', 'Los 43 artículos y la página comparativa', '1 artículo a la semana'],
@@ -436,7 +436,7 @@ const numeros = [
     ['Noches de las 43', '600', 'Quince noches de cuarenta personas', 'Casi todos terminan, porque a eso van'],
     ['Comunidades y alianzas', '600', 'Iglesias, exalumnos, clubes, bodas, gimnasios y salones', 'Veinte perfiles por alianza que sí se mueve'],
     ['Prensa y radio', '500', 'Dos notas, dos entrevistas y la radiografía', 'Una nota local buena trae de 100 a 200'],
-    ['Contenido propio', '350', 'Tres piezas diarias durante 18 semanas', 'Si las vistas no crecen, este renglón da menos de 200'],
+    ['Contenido propio', '350', 'Tres imágenes y un video diarios durante 18 semanas', 'Si las vistas no crecen, este renglón da menos de 200'],
     ['Publicidad pagada', '300', 'Pruebas de 3 mil y de 15 mil pesos', 'Tope de 60 pesos por perfil vivo'],
   ], nota: 'Suma 5,000. El primer renglón es el más grande a propósito: es el único que crece solo.' },
 
@@ -450,12 +450,12 @@ const numeros = [
 
   { k: 'cabeza', e: 'Cuántas publicaciones', t: 'El ritmo de una semana' },
   { k: 'cifras', l: [
-    { n: '45', t: 'piezas propias a la semana', s: '7 videos, 7 imágenes, 21 historias, 7 preguntas en WhatsApp, 2 videos a cámara y 1 artículo.' },
+    { n: '38', t: 'piezas propias a la semana', s: '21 imágenes (tres al día, en el orden de La cuenta; las mismas van a historias), 7 videos, 7 preguntas en WhatsApp, 2 videos a cámara y 1 artículo.' },
     { n: '70', t: 'invitaciones personales a la semana', s: 'Diez al día. Es el canal que más convierte y el que menos se ve.' },
     { n: '50', t: 'acercamientos a creadores a la semana', s: 'Diez al día, de lunes a viernes. Meta: cinco publicaciones de otros por semana.' },
     { n: '2', t: 'noches al mes', s: 'Y seis en la última semana de enero.' },
   ] },
-  { k: 'p', t: 'El banco alcanza: 275 imágenes y 154 videos son 429 piezas. A tres diarias, son 20 semanas sin producir nada nuevo. Lo nuevo que sí se graba son los videos a cámara, la serie de calle y lo que diga la ciudad.' },
+  { k: 'p', t: 'El banco alcanza y ya está en orden: en [Compartir → La cuenta](/compartir#cuenta) están las 325 imágenes como se publicarían, tres por día durante 109 días (un gancho, una del corazón y una prueba), y se bajan numeradas con su calendario. Los 154 videos, a uno diario, alcanzan 22 semanas. Lo nuevo que sí se graba son los videos a cámara, la serie de calle y lo que diga la ciudad.' },
 
   { k: 'cabeza', e: 'El dinero', t: 'Propuesta de tope para los primeros 90 días' },
   { k: 'tabla', cab: ['Concepto', 'Propuesta', 'Nota'], filas: [
@@ -496,7 +496,7 @@ const ritmo = [
     ['Viernes', 'Segundo video a cámara. Veinte minutos con las embajadoras. Revisión de reportes.', 'Persona'],
     ['Sábado', 'Clubes y eventos: donde está la gente.', 'Persona'],
     ['Domingo', 'Descanso. Solo salen las piezas programadas.', '—'],
-    ['Todos los días', 'Diez invitaciones personales, un video, una imagen, tres historias, la pregunta del día y contestar todo en menos de una hora.', 'Persona + IA'],
+    ['Todos los días', 'Diez invitaciones personales, un video, las tres imágenes del día (al muro y a historias), la pregunta del día y contestar todo en menos de una hora.', 'Persona + IA'],
   ] },
 
   { k: 'cabeza', e: 'El reparto', t: 'Qué hace cada quién' },
@@ -564,7 +564,7 @@ const equipo = [
 ];
 
 export const PLAN = {
-  version: '1.0', fecha: '10 de octubre de 2026',
+  version: '1.1', fecha: '10 de octubre de 2026',
   titulo: 'El plan para que 10 millones de personas busquen pareja con Cupido',
   bajada: 'Primero el resumen y los atajos; después, la lista de todo lo que hay que hacer. Lo que dice «supuesto» se cambia por el dato real en cuanto exista.',
   pestanas: [

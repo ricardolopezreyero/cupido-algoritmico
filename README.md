@@ -18,7 +18,7 @@ Te registras, respondes 43 preguntas una sola vez, y no pasa nada más. No hay s
 | **Tablero de la persona** · `/persona` | Menú lateral: inicio con camino y logros, coincidencias de 90 % hacia arriba, aceptaciones, avisos, lo que más pesa, sus respuestas por categoría, privacidad, pausa y cerrar sesión. |
 | **Panel administrativo** · `/admin` | Cifras, matriz 10 × 10, vetos explicados, el cálculo de cada par en las dos direcciones, puertas, corrida del matching por fases, laboratorio de pesos, artículos y bitácora en vivo. |
 | **Artículos** · `/articulos` | Cualquiera publica sin crear cuenta. |
-| **Compartir** · `/compartir` | Todo para hablar de Cupido: 275 frases en la medida de Instagram, Facebook, TikTok y YouTube, 154 videos verticales (sin audio o con música), mensajes de WhatsApp, código para páginas, la marca y los paquetes para bajarlo todo. La misma sección vive en el tablero, con la liga personal. |
+| **Compartir** · `/compartir` | Todo para hablar de Cupido: 325 frases en la medida de Instagram, Facebook, TikTok y YouTube (entre ellas, 50 «verdades incómodas» con su fuente), la cuenta completa en orden de publicación, 154 videos verticales (sin audio o con música), mensajes de WhatsApp, código para páginas, la marca y los paquetes para bajarlo todo. La misma sección vive en el tablero, con la liga personal. |
 | **Cuestionario** · `/cuestionario` | Las 43 preguntas conectadas a tu cuenta: autoguardado y el motor te cruza al terminar. |
 | **Go-to-market** · `/gtm` | Privado para el equipo: la estrategia para llegar a 10 millones de perfiles vivos, los atajos, a quién buscar y una lista de 244 actividades cuyas palomitas se guardan con nombre y fecha. |
 
@@ -53,7 +53,7 @@ Detalle completo, incluida la revisión de lo sexual y lo espiritual: **[MODELO.
 - [`EXPERIENCIA.md`](EXPERIENCIA.md) — La experiencia de respuesta y la primera impresión multimedia.
 - [`docs/RUTA.md`](docs/RUTA.md) — **La lista completa** de lo que falta, priorizada.
 - [`docs/RECORRIDO.md`](docs/RECORRIDO.md) — **El recorrido**: cómo recibe Cupido a cada persona, con una voz para ella y otra para él.
-- [`docs/COMPARTIR.md`](docs/COMPARTIR.md) — **Compartir**: 275 frases en la medida de cada red, 154 videos cortos con música o sin ella, el taller, WhatsApp, el código para páginas, la marca, y cómo se pintan las piezas y se fabrican los videos.
+- [`docs/COMPARTIR.md`](docs/COMPARTIR.md) — **Compartir**: 325 frases en la medida de cada red, la serie «Verdades incómodas» con sus fuentes, el orden de publicación, 154 videos cortos con música o sin ella, el taller, WhatsApp, el código para páginas, la marca, y cómo se pintan las piezas y se fabrican los videos.
 - [`docs/GTM.md`](docs/GTM.md) — **El go-to-market**: qué trae `/gtm`, quién entra, dónde se edita el plan y la lista, y las reglas para tocarla.
 - [`docs/APP.md`](docs/APP.md) — **Cupido como app**: cómo se instala en cada equipo, qué guarda y qué no, pantalla completa y el código para entrar desde el iPhone.
 - [`docs/PANTALLA.md`](docs/PANTALLA.md) — **Privacidad en pantalla**: nombres y fotos borrosos con un toque, para grabar sin enseñar de quién es.

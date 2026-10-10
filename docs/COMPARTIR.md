@@ -15,7 +15,8 @@ Está en dos lugares, y es la misma sección:
 | Parte | Qué es |
 |---|---|
 | **Tu liga** | Copiar, WhatsApp, Facebook, X, Telegram, correo, «Más…» (la hoja de compartir del teléfono) y su código QR. |
-| **Galería · Imágenes** | 275 frases en 12 series, en 5 medidas y 3 fondos. «Todas» sale mezclada, una de cada serie por vuelta. |
+| **Galería · Imágenes** | 325 frases en 13 series, en 5 medidas y 3 fondos. «Todas» sale mezclada, una de cada serie por vuelta. |
+| **Galería · La cuenta** | Las 325 juntas y **en el orden en que conviene publicarlas**, como se vería el perfil de una red: tres por renglón, cada renglón un día. Se bajan numeradas, con su calendario. Liga directa: `/compartir#cuenta`. |
 | **Galería · Videos** | 154 de esas frases como video vertical de 5 a 9 segundos. Ya vienen hechos: bajan al instante, **sin audio** o **con música**. |
 | **El taller** | Una pieza en grande, con dos pestañas. **Imagen:** descargar, compartir, copiar; cambiar medida, fondo y acomodo; liga personal o código QR. **Video:** verlo, oír la música, elegir otra, y los dos botones: «Video sin audio» y «Video con música». También «Con mi frase». |
 | **Textos** | Para Instagram, TikTok, YouTube, Facebook y X. La sección está plegada: cada imagen ya trae su texto. |
@@ -23,7 +24,7 @@ Está en dos lugares, y es la misma sección:
 | **Qué va en cada red** | La tabla red → pieza → medida. Tocar una fila acomoda la galería. |
 | **Código para tu página** | Botón, insignia, tarjeta con frase e imagen con liga. Un solo selector de color (negro, blanco, rosa) cambia las cuatro. |
 | **La marca** | Logotipo, color, tipografía (se descarga de aquí, con licencia), cómo suena, tres reglas y la guía de estilos. |
-| **Descargar todo** | Cuatro paquetes: las 275 imágenes en vertical, los 154 videos sin audio, los 154 con música y el kit de marca. |
+| **Descargar todo** | Cuatro paquetes: las 325 imágenes en vertical, los 154 videos sin audio, los 154 con música y el kit de marca. |
 
 ## La idea de estilo
 
@@ -114,6 +115,50 @@ Regla: **toda frase se puede comprobar en la plataforma, o es una invitación de
 | En serio · Para él · Para invitar | 56 | Invitaciones y opinión de la casa | — |
 
 **Lo que no se dice nunca:** «pareja garantizada», plazos («en 30 días»), «perfiles verificados» (todavía no se verifica identidad), cifras de usuarios, ni el nombre de otras apps. El dato del demo («9 de cada 100 cruces») siempre dice que es del demo.
+
+## Verdades incómodas (la serie controversial)
+
+Cincuenta frases que cuestionan cómo se ha escogido pareja hasta hoy: por lo físico, de entre muy pocos y a ciegas. Son más duras que el resto a propósito; por lo mismo, la regla es más estricta. Hay tres clases y cada una se sostiene distinto:
+
+| Clase | Ejemplo | Qué la sostiene |
+|---|---|---|
+| **El dato** | «32 divorcios por cada 100 bodas.» | La fuente va escrita en la letra chica y ligada en el campo `f`. El taller enseña «📎 Ver la fuente del dato» y el texto para acompañarla la incluye. |
+| **La cuenta** | «192 años te tomaría tener 10,000 primeras citas.» | Aritmética, con su supuesto dicho en la misma pieza («a una por semana», «si es una entre mil»). |
+| **La tesis de la casa** | «Cuerpo, mente y espíritu. Los tres, o falta algo.» | Es lo que Cupido cree y lo que cruza (intimidad, forma de pensar y de pelear, fe y vida interior). No se presenta como dato. |
+
+Lo que **no** dice ninguna, aunque suene bien: que las apps de deslizar «causan» divorcios (los estudios no coinciden: uno de 2021 en Reino Unido y otro de 2024 apuntan a matrimonios algo más frágiles; otro de 2013, pagado por eHarmony, dice lo contrario), que Cupido esté «comprobado por la ciencia» ni que use inteligencia artificial para cruzar (el motor es lógica publicada; la IA solo acomoda un texto dictado, si la persona lo pide). Tampoco promete pareja: lo que afirma es de la **muestra** (cuánta gente puede comparar un motor contra cuánta alcanza a conocer una persona) y de la **información** (lo que se pregunta antes de verse).
+
+Cuando la frase habla de cuánta gente cruza Cupido, va en condicional («cuando tu ciudad llegue a 10,000 perfiles», «todas las personas que estén»): hoy no hay miles.
+
+**De dónde sale cada dato** (verificado el 10 de octubre de 2026):
+
+| Frase | Dato | Fuente |
+|---|---|---|
+| `divorcios-100`, `veinte-anos`, `sin-razon` | 31.6 divorcios por cada 100 matrimonios (25.7 en 2016); 33.1 % de los disueltos duró 21 años o más; 66.4 % incausados | [INEGI, Estadística de Divorcios 2025](https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2026/ed/ED2025_CP.pdf) |
+| `coahuila-48` | Coahuila 48.2 y Nuevo León 56.4 divorcios por cada 100 matrimonios | [INEGI, reporte de resultados 2025](https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2026/ed/ED2025_RR.pdf) |
+| `cuatro-de-diez` | 39.9 % de las mujeres de 15 años o más que han tenido pareja vivió violencia de su pareja a lo largo de la relación | [INEGI, ENDIREH 2021](https://www.inegi.org.mx/programas/endireh/2021/) |
+| `la-dejaron` | 38.7 millones han descargado una app de citas; 8.6 millones activos | [The CIU, feb 2026 (Crónica)](https://www.cronica.com.mx/nacional/2026/02/13/citas-digitales-en-mexico-mas-de-86-millones-de-personas-buscan-el-amor-por-aplicacion/) |
+| `agotados` | 78 % con fatiga de apps (Estados Unidos, 2024) | [Forbes Health, vía Global Dating Insights](https://www.globaldatinginsights.com/featured/survey-finds-over-three-quarters-are-suffering-dating-app-fatigue/) |
+| `insatisfechos`, `sin-pareja-satisfecha` | 31 % no está satisfecho con su vida romántica; 82 % de quienes tienen pareja dice estar satisfecho con ella (29 países) | [Ipsos, Love Life Satisfaction 2026](https://www.ipsos.com/es-mx/mayor%C3%ADas-fuertes-se-sienten-amadas-satisfechas-con-su-pareja-el-d%C3%ADa-de-san-valent%C3%ADn) |
+| `tres-anos` | 12 % de quienes se conocieron en línea se divorció en los primeros tres años, contra 2 % de los presentados por familia o amigos (Reino Unido, 2,000 personas; correlación, no causa) | [Marriage Foundation, 2021](https://marriagefoundation.org.uk/wp-content/uploads/2021/10/MF-press-release-online-weddings.pdf) |
+| `deslizar-cansa` | La probabilidad de aceptar cae 27 % del primer perfil al último | [Pronk y Denissen, 2020](https://research.tilburguniversity.edu/en/publications/a-rejection-mind-set-choice-overload-in-online-dating/) |
+| `miedo-sola` | El miedo a la soltería predice conformarse con menos | [Spielmann y otros, 2013](https://www.utoronto.ca/news/bad-relationships-and-fear-being-single) |
+| `cinco-cuadras` | Una de cada tres parejas vivía a cinco cuadras o menos (5,000 actas, Filadelfia) | [Bossard, American Journal of Sociology, 1932](https://www.journals.uchicago.edu/doi/10.1086/216031) |
+| `secretaria` | Conociendo candidatos de uno en uno, la mejor estrategia acierta 1/e ≈ 37 % | Resultado matemático: el problema de la secretaria |
+| `una-entre-mil`, `anos-192`, `cien-veces` | 1 − 0.999¹⁰⁰ = 9.5 %; 1 − 0.999¹⁰⁰⁰⁰ > 99.9 %; 10,000 ÷ 52 = 192 | Cuenta propia, con el supuesto escrito en la pieza |
+
+La tarjeta para páginas ajenas **no** saca estas frases en su rotación diaria: solo aparecen si quien pega la tarjeta las pide por su clave.
+
+## La cuenta: el orden de publicación
+
+`public/js/orden.js` es el calendario: todas las frases en el orden en que conviene publicarlas, tres por renglón (un día). Cada día lleva un **gancho** que detiene el dedo (una verdad incómoda, una pregunta o «lo contrario»), una **del corazón** (ella manda, lo que se siente, en serio, los dos síes) y una **prueba** (cómo funciona, los números, sin publicidad, para él, para invitar). El gancho cambia de columna cada día para que la cuenta no se vea en franjas.
+
+- Cada entrada es `'clave'` (fondo blanco), `'clave/negro'` o `'clave/rosa'`. Las verdades incómodas van en negro y la regla de la casa en rosa.
+- **La lista es el calendario y se edita a mano.** Una frase nueva que no esté en la lista sale sola al final; una que se quite, se salta.
+- Se armó con `node scripts/armar-orden.mjs`. Volver a correrlo rehace todo: no hacerlo si ya se empezó a publicar.
+- En la galería, «📱 La cuenta» las pinta todas (como imágenes, no lienzos, para que cientos no pesen) con la cabecera de un perfil. Al tocar una, el taller dice su turno («Publicación 10 de 325 · día 4»).
+- «⬇ Bajar las 325 numeradas, en orden» arma un `.zip` con `001_…png` a `325_…png` y `000_calendario.txt` (día por día, con el texto para acompañar cada una y su fuente).
+- A tres por día alcanza para 109 días; a una por día, para casi un año.
 
 ## Lo que sí vive como archivo
 

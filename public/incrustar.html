@@ -45,8 +45,9 @@ const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const q = new URLSearchParams(location.search), esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 const fondo = q.get('fondo'); if (fondo === 'negro' || fondo === 'rosa') document.body.classList.add(fondo);
 const i = q.get('i'); if (i && /^[a-z0-9]{5,12}$/.test(i)) document.getElementById('t').href = `${location.origin}/i/${i}`; else if (location.hostname !== 'cupido.capitaltorreon.com') document.getElementById('t').href = location.origin;
-// la frase del día: la misma para todo el mundo durante un día; las de invitar se dejan para quien comparte en persona
-const deCasa = FRASES.filter((f) => f.s !== 'invitar'), hoy = Math.floor(Date.now() / 86400000);
+// la frase del día: la misma para todo el mundo durante un día; las de invitar se dejan para quien comparte en persona,
+// y las verdades incómodas solo salen si quien pega la tarjeta las pide por su clave (es su página, no la nuestra)
+const deCasa = FRASES.filter((f) => f.s !== 'invitar' && f.s !== 'verdades'), hoy = Math.floor(Date.now() / 86400000);
 const fr = FRASE[q.get('frase')] || deCasa[hoy % deCasa.length];
 const marcado = (t) => esc(t).replace(/\*([^*]+)\*/g, '<em>$1</em>').replace(/~([^~]+)~/g, '<s>$1</s>').replace(/\n/g, '<br>');
 document.getElementById('f').innerHTML = (fr.g ? `<span class="g">${esc(fr.g)}</span>` : '') + (fr.n ? `<span class="n">${esc(fr.n)}</span>` : '') + marcado(fr.t);

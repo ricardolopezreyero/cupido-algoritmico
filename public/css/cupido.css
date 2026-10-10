@@ -1695,3 +1695,26 @@ html[data-app] .bv-pie { padding-bottom: calc(10px + env(safe-area-inset-bottom)
 .demo-switch { gap: 8px; } .demo-switch .pal { width: 32px; height: 19px; } .demo-switch .pal::after { width: 13px; height: 13px; }
 /* arriba a la derecha vive el botón de la cuenta (el círculo): los botones del encabezado le dejan su lugar */
 @media (min-width: 901px) { .seccion-admin > .cabeza-admin { padding-right: 58px; } }
+
+/* ── Compartir · «La cuenta»: todas las publicaciones juntas y en orden, como el perfil de una red — RLR ── */
+.cmp-perfil { display: flex; align-items: center; gap: 20px; max-width: 760px; margin: 4px auto 18px; }
+.cmp-perfil canvas { width: 84px; height: 84px; border-radius: 50%; flex: none; box-shadow: 0 0 0 3px #fff, 0 0 0 4px var(--linea-2); }
+.cmp-perfil > div > b { display: block; font: 600 18px/1.2 var(--sans); color: var(--tinta); }
+.cmp-perfil p { margin: 0; font-size: 14px; line-height: 1.45; color: var(--tinta-2); }
+.cmp-perfil .cmp-perfil-cifras { display: flex; flex-wrap: wrap; gap: 4px 20px; margin: 6px 0; font-size: 14.5px; color: var(--tinta); }
+.cmp-perfil-cifras b { font-weight: 700; }
+.cmp-rejilla.de-cuenta { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 3px; max-width: 760px; margin: 0 auto; background: #e6e0d9; border: 3px solid #e6e0d9; }   /* el fondo se asoma entre las piezas: así las blancas no se pegan entre sí */
+.cmp-rejilla.de-cuenta .cmp-pieza { position: relative; border-radius: 0; box-shadow: none; background: #f3efeb; transition: filter .2s; }
+.cmp-rejilla.de-cuenta .cmp-pieza:hover, .cmp-rejilla.de-cuenta .cmp-pieza:focus-visible { transform: none; box-shadow: none; filter: brightness(.94); z-index: 1; outline: 2px solid var(--rosa); outline-offset: -2px; }
+.cmp-rejilla.de-cuenta img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.cmp-rejilla.de-cuenta img:not([src]) { visibility: hidden; }
+.cmp-turno { position: absolute; left: 6px; top: 6px; font: 600 11px/1 var(--sans); font-style: normal; padding: 4px 7px; border-radius: 999px; background: rgba(17,17,17,.74); color: #fff; opacity: 0; transition: opacity .2s; pointer-events: none; }
+.cmp-pieza:hover .cmp-turno, .cmp-pieza:focus-visible .cmp-turno { opacity: 1; }
+.cmp-turno-t { font-size: 12.5px; font-weight: 600; color: var(--gris); }
+.cmp-fuente { font-size: 13px; font-weight: 600; color: var(--rosa-osc); text-underline-offset: 3px; }
+#cmp-series[hidden], #cmp-mandos-muro[hidden], #cmp-perfil[hidden] { display: none; }
+@media (max-width: 700px) {
+  .cmp-modos button small { display: none; }
+  .cmp-perfil { gap: 14px; } .cmp-perfil canvas { width: 64px; height: 64px; }
+  .cmp-rejilla.de-cuenta { gap: 2px; }
+}

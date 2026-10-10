@@ -3,9 +3,9 @@
    Autor: Ricardo López Reyero · RLR
 
    Cada frase es un post (en cualquier medida y fondo) y, si lleva v, también un
-   videíto. Regla de la casa: TODA frase se puede comprobar en la plataforma o es
-   una invitación de corazón; ninguna promete pareja. Si el producto cambia, la
-   frase se cambia o se quita (ver docs/COMPARTIR.md).
+   videíto. Regla de la casa: TODA frase se puede comprobar en la plataforma, trae
+   su fuente, o es una invitación de corazón; ninguna promete pareja. Si el producto
+   cambia, la frase se cambia o se quita (ver docs/COMPARTIR.md).
 
    t  = la frase   (\n parte el renglón · *así* va en cursiva · ~así~ va tachado)
    e  = la letra chica: el dato, la cifra o la razón
@@ -13,6 +13,7 @@
    gr = el dibujo de esa cantidad: { puntos: 43 } · { puntos: 100, llenos: 9 } · { barra: 90, raya: 90 }
    c  = el acomodo de inicio: arriba, abajo o centro
    v  = 1 si también es video · g = el gancho con el que abre el video (opcional)
+   f  = la liga de la fuente, cuando la frase es un dato de fuera (se enseña en el taller, junto a la pieza)
    El id no se cambia nunca: es el nombre del archivo y la dirección de la tarjeta.
    ───────────────────────────────────────────────────────────────────────────── */
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
@@ -20,6 +21,7 @@ const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 // m = la música de fondo que le queda a los videos de esa serie
 export const SERIES = [
   { id: 'ella', n: 'Ellas mandan', m: 'piano', d: 'La regla de la casa: aquí manda ella.' },
+  { id: 'verdades', n: 'Verdades incómodas', m: 'ritmo', d: 'Lo que nadie quiere oír sobre cómo se escoge pareja. Cada dato, con su fuente.' },
   { id: 'sentir', n: 'Con sentimiento', m: 'piano', d: 'Lo que se siente buscar en serio.' },
   { id: 'datos', n: 'En números', m: 'ritmo', d: 'Las cifras de Cupido, una por una.' },
   { id: 'contrario', n: 'Lo contrario', m: 'ritmo', d: 'Todo lo contrario a lo que conoces de citas.' },
@@ -62,6 +64,62 @@ export const FRASES = [
   { id: 'captura', s: 'ella', c: 'arriba', t: 'No podemos impedir una captura de pantalla.', e: 'Por eso tu foto y lo delicado de tu perfil se entregan solo cuando tú decides.' },
   { id: 'reglas-el', s: 'ella', c: 'centro', t: 'Él acepta las reglas antes de entrar.', e: 'Las mismas para todos.' },
   { id: 'cuando-quieras', s: 'ella', c: 'centro', v: 1, t: 'Contestas cuando quieras.\n*O nunca.*', e: 'Y él no puede insistir.' },
+
+  /* ═══ Verdades incómodas ═══
+     La serie que cuestiona cómo se ha escogido pareja hasta hoy: por lo físico, de entre muy pocos y a ciegas.
+     Tres clases de frase: el DATO (lleva su fuente en e y la liga en f), la CUENTA (aritmética, con su supuesto dicho)
+     y la TESIS de la casa (cuerpo, mente y espíritu; no conformarse). Ninguna promete pareja ni dice «comprobado por la ciencia».
+     El orden de aquí es el orden en que conviene publicarlas. */
+  { id: 'entre-pocos', s: 'verdades', c: 'centro', t: 'No es que escojas mal.\n*Es que escoges entre muy pocos.*', e: 'El problema no eres tú. Es la muestra.' },
+  { id: 'divorcios-100', s: 'verdades', c: 'arriba', n: '32', gr: { puntos: 100, llenos: 32 }, t: 'divorcios por cada 100 bodas.', e: 'México, 2025: 31.6, para ser exactos. En 2016 eran 25.7. Fuente: INEGI.', f: 'https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2026/ed/ED2025_CP.pdf' },
+  { id: 'cara-caracter', s: 'verdades', c: 'abajo', t: 'Te enamoras de una cara.\n*Vives con un carácter.*', e: 'En la foto no sale cómo pelea.' },
+  { id: 'alcanzo', s: 'verdades', c: 'arriba', t: 'Nadie escoge al mejor.\nEscoge al mejor *de los que alcanzó a conocer.*', e: 'Hasta hoy no había otra forma.' },
+  { id: 'cinco-cuadras', s: 'verdades', c: 'centro', g: 'Filadelfia, 1932.', t: 'Una de cada tres parejas vivía a cinco cuadras o menos.', e: 'Así se ha escogido siempre: de entre quien queda cerca. James Bossard revisó 5,000 actas de matrimonio.', f: 'https://www.journals.uchicago.edu/doi/10.1086/216031' },
+  { id: 'solo-fisico', s: 'verdades', c: 'arriba', t: 'Cuando solo te conectas por lo físico, tu vida *no es plena.*', e: 'Se acaba la novedad y no hay de qué hablar.' },
+  { id: 'agotados', s: 'verdades', c: 'arriba', n: '78 %', gr: { barra: 78 }, t: 'de quienes usan apps de citas dice estar agotado.', e: 'Encuesta de Forbes Health en Estados Unidos, 2024.', f: 'https://www.globaldatinginsights.com/featured/survey-finds-over-three-quarters-are-suffering-dating-app-fatigue/' },
+  { id: 'la-prima', s: 'verdades', c: 'abajo', t: 'Te lo presentó tu prima.\nEra amigo del novio.\n*Ese fue todo el proceso de selección.*', e: 'Para la decisión más importante de tu vida.' },
+  { id: 'solo-mental', s: 'verdades', c: 'centro', t: 'Cuando solo te conectas por lo mental, tu vida *no es plena.*', e: 'Grandes pláticas. Y dos compañeros de cuarto.' },
+  { id: 'coahuila-48', s: 'verdades', c: 'arriba', n: '48', gr: { puntos: 100, llenos: 48 }, t: 'divorcios por cada 100 bodas en Coahuila.', e: 'En Nuevo León, 56. Fuente: INEGI, 2025.', f: 'https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2026/ed/ED2025_RR.pdf' },
+  { id: 'corazonada', s: 'verdades', c: 'abajo', t: 'Para lo que más importa en tu vida usas lo que menos piensa:\n*una corazonada.*', e: '' },
+  { id: 'solo-espiritual', s: 'verdades', c: 'arriba', t: 'Cuando solo te conectas por lo espiritual, tu vida *no es plena.*', e: 'Creen en lo mismo. Y no saben pelear.' },
+  { id: 'anos-192', s: 'verdades', c: 'arriba', n: '192', t: 'años te tomaría tener 10,000 primeras citas.', e: 'A una por semana, sin fallar ninguna. Cruzar respuestas no pide una cena por persona.' },
+  { id: 'los-tres', s: 'verdades', c: 'centro', t: 'Cuerpo, mente y espíritu.\n*Los tres, o falta algo.*', e: 'Cupido cruza los tres: la intimidad, la forma de pensar y de pelear, y la fe o la vida interior.' },
+  { id: 'la-dejaron', s: 'verdades', c: 'arriba', n: '30', t: 'millones de mexicanos bajaron una app de citas y la dejaron.', e: '38.7 millones las han descargado; 8.6 millones siguen activos. The CIU, 2026.', f: 'https://www.cronica.com.mx/nacional/2026/02/13/citas-digitales-en-mexico-mas-de-86-millones-de-personas-buscan-el-amor-por-aplicacion/' },
+  { id: 'te-cansaste', s: 'verdades', c: 'abajo', t: 'No encontraste a tu persona.\n*Te cansaste de buscar.*', e: 'Y a eso le decimos sentar cabeza.' },
+  { id: 'curriculums', s: 'verdades', c: 'arriba', t: 'Para un buen puesto se revisan cientos de currículums.\n*¿Y para escoger con quién vives?*', e: 'Cuatro citas y una corazonada.' },
+  { id: 'insatisfechos', s: 'verdades', c: 'arriba', n: '31 %', gr: { barra: 31 }, t: 'de las personas no está satisfecha con su vida romántica.', e: 'Casi una de cada tres. Promedio de 29 países; Ipsos, 2026.', f: 'https://www.ipsos.com/es-mx/mayor%C3%ADas-fuertes-se-sienten-amadas-satisfechas-con-su-pareja-el-d%C3%ADa-de-san-valent%C3%ADn' },
+  { id: 'lo-guapo', s: 'verdades', c: 'centro', t: 'Lo guapo se ve en dos segundos.\n*Cómo pelea, en dos años.*', e: 'Aquí se pregunta primero.' },
+  { id: 'una-entre-mil', s: 'verdades', c: 'arriba', g: 'Hagamos la cuenta.', n: '9.5 %', gr: { barra: 9.5 }, t: 'de probabilidad de dar con tu persona, si es una entre mil y tú conoces a cien.', e: 'Con 10,000 personas cruzadas pasa de 99.9 %. No cambia tu suerte: cambia la muestra.' },
+  { id: 'ciudad-chica', s: 'verdades', c: 'abajo', t: 'Creciste en una ciudad chica.\nConociste a treinta.\nEscogiste a una.\n*¿Y a eso le llamas destino?*', e: 'No fue destino. Fue cercanía.' },
+  { id: 'veinte-anos', s: 'verdades', c: 'arriba', g: 'El dato que nadie comenta.', t: 'Uno de cada tres divorcios llega después de *veinte años* de casados.', e: '33.1 % de los matrimonios que se disolvieron en México en 2025 duró 21 años o más. Fuente: INEGI.', f: 'https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2026/ed/ED2025_CP.pdf' },
+  { id: 'poco-romantico', s: 'verdades', c: 'centro', t: '¿Poco romántico usar lógica?\n*Menos romántico es divorciarte.*', e: 'La lógica va antes. El amor lo ponen ustedes dos.' },
+  { id: 'miedo-sola', s: 'verdades', c: 'arriba', t: 'El miedo a quedarte sola es pésimo para escoger.', e: 'Quien le teme a la soltería se conforma con menos. Spielmann y otros, Journal of Personality and Social Psychology, 2013.', f: 'https://www.utoronto.ca/news/bad-relationships-and-fear-being-single' },
+  { id: 'otro-algoritmo', s: 'verdades', c: 'abajo', t: 'Ya te escoge pareja un algoritmo.\n*El de una app que gana más mientras más tardes.*', e: 'El nuestro está publicado. Y Cupido no gana nada con que te quedes.' },
+  { id: 'secretaria', s: 'verdades', c: 'arriba', n: '63 %', gr: { barra: 63 }, t: 'de las veces fallas, aunque escojas con la mejor estrategia posible.', e: 'Es matemática: conociendo a una persona a la vez, lo óptimo acierta 37 %. Se llama el problema de la secretaria.' },
+  { id: 'no-sale-en-foto', s: 'verdades', c: 'centro', t: 'En la foto no sale cómo maneja el dinero, cómo pelea, en qué cree ni qué quiere en la cama.', e: 'Aquí se pregunta antes de que nadie vea a nadie.' },
+  { id: 'tres-anos', s: 'verdades', c: 'arriba', g: 'Reino Unido, 2,000 personas casadas.', n: '12 %', gr: { barra: 12 }, t: 'de quienes se conocieron en línea se divorció antes de tres años.', e: 'De los presentados por familia o amigos, 2 %. Marriage Foundation, 2021. No prueba la causa; sí da qué pensar.', f: 'https://marriagefoundation.org.uk/wp-content/uploads/2021/10/MF-press-release-online-weddings.pdf' },
+  { id: 'lo-obvio', s: 'verdades', c: 'abajo', t: 'Tus amigos te presentaban a cinco.\nLas apps te enseñan mil fotos.\n*Faltaba lo obvio.*', e: 'Mucha gente, y conocerla a fondo antes de verla. Para eso es Cupido.' },
+  { id: 'la-boda', s: 'verdades', c: 'centro', t: 'Planeaste la boda un año.\n*¿Cuánto planeaste con quién?*', e: '' },
+  { id: 'deslizar-cansa', s: 'verdades', c: 'arriba', n: '27 %', gr: { barra: 27 }, t: 'menos probable es que digas que sí al último perfil que al primero.', e: 'Entre más opciones deslizas, más rechazas. Pronk y Denissen, 2020.', f: 'https://research.tilburguniversity.edu/en/publications/a-rejection-mind-set-choice-overload-in-online-dating/' },
+  { id: 'sin-saber-hijos', s: 'verdades', c: 'abajo', t: 'Llevan tres años juntos y no saben si el otro quiere hijos.', e: 'Aquí es de lo primero que se cruza. Y si no coincide, ese par no existe.' },
+  { id: 'cuatro-de-diez', s: 'verdades', c: 'arriba', n: '4', gr: { puntos: 10, llenos: 4 }, t: 'de cada 10 mujeres en México han vivido violencia de su pareja.', e: '39.9 % de las que han tenido pareja. INEGI, ENDIREH 2021. Por eso aquí manda ella, y por eso lo que más pesa al cruzar es cómo pelea cada quien.', f: 'https://www.inegi.org.mx/programas/endireh/2021/' },
+  { id: 'cien-en-la-vida', s: 'verdades', c: 'centro', g: '¿De cuántos escogiste?', t: 'Una mujer conoce a fondo, si acaso, a cien posibles parejas en toda su vida.', e: 'Es una estimación generosa. Un motor la puede cruzar con todas las personas que estén.' },
+  { id: 'cien-veces', s: 'verdades', c: 'arriba', t: 'Tú: 100.\nUn motor: 10,000.\n*Cien veces más de dónde escoger.*', e: 'Cuando tu ciudad llegue a 10,000 perfiles. Por eso invitar te conviene.' },
+  { id: 'en-edad', s: 'verdades', c: 'centro', t: '«Ya estás en edad» no es una razón para casarte.', e: '' },
+  { id: 'sin-razon', s: 'verdades', c: 'abajo', t: 'Para divorciarte ya no te piden una razón.\n*Para casarte tampoco te la pidieron.*', e: '66.4 % de los divorcios en México son «incausados». Fuente: INEGI, 2025.', f: 'https://www.inegi.org.mx/contenidos/saladeprensa/boletines/2026/ed/ED2025_CP.pdf' },
+  { id: 'quince-minutos', s: 'verdades', c: 'arriba', t: 'Tu persona puede vivir a quince minutos.\n*Y no vas a conocerla nunca.*', e: 'No van al mismo gimnasio ni tienen los mismos amigos. Si los dos contestan, el motor sí los cruza.' },
+  { id: 'sin-pareja-satisfecha', s: 'verdades', c: 'arriba', n: '18 %', gr: { barra: 18 }, t: 'de las personas con pareja no se dice satisfecha con ella.', e: 'Casi una de cada cinco. Promedio de 29 países; Ipsos, 2026.', f: 'https://www.ipsos.com/es-mx/mayor%C3%ADas-fuertes-se-sienten-amadas-satisfechas-con-su-pareja-el-d%C3%ADa-de-san-valent%C3%ADn' },
+  { id: 'no-habia-herramienta', s: 'verdades', c: 'centro', t: 'No es tu culpa.\n*No existía la herramienta.*', e: 'Nadie podía comparar a fondo a miles de personas. Ya se puede.' },
+  { id: 'lo-volverias', s: 'verdades', c: 'abajo', t: '¿Lo volverías a escoger hoy?', e: 'Si dudaste, ya contestaste.' },
+  { id: 'prueba-y-error', s: 'verdades', c: 'arriba', t: 'Prueba y error funciona.\n*Solo que cada error cuesta años.*', e: 'Cupido es un atajo: menos años con quien no era.' },
+  { id: 'solo-una-cara', s: 'verdades', c: 'centro', t: 'Una app de deslizar no te pregunta nada.\n*Te enseña una cara y te pide decidir.*', e: '' },
+  { id: 'te-conformas', s: 'verdades', c: 'abajo', t: 'Cuando te conformas no pierdes a otra persona.\n*Pierdes la vida que ibas a tener.*', e: '' },
+  { id: 'los-que-habia', s: 'verdades', c: 'arriba', t: 'Antes no se escogía pareja.\n*Se escogía de entre los que había.*', e: '' },
+  { id: 'ya-no-eres', s: 'verdades', c: 'centro', t: 'Ya no eres quien eras a los 25.\n*Lo que necesitas de una pareja, tampoco.*', e: 'Por eso aquí tus respuestas se editan, y el motor te vuelve a cruzar.' },
+  { id: 'ganarle-a-la-muestra', s: 'verdades', c: 'arriba', t: 'No puedes ganarle a la muestra.', e: 'Tú conoces a quien te toca conocer. Un motor compara a todos los que estén.' },
+  { id: 'fisico-primero', s: 'verdades', c: 'abajo', t: 'Hoy lo físico va primero.\n*Y casi siempre, solo.*', e: 'Una foto, dos segundos, un pulgar.' },
+  { id: 'vida-plena', s: 'verdades', c: 'centro', t: 'El objetivo no es tener pareja.\n*Es una vida plena con alguien.*', e: 'En lo físico, en lo mental y en lo espiritual.' },
+  { id: 'no-la-menos-peor', s: 'verdades', c: 'arriba', t: 'La persona correcta.\n*No la menos peor.*', e: 'Para eso es todo esto.' },
 
   /* ═══ Con sentimiento ═══ */
   { id: 'mereces', s: 'sentir', c: 'centro', v: 1, t: 'Mereces a alguien que también te esté buscando.', e: '' },
