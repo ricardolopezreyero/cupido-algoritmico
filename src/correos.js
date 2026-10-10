@@ -140,15 +140,17 @@ const laOtra = (P) => (P?.genero === 'mujer' ? O_H : O_M);
 const charlaUrl = (env, O) => `${BASE(env)}/persona#charlas/${O?.id || ''}`;
 const FUERTES_MUESTRA = [{ dim: 'Conflicto y reparación', pct: 97, txt: 'Cuando algo les molesta, los dos se calman y lo hablan pronto' }, { dim: 'Proyecto de familia', pct: 94, txt: 'En hijos van en la misma dirección' }, { dim: 'Visión de vida', pct: 93, txt: 'Se imaginan su vida en el mismo tipo de lugar' }];
 const filasDeRazones = (fuertes) => (fuertes || []).map((f) => ({ ico: ICO_DIM[f.dim] || '💗', txt: `<b>${esc(f.txt)}</b>`, sub: `${esc(f.dim)} · ${f.pct} %` }));
+// El código de ocho números, por si el enlace abre en otro lado (la app del iPhone, el navegador de adentro del correo)
+const bloqueCodigo = (codigo, minutos) => (codigo ? [aviso('🔢', `<b>¿El enlace abrió en otro lado?</b> Pasa con la app instalada en el teléfono. Escribe este código donde pediste entrar:<br><span style="display:inline-block;margin:8px 0 4px;font-family:Georgia,'Times New Roman',serif;font-size:28px;line-height:1.2;font-weight:700;letter-spacing:3px;color:#211d24;white-space:nowrap">${esc(String(codigo).slice(0, 4))}&nbsp;${esc(String(codigo).slice(4))}</span><br><span style="font-size:14px;color:#6b6672">Vale ${minutos} minutos, igual que el enlace. Nadie de Cupido te lo va a pedir nunca.</span>`, 'sol')] : []);
 const candado = (minutos) => aviso('🔒', `<b>Este enlace abre tu cuenta: no reenvíes este correo.</b> Vale ${minutos} minutos y se usa una sola vez. Si tú no lo pediste, ignóralo: nadie puede entrar sin él.`, 'gris');
 const DISCRETO = (env, h = '') => ({ asunto: 'Tienes novedades en Cupido', contenido: { tono: 'sereno', figura: { tipo: 'emoji', v: '💌' }, eyebrow: 'Cupido', titulo: 'Tienes novedades.', sub: 'Entra a verlas cuando tengas un momento a solas.', vista: 'Entra a verlas cuando tengas un momento.',
   cuerpo: [p('Este correo no dice más porque tienes encendidos los <b>correos discretos</b>: sin nombres y sin contenido, para que nadie más lea lo que es tuyo.')], boton: { txt: 'Abrir mi tablero', url: tablero(env, h) } } });
 
 export const CORREOS = {
   enlace: { cat: 'acceso', cuando: 'Cada vez que alguien pide entrar con su correo. Si ya tiene cuenta, le dice lo que le espera adentro.',
-    muestra: () => ({ enlace: 'https://cupido.capitaltorreon.com/entrar/muestra', minutos: 20, espera: { sinLeer: 3, esperan: 1, abiertas: 1 } }),
+    muestra: () => ({ enlace: 'https://cupido.capitaltorreon.com/entrar/muestra', minutos: 20, codigo: '48391275', espera: { sinLeer: 3, esperan: 1, abiertas: 1 } }),
     prepara: async (env, P) => (!P?.id || discreto(P) ? {} : P.completo ? { espera: await resumenSemana(env, P) } : { av: avance(P.r || {}).pct }),
-    arma: (env, { P, enlace, minutos, espera, av }) => {
+    arma: (env, { P, enlace, minutos, codigo, espera, av }) => {
       const filas = [
         espera?.sinLeer ? { ico: '💬', txt: `<b>${cuantos(espera.sinLeer, 'mensaje', 'mensajes')}</b> sin leer` } : null,
         espera?.esperan ? { ico: '💘', txt: `<b>${cuantos(espera.esperan, 'coincidencia espera', 'coincidencias esperan')}</b> tu respuesta` } : null,
@@ -159,11 +161,11 @@ export const CORREOS = {
         contenido: { tono: 'noche', figura: { tipo: 'emoji', v: '🔑' }, eyebrow: 'Tu llave', titulo: nom(P) ? `Pásale, ${esc(nom(P))}.` : 'Pásale.', sub: 'Un toque y estás en tu tablero. Sin contraseña: tu correo es tu llave.', vista: `Un toque y estás adentro. Vale ${minutos} minutos y se usa una sola vez.`,
           cuerpo: [p('Aquí está el enlace que pediste. Ábrelo en el mismo teléfono o computadora donde quieres entrar.')],
           boton: { txt: 'Entrar a mi tablero', url: enlace, sub: `Vale ${minutos} minutos · se usa una sola vez` },
-          despues: [...(filas.length ? [sec('Lo que te espera adentro'), lista(filas)] : []), candado(minutos)],
+          despues: [...bloqueCodigo(codigo, minutos), ...(filas.length ? [sec('Lo que te espera adentro'), lista(filas)] : []), candado(minutos)],
           nota: `Si el botón no abre, copia esta liga en tu navegador:<br><span style="word-break:break-all">${esc(enlace)}</span>` } };
     } },
-  bienvenida: { cat: 'acceso', cuando: 'La primera vez que alguien entra con un correo nuevo.', muestra: () => ({ enlace: 'https://cupido.capitaltorreon.com/entrar/muestra', minutos: 20 }),
-    arma: (env, { enlace, minutos }) => ({ asunto: 'Qué gusto: tu cuenta de Cupido está lista',
+  bienvenida: { cat: 'acceso', cuando: 'La primera vez que alguien entra con un correo nuevo.', muestra: () => ({ enlace: 'https://cupido.capitaltorreon.com/entrar/muestra', minutos: 20, codigo: '48391275' }),
+    arma: (env, { enlace, minutos, codigo }) => ({ asunto: 'Qué gusto: tu cuenta de Cupido está lista',
       contenido: { tono: 'amor', figura: { tipo: 'emoji', v: '💘' }, eyebrow: 'Qué gusto que llegaste', titulo: 'No es una app de citas.', sub: 'Es un sistema de detección de parejas. Y tu cuenta ya está lista.', vista: 'Respondes 43 preguntas una sola vez y el motor hace el resto. Aquí está tu enlace.',
         cuerpo: [
           p('Aquí no hay perfiles que deslizar ni fotos como moneda de cambio. Hay 43 preguntas, un motor que cruza respuestas y una promesa: <b>solo te escribimos si alguien cruza el 90 % contigo</b>, en las dos direcciones.'),
@@ -172,7 +174,7 @@ export const CORREOS = {
           cita('Tú pon la verdad. Nosotros ponemos la lógica. El amor lo ponen ustedes dos.'),
         ],
         boton: { txt: 'Empezar mi cuestionario', url: enlace, sub: 'No hay contraseña que recordar: tu correo es tu cuenta' },
-        despues: [candado(minutos)],
+        despues: [...bloqueCodigo(codigo, minutos), candado(minutos)],
         nota: 'Te vamos a avisar por correo de todo lo que pase. Lo que no quieras saber, lo apagas en tu tablero, en «Mis correos».' } }) },
   matching: { cat: 'busqueda', reenvio: true, cuando: 'Al terminar el cuestionario: el motor ya cruzó a la persona. Le dice qué le falta subir.', muestra: () => ({ pares: 21, nuevas: 0, tengo: { foto: true, voz: false, video: false } }),
     prepara: async (env, P) => { const m = await mediosDe(env, P.id); return { tengo: { foto: !!m.foto, voz: !!m.audio, video: !!m.video } }; },
@@ -457,7 +459,7 @@ export async function paginaBaja(env, req, url) {
   const t = String(url.searchParams.get('t') || ''), cat = String(url.searchParams.get('c') || ''), C = CATEGORIA[cat];
   const fila = /^[a-z0-9]{20,40}$/.test(t) ? await env.DB.prepare(`SELECT id FROM personas WHERE baja = ?`).bind(t).first() : null;
   const P = fila ? await persona(env, fila.id) : null;
-  const pag = (titulo, cuerpo, status = 200) => new Response(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(titulo)} · Cupido Algorítmico</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="/css/cupido.css"></head><body data-author="RLR"><header class="barra"><div class="envoltura barra-in"><a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a></div></header><main class="envoltura entrar"><section class="tarjeta" style="max-width:560px;margin:40px auto"><p class="eyebrow">Mis correos</p><h1 style="font-size:30px;margin:0 0 10px">${titulo}</h1>${cuerpo}</section></main></body></html>`, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
+  const pag = (titulo, cuerpo, status = 200) => new Response(`<!doctype html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${esc(titulo)} · Cupido Algorítmico</title><link rel="icon" href="/favicon.svg" type="image/svg+xml"><link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#faf7f4"><link rel="apple-touch-icon" href="/app/icono-180.png"><link rel="stylesheet" href="/css/cupido.css"></head><body data-author="RLR"><header class="barra"><div class="envoltura barra-in"><a class="marca" href="/"><span class="corazon">💘</span><b>Cupido Algorítmico</b></a></div></header><main class="envoltura entrar"><section class="tarjeta" style="max-width:560px;margin:40px auto"><p class="eyebrow">Mis correos</p><h1 style="font-size:30px;margin:0 0 10px">${titulo}</h1>${cuerpo}</section></main></body></html>`, { status, headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store' } });
   if (!P || !C || C.fijo) return pag('Esta liga ya no sirve', `<p class="sub">Puede que sea vieja. Tus correos los eliges en tu tablero, en «Mis correos».</p><p><a class="boton" href="/persona#correos">Ir a mi tablero</a></p>`, 404);
   const accion = `/correo/baja?t=${t}&c=${cat}`;
   if (req.method === 'POST') {

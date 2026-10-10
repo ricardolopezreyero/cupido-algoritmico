@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sin conexión · Cupido Algorítmico</title>
+<meta name="author" content="Ricardo López Reyero">
+<meta name="rev" content="181218">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#faf7f4">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/css/cupido.css">
+</head>
+<body data-author="RLR">
+<!-- Cupido Algorítmico · Sin conexión · RLR · Ricardo López Reyero -->
+<main class="envoltura-texto" style="min-height:100vh;display:flex;flex-direction:column;justify-content:center;text-align:center;padding-top:40px;padding-bottom:40px">
+  <div style="font-size:56px;line-height:1">💘</div>
+  <p class="eyebrow" style="margin-top:18px">Sin conexión</p>
+  <h1 style="font-size:clamp(28px,6vw,40px);margin:0 0 12px">Cupido necesita internet para buscarte a alguien.</h1>
+  <p class="lead" style="margin:0 auto 24px;max-width:520px">No se perdió nada: tus respuestas, tus charlas y tus puertas están guardadas. En cuanto vuelva la conexión, sigues donde ibas.</p>
+  <p><button class="boton" id="otra" type="button">Intentar de nuevo</button></p>
+  <p class="nota-entrar" id="estado" aria-live="polite">Esta página se actualiza sola cuando regrese la conexión.</p>
+</main>
+<script>
+// RLR · sin conexión: reintenta sola en cuanto hay red
+(function () {
+  var _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
+  function otra() { document.getElementById('estado').textContent = 'Intentando…'; location.reload(); }
+  document.getElementById('otra').onclick = otra;
+  window.addEventListener('online', otra);
+  // se pregunta por algo que nunca se guarda (/api/): si contesta, aunque sea «no has entrado», ya hay red
+  setInterval(function () { if (navigator.onLine) fetch('/api/yo', { cache: 'no-store' }).then(otra).catch(function () {}); }, 8000);
+})();
+</script>
+</body>
+</html>

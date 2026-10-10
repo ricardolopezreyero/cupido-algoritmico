@@ -1395,3 +1395,47 @@ html[data-priv~="nombres"] .bv-av.a { color: transparent; text-shadow: 0 0 9px r
 mark.ch-marca { background: #ffe27a; color: var(--tinta); border-radius: 3px; padding: 0 1px; }
 .msg.encontrado .globo { box-shadow: 0 0 0 3px var(--rosa-suave), 0 0 0 5px var(--rosa); }
 @media (max-width: 560px) { .ch-busca-fila .cuenta { min-width: 46px; font-size: 12px; } .ch-busca-fila button { width: 34px; } }
+
+/* ── la app instalable ─────────────────────────────────────────────────────────────────── */
+/* «Instalar Cupido» en el menú de la izquierda: se ve como un renglón más, y desaparece cuando ya está instalada */
+#app-instalar:empty { display: none; }
+.lateral .app-entrada { display: flex; gap: 10px; align-items: center; width: 100%; margin-top: 10px; padding: 10px 12px; border-radius: 10px; border: 1px dashed var(--noche-3); background: transparent; color: #ffd0da; font: 500 14.5px var(--sans); cursor: pointer; text-align: left; }
+.lateral .app-entrada:hover { background: var(--noche-2); border-style: solid; color: #fff; }
+.lateral .app-entrada .ico { width: 20px; text-align: center; }
+.app-linea { margin: 8px 0 0; font-size: 15px; } .app-linea .ico, .app-pie .ico { margin-right: 6px; }
+.app-pie .enlace { font-size: inherit; } .app-pie:not(:empty)::after { content: ' · '; }
+.dock-lat #app-completa:empty { display: none; }
+/* la ventana de instalar */
+.app-cab { display: flex; gap: 16px; align-items: center; } .app-cab img { border-radius: 16px; flex: none; } .app-cab h2 { margin: 0 0 4px; }
+.app-t { margin: 16px 0 8px; font: 700 12px var(--sans); letter-spacing: .1em; text-transform: uppercase; color: var(--rosa-osc); }
+.app-pasos { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.app-pasos li { display: flex; gap: 12px; align-items: flex-start; background: var(--crema); border: 1px solid var(--linea); border-radius: 14px; padding: 12px 14px; font-size: 15.5px; line-height: 1.5; }
+.app-pasos .n { flex: none; width: 28px; height: 28px; border-radius: 50%; background: var(--rosa); color: #fff; font: 700 14px/28px var(--serif); text-align: center; }
+/* sin conexión: una franja arriba, sin tapar nada */
+.app-sin-red { position: fixed; left: 50%; top: calc(10px + env(safe-area-inset-top)); transform: translateX(-50%); z-index: 300; background: var(--noche); color: #fff; font: 600 13.5px var(--sans); padding: 9px 16px; border-radius: 99px; box-shadow: 0 8px 24px rgba(0,0,0,.25); white-space: nowrap; max-width: calc(100vw - 24px); overflow: hidden; text-overflow: ellipsis; }
+/* cuando Cupido corre como app instalada: respeta la muesca y la barra de abajo del teléfono */
+.toast { bottom: calc(24px + env(safe-area-inset-bottom)); }
+html[data-app] .lateral { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+html[data-app] .bv-pie { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+/* en pantallas táctiles, toda caja de texto va a 16 px: abajo de eso el iPhone hace zoom solo al escribir */
+@media (hover: none) and (pointer: coarse) { input:not([type=checkbox]):not([type=radio]):not([type=range]), textarea, select { font-size: 16px !important; } }
+
+/* entrar con el código del correo */
+.codigo-caja { text-align: left; margin: 18px 0 6px; padding: 16px; border: 1px solid var(--linea); border-radius: 16px; background: var(--crema); }
+.codigo-caja label { display: block; font-size: 15px; line-height: 1.5; color: var(--tinta-2); margin-bottom: 10px; } .codigo-caja label b { color: var(--tinta); }
+.codigo-fila { display: flex; gap: 8px; }
+.codigo-fila input { flex: 1; min-width: 0; border: 1.5px solid var(--linea-2); border-radius: 12px; padding: 12px 14px; font: 600 22px var(--serif); letter-spacing: 3px; text-align: center; background: var(--blanco); color: var(--tinta); }
+.codigo-fila input:focus { outline: none; border-color: var(--rosa); box-shadow: 0 0 0 3px var(--rosa-suave); }
+@media (hover: none) and (pointer: coarse) { .codigo-fila input { font-size: 22px !important; } }
+
+/* el bloque de abajo del menú, compacto: tres botones en fila (ocultar nombres, ocultar fotos, pantalla completa) y abajo el sonido */
+.lateral .dock-lat { gap: 7px; }
+.dock-tres { display: flex; gap: 6px; } .dock-tres > div { display: contents; }
+.dock-b { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 8px 4px 7px; border-radius: 12px; border: 1px solid var(--noche-3); background: var(--noche-2); color: #cbbfd3; font: 500 11.5px/1.25 var(--sans); text-align: center; cursor: pointer; transition: background .2s, border-color .2s, color .2s; }
+.dock-b .ico { font-size: 17px; line-height: 1.1; } .dock-b .t { display: block; }
+.dock-b:hover { border-color: #6a5a76; color: #fff; }
+.dock-b.on { background: var(--rosa); border-color: var(--rosa); color: #fff; font-weight: 600; }
+.dock-b:focus-visible { outline: 3px solid var(--rosa-linea); outline-offset: 2px; }
+.dock-lat .priv-tit { padding: 0 2px; margin-bottom: -2px; }
+.codigo-caja .codigo-fila .boton { width: auto; flex: none; margin: 0; padding-left: 22px; padding-right: 22px; }
+.codigo-caja .codigo-fila input { flex: 1 1 150px; width: auto; }

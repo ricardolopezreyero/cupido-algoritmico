@@ -75,6 +75,7 @@ export async function asegurar(env) {
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN vida TEXT`).run(); } catch { /* ya existe */ }
   try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN visita_a TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN visita_b TEXT`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE mensajes ADD COLUMN responde_a INTEGER`).run(); } catch { /* ya existe */ }
+  try { await env.DB.prepare(`ALTER TABLE enlaces ADD COLUMN codigo TEXT`).run(); await env.DB.prepare(`ALTER TABLE enlaces ADD COLUMN intentos INTEGER NOT NULL DEFAULT 0`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN codigo TEXT`).run(); await env.DB.prepare(`ALTER TABLE personas ADD COLUMN invitado_por TEXT`).run(); } catch { /* ya existen */ }
   // Aquí manda ella: las puertas y las charlas se pueden cerrar (y quién las cerró)
   try { await env.DB.prepare(`ALTER TABLE puertas ADD COLUMN cerro TEXT`).run(); await env.DB.prepare(`ALTER TABLE puertas ADD COLUMN cerrada TEXT`).run(); } catch { /* ya existen */ }

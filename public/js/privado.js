@@ -166,12 +166,12 @@ export function alCambiarPrivado(fn) {
 /* ── lo que se ve: dos interruptores en el menú, o un botón en las barras ── */
 export function interruptorPrivado(el, modo = 'menu') {
   if (!el) return;
-  const fila = (k, ico, txt, e) => `<button type="button" class="son-switch fino ${e[k] ? 'on' : ''}" role="switch" aria-checked="${e[k]}" data-k="${k}"><span class="ico">${ico}</span><span class="txt"><b>${txt}</b></span><span class="pal"></span></button>`;
+  const fila = (k, ico, txt, ayuda, e) => `<button type="button" class="dock-b ${e[k] ? 'on' : ''}" role="switch" aria-checked="${e[k]}" data-k="${k}" title="${ayuda}" data-priv-no><span class="ico">${ico}</span><span class="t">${txt}</span></button>`;
   const pinta = () => {
     const e = leer(), algo = e.nombres || e.fotos;
     el.innerHTML = modo === 'icono'
       ? `<button type="button" class="son-ico priv-ico ${algo ? 'on' : ''}" role="switch" aria-checked="${algo}" aria-label="Privacidad en pantalla" title="${algo ? 'Nombres y fotos borrosos. Toca para volver a verlos.' : 'Poner borrosos los nombres y las fotos, para grabar tu pantalla.'}">${algo ? '🙈' : '👁️'}</button>`
-      : `<div class="priv-lat" data-priv-no><span class="priv-tit">Privacidad en pantalla</span>${fila('nombres', '🙈', 'Ocultar nombres', e)}${fila('fotos', '🖼️', 'Ocultar fotos', e)}</div>`;
+      : fila('nombres', '🙈', 'Ocultar nombres', 'Pone borrosos todos los nombres y los correos, para grabar tu pantalla', e) + fila('fotos', '🖼️', 'Ocultar fotos', 'Pone borrosas todas las fotos y los videos', e);
     if (modo === 'icono') el.querySelector('button').onclick = () => alternarTodo();
     else el.querySelectorAll('[data-k]').forEach((b) => b.onclick = () => poner(b.dataset.k, !leer()[b.dataset.k]));
   };

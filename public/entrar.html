@@ -8,6 +8,36 @@
 <meta name="author" content="Ricardo López Reyero">
 <meta name="rev" content="181218">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<!-- la app: se puede instalar en el teléfono y en la computadora (opcional) -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#faf7f4">
+<meta name="application-name" content="Cupido">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cupido">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="/app/icono-180.png">
+<link rel="apple-touch-startup-image" media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/app/inicio/1320x2868.png">
+<link rel="apple-touch-startup-image" media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/app/inicio/1290x2796.png">
+<link rel="apple-touch-startup-image" media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/app/inicio/1206x2622.png">
+<link rel="apple-touch-startup-image" media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/app/inicio/1179x2556.png">
+<link rel="apple-touch-startup-image" media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/app/inicio/1170x2532.png">
+<link rel="apple-touch-startup-image" media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/app/inicio/1284x2778.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/app/inicio/1242x2688.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/828x1792.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/app/inicio/1125x2436.png">
+<link rel="apple-touch-startup-image" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/750x1334.png">
+<link rel="apple-touch-startup-image" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="/app/inicio/1242x2208.png">
+<link rel="apple-touch-startup-image" media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/640x1136.png">
+<link rel="apple-touch-startup-image" media="(device-width: 1032px) and (device-height: 1376px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/2064x2752.png">
+<link rel="apple-touch-startup-image" media="(device-width: 1024px) and (device-height: 1366px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/2048x2732.png">
+<link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1210px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/1668x2420.png">
+<link rel="apple-touch-startup-image" media="(device-width: 834px) and (device-height: 1194px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/1668x2388.png">
+<link rel="apple-touch-startup-image" media="(device-width: 820px) and (device-height: 1180px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/1640x2360.png">
+<link rel="apple-touch-startup-image" media="(device-width: 810px) and (device-height: 1080px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/1620x2160.png">
+<link rel="apple-touch-startup-image" media="(device-width: 768px) and (device-height: 1024px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/1536x2048.png">
+<link rel="apple-touch-startup-image" media="(device-width: 744px) and (device-height: 1133px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="/app/inicio/1488x2266.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/cupido.css">
@@ -25,6 +55,7 @@
     <h1>Sin contraseña. <em>Tu correo es tu cuenta.</em></h1>
     <p class="lead" id="aviso-arriba">Te mandamos un enlace, lo abres y ya estás dentro. Y si solo quieres ver cómo se siente, la cuenta demo está a un clic.</p>
     <p style="margin:10px 0 0"><a class="enlace" href="/bienvenida">¿Primera vez? Mira cómo funciona, en dos minutos →</a></p>
+    <div id="app-instalar" class="app-linea"></div>
   </section>
 
   <div class="entrar-rejilla">
@@ -55,6 +86,8 @@
 <script type="module">
 // RLR · entrar
 import { $, esc, api, avisar } from '/js/ui.js';
+import { botonInstalar } from '/js/app.js';
+botonInstalar($('#app-instalar'), { clase: 'enlace', texto: 'Llevar Cupido como app en mi teléfono o mi computadora' });
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 const q = new URLSearchParams(location.search);
 const ERRORES = { vencido: 'Ese enlace ya venció (valen 20 minutos). Pide uno nuevo con tu correo.', usado: 'Ese enlace ya se usó. Pide uno nuevo con tu correo.', 'inválido': 'Ese enlace no es válido. Pide uno nuevo con tu correo.' };
@@ -69,16 +102,31 @@ $('#f-correo').onsubmit = async (e) => {
   try {
     const r = await api('/api/entrar', { correo });
     $('#tarjeta-correo').innerHTML = `<div class="enviado"><div class="grande">📬</div><h2>Revisa tu correo</h2>
-      <p>Te mandamos tu enlace a <b>${esc(r.correo)}</b>. Ábrelo desde este mismo dispositivo o desde tu celular: entras directo.</p>
-      <p class="nota-entrar">¿No llega? Revisa el spam. Vale 20 minutos.</p>
+      <p>Te mandamos tu enlace a <b>${esc(r.correo)}</b>. Ábrelo y entras directo.</p>
+      <form id="f-codigo" class="codigo-caja" novalidate>
+        <label for="codigo"><b>¿El enlace abrió en otro lado?</b> Pasa con la app instalada en el teléfono. Escribe aquí el código de ocho números que viene en ese mismo correo:</label>
+        <div class="codigo-fila"><input id="codigo" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9 ]*" maxlength="9" placeholder="0000 0000" aria-label="Código de ocho números"><button class="boton" type="submit" id="btn-codigo">Entrar</button></div>
+        <p class="nota-entrar" id="codigo-msg" style="text-align:left;margin:8px 0 0" aria-live="polite"></p>
+      </form>
+      <p class="nota-entrar">¿No llega? Revisa el spam. El enlace y el código valen 20 minutos.</p>
       ${r.sinCorreo ? `<div class="tarjeta" style="margin-top:14px;padding:14px;background:var(--ambar-suave);border-color:#f0dcb8"><b>Modo desarrollo</b>: no hay llave de correo, así que aquí está tu enlace:<br><a href="${esc(r.enlace)}">${esc(r.enlace)}</a></div>` : ''}
       <p style="margin-top:18px"><button class="enlace" id="otra-vez">Usar otro correo</button></p></div>`;
     $('#otra-vez').onclick = () => location.replace('/entrar');
+    const cod = $('#codigo');
+    cod.oninput = () => { const n = cod.value.replace(/\D/g, '').slice(0, 8); cod.value = n.length > 4 ? n.slice(0, 4) + ' ' + n.slice(4) : n; if (n.length === 8) $('#f-codigo').requestSubmit(); }; // al completar los ocho, entra solo
+    $('#f-codigo').onsubmit = async (ev) => {
+      ev.preventDefault(); const n = cod.value.replace(/\D/g, ''), bc = $('#btn-codigo'), msg = $('#codigo-msg');
+      if (n.length !== 8) { msg.textContent = 'Son ocho números.'; cod.focus(); return; }
+      if (bc.disabled) return; bc.disabled = true; bc.textContent = 'Entrando…'; msg.textContent = '';
+      try { const x = await api('/api/entrar/codigo', { correo: r.correo, codigo: n }); location.replace(x.ir || '/persona'); }
+      catch (err) { msg.textContent = err.message || 'Ese código no coincide.'; bc.disabled = false; bc.textContent = 'Entrar'; cod.select(); }
+    };
   } catch (err) { avisar(err.message || 'No se pudo mandar el correo'); b.disabled = false; b.textContent = 'Mandarme mi enlace →'; }
 };
 </script>
 <!-- RLR · Login de CapitalTorreon: todo funciona sin entrar; entrar solo agrega -->
 <div data-login-ct style="position:fixed;top:12px;right:12px;z-index:9999"></div>
 <script src="https://login.capitaltorreon.com/login.js" data-prefs="cupido.estilo,cupido.sonido.v2" defer></script>
+<script type="module" src="/js/app.js"></script>
 </body>
 </html>

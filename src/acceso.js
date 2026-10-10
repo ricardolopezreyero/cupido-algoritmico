@@ -18,6 +18,10 @@ const _k = 'EYE', _rev = 181218;
 export const COOKIE = 'cupido_s';
 export const DEMO_ID = 'h01'; // Diego: dos coincidencias, una puerta abierta y una que espera su respuesta
 const DIAS_SESION = 90, MIN_ENLACE = 20;
+// El código del correo: para cuando el enlace abre en otro lado (la app instalada en iPhone guarda su sesión aparte de Safari,
+// igual que el navegador de adentro de Gmail). Ocho números y muy pocos intentos: adivinarlo no es un camino.
+const INTENTOS_CODIGO = 5, INTENTOS_DIA = 10;
+const codigoNuevo = () => { const n = crypto.getRandomValues(new Uint32Array(2)); return String((n[0] % 10000) * 10000 + (n[1] % 10000)).padStart(8, '0'); };
 
 const aleatorio = (n = 24) => [...crypto.getRandomValues(new Uint8Array(n))].map((b) => b.toString(36).padStart(2, '0')).join('').slice(0, n + 8);
 async function hash(txt) {
@@ -134,12 +138,12 @@ export async function pedirEnlace(env, req, url, correoCrudo) {
   if (n.porCorreo >= 4 || n.porIp >= 12) return { ok: false, error: 'Ya te mandamos varios enlaces. Revisa tu correo (y el spam) o espera un rato.' };
   // Una cuenta retirada para siempre no recibe enlace. La respuesta es la misma de siempre: nadie averigua aquí quién fue retirado.
   if (await estaVetado(env, correo)) { await anotar(env, 'acceso', 'Una cuenta retirada intentó entrar', await hash(correo)); return { ok: true, correo }; }
-  const token = aleatorio(28);
-  await env.DB.prepare(`INSERT INTO enlaces (token, correo, ip_hash) VALUES (?, ?, ?)`).bind(token, correo, ipHash).run();
+  const token = aleatorio(28), codigo = codigoNuevo();
+  await env.DB.prepare(`INSERT INTO enlaces (token, correo, ip_hash, codigo) VALUES (?, ?, ?, ?)`).bind(token, correo, ipHash, codigo).run();
   const enlace = new URL(`/entrar/${token}`, url).href;
   const existe = await env.DB.prepare(`SELECT id FROM personas WHERE correo = ?`).bind(correo).first();
   // quien ya tiene cuenta recibe su enlace con su nombre y lo que le espera adentro
-  const c = await armar(env, existe ? await persona(env, existe.id) : null, existe ? 'enlace' : 'bienvenida', { enlace, minutos: MIN_ENLACE });
+  const c = await armar(env, existe ? await persona(env, existe.id) : null, existe ? 'enlace' : 'bienvenida', { enlace, minutos: MIN_ENLACE, codigo });
   const mandado = await mandar(env, { persona: existe?.id || null, para: correo, tipo: existe ? 'enlace' : 'bienvenida', asunto: c.asunto, contenido: c.contenido });
   await anotar(env, 'acceso', existe ? 'Alguien pidió su enlace para entrar' : 'Alguien pidió crear su cuenta', await hash(correo));
   if (mandado === 'sin_remitente') {
@@ -149,6 +153,22 @@ export async function pedirEnlace(env, req, url, correoCrudo) {
   }
   if (!mandado) return { ok: false, error: 'No pudimos mandar el correo. Intenta de nuevo en un momento.' };
   return { ok: true, correo };
+}
+
+// Entrar con el código del correo, desde el mismo lugar donde se pidió. Solo vale el del último enlace, mientras ese enlace siga vivo.
+export async function canjearCodigo(env, correoCrudo, codigoCrudo, invitadoPor = null) {
+  const correo = normalizar(correoCrudo), codigo = String(codigoCrudo || '').replace(/\D/g, '');
+  const NO = { ok: false, error: 'Ese código no coincide. Revísalo: son los ocho números del último correo que te mandamos.' };
+  if (!correoValido(correo) || codigo.length !== 8) return NO;
+  const dia = (await env.DB.prepare(`SELECT COALESCE(SUM(intentos), 0) AS n FROM enlaces WHERE correo = ? AND creado > datetime('now', '-1 day')`).bind(correo).first()).n;
+  if (dia >= INTENTOS_DIA) return { ok: false, error: 'Demasiados intentos con este correo. Por hoy entra abriendo el enlace del correo.' };
+  const e = await env.DB.prepare(`SELECT token, codigo, intentos FROM enlaces WHERE correo = ? AND usado IS NULL AND creado > datetime('now', ?) ORDER BY creado DESC, rowid DESC LIMIT 1`).bind(correo, `-${MIN_ENLACE} minutes`).first();
+  if (!e || !e.codigo) return { ok: false, error: `Ese código ya venció (vale ${MIN_ENLACE} minutos). Pide un enlace nuevo.` };
+  if (e.intentos >= INTENTOS_CODIGO) return { ok: false, error: 'Ese código ya no sirve: hubo demasiados intentos. Pide un enlace nuevo.' };
+  let igual = e.codigo.length === codigo.length ? 0 : 1; for (let i = 0; i < 8; i++) igual |= e.codigo.charCodeAt(i) ^ codigo.charCodeAt(i); // se compara completo, sin atajos
+  if (igual !== 0) { await env.DB.prepare(`UPDATE enlaces SET intentos = intentos + 1 WHERE token = ?`).bind(e.token).run(); await anotar(env, 'acceso', 'Un código de entrada no coincidió', await hash(correo)); return NO; }
+  const r = await canjearEnlace(env, e.token, invitadoPor);
+  return r.ok ? r : { ok: false, error: 'Ese código ya venció. Pide un enlace nuevo.' };
 }
 
 export async function canjearEnlace(env, token, invitadoPor = null) {

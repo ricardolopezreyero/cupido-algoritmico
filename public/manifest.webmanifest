@@ -1,0 +1,130 @@
+{
+  "name": "Cupido Algorítmico",
+  "short_name": "Cupido",
+  "description": "No es una app de citas: es un sistema de detección de parejas. Respondes 43 preguntas una sola vez y solo te avisamos si alguien cruza el 90 % contigo. Sin publicidad, nunca.",
+  "id": "/",
+  "start_url": "/persona?desde=app",
+  "scope": "/",
+  "lang": "es-MX",
+  "dir": "ltr",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  "orientation": "any",
+  "background_color": "#faf7f4",
+  "theme_color": "#1c1622",
+  "categories": [
+    "social",
+    "lifestyle"
+  ],
+  "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": [
+      "navigate-existing",
+      "auto"
+    ]
+  },
+  "icons": [
+    {
+      "src": "/app/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/app/icono-512-enmascarable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/app/icono-512-mono.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "monochrome"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Mis charlas",
+      "short_name": "Charlas",
+      "url": "/persona?desde=app#charlas",
+      "icons": [
+        {
+          "src": "/app/icono-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Mis coincidencias",
+      "short_name": "Coincidencias",
+      "url": "/persona?desde=app#coincidencias",
+      "icons": [
+        {
+          "src": "/app/icono-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Mi cuestionario",
+      "short_name": "Cuestionario",
+      "url": "/cuestionario",
+      "icons": [
+        {
+          "src": "/app/icono-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/app/capturas/movil-portada.jpg",
+      "sizes": "800x1728",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "No es una app de citas: es un sistema de detección de parejas"
+    },
+    {
+      "src": "/app/capturas/movil-recorrido.jpg",
+      "sizes": "800x1728",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "Cupido te pregunta quién llega y te cuenta lo que te toca a ti"
+    },
+    {
+      "src": "/app/capturas/movil-ella.jpg",
+      "sizes": "800x1728",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "La regla de la casa: aquí manda ella"
+    },
+    {
+      "src": "/app/capturas/pc-portada.jpg",
+      "sizes": "1280x800",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "Solo te avisamos si alguien cruza el 90 % contigo"
+    },
+    {
+      "src": "/app/capturas/pc-recorrido.jpg",
+      "sizes": "1280x800",
+      "type": "image/jpeg",
+      "form_factor": "wide",
+      "label": "El recorrido: ocho pantallas, a tu ritmo"
+    }
+  ]
+}

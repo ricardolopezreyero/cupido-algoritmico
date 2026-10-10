@@ -6,6 +6,16 @@
 <title>No encontrado · Cupido Algorítmico</title>
 <meta name="author" content="Ricardo López Reyero">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<!-- la app: se puede instalar en el teléfono y en la computadora (opcional) -->
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="theme-color" content="#faf7f4">
+<meta name="application-name" content="Cupido">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cupido">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="format-detection" content="telephone=no">
+<link rel="apple-touch-icon" href="/app/icono-180.png">
 <link rel="stylesheet" href="/css/cupido.css">
 </head>
 <body data-author="RLR">
@@ -19,5 +29,6 @@
 <!-- RLR · Login de CapitalTorreon: todo funciona sin entrar; entrar solo agrega -->
 <div data-login-ct style="position:fixed;top:12px;right:12px;z-index:9999"></div>
 <script src="https://login.capitaltorreon.com/login.js" data-prefs="cupido.estilo,cupido.sonido.v2" defer></script>
+<script type="module" src="/js/app.js"></script>
 </body>
 </html>

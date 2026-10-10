@@ -7,7 +7,7 @@
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
 import { asegurar, vistaPersona, vistaAdmin, detallePar, detallePersona, persona, decidir, correrFase, reiniciarDemo, guardarCuestionario, anotar, recalcularTodo } from './datos.js';
-import { quien, entrarDemo, pedirEnlace, canjearEnlace, cerrarSesion, cookieSesion, DEMO_ID } from './acceso.js';
+import { quien, entrarDemo, pedirEnlace, canjearEnlace, canjearCodigo, cerrarSesion, cookieSesion, DEMO_ID } from './acceso.js';
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
@@ -130,6 +130,14 @@ async function api(req, env, ctx, url) {
     const b = await leerJson(req, 2000);
     const r = await pedirEnlace(env, req, url, b.correo);
     return json(r, r.ok ? 200 : 422);
+  }
+  // Entrar con el código del correo (para la app instalada en iPhone y para cuando el enlace abre en otro navegador)
+  if (ruta === '/api/entrar/codigo' && metodo === 'POST') {
+    const b = await leerJson(req, 2000);
+    const inv = (req.headers.get('cookie') || '').match(/(?:^|;\s*)cupido_inv=([a-z0-9]{5,12})/)?.[1] || null;
+    const r = await canjearCodigo(env, b.correo, b.codigo, inv);
+    if (!r.ok) return json({ ok: false, error: r.error }, 422);
+    return json({ ok: true, ir: r.completo ? '/persona' : r.nueva ? '/bienvenida?luego=cuestionario' : '/cuestionario' }, 200, { 'set-cookie': cookieSesion(r.sesion, url) });
   }
   if (ruta === '/api/demo' && metodo === 'POST') {
     const b = await leerJson(req, 2000);

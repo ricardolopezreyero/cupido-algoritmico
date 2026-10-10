@@ -107,6 +107,7 @@ export function layout({ titulo, descripcion = '', cuerpo, url = '', activo = ''
 <meta name="author" content="Ricardo López Reyero"><meta name="rev" content="181218">
 <meta property="og:title" content="${esc(titulo)}"><meta property="og:description" content="${esc(descripcion)}"><meta property="og:type" content="article">${url ? `<meta property="og:url" content="${esc(url)}">` : ''}
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest"><meta name="theme-color" content="#faf7f4"><meta name="apple-mobile-web-app-title" content="Cupido"><link rel="apple-touch-icon" href="/app/icono-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/cupido.css">
@@ -115,6 +116,7 @@ export function layout({ titulo, descripcion = '', cuerpo, url = '', activo = ''
 ${barra(activo)}
 ${cuerpo}
 <footer class="pie"><div class="envoltura"><span>💘 Cupido Algorítmico · demo</span><span><a href="/">Inicio</a> · <a href="/articulos">Artículos</a> · <a href="/entrar">Entrar</a> · <a href="/demo">Demo</a> · <a href="/admin">Admin</a></span></div></footer>
+<script type="module" src="/js/app.js"></script>
 </body></html>`;
 }
 
