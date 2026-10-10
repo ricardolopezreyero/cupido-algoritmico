@@ -1362,3 +1362,36 @@ html[data-priv~="fotos"] img.avatar.xl { filter: blur(10px); }
 html[data-priv~="fotos"] .visor img, html[data-priv~="fotos"] .visor video { filter: blur(44px); }
 html[data-priv~="fotos"] [data-login-ct] img { filter: none; clip-path: none; } /* ya va borroso entero */
 html[data-priv~="nombres"] .bv-av.a { color: transparent; text-shadow: 0 0 9px rgba(255,255,255,.95); } /* la inicial de quien recorre, en las pantallas del recorrido */
+
+/* ── la charla: subir sin pausas, volver abajo y buscar ───────────────────────────────── */
+.ch-mensajes { overscroll-behavior: contain; overflow-anchor: none; } /* la posición la corrige el código, una sola vez: si además la corrige el navegador, brinca el doble */
+.ch-inicio { text-align: center; padding: 14px 0 10px; }
+.ch-inicio span { font-size: 12.5px; color: var(--gris); }
+.ch-flota { position: relative; height: 0; z-index: 4; flex: none; }
+/* volver a lo más nuevo: aparece al subir; si llegó algo mientras leías, trae la cuenta */
+.ch-flota .ch-abajo { position: absolute; right: 16px; bottom: 12px; width: 42px; height: 42px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid var(--linea); background: var(--blanco); color: var(--rosa-osc); cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,.14); transition: transform .2s var(--ease); }
+.ch-flota .ch-abajo[hidden] { display: none; }
+.ch-flota .ch-abajo:hover { transform: translateY(2px); }
+.ch-flota .ch-abajo b { font: 700 18px/1 var(--sans); }
+.ch-flota .ch-abajo span { position: absolute; top: -7px; right: -5px; min-width: 21px; height: 21px; padding: 0 6px; border-radius: 99px; background: var(--rosa); color: #fff; font: 700 11.5px/21px var(--sans); text-align: center; }
+.ch-flota .ch-abajo span:empty { display: none; }
+/* la lupita: discreta, aparece cuando subes a leer */
+.ch-lupa { position: absolute; right: 14px; top: 10px; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--linea); background: rgba(255,255,255,.92); font-size: 15px; cursor: pointer; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: opacity .25s, transform .25s var(--ease); box-shadow: 0 4px 12px rgba(0,0,0,.08); }
+.ch-lupa.ver { opacity: .62; pointer-events: auto; transform: none; } .ch-lupa.ver:hover, .ch-lupa:focus-visible { opacity: 1; }
+/* la barra de búsqueda */
+.ch-busca { border-bottom: 1px solid var(--linea); background: var(--blanco); border-radius: var(--radio) var(--radio) 0 0; padding: 10px 12px 8px; display: grid; gap: 8px; animation: aparecer .25s var(--ease); }
+.ch-busca[hidden] { display: none; }
+.ch-busca-fila { display: flex; align-items: center; gap: 6px; }
+.ch-busca-fila .lupa { font-size: 15px; opacity: .6; }
+.ch-busca-fila input { flex: 1; min-width: 0; border: 1.5px solid var(--linea-2); border-radius: 10px; padding: 9px 11px; font: 16px var(--sans); background: var(--blanco); color: var(--tinta); }
+.ch-busca-fila input:focus { outline: none; border-color: var(--rosa); box-shadow: 0 0 0 3px var(--rosa-suave); }
+.ch-busca-fila .cuenta { font: 600 13px var(--sans); color: var(--tinta-2); min-width: 58px; text-align: center; white-space: nowrap; }
+.ch-busca-fila button { flex: none; width: 36px; height: 36px; border-radius: 10px; border: 1px solid var(--linea-2); background: var(--blanco); color: var(--tinta); font-size: 13px; cursor: pointer; }
+.ch-busca-fila button:hover:not(:disabled) { border-color: var(--rosa-linea); color: var(--rosa-osc); } .ch-busca-fila button:disabled { opacity: .35; cursor: default; }
+.ch-busca-fila #ch-q-x { border: 0; font-size: 22px; color: var(--gris); }
+.ch-busca-de { display: flex; gap: 6px; flex-wrap: wrap; }
+.ch-busca-de button { border: 1px solid var(--linea-2); background: var(--blanco); border-radius: 99px; padding: 5px 12px; font: 500 13px var(--sans); color: var(--tinta-2); cursor: pointer; }
+.ch-busca-de button.on { background: var(--noche); border-color: var(--noche); color: #fff; }
+mark.ch-marca { background: #ffe27a; color: var(--tinta); border-radius: 3px; padding: 0 1px; }
+.msg.encontrado .globo { box-shadow: 0 0 0 3px var(--rosa-suave), 0 0 0 5px var(--rosa); }
+@media (max-width: 560px) { .ch-busca-fila .cuenta { min-width: 46px; font-size: 12px; } .ch-busca-fila button { width: 34px; } }

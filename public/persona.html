@@ -586,8 +586,10 @@ function vistaCharla(otra) {
     <div class="ch-tono" id="ch-tono"></div>
     <div class="charla-rejilla" id="ch-rejilla">
       <section class="tarjeta charla" id="ch-zona">
+        <div class="ch-busca" id="ch-busca" hidden></div>
+        <div class="ch-flota arriba"><button class="ch-lupa" id="ch-lupa" type="button" title="Buscar en esta charla" aria-label="Buscar en esta charla">🔍</button></div>
         <div class="ch-mensajes" id="ch-mensajes"><p class="vacio">Cargando…</p></div>
-        <button class="ch-abajo" id="ch-abajo" hidden>↓ <span id="ch-abajo-n"></span></button>
+        <div class="ch-flota"><button class="ch-abajo" id="ch-abajo" type="button" hidden aria-label="Ir a lo más nuevo"><b>↓</b><span id="ch-abajo-n"></span></button></div>
         <div class="ch-rompehielos" id="ch-rompehielos" hidden></div>
         <div class="ch-panel" id="ch-panel" hidden></div>
         <div class="ch-cita-en-curso" id="ch-citando" hidden></div>
@@ -811,7 +813,7 @@ async function engancharCharla(otra) {
       CH.reac = d.reacciones || {}; CH.visto = Math.max(CH.visto, d.vistoHasta || 0);
       CH.juego = d.juego || {}; CH.usadas = d.cartasUsadas || [];
       if (d.guardados) CH.guardados = new Set(d.guardados);
-      if (primera) { CH.hayMas = !!d.hayMas; CH.primero = d.mensajes[0]?.id || 0; }
+      if (primera) { CH.hayMas = !!d.hayMas; CH.primero = d.mensajes[0]?.id || 0; CH.abierta = d.desde || null; }
       if (d.total != null) { const r = $('#ch-resumen'); if (r) r.textContent = ` · ${d.total} mensajes · puerta abierta ${hace(d.desde)}`; }
       $$('.msg.pendiente', caja).forEach((el) => el.remove());
       if (d.mensajes.length) {
@@ -838,8 +840,12 @@ async function engancharCharla(otra) {
         caja.insertAdjacentHTML('beforeend', html);
         if (escribe && CH.escribiendo) caja.appendChild(escribe);
         CH.ultimo = d.mensajes[d.mensajes.length - 1].id; CH.ultimoTsPintado = fechaDe(d.mensajes[d.mensajes.length - 1].creado).getTime();
-        if (abajo) caja.scrollTop = caja.scrollHeight;
-        else { const n = d.mensajes.filter((m) => !m.mio && m.tipo !== 'sistema').length; if (n) { CH.sinLeer += n; $('#ch-abajo-n').textContent = CH.sinLeer; $('#ch-abajo').hidden = false; } }
+        if (primera) { // si hay mucho sin leer, se abre donde te quedaste; si no, abajo
+          const marca = caja.querySelector('.ch-dia.nuevo'), arriba = marca ? marca.getBoundingClientRect().top - caja.getBoundingClientRect().top : 0;
+          if (marca && caja.scrollHeight - arriba > caja.clientHeight * 1.2) caja.scrollTop = Math.max(0, arriba - 14); else caja.scrollTop = caja.scrollHeight;
+          CH.pegado = cercaDelFinal(caja);
+        } else if (abajo) { caja.scrollTop = caja.scrollHeight; CH.pegado = true; }
+        else { const n = d.mensajes.filter((m) => !m.mio && m.tipo !== 'sistema').length; if (n) { CH.sinLeer += n; pintarAbajo(); } } // estás leyendo arriba: lo nuevo entra abajo y no te mueve
         if (ev && ev.de === 'sistema' && d.mensajes.some((m) => m.tipo === 'sistema' && /⟨[a-z0-9]+⟩/.test(m.texto || ''))) tocar('hito');
         if (!primera && d.mensajes.some((m) => m.tipo === 'sistema' && /⟨tono/.test(m.texto || ''))) { efecto('💫', 18); tocar('tono'); }
         if (!primera && d.mensajes.some((m) => m.tipo === 'sistema' && /⟨cita/.test(m.texto || ''))) efecto('💛', 14);
@@ -858,6 +864,7 @@ async function engancharCharla(otra) {
       if (!soloAuto && rh.dataset.modo !== (saludo || '')) { rh.dataset.modo = saludo || ''; rh.innerHTML = saludo ? `<span>Un toque y ya:</span><button type="button" data-saludo="${saludo}">${DETALLE[saludo].i} ${esc(DETALLE[saludo].n)}, ${esc(d.otra.nombre)}</button>` : ''; const bs = $('[data-saludo]', rh); if (bs) bs.onclick = async () => { rh.hidden = true; try { await mandar({ tipo: 'detalle', detalle: saludo, texto: `${DETALLE[saludo].i} ${DETALLE[saludo].n}` }); efecto(DETALLE[saludo].e); } catch {} }; }
       if (soloAuto && !rh.innerHTML) { rh.innerHTML = `<span>Para romper el hielo:</span>${ROMPEHIELOS(d.otra.nombre).map((t) => `<button type="button">${esc(t)}</button>`).join('')}`; $$('button', rh).forEach((b) => b.onclick = () => { const t = $('#ch-texto'); t.value = b.textContent; t.focus(); t.dispatchEvent(new Event('input')); }); }
       if (primera || d.mensajes.some((m) => m.tipo === 'sistema')) pintarLado();
+      if (primera) { if (CH.hayMas) pedirAntes(); else ponerInicio(); pintarAbajo(); } // la página de arriba se trae antes de que alguien suba
       pintarCandados();
     } catch (e) { if (e.status === 404) puertaCerrada(otra); }
   };
@@ -899,24 +906,66 @@ async function engancharCharla(otra) {
     bd.onclick = () => { if (!puedeDictar()) { avisar('Tu navegador no tiene dictado. Prueba en Chrome, Edge o Safari.'); return; } barra?.querySelector('[data-d="mic"]')?.click(); bd.classList.toggle('on', !!barra?.querySelector('[data-d="mic"].on')); };
     txt.addEventListener('input', () => bd.classList.toggle('on', !!barra?.querySelector('[data-d="mic"].on')));
   }
-  caja.onscroll = () => { if (cercaDelFinal(caja)) { CH.sinLeer = 0; $('#ch-abajo').hidden = true; } if (caja.scrollTop < 60 && CH.hayMas && !CH.cargandoAntes) cargarAntes(); };
-  async function cargarAntes() {
-    CH.cargandoAntes = true;
-    const tope = document.createElement('div'); tope.className = 'ch-dia'; tope.innerHTML = '<span>Cargando lo anterior…</span>'; caja.prepend(tope);
-    try {
-      const d = await api(`/api/charla/${encodeURIComponent(otra)}?antes=${CH.primero}`);
-      tope.remove();
-      if (!d.mensajes.length) { CH.hayMas = false; CH.cargandoAntes = false; return; }
-      const h0 = caja.scrollHeight;
-      const html = pintarBloque(d.mensajes);
-      const primerDia = caja.querySelector('.ch-dia:not(.nuevo)'); if (primerDia && primerDia.textContent === diaDe(d.mensajes[d.mensajes.length - 1].creado)) primerDia.remove();
-      caja.insertAdjacentHTML('afterbegin', html);
-      caja.scrollTop += caja.scrollHeight - h0;
-      CH.primero = d.mensajes[0].id; CH.hayMas = !!d.hayMas; repintarReacciones();
-    } catch (e) { tope.remove(); avisar(e.message); }
-    CH.cargandoAntes = false;
+  /* ── subir y bajar sin pausas ──────────────────────────────────────────────
+     · La página anterior se pide ANTES de que haga falta (en cuanto se pinta la que está): al subir ya está en memoria.
+     · Entra cuando todavía faltan un par de pantallas para llegar arriba, y sin mover lo que se está leyendo
+       (se mide dónde quedó el mensaje que estaba a la vista y se corrige justo eso).
+     · Si el dedo sigue deslizando y hay colchón, espera a que descanse: así no se corta el impulso en el teléfono.
+     · Lo nuevo siempre entra abajo. Si estás leyendo arriba no te mueve: solo enciende el botón de volver. */
+  const colchon = () => Math.max(1400, caja.clientHeight * 2.5);
+  function pedirAntes() {
+    if (!CH.hayMas) return null;
+    if (CH.reserva && CH.reserva.desde === CH.primero) return CH.reserva.p;
+    const desde = CH.primero, pr = api(`/api/charla/${encodeURIComponent(otra)}?antes=${desde}`).then((d) => ({ d, desde })).catch(() => { if (CH.reserva?.desde === desde) CH.reserva = null; return null; });
+    CH.reserva = { desde, p: pr };
+    return pr;
   }
-  $('#ch-abajo').onclick = () => { caja.scrollTop = caja.scrollHeight; };
+  // Mete un bloque de mensajes más viejos arriba, dejando quieto lo que se ve
+  function meterArriba(mensajes, hayMas) {
+    const r = caja.getBoundingClientRect(), a = document.elementFromPoint(r.left + Math.min(60, r.width / 2), r.top + 24)?.closest?.('#ch-mensajes > *');
+    const ancla = a && caja.contains(a) ? a : null, y0 = ancla ? ancla.getBoundingClientRect().top : 0, h0 = caja.scrollHeight;
+    const primerDia = caja.querySelector('.ch-dia:not(.nuevo)'); if (primerDia && primerDia.textContent === diaDe(mensajes[mensajes.length - 1].creado)) primerDia.remove();
+    caja.insertAdjacentHTML('afterbegin', pintarBloque(mensajes));
+    const corrimiento = ancla && caja.contains(ancla) ? ancla.getBoundingClientRect().top - y0 : caja.scrollHeight - h0;
+    if (corrimiento) caja.scrollTop += corrimiento; // el mensaje que se estaba leyendo queda exactamente donde estaba
+    CH.primero = mensajes[0].id; CH.hayMas = !!hayMas; repintarReacciones(); repintarJuego();
+    if (!CH.hayMas) ponerInicio();
+  }
+  function ponerInicio() { // hasta arriba de todo: aquí empezó
+    if (caja.querySelector('.ch-inicio')) return;
+    const y = caja.scrollHeight, top0 = caja.scrollTop;
+    caja.insertAdjacentHTML('afterbegin', `<div class="ch-inicio"><span>🚪 Aquí se abrió la puerta${CH.abierta ? ' · ' + esc(diaDe(CH.abierta)) : ''}</span></div>`);
+    if (top0 > 0) caja.scrollTop = top0 + (caja.scrollHeight - y);
+  }
+  async function meterAntes() {
+    if (CH.metiendo || !CH.hayMas) return;
+    CH.metiendo = true;
+    const espera = caja.scrollTop < 80 ? setTimeout(() => { if (CH.metiendo && !caja.querySelector('.ch-cargando')) caja.insertAdjacentHTML('afterbegin', '<div class="ch-dia ch-cargando"><span>Cargando lo anterior…</span></div>'); }, 350) : 0; // solo se ve si la red de verdad se tarda y ya se llegó arriba
+    try {
+      const r = await pedirAntes();
+      clearTimeout(espera); caja.querySelector('.ch-cargando')?.remove();
+      if (r && CH.otra === otra && r.desde === CH.primero) { CH.reserva = null; if (r.d.mensajes.length) meterArriba(r.d.mensajes, r.d.hayMas); else { CH.hayMas = false; ponerInicio(); } }
+    } catch (e) { clearTimeout(espera); caja.querySelector('.ch-cargando')?.remove(); }
+    CH.metiendo = false;
+    if (CH.hayMas && CH.otra === otra) { pedirAntes(); if (caja.scrollTop < colchon()) meterAntes(); } // siempre una página adelante
+  }
+  function pintarAbajo() {
+    const lejos = caja.scrollHeight - caja.scrollTop - caja.clientHeight > Math.max(420, caja.clientHeight * 0.9), b = $('#ch-abajo'), l = $('#ch-lupa');
+    if (b) { b.hidden = !lejos && !CH.sinLeer; $('#ch-abajo-n').textContent = CH.sinLeer ? (CH.sinLeer > 99 ? '99+' : CH.sinLeer) : ''; b.title = CH.sinLeer ? `${CH.sinLeer} ${CH.sinLeer === 1 ? 'mensaje nuevo' : 'mensajes nuevos'}` : 'Ir a lo más nuevo'; }
+    if (l) l.classList.toggle('ver', lejos && $('#ch-busca').hidden); // la lupita aparece cuando subes a leer
+  }
+  let tQuieto = 0;
+  caja.onscroll = () => {
+    CH.pegado = cercaDelFinal(caja);
+    if (CH.pegado && CH.sinLeer) CH.sinLeer = 0;
+    pintarAbajo();
+    if (CH.hayMas && caja.scrollTop < colchon()) { clearTimeout(tQuieto); if (caja.scrollTop < 500) meterAntes(); else tQuieto = setTimeout(meterAntes, 140); }
+  };
+  // una foto o un video que termina de cargar no debe despegarte del final si ahí estabas
+  caja.addEventListener('load', () => { if (CH.pegado) caja.scrollTop = caja.scrollHeight; }, true);
+  CH.meterArriba = meterArriba; CH.pintarAbajo = pintarAbajo;
+  $('#ch-abajo').onclick = () => { const lejos = caja.scrollHeight - caja.scrollTop - caja.clientHeight > caja.clientHeight * 4; caja.scrollTo({ top: caja.scrollHeight, behavior: lejos ? 'auto' : 'smooth' }); CH.sinLeer = 0; };
+  $('#ch-lupa').onclick = () => abrirBusqueda();
   const responder = async (el, valor, sonido = 'si') => { const id = Number(el.closest('.msg[data-id]').dataset.id); try { await api(`/api/charla/${encodeURIComponent(otra)}/responder`, { mensaje: id, valor }); tocar(sonido); await traer(true); } catch (err) { avisar(err.message); } };
   caja.ondblclick = async (e) => { // doble toque: un corazón
     const el = e.target.closest('.msg[data-id]:not(.sistema)'); if (!el || e.target.closest('button, a, textarea, audio, video, input')) return;
@@ -954,7 +1003,7 @@ async function engancharCharla(otra) {
     vozLlamar(otra);
   };
   $('#ch-carta').onclick = abrirSuCarta;
-  $('#ch-buscar').onclick = () => abrirPanelCabeza('buscar');
+  $('#ch-buscar').onclick = () => { if ($('#ch-busca').hidden) abrirBusqueda(); else cerrarBusqueda(); };
   $('#ch-guardados').onclick = () => abrirPanelCabeza('guardados');
   $('#ch-lado-btn').onclick = () => { $('#ch-rejilla').classList.toggle('lado-abierto'); };
   const av = $('#ch-aviso');
@@ -974,17 +1023,75 @@ function ponerCita(id, mio, vista) {
   $('#ch-quitar-cita').onclick = quitarCita; $('#ch-texto').focus();
 }
 function quitarCita() { CH.citando = null; CH.frase = null; const c = $('#ch-citando'); if (c) { c.hidden = true; c.innerHTML = ''; } const t = $('#ch-texto'); if (t) t.placeholder = 'Escribe…'; }
-async function irAMensaje(id) {
+async function irAMensaje(id, { suave = true, resaltar = true } = {}) {
   const caja = $('#ch-mensajes');
   let el = caja.querySelector(`.msg[data-id="${id}"]`);
-  if (!el && CH.hayMas) { // está más atrás: trae todo el historial anterior de una vez
-    try { const d = await api(`/api/charla/${encodeURIComponent(CH.otra)}?todo=1`); const h0 = caja.scrollHeight; const ya = new Set($$('.msg[data-id]', caja).map((x) => Number(x.dataset.id))); const previos = []; for (const m of d.mensajes) { if (ya.has(m.id)) break; previos.push(m); }
-      if (previos.length) { caja.insertAdjacentHTML('afterbegin', pintarBloque(previos)); caja.scrollTop += caja.scrollHeight - h0; CH.primero = previos[0].id; repintarReacciones(); } CH.hayMas = false;
-    } catch (e) { avisar(e.message); }
+  if (!el && CH.hayMas && id < CH.primero) { // está más atrás de lo que hay en pantalla
+    try { const d = await api(`/api/charla/${encodeURIComponent(CH.otra)}?antes=${CH.primero}&desde=${id}`); if (d.mensajes.length) { CH.reserva = null; CH.meterArriba?.(d.mensajes, d.hayMas); } }
+    catch (e) { avisar(e.message); }
     el = caja.querySelector(`.msg[data-id="${id}"]`);
   }
-  if (!el) { avisar('No encontré ese mensaje.'); return; }
-  el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('resaltado'); setTimeout(() => el.classList.remove('resaltado'), 1800);
+  if (!el) { avisar('No encontré ese mensaje.'); return null; }
+  el.scrollIntoView({ block: 'center', behavior: suave ? 'smooth' : 'auto' });
+  if (resaltar) { el.classList.add('resaltado'); setTimeout(() => el.classList.remove('resaltado'), 1800); }
+  return el;
+}
+/* ── buscar dentro de la charla: una barra, un contador y dos flechas ────── */
+const sinAcentos = (t) => String(t || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+// Subraya en un mensaje las palabras buscadas (sin importar acentos ni mayúsculas)
+function marcarPalabras(el, palabras) {
+  const w = document.createTreeWalker(el.querySelector('.globo') || el, NodeFilter.SHOW_TEXT), nodos = [];
+  while (w.nextNode()) if (!w.currentNode.parentElement.closest('.hora, .msg-acc, .cita, mark, button, small')) nodos.push(w.currentNode);
+  for (const n of nodos) {
+    const t = n.nodeValue, cortes = []; let plano = '';
+    for (let i = 0; i < t.length; i++) plano += (sinAcentos(t[i])[0] || t[i]); // letra por letra: los índices del texto llano son los mismos del original
+    for (const p of palabras) { let i = -1; while ((i = plano.indexOf(p, i + 1)) >= 0) cortes.push([i, i + p.length]); }
+    if (!cortes.length) continue;
+    cortes.sort((a, b) => a[0] - b[0]);
+    const frag = document.createDocumentFragment(); let k = 0;
+    for (const [a, b] of cortes) { if (a < k) continue; if (a > k) frag.appendChild(document.createTextNode(t.slice(k, a))); const m = document.createElement('mark'); m.className = 'ch-marca'; m.textContent = t.slice(a, b); frag.appendChild(m); k = b; }
+    if (k < t.length) frag.appendChild(document.createTextNode(t.slice(k)));
+    n.parentNode.replaceChild(frag, n);
+  }
+}
+function quitarMarcas() {
+  $$('#ch-mensajes mark.ch-marca').forEach((m) => { const p = m.parentNode; p.replaceChild(document.createTextNode(m.textContent), m); p.normalize(); });
+  $$('#ch-mensajes .msg.encontrado').forEach((x) => x.classList.remove('encontrado'));
+}
+function cerrarBusqueda() { const b = $('#ch-busca'); if (!b || b.hidden) return; b.hidden = true; b.innerHTML = ''; quitarMarcas(); CH.busca = null; $('#ch-buscar')?.classList.remove('on'); CH.pintarAbajo?.(); }
+function abrirBusqueda() {
+  const b = $('#ch-busca'); if (!b) return;
+  if (!b.hidden) { $('#ch-q')?.focus(); return; }
+  cerrarPaneles();
+  const nombre = esc(CH.datos?.otra?.nombre || 'la otra persona');
+  b.hidden = false; $('#ch-buscar')?.classList.add('on'); CH.pintarAbajo?.();
+  b.innerHTML = `<div class="ch-busca-fila"><span class="lupa">🔍</span><input type="search" id="ch-q" placeholder="Buscar en esta charla…" autocomplete="off" enterkeyhint="search" aria-label="Buscar en esta charla">
+      <span class="cuenta" id="ch-q-n" aria-live="polite"></span>
+      <button type="button" id="ch-q-arr" title="El anterior (más viejo)" aria-label="Resultado anterior" disabled>▲</button><button type="button" id="ch-q-aba" title="El siguiente (más nuevo)" aria-label="Resultado siguiente" disabled>▼</button>
+      <button type="button" id="ch-q-x" title="Cerrar la búsqueda" aria-label="Cerrar la búsqueda">×</button></div>
+    <div class="ch-busca-de" id="ch-q-de"><button type="button" data-de="" class="on">Todo</button><button type="button" data-de="otra">Lo que dijo ${nombre}</button><button type="button" data-de="yo">Lo que dije yo</button></div>`;
+  const q = $('#ch-q'), cuenta = $('#ch-q-n'), arr = $('#ch-q-arr'), aba = $('#ch-q-aba');
+  const E = CH.busca = { lista: [], i: 0, total: 0, palabras: [], de: '', pedido: 0 };
+  const pinta = () => { cuenta.textContent = !q.value.trim() ? '' : q.value.trim().length < 2 ? '' : E.cargando ? '…' : E.total ? `${E.i + 1} de ${E.total > E.lista.length ? E.lista.length + '+' : E.total}` : 'Nada'; arr.disabled = !E.lista.length || E.i >= E.lista.length - 1; aba.disabled = !E.lista.length || E.i <= 0; };
+  const ir = async () => {
+    quitarMarcas(); const m = E.lista[E.i]; if (!m) { pinta(); return; }
+    pinta(); const el = await irAMensaje(m.id, { suave: false, resaltar: false });
+    if (el && CH.busca === E) { el.classList.add('encontrado'); marcarPalabras(el, E.palabras); }
+  };
+  const buscar = async () => {
+    const t = q.value.trim(); quitarMarcas();
+    if (t.length < 2) { E.lista = []; E.total = 0; E.cargando = false; pinta(); return; }
+    const mio = ++E.pedido; E.cargando = true; pinta();
+    try { const r = await api(`/api/charla/${encodeURIComponent(CH.otra)}/buscar?q=${encodeURIComponent(t)}${E.de ? '&de=' + E.de : ''}`); if (CH.busca !== E || mio !== E.pedido) return; E.lista = r.lista; E.total = r.total; E.palabras = r.palabras; E.i = 0; E.cargando = false; await ir(); }
+    catch (e) { E.cargando = false; pinta(); avisar(e.message); }
+  };
+  let t = 0; q.oninput = () => { clearTimeout(t); E.cargando = q.value.trim().length >= 2; t = setTimeout(buscar, 260); pinta(); }; // mientras se busca dice «…», nunca «Nada» antes de tiempo
+  q.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); if (e.shiftKey) aba.click(); else arr.click(); } else if (e.key === 'Escape') { e.preventDefault(); cerrarBusqueda(); } };
+  arr.onclick = () => { if (E.i < E.lista.length - 1) { E.i++; ir(); } };
+  aba.onclick = () => { if (E.i > 0) { E.i--; ir(); } };
+  $('#ch-q-x').onclick = cerrarBusqueda;
+  $$('#ch-q-de button').forEach((x) => x.onclick = () => { E.de = x.dataset.de; $$('#ch-q-de button').forEach((y) => y.classList.toggle('on', y === x)); buscar(); q.focus(); });
+  q.focus();
 }
 function abrirPanelCabeza(cual) {
   const p = $('#ch-panel');
@@ -992,11 +1099,7 @@ function abrirPanelCabeza(cual) {
   cerrarPaneles(); p.hidden = false; p.dataset.cual = cual;
   const fila = (m) => `<button type="button" data-ir="${m.id}"><b>${m.mio ? 'Tú' : esc(CH.datos?.otra?.nombre || '')}</b><span>${esc(m.vista)}</span><small>${diaDe(m.creado)} · ${horaDe(m.creado)}</small></button>`;
   const enganchar = () => $$('[data-ir]', p).forEach((b) => b.onclick = () => { cerrarPaneles(); irAMensaje(Number(b.dataset.ir)); });
-  if (cual === 'buscar') {
-    p.innerHTML = `<div class="ch-gif-busca"><input type="search" id="ch-q" placeholder="Buscar en esta charla…" autocomplete="off"><button type="button" class="enlace" id="ch-q-x">Cerrar</button></div><div class="ch-resultados" id="ch-res"><p class="vacio" style="padding:8px 12px">Escribe al menos dos letras.</p></div>`;
-    const q = $('#ch-q'); let t = null; q.focus(); $('#ch-q-x').onclick = cerrarPaneles;
-    q.oninput = () => { clearTimeout(t); t = setTimeout(async () => { if (q.value.trim().length < 2) return; try { const r = await api(`/api/charla/${encodeURIComponent(CH.otra)}/buscar?q=${encodeURIComponent(q.value.trim())}`); $('#ch-res').innerHTML = r.length ? r.map(fila).join('') : '<p class="vacio" style="padding:8px 12px">Nada con esas palabras.</p>'; enganchar(); } catch (e) { avisar(e.message); } }, 300); };
-  } else if (cual === 'guardados') {
+  if (cual === 'guardados') {
     p.innerHTML = `<div class="ch-gif-busca"><b style="font-size:14px">🔖 Guardados</b><span class="nota-entrar" style="margin:0 0 0 auto">Solo tú los ves</span><button type="button" class="enlace" id="ch-g-x">Cerrar</button></div><div class="ch-resultados" id="ch-res"><p class="vacio" style="padding:8px 12px">Cargando…</p></div>`;
     $('#ch-g-x').onclick = cerrarPaneles;
     api(`/api/charla/${encodeURIComponent(CH.otra)}/guardados`).then((r) => { $('#ch-res').innerHTML = r.length ? r.map(fila).join('') : '<p class="vacio" style="padding:8px 12px">Todavía no guardas nada. En cualquier mensaje: ☺ → ☆.</p>'; enganchar(); }).catch((e) => avisar(e.message));

@@ -121,12 +121,14 @@ async function conCitas(env, c, msgs) {
   const citas = new Map((await env.DB.prepare(`SELECT id, de, tipo, texto FROM mensajes WHERE a = ? AND b = ? AND id IN (${ids.map(() => '?').join(',')})`).bind(c.a, c.b, ...ids).all()).results.map((q) => [q.id, q]));
   return msgs.map((m) => ({ ...m, cita: m.responde_a && citas.get(m.responde_a) ? { id: m.responde_a, de: citas.get(m.responde_a).de, vista: vistaDe(citas.get(m.responde_a)) } : null }));
 }
-export async function verCharla(env, yo, otraId, despues = 0, { antes = 0, todo = false } = {}) {
+export async function verCharla(env, yo, otraId, despues = 0, { antes = 0, desde = 0, todo = false } = {}) {
   const c = await charlaDe(env, yo, otraId);
   if (!c) return null;
   const O = await persona(env, otraId);
   let msgs;
-  if (antes) { // historial hacia atrás, al subir hasta arriba
+  if (antes && desde) { // de un tirón: todo lo que hay entre un mensaje viejo y lo que ya está en pantalla, para que la charla quede corrida y sin huecos
+    msgs = (await env.DB.prepare(`SELECT id, de, tipo, texto, archivo, auto, responde_a, creado FROM mensajes WHERE a = ? AND b = ? AND id >= ? AND id < ? ORDER BY id ASC LIMIT 6000`).bind(c.a, c.b, desde, antes).all()).results;
+  } else if (antes) { // historial hacia atrás, una página, al ir subiendo
     msgs = (await env.DB.prepare(`SELECT id, de, tipo, texto, archivo, auto, responde_a, creado FROM mensajes WHERE a = ? AND b = ? AND id < ? ORDER BY id DESC LIMIT ?`).bind(c.a, c.b, antes, VENTANA).all()).results.reverse();
   } else if (!despues && !todo) { // primera carga: solo la ventana más reciente
     msgs = (await env.DB.prepare(`SELECT id, de, tipo, texto, archivo, auto, responde_a, creado FROM mensajes WHERE a = ? AND b = ? ORDER BY id DESC LIMIT ?`).bind(c.a, c.b, VENTANA).all()).results.reverse();
@@ -285,14 +287,18 @@ export async function losGuardados(env, yo, otraId) {
 }
 
 /* ── buscar dentro de la charla ──────────────────────────────────────────── */
-export async function buscarEnCharla(env, yo, otraId, q) {
+const sinAcentos = (t) => String(t || '').normalize('NFD').replace(/\p{M}/gu, '').toLowerCase();
+// Devuelve los mensajes que tienen TODAS las palabras, del más nuevo al más viejo. «café» encuentra «cafe» y «Café».
+// `de`: 'yo' (lo que dije yo), 'otra' (lo que dijo la otra persona) o vacío (todo).
+export async function buscarEnCharla(env, yo, otraId, q, de = '') {
   const c = await charlaDe(env, yo, otraId);
   if (!c) return null;
-  const t = limpiarTexto(q).slice(0, 80);
-  if (t.length < 2) return [];
-  const like = '%' + t.replace(/[%_]/g, (x) => '\\' + x) + '%';
-  return (await env.DB.prepare(`SELECT id, de, tipo, texto, creado FROM mensajes WHERE a = ? AND b = ? AND tipo IN ('texto','archivo') AND texto LIKE ? ESCAPE '\\' ORDER BY id DESC LIMIT 40`).bind(c.a, c.b, like).all()).results
-    .map((m) => ({ id: m.id, mio: m.de === yo, vista: vistaDe(m), creado: m.creado }));
+  const palabras = [...new Set(sinAcentos(limpiarTexto(q).slice(0, 80)).split(/\s+/).filter((x) => x.length >= 2))].slice(0, 6);
+  if (!palabras.length) return { total: 0, lista: [], palabras: [] };
+  const quien = de === 'yo' ? yo : de === 'otra' ? otraId : null;
+  const filas = (await env.DB.prepare(`SELECT id, de, tipo, texto, archivo, creado FROM mensajes WHERE a = ? AND b = ? AND tipo IN ('texto','archivo') AND texto IS NOT NULL${quien ? ' AND de = ?' : ''} ORDER BY id DESC LIMIT 30000`).bind(...(quien ? [c.a, c.b, quien] : [c.a, c.b])).all()).results;
+  const hallados = filas.filter((m) => { const t = sinAcentos(m.texto); return palabras.every((w) => t.includes(w)); });
+  return { total: hallados.length, palabras, lista: hallados.slice(0, 300).map((m) => ({ id: m.id, mio: m.de === yo, vista: vistaDe(m), creado: m.creado })) };
 }
 
 /* ── hitos: el sistema deja una nota cuando la charla cruza algo que vale ── */
