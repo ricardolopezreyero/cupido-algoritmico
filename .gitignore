@@ -5,3 +5,5 @@ node_modules/
 .claude/
 docs/monetizacion/node_modules
 docs/monetizacion/package*.json
+# las fichas de personas que salimos a buscar: nunca van al repositorio (es público)
+privado/

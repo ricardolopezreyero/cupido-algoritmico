@@ -186,7 +186,7 @@ function refrescarTarea(id) {
 // Las pruebas que llegan por /ceo: quién quiere dirigir Cupido. Traen datos de personas, así que solo las ve una cuenta administradora
 function pruebas() {
   const l = D.postulaciones || [], liga = (u, t) => (u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>` : ''), parte = (t, v) => (v ? `<h5>${t}</h5><p>${esc(v).replace(/\n/g, '<br>')}</p>` : '');
-  return `<section class="gtm-pruebas"><header class="gtm-cabeza"><p class="eyebrow">Dirección</p><h2>Pruebas recibidas <i>${l.length}</i></h2><p class="lead">Lo que mandó cada persona desde <a href="/ceo">/ceo</a>. Solo lo ven las cuentas administradoras, y a ellas les llega un aviso por correo con cada prueba nueva.</p></header>
+  return `<section class="gtm-pruebas"><header class="gtm-cabeza"><p class="eyebrow">Dirección</p><h2>Pruebas recibidas <i>${l.length}</i></h2><p class="lead">Lo que mandó cada persona desde <a href="/ceo">/ceo</a>. Solo lo ven las cuentas administradoras, y a ellas les llega un aviso por correo con cada prueba nueva. A quienes salimos a buscar nosotros están en <button class="enlace" data-p="candidatas">la pestaña Candidatas</button>.</p></header>
     ${l.length ? l.map((p) => `<details class="gtm-prueba"><summary><b>${esc(p.nombre)}</b><span>${esc(p.ciudad || 'sin ciudad')} · ${fecha(p.creado)}</span>${p.video ? '<span class="gtm-et ok">🎥 mandó video</span>' : ''}</summary>
       <p class="gtm-prueba-contacto"><a href="mailto:${esc(p.correo)}">${esc(p.correo)}</a>${p.whatsapp ? ` · ${esc(p.whatsapp)}` : ''}${p.video ? ` · ${liga(p.video, 'Ver su video')}` : ''}${p.enlace ? ` · ${liga(p.enlace, 'Lo que construyó')}` : ''}</p>
       ${parte('1 · La vez que juntó gente desde cero', p.sala)}${parte('2 · Diez días y cero pesos', p.diez_dias)}${parte('3 · Tres cosas que cambiaría', p.cambiarias)}${parte('4 · Lo correcto sobre lo conveniente', p.correcto)}</details>`).join('') : '<p class="vacio">Todavía no llega ninguna. La liga para mandar es cupido.capitaltorreon.com/ceo</p>'}</section>`;
@@ -208,14 +208,17 @@ async function cambiarEquipo(email, quitar) {
 /* ═══ armar la página ═════════════════════════════════════════════════ */
 function pintar() {
   const P = D.plan.pestanas, n = Object.keys(D.hechas).length;
-  const orden = [P[0], { id: 'checklist', t: 'Lista' }, ...P.slice(1)].filter(Boolean);
+  // «Candidatas» (las fichas de quien salimos a buscar) solo existe para una cuenta administradora
+  const orden = [P[0], { id: 'checklist', t: 'Lista' }, ...P.slice(1), ...(D.yo.admin ? [{ id: 'candidatas', t: 'Candidatas' }] : [])].filter(Boolean);
   if (!orden.some((p) => p.id === pestana)) pestana = orden[0].id;
   const actual = P.find((p) => p.id === pestana);
   raiz.innerHTML = `<header class="gtm-titulo"><p class="eyebrow">Go-to-market · versión ${esc(D.plan.version)} · ${esc(D.plan.fecha)}</p><h1>${tx(D.plan.titulo || 'El plan para llevar a Cupido a millones')}</h1>${D.plan.bajada ? `<p class="lead">${tx(D.plan.bajada)}</p>` : ''}</header>
     ${franja()}
     <nav class="gtm-pestanas" id="gtm-pestanas" aria-label="Partes del plan">${orden.map((p) => `<button data-p="${p.id}" class="${p.id === pestana ? 'activo' : ''}">${esc(p.t)}${p.id === 'checklist' ? ` <i>${n}/${D.tareas.length}</i>` : ''}</button>`).join('')}</nav>
-    <div class="gtm-cuerpo" id="gtm-cuerpo">${pestana === 'checklist' ? lista() : bloques(actual.bloques) + (pestana === 'equipo' ? equipo() : '')}</div>`;
+    <div class="gtm-cuerpo" id="gtm-cuerpo">${pestana === 'checklist' ? lista() : pestana === 'candidatas' ? '<div id="gtm-candidatas"></div>' : bloques(actual.bloques) + (pestana === 'equipo' ? equipo() : '')}</div>`;
   calculadora();
+  // La pantalla de fichas es un módulo aparte (candidatos.js): pide las fichas con el mismo pase y las pinta
+  if (pestana === 'candidatas' && window.Candidatos) window.Candidatos.montar($('#gtm-candidatas'), { api: '/api/gtm/candidatos', vacante: 'ceo', claro: true, toast: avisar, cabeceras: () => (pase() ? { authorization: 'Bearer ' + pase() } : {}) });
 }
 function ir(p, arriba = true) {
   pestana = p; try { history.replaceState(null, '', '#' + p); } catch { /* sin historial */ }

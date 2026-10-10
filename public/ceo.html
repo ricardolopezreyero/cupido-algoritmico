@@ -91,6 +91,7 @@
     <div>
       <h3>De dónde vienes, probablemente</h3>
       <ul class="ceo-lista">
+        <li>Llevaste en un país una aplicación para conocer gente: de citas, de encuentros o de amistad.</li>
         <li>Abriste una ciudad para una aplicación de reparto, de transporte o de pagos.</li>
         <li>Armaste una comunidad desde cero: un club, una red de exalumnos, un grupo de jóvenes, un festival.</li>
         <li>Llevaste campañas de calle, sociales o de marca, con voluntarios y meta semanal.</li>
@@ -187,6 +188,7 @@ const RASGOS = [
   ['Herramienta', 'Trabajas con inteligencia artificial todos los días.', 'Más de la mitad del plan la hace o la ayuda a hacer una IA. Sabes pedir con claridad, revisar lo que te entrega y quedarte con lo que solo hace una persona: llamar, dar la cara y llenar una sala.', 'puedes enseñar algo que hiciste esta semana con IA, y lo que le corregiste.'],
   ['Honradez', 'Das la mala noticia primero.', 'Nunca has inflado un número. Aquí están prohibidas las cuentas falsas, los seguidores comprados y los testimonios pagados sin decirlo, aunque nadie se fuera a enterar.', 'alguna vez dijiste un número peor que el que esperaban, y lo dijiste tú antes que nadie.'],
   ['Largo plazo', 'Construyes para 2030.', 'Aquí el éxito es que la gente encuentre pareja y se vaya. No hay dinero rápido ni cifras de adorno. El número que manda hoy son los perfiles vivos; el de mañana, las parejas que siguen juntas.', 'llevas años en lo mismo, con la misma gente, y esa gente te sigue buscando.'],
+  ['Motivo', 'Este problema te importa en lo personal.', 'Has visto de cerca lo que cuesta escoger pareja a ciegas, en tu historia o en la de alguien que quieres. No te da pena decirlo, y por eso nadie tiene que convencerte de que el problema es real.', 'cuando te preguntan por qué harías esto contestas con una historia, no con una oportunidad de mercado.'],
 ];
 $('#ceo-rasgos').innerHTML = RASGOS.map((r, i) => `<article><span>${String(i + 1).padStart(2, '0')}</span><div><small>${esc(r[0])}</small><h3>${esc(r[1])}</h3><p>${esc(r[2])}</p><p class="ceo-nota"><i>Se nota en que</i> ${esc(r[3])}</p></div></article>`).join('');
 

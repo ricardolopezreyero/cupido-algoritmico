@@ -26,11 +26,32 @@ Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verda
 
 **https://cupido.capitaltorreon.com/ceo** es la página que se le manda a quien podría dirigir Cupido y ejecutar este plan. Es pública pero no está listada en buscadores (`noindex`). No pide currículum: pide una prueba.
 
-- **Lo que dice:** de qué se trata, «no se llena una app: se enciende una ciudad», once rasgos en espejo (cada uno con «se nota en que…»), nueve cosas que tiene que saber, diez que tiene que poder hacer, las metas con fecha y su marcador (perfiles vivos con equilibrio), de dónde viene probablemente, para quién no es, y lo que tiene desde el primer día.
+- **Lo que dice:** de qué se trata, «no se llena una app: se enciende una ciudad», doce rasgos en espejo (cada uno con «se nota en que…»), nueve cosas que tiene que saber, diez que tiene que poder hacer, las metas con fecha y su marcador (perfiles vivos con equilibrio), de dónde viene probablemente, para quién no es, y lo que tiene desde el primer día.
 - **La prueba:** la vez que juntó gente desde cero · diez días y cero pesos para cien perfiles · tres cosas que cambiaría · lo correcto sobre lo conveniente · un minuto a cámara (opcional). Más nombre, correo, WhatsApp y ciudad.
 - **A dónde llega:** `POST /api/ceo/postular` la guarda en `ceo_postulaciones` (`src/ceo.js`). Se lee en `/gtm` → Equipo, y a las cuentas administradoras que ya abrieron `/gtm` (tabla `gtm_avisos`) les llega un correo corto con un botón. Candados: casilla trampa, una por correo al día, tres por conexión y cuarenta en total al día.
 - **Lo que hay que decidir antes de mandar la liga** (está escrito en Equipo): la paga, si vivir en La Laguna de noviembre a febrero es requisito, y cómo se llama el puesto.
 - La vacante no pide género ni edad.
+
+## Candidatas: a quién salimos a buscar (`/gtm` → Candidatas)
+
+`/ceo` espera a que alguien llegue. Esta pestaña es lo contrario: con el perfil en la mano se sale a buscar, y se guarda una ficha por persona. Solo la ven las **cuentas administradoras** (ni siquiera el equipo: quien sea contratada no debe leer lo que se pensó de las demás).
+
+- **Qué trae cada ficha:** quién es y su liga, por qué esto le estaba destinado, trayectoria, los doce rasgos uno por uno (se ve, probable, por comprobar o bandera, con su evidencia), qué revisar, quién puede presentarla, la nota de invitación (cabe en 200 caracteres), el mensaje completo y tres preguntas para la primera llamada.
+- **Seguimiento:** estado (por contactar, contactada, en plática, mandó la prueba, descartada) y notas, que se guardan solas con quién y cuándo. Se puede agregar a alguien a mano: entra a la banca.
+- **Cómo se buscó** (está escrito en la propia pestaña): una sola fuente (LinkedIn), solo trayectoria profesional, por oficio y no por nombre. **No se busca la vida personal de nadie**: ni estado civil, ni divorcios, ni familia. Si a alguien le importa el problema por su historia, lo cuenta ella; para eso está el rasgo «Motivo», que se pregunta. Solo se escribe en femenino de quien así se presenta en su perfil.
+- **Nadie contacta por nosotros:** de la búsqueda no sale ningún mensaje. Los textos están listos para que los mande quien firma.
+- **Privacidad (importante):** el repositorio es público. Las fichas viven solo en la tabla `candidatos` y en `privado/candidatas-ceo.json`, que está en `.gitignore`. **Ningún nombre va en el código.**
+- **Sembrar o actualizar** (respeta el estado y las notas ya escritas; `--podar` quita las que ya no vengan en el archivo):
+
+  ```bash
+  node scripts/sembrar-candidatos.mjs privado/candidatas-ceo.json --local
+  ```
+
+  ```bash
+  node scripts/sembrar-candidatos.mjs privado/candidatas-ceo.json --remote
+  ```
+
+- **De dónde salió:** es el módulo suelto de Video Room (`public/js/candidatos.js`, `public/css/candidatos.css`, `src/candidatos.js`, tres rutas bajo `/api/gtm/candidatos` y el sembrador). Aquí se le agregó la opción `cabeceras`, para mandar el pase del login en cada petición.
 
 ## Quién entra
 

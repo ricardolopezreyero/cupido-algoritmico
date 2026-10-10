@@ -13,6 +13,7 @@ import { etiqueta } from '../public/js/preguntas.js';
 import { TAREAS, FASES, AREAS, QUIENES, ESFUERZOS, RITMOS } from './gtm-tareas.js';
 import { PLAN } from './gtm-plan.js';
 import { ESQUEMA_CEO, listarPostulaciones } from './ceo.js';
+import { ESQUEMA_CANDIDATOS } from './candidatos.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -24,6 +25,7 @@ export const ESQUEMA_GTM = [
   `CREATE TABLE IF NOT EXISTS gtm_equipo (
      email TEXT PRIMARY KEY, agregado_por TEXT, at TEXT NOT NULL DEFAULT (datetime('now')))`,
   ...ESQUEMA_CEO,
+  ...ESQUEMA_CANDIDATOS,
 ];
 
 const IDS = new Set(TAREAS.map((t) => t[0]));

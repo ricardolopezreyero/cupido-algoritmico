@@ -530,7 +530,7 @@ const ritmo = [
 
 /* ═══ EQUIPO ══════════════════════════════════════════════════════════ */
 const equipo = [
-  { k: 'cabeza', e: 'A quién buscar', t: 'Una persona que dirija y ejecute, viviendo en la ciudad semilla', s: 'Es a quien se le dice: «sigue el go-to-market». Su perfil completo (cómo es, qué tiene que saber, qué tiene que poder hacer y la prueba) está en [cupido.capitaltorreon.com/ceo](/ceo). Esa es la liga que se manda; no está listada en buscadores.' },
+  { k: 'cabeza', e: 'A quién buscar', t: 'Una persona que dirija y ejecute, viviendo en la ciudad semilla', s: 'Es a quien se le dice: «sigue el go-to-market». Su perfil completo (cómo es, qué tiene que saber, qué tiene que poder hacer y la prueba) está en [cupido.capitaltorreon.com/ceo](/ceo). Esa es la liga que se manda; no está listada en buscadores. A quienes ya salimos a buscar están en la pestaña Candidatas (solo cuentas administradoras).' },
   { k: 'tarjetas', col: 2, l: [
     { t: 'Lo que hace', l: ['Llena las Noches de las 43 y las deja contentas.', 'Invita, convence y da seguimiento: fundadoras, madrinas, sedes, clubes, iglesias.', 'Escribe a diez creadores al día y cumple con sus números.', 'Sale a cámara dos veces por semana.', 'Lleva el lunes de números y propone la decisión.', 'Usa IA todos los días para todo lo que no pide presencia.'] },
     { t: 'Cómo reconocerla', l: ['Ya hizo crecer algo desde cero con poco dinero: una comunidad, un evento, un negocio local.', 'Tiene gente: en una semana puede sentar a cuarenta personas en un café.', 'Escribe claro y sin adornos.', 'Le gustan los números y no se los cuenta bonito a sí misma.', 'Puede explicarle Cupido a una amiga que no cree en estas cosas, sin exagerar.', 'Cree en las reglas de la casa: manda ella y cero publicidad.'] },
@@ -577,7 +577,7 @@ const equipo = [
 ];
 
 export const PLAN = {
-  version: '1.2', fecha: '10 de octubre de 2026',
+  version: '1.3', fecha: '10 de octubre de 2026',
   titulo: 'El plan para que 10 millones de personas busquen pareja con Cupido',
   bajada: 'Primero el resumen y los atajos; después, la lista de todo lo que hay que hacer. Lo que dice «supuesto» se cambia por el dato real en cuanto exista.',
   pestanas: [

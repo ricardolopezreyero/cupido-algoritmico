@@ -20,6 +20,7 @@ import { llamada, conectarVoz, cambiarTono, responderChispa, verAlbum, misCharla
 import { empezarSubida, subirParte, subirVista, terminarSubida, cancelarSubida, limpiarSubidas } from './subidas.js';
 import { quienGtm, verGtm, marcarTarea, cambiarEquipo } from './gtm.js';
 import { guardarPostulacion, avisoPostulacion, aQuienAvisar } from './ceo.js';
+import { listarCandidatos, moverCandidato, agregarCandidato } from './candidatos.js';
 import { mandar as correoSuelto } from './correos.js';   // un correo que no sale del catálogo: el aviso a quien administra
 import { esHombre, esAdmin, ponerControl, cerrarPuerta, bloquear, desbloquear, agregarEvitar, quitarEvitar, seguridadAdmin, accionAdmin } from './ella.js';
 export { CharlaViva } from './viva.js'; // el objeto durable de la charla en vivo (debe exportarse desde el módulo principal)
@@ -302,6 +303,14 @@ async function api(req, env, ctx, url) {
     if (q.falta === 'sesion') return json({ error: 'Entra con tu cuenta para ver el plan.', falta: 'sesion' }, 401);
     if (q.falta === 'permiso') return json({ error: 'Esta cuenta no está en el equipo.', falta: 'permiso', correo: q.email }, 403);
     if (ruta === '/api/gtm' && metodo === 'GET') return json(await verGtm(env, q));
+    // Candidatas: las fichas de quien salimos a buscar. Traen nombres y lo que pensamos de cada quien: solo cuentas administradoras
+    if (ruta === '/api/gtm/candidatos' || ruta.startsWith('/api/gtm/candidatos/')) {
+      if (!q.admin) return error('Las fichas solo las ve una cuenta administradora.', 403);
+      if (ruta === '/api/gtm/candidatos' && metodo === 'GET') return json(await listarCandidatos(env, url.searchParams.get('vacante') || 'ceo'));
+      if (ruta === '/api/gtm/candidatos' && metodo === 'POST') { const r = await agregarCandidato(env, await leerJson(req, 8000), q.email); return json(r, r.ok ? 200 : 422); }
+      if ((x = m(/^\/api\/gtm\/candidatos\/([a-z0-9_-]{3,60})$/)) && metodo === 'POST') { const r = await moverCandidato(env, x[1], await leerJson(req, 8000), q.email); return json(r, r.ok ? 200 : r.error === 'no_existe' ? 404 : 422); }
+      return error('No existe', 404);
+    }
     if (ruta === '/api/gtm/tarea' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await marcarTarea(env, q, String(b.id || ''), !!b.hecha); return json(r, r.ok ? 200 : 422); }
     if (ruta === '/api/gtm/equipo' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await cambiarEquipo(env, q, b.email, !!b.quitar); return json(r, r.ok ? 200 : r.status || 422); }
     return error('No existe', 404);
