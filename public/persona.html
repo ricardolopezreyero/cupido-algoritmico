@@ -201,6 +201,7 @@ const MENU = [
   { s: 'ella', i: () => (MANDO() ? '👑' : '🛡️'), t: () => (MANDO() ? 'Aquí mando yo' : 'Las reglas de la casa') },
   { s: 'estilo', i: '🎨', t: 'Mi estilo' },
   { s: 'apoyar', i: '🤍', t: 'Apoyar a Cupido' },
+  { s: 'correos', i: '✉️', t: 'Mis correos' },
   { s: 'privacidad', i: '🔒', t: 'Privacidad y pausa' },
 ];
 function pintarLateral() {
@@ -439,6 +440,10 @@ const SECCIONES = {
       <p class="seccion-sub">${DEMO() && V.persona.origen === 'demo' ? 'En la cuenta demo el estilo se recuerda solo en este dispositivo.' : 'Se aplica en todos tus dispositivos al entrar con tu correo.'}</p>`;
   },
 
+  correos() {
+    return cabeza('Mis correos', 'Aquí somos chismógrafos: de inicio te avisamos de todo. Lo que no quieras saber, lo apagas tú.') + `<div id="mis-correos"><p class="vacio">Cargando…</p></div>`;
+  },
+
   privacidad() {
     const P = V.persona, pausada = P.estado === 'pausada';
     return cabeza('Privacidad y pausa', 'Tú decides cuándo buscar y cuándo no.') + `
@@ -456,7 +461,7 @@ const SECCIONES = {
       <section class="tarjeta"><h2>Tu acceso</h2>
         ${DEMO() ? `<p class="sub">Esta es la <b>cuenta demo</b>: datos ficticios que cualquiera puede ver. Para tener tu propio tablero, crea tu cuenta con tu correo.</p><button class="boton" id="crear-cuenta">Crear mi cuenta</button>`
           : `<p class="sub">Sin contraseña. Cada vez que entres te mandamos un enlace a tu correo; vale 20 minutos y se usa una sola vez.</p><div class="acceso-correo"><span>✉️</span><b>${esc(V.sesion.correo || '')}</b></div>
-          <label class="elemento" style="margin-top:12px;cursor:pointer;color:var(--tinta)"><input type="checkbox" id="avisos-correo" ${(V.ajustes || {}).avisos_correo === false ? '' : 'checked'} style="accent-color:var(--rosa)"> Avisarme por correo: coincidencias, puertas abiertas y mensajes cuando no esté aquí</label>`}</section>
+          <p style="margin:12px 0 0"><a class="boton boton-claro boton-chico" href="#correos">✉️ Elegir de qué me avisan por correo</a></p>`}</section>
       <section class="tarjeta"><h2>Sonido</h2><p class="sub">Cupido suena suave y solo cuando pasa algo. Aquí eliges qué familias quieres oír y el volumen.</p><div id="son-priv"></div></section>
       <section class="tarjeta"><h2>Cerrar sesión</h2><p class="sub">Olvida tu sesión en este dispositivo. ${DEMO() ? 'El demo siempre está a un clic en la puerta de entrada.' : 'Para volver, pide un enlace nuevo con tu correo.'}</p>
         <button class="boton boton-oscuro" id="btn-salir">⏻ Cerrar sesión</button></section>`;
@@ -466,6 +471,7 @@ const SECCIONES = {
 const DESPUES = {
   charlas() { if (parametro && $('#ch-mensajes')) engancharCharla(parametro); },
   apoyar() { pintarPrograma(); },
+  correos() { pintarCorreos(); },
   vida() {
     let t = null;
     $$('[data-vida]').forEach((s) => s.oninput = () => {
@@ -495,7 +501,6 @@ const DESPUES = {
   privacidad() {
     $('#btn-salir').onclick = () => $('#salir').click();
     panelSonido($('#son-priv'));
-    const ac = $('#avisos-correo'); if (ac) ac.onchange = async () => { try { const r = await api('/api/yo/ajustes', { avisos_correo: ac.checked }); V.ajustes = r.ajustes; avisar(ac.checked ? 'Te avisaremos por correo.' : 'Sin avisos por correo. Los enlaces para entrar sí llegan.'); } catch (e) { avisar(e.message); } };
     const c = $('#crear-cuenta'); if (c) c.onclick = abrirModalCuenta;
     $('#btn-pausa').onclick = async (e) => {
       e.target.disabled = true;
@@ -1235,6 +1240,45 @@ async function grabar(tipo, boton) {
   };
   grabando = rec; boton.textContent = `⏹ Detener (${limite} s)`;
   rec.start(1000);
+}
+
+/* ═══ MIS CORREOS ═════════════════════════════════════════════════════════
+   De inicio llega todo: aquí somos chismógrafos. Cada quien apaga lo que no
+   quiera saber, por categoría. Reglas en src/correos.js. */
+async function pintarCorreos() {
+  const z = $('#mis-correos'); if (!z) return;
+  let d; try { d = await api('/api/yo/correos'); } catch (e) { z.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; return; }
+  const demo = DEMO() && V.persona.origen === 'demo';
+  const pintar = () => {
+    const apagadas = d.categorias.filter((c) => !c.fijo && !c.on).length;
+    z.innerHTML = `
+      <section class="tarjeta corona"><label class="son-fila principal" style="background:transparent;border:0;padding:0"><span><b>✉️ Avisarme por correo</b><small>${d.correo ? `A <i class="co-dir">${esc(d.correo)}</i>.` : 'La cuenta demo no tiene correo: así se vería en la tuya.'} El enlace para entrar llega siempre, con esto apagado también.</small></span><input type="checkbox" id="co-on" ${d.on ? 'checked' : ''}></label>
+        ${demo ? '' : `<div class="acciones" style="margin-top:14px"><button class="boton boton-claro boton-chico" id="co-prueba">Mándame un correo de prueba</button>${apagadas ? `<button class="enlace" id="co-todas">Volver a encender todo</button>` : ''}</div>`}</section>
+      <section class="tarjeta ${d.on ? '' : 'apagada'}"><h2>De qué te avisamos</h2><p class="sub">${apagadas ? `Tienes ${apagadas} ${apagadas === 1 ? 'categoría apagada' : 'categorías apagadas'}.` : 'Hoy te avisamos de todo.'} Apaga lo que no quieras saber; lo puedes volver a encender cuando quieras.</p>
+        <div class="son-panel">${d.categorias.map((c) => `<label class="son-fila ${c.fijo ? 'fija' : ''}"><span><b>${c.i} ${esc(c.n)}</b><small>${esc(c.d)}</small></span>${c.fijo ? '<span class="chip gris">Siempre</span>' : `<input type="checkbox" data-cat="${c.id}" ${c.on ? 'checked' : ''} ${d.on ? '' : 'disabled'}>`}</label>`).join('')}</div></section>
+      <section class="tarjeta"><h2>Cómo te escribimos</h2>
+        <div class="son-panel">
+          <label class="son-fila"><span><b>🤫 Correos discretos</b><small>Llegan sin nombres ni contenido: «Tienes novedades en Cupido». Para quien comparte pantalla, computadora o bandeja.</small></span><input type="checkbox" id="co-discreto" ${d.discreto ? 'checked' : ''}></label>
+          <label class="son-fila"><span><b>🌙 Sin correos de noche</b><small>De 10 de la noche a 8 de la mañana (hora del centro de México), lo que pasa en tus charlas espera y te llega junto en la mañana.</small></span><input type="checkbox" id="co-silencio" ${d.silencio ? 'checked' : ''}></label>
+        </div>
+        <ul class="razones" style="padding:0;margin-top:14px">
+          <li><span class="i si">✓</span><span><b>Juntamos, no amontonamos.</b> Si en una charla pasan cinco cosas en diez minutos, te llega un correo, no cinco. Y como mucho uno cada media hora por charla.</span></li>
+          <li><span class="i si">✓</span><span><b>Si ya lo viste aquí, no te lo repetimos.</b> Solo te escribimos de una charla cuando no estás en Cupido.</span></li>
+          <li><span class="i si">✓</span><span><b>Hay cosas que nunca mandamos:</b> que alguien dijo que no, que alguien bajó el tono o que guardó de nuevo algo que te había compartido.</span></li>
+          <li><span class="i si">✓</span><span><b>Cada correo trae su salida.</b> Abajo dice por qué te llegó y un «ya no quiero estos» que funciona con un clic.</span></li>
+          <li><span class="i si">✓</span><span><b>Sin anuncios, nunca.</b> Tu correo no se le da a nadie.</span></li>
+        </ul></section>
+      <section class="tarjeta"><h2>Lo último que te mandamos</h2>
+        ${d.ultimos.length ? `<div class="avisos-lista" style="margin:0">${d.ultimos.map((c) => `<div class="aviso"><span>${(d.categorias.find((x) => x.id === c.cat) || {}).i || '✉️'}</span><div>${esc(c.asunto)}<span class="cuando">${hace(c.creado)}${c.estado === 'enviado' || c.estado === 'simulado' ? '' : ' · no salió'}</span></div></div>`).join('')}</div>` : '<p class="vacio" style="margin:0">Todavía nada. En cuanto pase algo, aquí queda el registro.</p>'}</section>`;
+    const cambiar = async (cuerpo, msg) => { try { d = await api('/api/yo/correos', cuerpo); tocar('guardado'); if (msg) avisar(msg, 4200); pintar(); } catch (e) { avisar(e.message, 4600); pintar(); } };
+    $('#co-on').onchange = (e) => cambiar({ on: e.target.checked }, e.target.checked ? 'Listo: te avisamos por correo.' : 'Listo: sin avisos por correo. El enlace para entrar sí llega.');
+    $$('[data-cat]', z).forEach((i) => i.onchange = () => { const c = d.categorias.find((x) => x.id === i.dataset.cat); cambiar({ cat: i.dataset.cat, valor: i.checked }, i.checked ? `Encendido: «${c.n}».` : `Apagado: ya no te mandamos «${c.n}».`); });
+    $('#co-discreto').onchange = (e) => cambiar({ discreto: e.target.checked }, e.target.checked ? 'Correos discretos encendidos: sin nombres ni contenido.' : 'Correos discretos apagados.');
+    $('#co-silencio').onchange = (e) => cambiar({ silencio: e.target.checked }, e.target.checked ? 'De noche, tus charlas esperan a la mañana.' : 'Te escribimos a cualquier hora.');
+    const t = $('#co-todas'); if (t) t.onclick = () => cambiar({ todas: true }, 'Todo encendido de nuevo.');
+    const p = $('#co-prueba'); if (p) p.onclick = async () => { p.disabled = true; try { const r = await api('/api/yo/correos/prueba', {}); avisar(`Mandado a ${r.correo}. Si no lo ves en un minuto, revisa el spam.`, 5200); } catch (e) { avisar(e.message, 4600); } p.disabled = false; };
+  };
+  pintar();
 }
 
 /* ═══ LA CHISPA ═══════════════════════════════════════════════════════════

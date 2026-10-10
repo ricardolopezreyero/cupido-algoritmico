@@ -80,6 +80,7 @@ export async function asegurar(env) {
   try { await env.DB.prepare(`ALTER TABLE puertas ADD COLUMN cerro TEXT`).run(); await env.DB.prepare(`ALTER TABLE puertas ADD COLUMN cerrada TEXT`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN cerrada TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN cerro TEXT`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN tono_a TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN tono_b TEXT`).run(); } catch { /* ya existen */ }
+  try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN baja TEXT`).run(); } catch { /* ya existe */ }
   try { await env.DB.prepare(`ALTER TABLE medios ADD COLUMN vista INTEGER NOT NULL DEFAULT 0`).run(); } catch { /* ya existe */ }
   await sembrarPrograma(env);
   await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_personas_correo ON personas(correo)`).run();
@@ -261,6 +262,7 @@ export async function decidir(env, yo, otra, decision) {
       env.DB.prepare(`INSERT INTO avisos (persona, tipo, texto, otra, pct) VALUES (?, 'coincidencia', ?, ?, ?)`).bind(otra, 'Alguien con quien ya habías hablado quiere volver a abrir la puerta. Tú decides, igual que la primera vez.', yo, p.pct),
     ]);
     await anotar(env, 'ella', 'Alguien quiso volver a abrir una puerta que cerró', '');
+    if (O.correo) await correoA(env, O, 'reabrir', { pct: p.pct }, { clave: yo, cadaMinutos: 60 * 24 });
     return { estado: 'cerrada', miDecision: 'si' };
   }
   await env.DB.prepare(`UPDATE puertas SET ${col} = ? WHERE a = ? AND b = ?`).bind(decision, a, b).run();

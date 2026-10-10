@@ -13,17 +13,12 @@ import { persona, anotar } from './datos.js';
 import { PREGUNTAS } from '../public/js/preguntas.js';
 import { ELEMENTOS, ELEMENTO } from '../public/js/elementos.js';
 import { avisarVivo, presenciaVivo, llamadaVivo } from './viva.js';
-import { correoA } from './correos.js';
+import { anotarNovedad } from './correos.js';
 import { manda, esHombre, ajustesDe, control, controlesDe, sinRespuesta, INSISTENCIA } from './ella.js';
 import { TIPOS_CHISPA, tonoDe, ponerTono, prepararChispa, trasEnviarChispa, responder, juegoDe, album } from './chispa.js';
 
-// Si la otra persona no está en el tablero, avísale por correo (máximo uno por hora por charla)
-async function correoSiAusente(env, c, yo, otraId, tipo, datos) {
-  const O = await persona(env, otraId); if (!O?.correo) return;
-  const en = await presenciaVivo(env, c.a, c.b); if (en.includes(otraId)) return;
-  const Yo = await persona(env, yo);
-  await correoA(env, O, tipo, { O: { id: yo, nombre: Yo.nombre }, ...datos }, { clave: yo, cadaMinutos: 60 });
-}
+// Lo que pasa en la charla mientras la otra persona no está se anota como novedad; sale junto, en un solo correo (src/correos.js)
+const novedad = (env, c, yo, otraId, nov) => anotarNovedad(env, c, yo, otraId, nov);
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -201,7 +196,7 @@ export async function enviar(env, yo, otraId, b = {}) {
   if (chispa) await trasEnviarChispa(env, r.meta.last_row_id, await persona(env, otraId), chispa);
   await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo, vista: chispa ? chispa.vista : tipo === 'sticker' ? t : tipo === 'gif' ? '🎞️ GIF' : t.slice(0, 80), excepto: yo });
   await hitoPorCantidad(env, c);
-  await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: chispa ? chispa.correo : tipo === 'texto' ? t.slice(0, 140) : tipo === 'sticker' ? t : 'Te mandó un GIF' });
+  await novedad(env, c, yo, otraId, chispa ? chispa.nov : tipo === 'sticker' ? { cat: 'charla', ico: t, v: 'te mandó un sticker' } : tipo === 'gif' ? { cat: 'charla', ico: '🎞️', v: 'te mandó un GIF' } : { cat: 'charla', ico: '💬', v: 'te escribió', d: t.slice(0, 180) });
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'escribe_a' : 'escribe_b'} = NULL, ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
   return { ok: true, id: r.meta.last_row_id };
 }
@@ -231,7 +226,7 @@ export async function llamada(env, yo, otraId, accion) {
     const candado = await candadoDeElla(env, c, yo, otraId, false); if (candado) return candado;
   }
   const r = await llamadaVivo(env, c.a, c.b, { accion, persona: yo });
-  if (accion === 'llamar' && r.ok && !r.enLinea) await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: 'Te llamó por voz 📞. No estabas en Cupido en ese momento.' });
+  if (accion === 'llamar' && r.ok && !r.enLinea) await novedad(env, c, yo, otraId, { cat: 'llamadas', ico: '📞', v: 'te llamó por voz', d: 'No estabas en Cupido en ese momento. Le devuelves la llamada cuando quieras, o no.' });
   delete r.enLinea;
   return r;
 }
@@ -246,13 +241,17 @@ export async function conectarVoz(env, req, yo, otraId) {
 export async function cambiarTono(env, yo, otraId, tono) {
   const c = await charlaDe(env, yo, otraId);
   if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
-  return ponerTono(env, c, yo, String(tono || ''));
+  const r = await ponerTono(env, c, yo, String(tono || ''));
+  // la buena noticia sí se cuenta; que alguien le bajó al tono, no: eso se ve en la charla y ya
+  if (r.cambio === 'coqueteo') await novedad(env, c, yo, otraId, { cat: 'chispa', ico: '💫', v: 'también eligió coqueteo', d: 'Los dos lo eligieron: ya se encendió. Con gusto y sin prisa.' });
+  delete r.cambio;
+  return r;
 }
 export async function responderChispa(env, yo, otraId, mensaje, valor) {
   const c = await charlaDe(env, yo, otraId);
   if (!c) return { error: 'No hay una puerta abierta con esa persona', status: 403 };
   const r = await responder(env, c, yo, await persona(env, yo), mensaje, valor);
-  if (r.correo) { await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: r.correo }); delete r.correo; }
+  if (r.nov) { await novedad(env, c, yo, otraId, r.nov); delete r.nov; }
   return r;
 }
 export async function verAlbum(env, yo, otraId) {
@@ -302,6 +301,8 @@ async function hito(env, c, clave, texto) {
   if (ya) return false;
   await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(c.a, c.b, `${texto} ⟨${clave}⟩`).run();
   await avisarVivo(env, c.a, c.b, { t: 'mensaje', de: 'sistema', tipo: 'sistema' });
+  const limpio = texto.replace(/^\S+\s/, ''); // sin el emoji del principio
+  for (const [yo, otra] of [[c.a, c.b], [c.b, c.a]]) await novedad(env, c, otra, yo, { cat: 'planes', ico: '🗓️', v: 'y tú tienen algo que celebrar', d: limpio });
   return true;
 }
 async function hitoPorCantidad(env, c) {
@@ -390,7 +391,7 @@ export async function registrarAdjunto(env, yo, otraId, archivo) {
   const r = await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto, archivo) VALUES (?, ?, ?, 'archivo', ?, ?)`).bind(c.a, c.b, yo, limpio, JSON.stringify(archivo)).run();
   await env.DB.prepare(`UPDATE charlas SET ${c.soyA ? 'leido_a' : 'leido_b'} = ? WHERE a = ? AND b = ?`).bind(r.meta.last_row_id, c.a, c.b).run();
   await avisarVivo(env, c.a, c.b, { t: 'mensaje', id: r.meta.last_row_id, de: yo, tipo: 'archivo', vista: /^image\//.test(mime) ? '📷 Foto' : /^audio\//.test(mime) ? '🎤 Audio' : /^video\//.test(mime) ? '🎬 Video' : '📎 ' + limpio, excepto: yo });
-  await correoSiAusente(env, c, yo, otraId, 'mensaje', { vista: /^image\//.test(mime) ? 'Te mandó una foto 📷' : /^audio\//.test(mime) ? 'Te mandó un audio 🎤' : /^video\//.test(mime) ? 'Te mandó un video 🎬' : 'Te mandó un archivo 📎' });
+  await novedad(env, c, yo, otraId, /^image\//.test(mime) ? { cat: 'charla', ico: '📷', v: 'te mandó una foto' } : /^audio\//.test(mime) ? { cat: 'charla', ico: '🎤', v: limpio === 'Nota de voz' ? 'te mandó una nota de voz' : 'te mandó un audio', d: limpio === 'Nota de voz' ? '' : limpio } : /^video\//.test(mime) ? { cat: 'charla', ico: '🎬', v: 'te mandó un video' } : { cat: 'charla', ico: '📎', v: 'te mandó un archivo', d: limpio });
   await anotar(env, 'charla', 'Se mandó un archivo en una charla', `${archivo.tamano >= 1048576 ? (archivo.tamano / 1048576).toFixed(1) + ' MB' : Math.round(archivo.tamano / 1024) + ' KB'} · ${mime}`);
   return { ok: true, id: r.meta.last_row_id };
 }
@@ -436,7 +437,7 @@ export async function liberar(env, yo, otraId, elementos) {
     ]);
     await anotar(env, 'charla', 'Una persona liberó parte de su perfil', `${nuevos.length} elemento(s)`);
     await avisarVivo(env, c.a, c.b, { t: 'mensaje', de: 'sistema', tipo: 'sistema', excepto: yo });
-    await correoSiAusente(env, c, yo, otraId, 'compartio', { elementos: nuevos.map((e) => `${ELEMENTO[e].i} ${ELEMENTO[e].n}`) });
+    await novedad(env, c, yo, otraId, { cat: 'perfil', ico: '🔓', v: 'te compartió parte de su perfil', d: nuevos.map((e) => `${ELEMENTO[e].i} ${ELEMENTO[e].n}`).join(' · ') });
   }
   const mios = [...ya, ...nuevos];
   return { ok: true, mios };

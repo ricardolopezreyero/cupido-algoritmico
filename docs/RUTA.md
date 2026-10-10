@@ -47,6 +47,8 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 
 - [x] **Llamada de voz dentro de la charla** (9 oct 2026): solo voz, sin video. **Solo existe cuando ella la autoriza**: el permiso «puede llamarme por voz» nace apagado frente a un hombre; ella le puede llamar cuando quiera, y cada llamada se contesta o no se contesta. Para quien llama, suena igual esté o no en línea la otra persona y «no contestó» se ve igual que «prefirió no contestar». **El audio no va de teléfono a teléfono: pasa por Cupido** (el objeto de la charla lo entrega cuadro por cuadro), así que nadie da su número ni ve la dirección de internet del otro, y funciona detrás de cualquier red. Voz en Opus a 32 kbps (si el navegador no puede, sin comprimir a 16 kHz), cancelación de eco y de ruido, colchón de unos 80 ms que se adapta solo, medidor de retraso, silenciar, reconexión sola si se corta la red (12 s de gracia), tope de 4 llamadas sin contestar por hora, y un renglón en la charla por cada llamada. No se graba nada. Código en `src/viva.js`, `public/js/llamada.js` y `public/js/voz-worklet.js`.
 
+- [x] **Los correos, completos** (9 oct 2026): «aquí somos chismógrafos». De inicio se avisa de todo y cada quien apaga lo que no quiera, por categoría (11 que se apagan + la de acceso, que llega siempre), desde **Mis correos** en su tablero o con un clic desde el propio correo, sin entrar a la cuenta. 22 correos distintos; el mismo correo cambia según lo lea ella o él. **Lo de una charla se junta**: mensajes, fotos, cartas, detalles, invitaciones y llamadas perdidas salen en un solo correo a los tres minutos, como mucho uno cada media hora por charla, y solo si la persona no lo vio ya en Cupido. Nuevos: puerta cerrada (idéntico si cerró, bloqueó o reportó), volver a abrir, coincidencias sin responder (juntas, cada dos semanas), plan de mañana, **Tu semana en Cupido** los domingos, reporte recibido y reporte leído, cuenta en revisión y de regreso, alguien llegó por tu invitación, espacio al 80 %, y correo de prueba. **Correos discretos** (sin nombres ni contenido) y **sin correos de noche**. Nunca se manda: que alguien dijo que no, que bajó el tono, o que guardó de nuevo algo que había compartido. Galería de vista previa en el admin. Código en `src/correos.js`.
+
 ## 1 · Antes de abrirlo a personas reales (bloquea el lanzamiento)
 
 ### Acceso sin contraseñas
@@ -91,7 +93,7 @@ Todo lo que falta para pasar del demo a **un millón de personas buscando pareja
 ## 2 · Para que funcione bien con miles
 
 ### Producto
-- [ ] Avisos por correo (y WhatsApp opcional) cuando aparece una coincidencia o se abre una puerta.
+- [x] Avisos por correo de todo lo que pasa (9 oct 2026). Falta: WhatsApp opcional; aviso push para que suene con Cupido cerrado; saber si un correo rebotó o cayó en spam (hoy solo sabemos que salió); y la hora local de cada quien para «sin correos de noche» (hoy usa la del centro de México).
 - [ ] **Conversación dentro de la puerta abierta**, en tiempo real (Durable Objects).
 - [ ] **Primera impresión multimedia** en orden: carta → audio leyendo la carta → video de su martes → fotos (R2). El algoritmo nunca las ve.
 - [ ] **Caducidad de puertas**: si en 14 días no hay dos síes, "la puerta se cerró sin abrirse" — sin decir por qué.

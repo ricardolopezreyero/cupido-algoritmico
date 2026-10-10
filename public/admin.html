@@ -31,6 +31,7 @@
       <a href="#motor" data-s="motor"><span class="ico">⚙️</span>Cómo decide</a>
       <div class="sep">Contenido</div>
       <a href="#articulos" data-s="articulos"><span class="ico">📝</span>Artículos</a>
+      <a href="#correos" data-s="correos"><span class="ico">✉️</span>Correos</a>
       <a href="#bitacora" data-s="bitacora"><span class="ico">📜</span>Bitácora</a>
       <a href="#programa" data-s="programa"><span class="ico">🤍</span>Programa y apoyos</a>
       <a href="#ruta" data-s="ruta"><span class="ico">🗺️</span>La lista completa</a>
@@ -226,16 +227,26 @@ const SECCIONES = {
     // enlaces a otros documentos: se abren en el visor de la portada
     return `<section class="tarjeta prosa" style="font-size:16.5px">${html.replace(/href="(?:\.\.\/)?(?:docs\/)?([A-Z]+\.md)"/g, 'href="/#doc=$1" target="_blank"')}</section>`;
   },
-};
 
-const DESPUES = {
-  seguridad() {
-    $$('[data-seg]').forEach((b) => b.onclick = async () => {
-      if (b.dataset.seg === 'vetar' && b.dataset.seguro !== '1') { b.dataset.seguro = '1'; b.textContent = '¿Para siempre? Toca otra vez'; setTimeout(() => { if (b.isConnected) { b.dataset.seguro = ''; b.textContent = 'Retirar para siempre'; } }, 4000); return; }
-      b.disabled = true;
-      try { await api('/api/admin/seguridad', { accion: b.dataset.seg, persona: b.dataset.persona, clave: b.dataset.clave }); avisar('Listo'); ir('seguridad'); } catch (e) { b.disabled = false; avisar(e.message); }
-    });
+  // Correos: el catálogo completo, cómo se ve cada uno (para ella, para él, discreto) y lo que ha salido
+  async correos() {
+    const C = await api('/api/admin/correos/catalogo');
+    const env = Object.fromEntries(C.enviados.map((e) => [e.tipo, e]));
+    const total = C.enviados.reduce((x, e) => x + e.n, 0);
+    return cabeza('Correos', 'Aquí somos chismógrafos: de inicio se avisa de todo, y cada quien apaga lo que no quiera. Lo de una charla se junta en un solo correo.') + `
+      <div class="banda" style="grid-template-columns:repeat(4,1fr)"><div class="rosa"><b>${C.correos.length}</b><span>correos<br>distintos</span></div><div><b>${C.categorias}</b><span>categorías que<br>cada quien apaga</span></div><div><b>${total}</b><span>enviados en<br>30 días</span></div><div><b>${C.enEspera}</b><span>novedades por<br>juntar y mandar</span></div></div>
+      <section class="tarjeta"><h2>Cómo se ve cada correo</h2><p class="sub">El mismo correo cambia según quién lo lee. Los de ejemplo no se le mandan a nadie.</p>
+        <div class="correo-controles"><select id="cv-tipo">${C.correos.map((c) => `<option value="${esc(c.tipo)}" ${c.tipo === 'novedades' ? 'selected' : ''}>${esc(c.categoria)} · ${esc(c.tipo)}</option>`).join('')}</select>
+          <select id="cv-genero"><option value="mujer">Lo lee ella</option><option value="hombre">Lo lee él</option><option value="otro">Sin género</option></select>
+          <label style="font-size:14px;display:flex;gap:6px;align-items:center"><input type="checkbox" id="cv-discreto" style="accent-color:var(--rosa)"> Discreto</label></div>
+        <p class="correo-asunto" id="cv-asunto"></p><iframe class="correo-marco" id="cv-marco" title="Vista previa del correo"></iframe></section>
+      <section class="tarjeta"><h2>El catálogo</h2><p class="sub">Qué correo existe, a qué categoría pertenece y cuándo sale.</p>
+        <div style="overflow-x:auto"><table class="tabla"><thead><tr><th>Categoría</th><th>Correo</th><th>Cuándo se manda</th><th>30 días</th></tr></thead><tbody>${C.correos.map((c) => `<tr><td>${esc(c.categoria)}${c.fijo ? ' <span class="chip gris">siempre</span>' : ''}</td><td><a href="#" data-ver="${esc(c.tipo)}"><b>${esc(c.tipo)}</b></a>${c.discreta ? ' <span class="chip gris">versión discreta</span>' : ''}</td><td style="color:var(--tinta-2)">${esc(c.cuando)}</td><td>${env[c.tipo]?.n || 0}${env[c.tipo]?.fallas ? ` <span class="chip ambar">${env[c.tipo].fallas} fallas</span>` : ''}</td></tr>`).join('')}</tbody></table></div></section>
+      <section class="tarjeta"><h2>Mandarme la serie completa</h2><p class="sub">Todos los correos de ejemplo, uno tras otro, a un correo tuyo. Pide entrar con una cuenta administradora.</p>
+        ${C.admin ? `<div class="correo-controles"><input type="email" id="cm-para" placeholder="tu@correo.com" maxlength="254"><select id="cm-genero"><option value="mujer">Como los recibe ella</option><option value="hombre">Como los recibe él</option></select><button class="boton boton-chico" id="cm-ir">Mandar la serie</button></div>
+          <h3 style="margin:18px 0 8px;font-size:16px">Lo último que salió</h3><div id="cm-lista"><p class="vacio">Cargando…</p></div>` : `<p><a class="boton boton-claro boton-chico" href="/entrar">Entrar con una cuenta administradora</a></p>`}</section>`;
   },
+
   // Aquí manda ella: bloqueos, reportes, cuentas en revisión y cuentas retiradas
   async seguridad() {
     const S = await api('/api/admin/seguridad'), L = S.limites;
@@ -254,7 +265,28 @@ const DESPUES = {
         ${S.personas.length ? `<div style="overflow-x:auto"><table class="tabla"><thead><tr><th>Persona</th><th>De mujeres</th><th>Reportes</th><th>Total</th><th>Estado</th><th></th></tr></thead><tbody>${S.personas.map((p) => `<tr><td>${esc(p.nombre)} <small style="color:var(--gris)">${esc(p.genero || '')}${p.pool === 'demo' ? ' · ficticia' : ''}</small></td><td><b>${p.deMujeres}</b> de ${L.veto}</td><td>${p.reportes}</td><td>${p.bloqueos}</td><td>${estado(p.estado)}</td><td>${S.admin && p.estado === 'revision' ? `<button class="boton boton-claro boton-chico" data-seg="regresar" data-persona="${esc(p.id)}">Regresar al matching</button>` : ''}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vacio" style="margin:0">Nadie ha sido bloqueado.</p>'}</section>
       ${S.vetadas.length ? `<section class="tarjeta"><h2>Fuera para siempre</h2><p class="sub">Su cuenta no puede entrar y su correo no vuelve a registrarse.</p><p style="margin:0">${S.vetadas.map((p) => `<span class="chip noche" style="margin:0 6px 6px 0">${esc(p.nombre)}</span>`).join('')}</p></section>` : ''}`;
   },
+};
 
+const DESPUES = {
+  correos() {
+    const ver = async () => {
+      const r = await fetch(`/api/admin/correos/vista?tipo=${encodeURIComponent($('#cv-tipo').value)}&genero=${$('#cv-genero').value}&discreto=${$('#cv-discreto').checked ? 1 : 0}`);
+      $('#cv-asunto').innerHTML = `Asunto: <b>${esc(decodeURIComponent(r.headers.get('x-asunto') || ''))}</b>`; $('#cv-marco').srcdoc = await r.text();
+    };
+    ['cv-tipo', 'cv-genero', 'cv-discreto'].forEach((id) => $('#' + id).onchange = ver); ver();
+    $$('[data-ver]').forEach((a) => a.onclick = (e) => { e.preventDefault(); $('#cv-tipo').value = a.dataset.ver; ver(); $('#cv-marco').scrollIntoView({ block: 'center', behavior: 'smooth' }); });
+    const b = $('#cm-ir'); if (b) {
+      b.onclick = async () => { const para = $('#cm-para').value.trim(); if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(para)) { avisar('Ese correo no se ve bien.'); return; } b.disabled = true; b.textContent = 'Mandando…'; try { const r = await api('/api/admin/correos/muestra', { para, genero: $('#cm-genero').value }); avisar(`Salieron ${r.filter((x) => x.id).length} de ${r.length} correos a ${para}.`, 5200); } catch (e) { avisar(e.message); } b.disabled = false; b.textContent = 'Mandar la serie'; };
+      api('/api/admin/correos').then((l) => { $('#cm-lista').innerHTML = l.length ? `<div style="overflow-x:auto"><table class="tabla"><thead><tr><th>Cuándo</th><th>Tipo</th><th>Asunto</th><th>Estado</th></tr></thead><tbody>${l.slice(0, 40).map((c) => `<tr><td>${hace(c.creado)}</td><td>${esc(c.tipo)}</td><td>${esc(c.asunto)}</td><td>${esc(c.estado)}</td></tr>`).join('')}</tbody></table></div>` : '<p class="vacio">Nada todavía.</p>'; }).catch(() => {});
+    }
+  },
+  seguridad() {
+    $$('[data-seg]').forEach((b) => b.onclick = async () => {
+      if (b.dataset.seg === 'vetar' && b.dataset.seguro !== '1') { b.dataset.seguro = '1'; b.textContent = '¿Para siempre? Toca otra vez'; setTimeout(() => { if (b.isConnected) { b.dataset.seguro = ''; b.textContent = 'Retirar para siempre'; } }, 4000); return; }
+      b.disabled = true;
+      try { await api('/api/admin/seguridad', { accion: b.dataset.seg, persona: b.dataset.persona, clave: b.dataset.clave }); avisar('Listo'); ir('seguridad'); } catch (e) { b.disabled = false; avisar(e.message); }
+    });
+  },
   programa() {
     $$('[data-prog]').forEach((b) => b.onclick = async () => {
       const fila = b.closest('tr'), clave = b.dataset.prog;

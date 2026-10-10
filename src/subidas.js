@@ -13,6 +13,7 @@
 import { anotar } from './datos.js';
 import { puedeAdjuntar, registrarAdjunto, ARCHIVO } from './charla.js';
 import { mediosDe, TIPOS } from './medios.js';
+import { correoA } from './correos.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -107,6 +108,11 @@ export async function subirVista(env, P, id, req) {
 }
 
 /* ── 3 · terminar: se arma el original y nace el mensaje (o el medio del perfil) ── */
+// Antes de que se llene: un aviso cuando lo subido pasa del 80 % del espacio incluido (como mucho uno al mes)
+async function avisarEspacio(env, P) {
+  const e = await espacioDe(env, P.id), pct = Math.round(100 * e.usado / e.tope);
+  if (pct >= 80) await correoA(env, P, 'espacio', { usado: legible(e.usado), tope: legible(e.tope), pct }, { cadaMinutos: 60 * 24 * 30 });
+}
 export async function terminarSubida(env, P, id, partes) {
   const s = await laSubida(env, P, id); if (!s) return { error: 'Esa subida ya no existe', status: 404 };
   const lista = (Array.isArray(partes) ? partes : []).map((p) => ({ partNumber: Number(p.n), etag: String(p.etag || '') })).filter((p) => p.partNumber >= 1 && p.etag).sort((x, y) => x.partNumber - y.partNumber);
@@ -125,10 +131,12 @@ export async function terminarSubida(env, P, id, partes) {
       .bind(P.id, s.tipo, s.clave, s.mime, s.tamano, s.vista ? 1 : 0).run();
     if (anterior && anterior.clave !== s.clave) { try { await env.MEDIOS.delete([anterior.clave, anterior.clave + '.vista']); } catch {} }
     await anotar(env, 'persona', `Una persona subió su ${s.tipo} en alta calidad`, legible(s.tamano));
+    await avisarEspacio(env, P);
     return { ok: true, medios: await mediosDe(env, P.id), espacio: await espacioDe(env, P.id) };
   }
   const r = await registrarAdjunto(env, P.id, s.otra, { clave: s.clave, mime: s.mime, nombre: s.nombre, tamano: s.tamano, vista: !!s.vista, ...extra });
   if (r.error) { await env.MEDIOS.delete(s.clave); if (s.vista) await env.MEDIOS.delete(s.clave + '.vista'); }
+  else await avisarEspacio(env, P);
   return r;
 }
 

@@ -12,12 +12,13 @@
     "binding": "ASSETS",
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "404-page",
-    "run_worker_first": ["/api/*", "/articulos", "/articulos/*", "/docs/*", "/demo", "/demo.html", "/entrar/*", "/persona", "/cuestionario", "/i/*"]
+    "run_worker_first": ["/api/*", "/articulos", "/articulos/*", "/docs/*", "/demo", "/demo.html", "/entrar/*", "/persona", "/cuestionario", "/i/*", "/correo/*"]
   },
   // Correo: FROM_EMAIL aquí; la llave va en secrets (wrangler secret put RESEND_KEY)
   // ADMINES: huellas (no correos) de las cuentas que pueden ver el detalle de los reportes y retirar a alguien. Se calculan con huella() de src/ella.js.
   "vars": { "FROM_EMAIL": "Cupido Algorítmico <cupido@capitaltorreon.com>", "BASE_URL": "https://cupido.capitaltorreon.com", "ADMINES": "22b4416e984e66d8a380ce36261f4062,75c35f4dc0cfba67b63601dcba973408" },
-  "triggers": { "crons": ["0 16 * * *"] },
+  // 0 16 * * * = cada día a las 10 de la mañana (centro de México): recordatorios y, los domingos, el resumen. */3 = juntar y mandar las novedades de las charlas.
+  "triggers": { "crons": ["0 16 * * *", "*/3 * * * *"] },
   "rules": [{ "type": "Text", "globs": ["**/*.md"], "fallthrough": true }],
   "ai": { "binding": "AI" },
   // La llave de Stripe vive UNA vez en la bóveda de la cuenta (Secrets Store «superleads»); aquí solo se liga. Cuando llegue la de CapitalTorreon se cambia el secret_name.

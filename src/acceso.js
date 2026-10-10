@@ -7,7 +7,7 @@
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
 import { persona, anotar, recalcularTodo } from './datos.js';
-import { mandar, CORREOS } from './correos.js';
+import { mandar, armar, correoA } from './correos.js';
 import { abrirCharla, borrarCharlasDe } from './charla.js';
 import { SUAVES, ELEMENTO } from '../public/js/elementos.js';
 import { estaVetado, limpiarEllaDe } from './ella.js';
@@ -138,7 +138,7 @@ export async function pedirEnlace(env, req, url, correoCrudo) {
   await env.DB.prepare(`INSERT INTO enlaces (token, correo, ip_hash) VALUES (?, ?, ?)`).bind(token, correo, ipHash).run();
   const enlace = new URL(`/entrar/${token}`, url).href;
   const existe = await env.DB.prepare(`SELECT id FROM personas WHERE correo = ?`).bind(correo).first();
-  const c = CORREOS[existe ? 'enlace' : 'bienvenida'](env, { enlace, minutos: MIN_ENLACE });
+  const c = await armar(env, null, existe ? 'enlace' : 'bienvenida', { enlace, minutos: MIN_ENLACE });
   const mandado = await mandar(env, { persona: existe?.id || null, para: correo, tipo: existe ? 'enlace' : 'bienvenida', asunto: c.asunto, contenido: c.contenido });
   await anotar(env, 'acceso', existe ? 'Alguien pidió su enlace para entrar' : 'Alguien pidió crear su cuenta', await hash(correo));
   if (mandado === 'sin_remitente') {
@@ -168,7 +168,11 @@ export async function canjearEnlace(env, token, invitadoPor = null) {
     const quien = invitadoPor ? (await env.DB.prepare(`SELECT id FROM personas WHERE codigo = ?`).bind(invitadoPor).first())?.id || null : null;
     await env.DB.prepare(`INSERT INTO personas (id, pool, nombre, correo, color, respuestas, origen, estado, completo, invitado_por) VALUES (?, 'real', 'Sin nombre', ?, ?, '{}', 'correo', 'activa', 0, ?)`)
       .bind(id, e.correo, COLORES[Math.floor(Math.random() * COLORES.length)], quien).run();
-    if (quien) await anotar(env, 'programa', 'Una cuenta nueva llegó por invitación', quien);
+    if (quien) {
+      await anotar(env, 'programa', 'Una cuenta nueva llegó por invitación', quien);
+      const total = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas WHERE invitado_por = ?`).bind(quien).first()).n;
+      await correoA(env, await persona(env, quien), 'invitado', { total }); // a quien invitó: alguien llegó por ti
+    }
     await anotar(env, 'acceso', 'Se creó una cuenta nueva', await hash(e.correo));
     P = await env.DB.prepare(`SELECT * FROM personas WHERE id = ?`).bind(id).first();
   } else await anotar(env, 'acceso', 'Alguien entró con su enlace', P.nombre);

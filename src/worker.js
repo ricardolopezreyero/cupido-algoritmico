@@ -11,7 +11,7 @@ import { quien, entrarDemo, pedirEnlace, canjearEnlace, cerrarSesion, cookieSesi
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
-import { mandarMuestra, correoA } from './correos.js';
+import { CATEGORIAS as CATEGORIAS_CORREO, mandarMuestra, correoA, despacharNovedades, correosDelDia, paginaBaja, prefsDe, ponerPrefs, catalogoCorreos, vistaPrevia } from './correos.js';
 import { verPrograma, apoyar, confirmarApoyo, ajustarPrograma, aportesAdmin, distribucionPrecios } from './programa.js';
 import { limpiarPrecioJusto, REVISION_DIAS } from './precios.js';
 import { generarSonido, servirSonido, estadoSonidos } from './sonidos.js';
@@ -49,6 +49,8 @@ export default {
   // Cada día: recordar el cuestionario a quien lo dejó a medias hace 2 días o más (una sola vez)
   async scheduled(ev, env, ctx) {
     await asegurar(env);
+    // Cada tres minutos: lo que pasó en las charlas mientras alguien no estaba sale junto, en un solo correo
+    if (ev.cron === '*/3 * * * *') { await despacharNovedades(env); return; }
     const lista = (await env.DB.prepare(`SELECT * FROM personas WHERE pool = 'real' AND completo = 0 AND correo IS NOT NULL AND creada < datetime('now', '-2 days')`).all()).results;
     for (const fila of lista) {
       const P = await persona(env, fila.id);
@@ -58,6 +60,7 @@ export default {
     }
     await hitosDelDia(env); // aniversarios de las charlas
     await limpiarSubidas(env); // lo que se quedó a medias no ocupa espacio
+    await correosDelDia(env); // coincidencias sin responder, planes de mañana y, los domingos, «Tu semana en Cupido»
     // precio justo: cada 180 días, ¿sigue igual tu situación? (junto con lo que cambia: ciudad, trabajo, hijos)
     const reales = (await env.DB.prepare(`SELECT id FROM personas WHERE pool = 'real' AND correo IS NOT NULL AND completo = 1`).all()).results;
     for (const f of reales) { const P = await persona(env, f.id); let aj = {}; try { aj = JSON.parse(P.ajustes || '{}'); } catch {} const rev = aj.precio_revisado ? Date.parse(aj.precio_revisado) : Date.parse(P.creada + 'Z'); if (Date.now() - rev >= REVISION_DIAS * 86400000) await correoA(env, P, 'revision', {}, { cadaMinutos: 60 * 24 * (REVISION_DIAS - 1) }); }
@@ -104,6 +107,7 @@ export default {
         if (!q.sesion.demo) { let aj = {}; try { aj = JSON.parse(q.P.ajustes || '{}'); } catch {} if (!aj.bienvenida) return irA(`/bienvenida${ruta === '/cuestionario' ? '?luego=cuestionario' : ''}`, url); }
       }
 
+      if (ruta === '/correo/baja') return await paginaBaja(env, req, url); // dejar de recibir una categoría, con un clic y sin entrar
       if (ruta === '/articulos') return await paginaLista(env, url);
       if (ruta === '/articulos/escribir') return env.ASSETS.fetch(new Request(new URL('/escribir', url), req));
       if (ruta.startsWith('/articulos/')) return await paginaArticulo(env, url, decodeURIComponent(ruta.slice(11)));
@@ -177,6 +181,18 @@ async function api(req, env, ctx, url) {
     if (b.bienvenida === true && !previo.bienvenida) aj.bienvenida_fecha = new Date().toISOString();
     if (!(yo.sesion.demo && yo.P.origen === 'demo')) await env.DB.prepare(`UPDATE personas SET ajustes = ? WHERE id = ?`).bind(JSON.stringify(aj), yo.P.id).run();
     return json({ ok: true, ajustes: aj });
+  }
+  /* ── Mis correos: de inicio llega todo; cada quien apaga lo que no quiera ── */
+  if (ruta === '/api/yo/correos') {
+    if (!yo) return sinSesion();
+    if (metodo === 'GET') return json(await prefsDe(env, yo.P));
+    if (metodo === 'POST') { if (yo.sesion.demo && yo.P.origen === 'demo') return error('En la cuenta demo esto no se guarda. Con tu cuenta sí.', 403); return json(await ponerPrefs(env, yo.P, await leerJson(req, 2000))); }
+  }
+  if (ruta === '/api/yo/correos/prueba' && metodo === 'POST') {
+    if (!yo) return sinSesion();
+    if (!yo.P.correo || yo.sesion.demo) return error('La cuenta demo no tiene correo. Con tu cuenta sí.', 403);
+    const r = await correoA(env, yo.P, 'prueba', {}, { cadaMinutos: 5, forzar: true });
+    return r === 'reciente' ? error('Ya te mandamos uno hace un momento. Revisa tu bandeja (y el spam).', 429) : r ? json({ ok: true, correo: yo.P.correo }) : error('No pudimos mandarlo. Intenta de nuevo en un momento.', 502);
   }
   if (ruta === '/api/yo/vida' && metodo === 'POST') {
     // los elementos de su vida, del 0 al 100 %, como ella misma se ve hoy
@@ -320,8 +336,19 @@ async function api(req, env, ctx, url) {
   if ((x = m(/^\/api\/admin\/persona\/([a-z0-9]+)$/))) { const d = await detallePersona(env, x[1]); return d ? json(d) : error('No existe', 404); }
   if (ruta === '/api/admin/correr' && metodo === 'POST') { const b = await leerJson(req); return json(await correrFase(env, Number(b.fase))); }
   if (ruta === '/api/admin/reiniciar' && metodo === 'POST') { await reiniciarDemo(env); return json({ ok: true }); }
-  if (ruta === '/api/admin/correos/muestra' && metodo === 'POST') { const b = await leerJson(req, 2000); if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(String(b.para || ''))) return error('Correo inválido'); return json(await mandarMuestra(env, String(b.para).toLowerCase())); }
-  if (ruta === '/api/admin/correos' && metodo === 'GET') return json((await env.DB.prepare(`SELECT id, persona, tipo, asunto, estado, creado FROM correos ORDER BY id DESC LIMIT 60`).all()).results);
+  // El catálogo y la vista previa son de ejemplo y los ve cualquiera; mandar la serie y ver lo enviado piden cuenta administradora
+  if (ruta === '/api/admin/correos/catalogo' && metodo === 'GET') return json({ correos: catalogoCorreos(), categorias: CATEGORIAS_CORREO.filter((c) => !c.fijo).length, admin: await esAdmin(env, yo), enviados: (await env.DB.prepare(`SELECT tipo, COUNT(*) AS n, SUM(estado != 'enviado') AS fallas FROM correos WHERE creado > datetime('now', '-30 days') GROUP BY tipo`).all()).results, enEspera: (await env.DB.prepare(`SELECT COUNT(*) AS n FROM novedades`).first()).n });
+  if (ruta === '/api/admin/correos/vista' && metodo === 'GET') { const v = vistaPrevia(env, String(url.searchParams.get('tipo') || ''), String(url.searchParams.get('genero') || 'mujer'), url.searchParams.get('discreto') === '1'); return v ? new Response(v.html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-asunto': encodeURIComponent(v.asunto) } }) : error('No existe ese correo', 404); }
+  if (ruta === '/api/admin/correos/muestra' && metodo === 'POST') {
+    if (!(await esAdmin(env, yo))) return error('Mandar la serie pide entrar con una cuenta administradora.', 403);
+    const b = await leerJson(req, 2000); if (!/^[^\s@]+@[^\s@]+\.[a-z]{2,}$/i.test(String(b.para || ''))) return error('Correo inválido');
+    return json(await mandarMuestra(env, String(b.para).toLowerCase(), ['mujer', 'hombre'].includes(b.genero) ? b.genero : 'mujer'));
+  }
+  if (ruta === '/api/admin/correos/despachar' && metodo === 'POST') { if (!(await esAdmin(env, yo))) return error('Pide una cuenta administradora.', 403); return json({ novedades: await despacharNovedades(env), ...(await correosDelDia(env, { domingo: (await leerJson(req, 500)).semana === true })) }); }
+  if (ruta === '/api/admin/correos' && metodo === 'GET') {
+    if (!(await esAdmin(env, yo))) return json([]); // quién recibió qué no se enseña sin cuenta administradora
+    return json((await env.DB.prepare(`SELECT id, persona, tipo, asunto, estado, creado FROM correos ORDER BY id DESC LIMIT 80`).all()).results);
+  }
   if (ruta === '/api/admin/bitacora') {
     const despues = Number(url.searchParams.get('despues') || 0);
     return json((await env.DB.prepare(`SELECT * FROM bitacora WHERE id > ? ORDER BY id DESC LIMIT 30`).bind(despues).all()).results);

@@ -26,6 +26,7 @@ export const TIPOS_CHISPA = ['carta', 'detalle', 'cita'];
 
 const limpio = (s, max) => Array.from(String(s ?? '').replace(/[\u0000-\u0009\u000b-\u001f\u007f\u200b-\u200f\u2028-\u202e\u2066-\u2069]/g, ' ').replace(/[ \t]+/g, ' ').replace(/\n{3,}/g, '\n\n').trim()).slice(0, max).join('');
 const nom = (P) => (!P || P.nombre === 'Sin nombre' ? 'Alguien' : P.nombre.split(' ')[0]);
+const mayus = (s) => String(s || '').charAt(0).toUpperCase() + String(s || '').slice(1);
 
 /* ── el tono ─────────────────────────────────────────────────────────────── */
 export function tonoDe(c) {
@@ -45,6 +46,7 @@ export async function ponerTono(env, c, yo, tono) {
     await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(c.a, c.b, txt).run();
     await avisarVivo(env, c.a, c.b, { t: 'mensaje', de: 'sistema', tipo: 'sistema', tono: comun });
     await anotar(env, 'chispa', sube ? `El tono de una charla subió a ${comun}` : `El tono de una charla bajó a ${comun}`, '');
+    return { ok: true, tono: { mio: tono, comun }, cambio: sube ? comun : null };
   }
   return { ok: true, tono: { mio: tono, comun } };
 }
@@ -59,7 +61,7 @@ export async function prepararChispa(env, c, yo, otraId, b = {}) {
     if (ya) return { error: 'Esa carta ya salió en esta charla. Saca otra.', status: 409 };
     const pend = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes m WHERE m.a = ? AND m.b = ? AND m.de = ? AND m.tipo = 'carta' AND NOT EXISTS (SELECT 1 FROM respuestas r WHERE r.mensaje = m.id AND r.persona = ?)`).bind(c.a, c.b, yo, otraId).first()).n;
     if (pend >= CARTAS_PENDIENTES) return { error: `Ya hay ${CARTAS_PENDIENTES} cartas tuyas esperando respuesta. Dale su tiempo.`, status: 429 };
-    return { tipo: 'carta', texto: C.t, archivo: { carta: C.id }, vista: '🎴 ' + C.t, correo: 'Te mandó una carta para conocerse 🎴' };
+    return { tipo: 'carta', texto: C.t, archivo: { carta: C.id }, vista: '🎴 ' + C.t, nov: { cat: 'chispa', ico: '🎴', v: 'sacó una carta para los dos', d: C.tipo === 'ab' ? `${C.a} o ${C.b}` : C.t } };
   }
   if (b.tipo === 'detalle') {
     const D = DETALLE[String(b.detalle || '')]; if (!D) return { error: 'Ese detalle no existe', status: 400 };
@@ -67,7 +69,7 @@ export async function prepararChispa(env, c, yo, otraId, b = {}) {
     const hoy = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM mensajes WHERE a = ? AND b = ? AND de = ? AND tipo = 'detalle' AND creado > datetime('now', '-1 day')`).bind(c.a, c.b, yo).first()).n;
     if (hoy >= DETALLES_AL_DIA) return { error: 'Ya mandaste muchos detalles hoy. Un detalle vale más cuando no sobran.', status: 429 };
     const nota = limpio(b.nota, NOTA_MAX);
-    return { tipo: 'detalle', texto: D.n, archivo: { detalle: D.id, ...(nota ? { nota } : {}) }, vista: `${D.i} ${D.n}`, correo: `Te mandó un detalle ${D.i}` };
+    return { tipo: 'detalle', texto: D.n, archivo: { detalle: D.id, ...(nota ? { nota } : {}) }, vista: `${D.i} ${D.n}`, nov: { cat: 'chispa', ico: D.i, v: D.v, d: nota } };
   }
   if (b.tipo === 'cita') {
     const P = PLAN[String(b.plan || '')]; if (!P) return { error: 'Elige un plan', status: 400 };
@@ -77,7 +79,7 @@ export async function prepararChispa(env, c, yo, otraId, b = {}) {
     if (cuando) { if (!/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(cuando) || Number.isNaN(Date.parse(cuando))) return { error: 'Esa fecha no se ve bien', status: 400 }; if (Date.parse(cuando) < Date.now() - 86400000) return { error: 'Esa fecha ya pasó', status: 400 }; }
     const pend = await env.DB.prepare(`SELECT 1 AS v FROM mensajes m WHERE m.a = ? AND m.b = ? AND m.tipo = 'cita' AND NOT EXISTS (SELECT 1 FROM respuestas r WHERE r.mensaje = m.id)`).bind(c.a, c.b).first();
     if (pend) return { error: 'Ya hay una invitación esperando respuesta en esta charla.', status: 409 };
-    return { tipo: 'cita', texto: que, archivo: { plan: P.id, que, ...(donde ? { donde } : {}), ...(cuando ? { cuando } : {}) }, vista: `📅 ${que}`, correo: 'Te hizo una invitación 📅' };
+    return { tipo: 'cita', texto: que, archivo: { plan: P.id, que, ...(donde ? { donde } : {}), ...(cuando ? { cuando } : {}) }, vista: `📅 ${que}`, nov: { cat: 'chispa', ico: '📅', v: 'te hizo una invitación', d: resumenCita({ que, donde, cuando }) } };
   }
   return { error: 'Tipo inválido', status: 400 };
 }
@@ -102,7 +104,7 @@ export async function responder(env, c, yo, Yo, mensajeId, valor) {
     if (!r.meta.changes) return { error: 'Ya respondiste esta carta', status: 409 };
     const listo = (await env.DB.prepare(`SELECT COUNT(*) AS n FROM respuestas WHERE mensaje = ?`).bind(m.id).first()).n >= 2;
     await avisarVivo(env, c.a, c.b, { t: 'juego', mensaje: m.id, de: yo, listo });
-    return { ok: true, listo, correo: listo ? 'Ya se abrió la carta: los dos respondieron 🎴' : 'Respondió una carta. Se abre cuando tú respondas 🎴' };
+    return { ok: true, listo, nov: listo ? { cat: 'chispa', ico: '🎴', v: 'respondió la carta, y ya se abrió', d: C.t } : { cat: 'chispa', ico: '🎴', v: 'respondió una carta', d: `${C.t} · Se abre en cuanto respondas tú.` } };
   }
   // invitación: responde quien la recibió, y puede cambiar de opinión
   if (m.de === yo) return { error: 'Esa invitación la hiciste tú', status: 403 };
@@ -117,7 +119,7 @@ export async function responder(env, c, yo, Yo, mensajeId, valor) {
   await avisarVivo(env, c.a, c.b, { t: 'juego', mensaje: m.id, de: yo, listo: true, cita: valor });
   await avisarVivo(env, c.a, c.b, { t: 'mensaje', de: 'sistema', tipo: 'sistema' });
   if (valor === 'si') await anotar(env, 'chispa', 'Dos personas quedaron de verse', A.plan || '');
-  return { ok: true, listo: true, correo: valor === 'si' ? 'Dijo que sí a tu invitación 💛' : 'Respondió tu invitación' };
+  return { ok: true, listo: true, nov: valor === 'si' ? { cat: 'chispa', ico: '💛', v: 'dijo que sí a tu invitación', d: resumenCita(A) } : { cat: 'chispa', ico: '📅', v: 'respondió tu invitación', d: mayus(RESPUESTA_CITA[valor].dice) + '. Y está perfecto.' } };
 }
 
 /* ── el estado de cartas e invitaciones de toda la charla (cambia sobre mensajes viejos) ── */

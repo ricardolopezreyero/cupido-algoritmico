@@ -17,7 +17,7 @@
 // RLR
 import { persona, anotar, recalcularTodo } from './datos.js';
 import { avisarVivo } from './viva.js';
-import { correoA, mandar } from './correos.js';
+import { correoA, mandar, anotarNovedad } from './correos.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -98,6 +98,8 @@ export async function ponerControl(env, P, otraId, k, v) {
     : (v ? `${nom(P)} decidió enseñar su foto, su voz y su video.` : `${nom(P)} guardó su foto, su voz y su video.`);
   await env.DB.prepare(`INSERT INTO mensajes (a, b, de, tipo, texto) VALUES (?, ?, 'sistema', 'sistema', ?)`).bind(a, b, txt).run();
   await avisarVivo(env, a, b, { t: 'mensaje', de: 'sistema', tipo: 'sistema', control: k });
+  // encender algo es una buena noticia y se le cuenta por correo; apagarlo no (se ve en la charla y ya)
+  if (v) await anotarNovedad(env, { a, b }, P.id, otraId, k === 'llamadas' ? { cat: 'llamadas', ico: '📞', v: 'ya recibe llamadas de voz tuyas', d: 'Dentro de Cupido, sin números. Contesta solo si quiere.' } : k === 'recibir_medios' ? { cat: 'perfil', ico: '📎', v: 'ya recibe fotos, videos y audios tuyos' } : { cat: 'perfil', ico: '🖼️', v: 'decidió enseñarte su foto, su voz y su video' });
   return { ok: true, controles: await controlesDe(env, P, O) };
 }
 
@@ -142,6 +144,11 @@ async function borrarLoMio(env, a, b, yo) {
 const avisoCierre = (env, paraId, P) => env.DB.prepare(`INSERT INTO avisos (persona, tipo, texto, otra) VALUES (?, 'cierre', ?, ?)`)
   .bind(paraId, `Se cerró la puerta con ${nom(P)}. Aquí cualquiera de los dos puede cerrarla cuando quiera, sin dar explicaciones.`, P.id);
 
+// El mismo correo si cerró, bloqueó o reportó: quien lo recibe nunca distingue cuál fue
+async function correoCierre(env, paraId, P) {
+  const O = await persona(env, paraId);
+  if (O?.correo && O.estado !== 'vetada') await correoA(env, O, 'cierre', { O: { id: P.id, nombre: P.nombre, genero: P.genero } }, { clave: P.id, cadaMinutos: 5 });
+}
 export async function cerrarPuerta(env, P, otraId, { borrar = false } = {}) {
   const [a, b] = clave(P.id, otraId);
   const pu = await env.DB.prepare(`SELECT * FROM puertas WHERE a = ? AND b = ?`).bind(a, b).first();
@@ -156,6 +163,7 @@ export async function cerrarPuerta(env, P, otraId, { borrar = false } = {}) {
     avisoCierre(env, otraId, P),
   ]);
   await anotar(env, 'ella', borrar ? 'Alguien cerró una puerta y borró lo que mandó' : 'Alguien cerró una puerta', P.genero || '');
+  await correoCierre(env, otraId, P);
   return { ok: true };
 }
 
@@ -190,7 +198,8 @@ export async function bloquear(env, P, otraId, { reporte = false, motivo = null,
     ...(abierta ? [avisoCierre(env, otraId, P)] : []),
   ]);
   await anotar(env, 'ella', reporte ? 'Llegó un reporte' : 'Alguien bloqueó a una persona', `${P.genero || '?'} → ${O.genero || '?'}${reporte ? ' · ' + motivo : ''}`);
-  if (reporte) await avisarAdmin(env, motivo);
+  if (abierta) await correoCierre(env, otraId, P);
+  if (reporte) { await avisarAdmin(env, motivo); await correoA(env, P, 'reporte_recibido', { O: { id: O.id, nombre: O.nombre, genero: O.genero } }, { clave: otraId }); }
   const consecuencia = await consecuencias(env, P, O);
   return { ok: true, consecuencia };
 }
@@ -206,6 +215,7 @@ async function consecuencias(env, P, O) {
     await env.DB.prepare(`UPDATE personas SET estado = 'revision' WHERE id = ?`).bind(O.id).run();
     await recalcularTodo(env, { avisar: true, motivo: 'revisión' });
     await anotar(env, 'ella', 'Una cuenta salió del matching hasta que alguien la revise', `${n.rep} reportes`);
+    await correoA(env, O, 'en_revision', {}, { cadaMinutos: 60 * 24 });
     return 'revision';
   }
   return null;
@@ -222,7 +232,7 @@ export async function desbloquear(env, P, otraId) {
 /* ── fuera para siempre ──────────────────────────────────────────────────── */
 export async function vetar(env, O, motivo) {
   const abiertas = (await env.DB.prepare(`SELECT a, b FROM puertas WHERE (a = ? OR b = ?) AND estado = 'abierta'`).bind(O.id, O.id).all()).results;
-  for (const p of abiertas) { await apagarCharla(env, p.a, p.b, 'sistema'); await avisoCierre(env, p.a === O.id ? p.b : p.a, O).run(); }
+  for (const p of abiertas) { const otra = p.a === O.id ? p.b : p.a; await apagarCharla(env, p.a, p.b, 'sistema'); await avisoCierre(env, otra, O).run(); await correoCierre(env, otra, O); }
   const lote = [
     env.DB.prepare(`UPDATE personas SET estado = 'vetada' WHERE id = ?`).bind(O.id),
     env.DB.prepare(`DELETE FROM sesiones WHERE persona = ?`).bind(O.id),
@@ -333,16 +343,25 @@ export async function accionAdmin(env, { persona: id, accion, clave: k }) {
   if (accion === 'atender') {
     const [de, a] = String(k || '').split('|');
     await env.DB.prepare(`UPDATE bloqueos SET atendido = datetime('now') WHERE de = ? AND a = ?`).bind(de, a).run();
+    await correoA(env, await persona(env, de), 'reporte_atendido', { retirada: false }, { clave: a, cadaMinutos: 60 * 24 * 30 }); // a quien reportó: ya lo leyó una persona
     return { ok: true };
   }
   const O = await persona(env, String(id || ''));
   if (!O) return { error: 'No existe esa persona', status: 404 };
-  if (accion === 'vetar') { await vetar(env, O, 'decisión del equipo tras un reporte'); return { ok: true }; }
+  if (accion === 'vetar') {
+    await vetar(env, O, 'decisión del equipo tras un reporte');
+    // a cada persona que lo reportó: ya se leyó, y esa cuenta ya no está
+    const quienes = (await env.DB.prepare(`SELECT de FROM bloqueos WHERE a = ? AND tipo = 'reporte' AND estado = 'vigente'`).bind(O.id).all()).results;
+    await env.DB.prepare(`UPDATE bloqueos SET atendido = COALESCE(atendido, datetime('now')) WHERE a = ? AND tipo = 'reporte'`).bind(O.id).run();
+    for (const q of quienes) await correoA(env, await persona(env, q.de), 'reporte_atendido', { retirada: true }, { clave: O.id + ':fuera', cadaMinutos: 60 * 24 * 365 });
+    return { ok: true };
+  }
   if (accion === 'regresar') {
     if (O.estado !== 'revision') return { error: 'Esa cuenta no está en revisión', status: 400 };
     await env.DB.prepare(`UPDATE personas SET estado = 'activa' WHERE id = ?`).bind(O.id).run();
     await recalcularTodo(env, { avisar: true, motivo: 'revisión' });
     await anotar(env, 'ella', 'Una cuenta regresó al matching después de revisarla', '');
+    await correoA(env, O, 'regreso', {});
     return { ok: true };
   }
   return { error: 'Acción inválida', status: 400 };
