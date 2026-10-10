@@ -254,6 +254,8 @@ const SECCIONES = {
       <div class="banda banda-4"><div class="rosa"><b>${ids.length}</b><span>sonidos<br>distintos</span></div><div><b>${Object.keys(FAMILIAS).length}</b><span>familias que<br>se apagan aparte</span></div><div><b id="son-estado">${a.on ? 'Sí' : 'No'}</b><span>suena en<br>este equipo</span></div><div><b>1</b><span>toque para<br>apagarlo todo</span></div></div>
       ${Object.entries(FAMILIAS).map(([f, x]) => `<section class="tarjeta"><h2>${x.i}&nbsp; ${esc(x.n)}</h2><p class="sub">${esc(x.d)}.</p>
         <div class="son-cat">${ids.filter((id) => SONIDOS[id].f === f).map((id) => `<button type="button" class="son-pieza" data-oir="${id}" title="Oír «${id}»"><span class="play">▶</span><span><b>${id}</b><small>${esc(SONIDOS[id].c)}</small></span></button>`).join('')}</div></section>`).join('')}
+      <section class="tarjeta"><h2>🎵&nbsp; La música de los videos</h2><p class="sub">Cuatro fondos de 16 segundos, suaves y sin voz, hechos con ElevenLabs. Suenan en los videos de «Compartir». Si alguno no te convence, vuelve a crearlo: gasta créditos y reemplaza el original. Después hay que bajarlo y rehacer los videos (está en <code>docs/COMPARTIR.md</code>).</p>
+        <div class="mus-lista">${[['piano', 'Piano'], ['guitarra', 'Guitarra'], ['cuerdas', 'Cuerdas'], ['ritmo', 'Ritmo suave']].map(([id, n]) => `<div class="mus"><b>${n}</b><audio controls preload="none" src="/musica/${id}.mp3"></audio><button type="button" class="boton boton-claro boton-chico" data-musica="${id}">Volver a crear</button><span class="mus-nueva" id="mus-${id}"></span></div>`).join('')}</div></section>
       <section class="tarjeta"><h2>Cómo se apaga</h2>
         <ul class="razones" style="padding:0">
           <li><span class="i si">✓</span><span><b>Un toque, en el menú de la izquierda.</b> Está siempre a la vista, en el tablero y aquí. En el teléfono también va arriba, junto al menú.</span></li>
@@ -369,6 +371,13 @@ const DESPUES = {
     // aquí se oyen aunque el sonido esté apagado: es el catálogo
     $$('[data-oir]').forEach((b) => b.onclick = () => { precargar([b.dataset.oir]).then(() => tocar(b.dataset.oir, { siempre: true })); b.classList.add('suena'); setTimeout(() => b.classList.remove('suena'), 600); });
     alCambiarSonido((n) => { const e = $('#son-estado'); if (e) e.textContent = n.on ? 'Sí' : 'No'; });
+    // volver a crear una música: solo una cuenta administradora (el servidor lo comprueba)
+    $$('[data-musica]').forEach((b) => b.onclick = async () => {
+      if (!confirm('¿Crear de nuevo esta música con ElevenLabs? Gasta créditos y reemplaza la original.')) return;
+      b.disabled = true; const antes = b.textContent; b.textContent = 'Creando…';
+      try { await api('/api/admin/musica/generar', { id: b.dataset.musica }); $('#mus-' + b.dataset.musica).innerHTML = `<small>La nueva:</small><audio controls src="/api/admin/musica/${b.dataset.musica}.mp3?t=${Date.now()}"></audio>`; avisar('Música creada. Óyela aquí; para que entre a los videos hay que bajarla y rehacerlos.', 7000); }
+      catch (e) { avisar(e.message); } finally { b.disabled = false; b.textContent = antes; }
+    });
   },
 };
 function animarBarras() { pronto(() => { $$('.histo .bar').forEach((b) => b.style.height = b.dataset.h + '%'); $$('.relleno[data-w]').forEach((b) => b.style.width = b.dataset.w + '%'); }); }

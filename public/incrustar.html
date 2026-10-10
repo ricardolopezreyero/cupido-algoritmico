@@ -23,6 +23,7 @@ a.t { display: flex; flex-direction: column; height: 100%; padding: clamp(20px, 
 .f { margin: 0; font: 600 clamp(27px, 10.5vw, 44px)/1.08 Fraunces, Georgia, serif; letter-spacing: -.01em; text-wrap: balance; }
 .f em { font-style: italic; } .f s { color: var(--tenue); text-decoration-color: var(--cor); text-decoration-thickness: .07em; }
 .f .n { display: block; font-size: 2.3em; font-weight: 700; line-height: .95; margin-bottom: .08em; }
+.f .g { display: block; font-size: .52em; font-style: italic; line-height: 1.2; margin-bottom: .45em; }
 .e { margin: 14px 0 0; color: var(--sub); font-size: 15px; max-width: 34ch; }
 .pie { margin-top: auto; padding-top: 18px; display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .m { display: inline-flex; align-items: center; gap: 8px; font: 600 16.5px/1 Fraunces, Georgia, serif; white-space: nowrap; }
@@ -48,7 +49,7 @@ const i = q.get('i'); if (i && /^[a-z0-9]{5,12}$/.test(i)) document.getElementBy
 const deCasa = FRASES.filter((f) => f.s !== 'invitar'), hoy = Math.floor(Date.now() / 86400000);
 const fr = FRASE[q.get('frase')] || deCasa[hoy % deCasa.length];
 const marcado = (t) => esc(t).replace(/\*([^*]+)\*/g, '<em>$1</em>').replace(/~([^~]+)~/g, '<s>$1</s>').replace(/\n/g, '<br>');
-document.getElementById('f').innerHTML = (fr.n ? `<span class="n">${esc(fr.n)}</span>` : '') + marcado(fr.t);
+document.getElementById('f').innerHTML = (fr.g ? `<span class="g">${esc(fr.g)}</span>` : '') + (fr.n ? `<span class="n">${esc(fr.n)}</span>` : '') + marcado(fr.t);
 const e = document.getElementById('e'); if (fr.e) e.textContent = fr.e; else e.remove();
 // si la frase es larga para el hueco que le dieron, la letra se achica hasta que todo cabe (el botón nunca se corta)
 const t = document.getElementById('t'), f = document.getElementById('f');

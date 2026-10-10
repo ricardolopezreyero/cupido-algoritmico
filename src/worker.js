@@ -14,7 +14,7 @@ import { limpiarVida } from '../public/js/vida.js';
 import { CATEGORIAS as CATEGORIAS_CORREO, mandarMuestra, correoA, despacharNovedades, correosDelDia, paginaBaja, prefsDe, ponerPrefs, catalogoCorreos, vistaPrevia, revisarCorreos, armar, plantilla as plantillaCorreo } from './correos.js';
 import { verPrograma, apoyar, confirmarApoyo, ajustarPrograma, aportesAdmin, distribucionPrecios } from './programa.js';
 import { limpiarPrecioJusto, REVISION_DIAS } from './precios.js';
-import { generarSonido, servirSonido, estadoSonidos } from './sonidos.js';
+import { generarSonido, servirSonido, estadoSonidos, generarMusica, servirMusica, estadoMusica, asegurarMusica } from './sonidos.js';
 import { avance } from '../public/js/preguntas.js';
 import { llamada, conectarVoz, cambiarTono, responderChispa, verAlbum, misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, retirar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
 import { empezarSubida, subirParte, subirVista, terminarSubida, cancelarSubida, limpiarSubidas } from './subidas.js';
@@ -50,7 +50,7 @@ export default {
   async scheduled(ev, env, ctx) {
     await asegurar(env);
     // Cada tres minutos: lo que pasó en las charlas mientras alguien no estaba sale junto, en un solo correo
-    if (ev.cron === '*/3 * * * *') { await despacharNovedades(env); return; }
+    if (ev.cron === '*/3 * * * *') { await despacharNovedades(env); try { await asegurarMusica(env); } catch (e) { console.error('música', e); } return; }
     const lista = (await env.DB.prepare(`SELECT * FROM personas WHERE pool = 'real' AND completo = 0 AND correo IS NOT NULL AND creada < datetime('now', '-2 days')`).all()).results;
     for (const fila of lista) {
       const P = await persona(env, fila.id);
@@ -289,6 +289,10 @@ async function api(req, env, ctx, url) {
   /* ── El programa: todo gratis hoy; apoyar es voluntario ─────────────────── */
   if (ruta === '/api/programa' && metodo === 'GET') return json(await verPrograma(env, yo && !yo.sesion.demo ? yo.P : null));
   if (ruta === '/api/admin/sonidos' && metodo === 'GET') return json(await estadoSonidos(env));
+  if (ruta === '/api/admin/musica' && metodo === 'GET') return json(await estadoMusica(env));
+  if ((x = m(/^\/api\/admin\/musica\/([a-z_]+)\.mp3$/)) && metodo === 'GET') return await servirMusica(env, x[1]); // la original en R2, tal como la entregó ElevenLabs (la que suena en los videos es public/musica/, ya emparejada de volumen)
+  // Volver a crear una música gasta créditos de ElevenLabs y reemplaza la anterior: solo una cuenta administradora
+  if (ruta === '/api/admin/musica/generar' && metodo === 'POST') { if (!(await esAdmin(env, yo))) return error('Crear una música pide entrar con una cuenta administradora.', 403); const b = await leerJson(req, 2000); const r = await generarMusica(env, String(b.id || '')); return r.error ? error(r.error, r.status) : json(r); }
   if ((x = m(/^\/api\/admin\/sonidos\/([a-z_]+)\.mp3$/)) && metodo === 'GET') return await servirSonido(env, x[1]); // el original en R2, para bajarlo a public/sonidos
   // Crear un sonido gasta créditos de ElevenLabs y reemplaza el original: solo una cuenta administradora
   if (ruta === '/api/admin/sonidos/generar' && metodo === 'POST') { if (!(await esAdmin(env, yo))) return error('Crear un sonido pide entrar con una cuenta administradora.', 403); const b = await leerJson(req, 2000); const r = await generarSonido(env, String(b.id || '')); return r.error ? error(r.error, r.status) : json(r); }

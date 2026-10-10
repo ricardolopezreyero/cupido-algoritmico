@@ -1,7 +1,7 @@
 # Compartir
 
 > Autor: Ing. Ricardo López Reyero · RLR
-> Código: [`public/js/piezas.js`](../public/js/piezas.js) (las frases, las medidas y el pintor), [`public/js/compartir.js`](../public/js/compartir.js) (la sección), [`public/compartir.html`](../public/compartir.html) (la página pública), [`public/incrustar.html`](../public/incrustar.html) (la tarjeta para páginas ajenas) y [`scripts/piezas-compartir.mjs`](../scripts/piezas-compartir.mjs) (las pocas piezas que sí son archivo).
+> Código: [`public/js/frases.js`](../public/js/frases.js) (las frases), [`public/js/piezas.js`](../public/js/piezas.js) (las medidas y el pintor), [`public/js/compartir.js`](../public/js/compartir.js) (la sección), [`public/compartir.html`](../public/compartir.html) (la página pública), [`public/incrustar.html`](../public/incrustar.html) (la tarjeta para páginas ajenas), [`scripts/videos-compartir.mjs`](../scripts/videos-compartir.mjs) (la fábrica de videos) y [`scripts/piezas-compartir.mjs`](../scripts/piezas-compartir.mjs) (las piezas fijas y las hojas de revisión).
 
 Todo lo que alguien necesita para hablar de Cupido, en un solo lugar y a un toque. **Entre más se comparte, más fácil que cada quien encuentre a su persona.**
 
@@ -15,103 +15,139 @@ Está en dos lugares, y es la misma sección:
 | Parte | Qué es |
 |---|---|
 | **Tu liga** | Copiar, WhatsApp, Facebook, X, Telegram, correo, «Más…» (la hoja de compartir del teléfono) y su código QR. |
-| **Galería** | 64 frases en 8 series, en 5 medidas y 3 fondos. Se filtran por serie; cada pieza se abre en el taller. |
-| **El taller** | Una pieza en grande: cambiar medida, fondo y acomodo; quitar la letra chica o la dirección; poner la liga personal o un código QR; descargar (PNG), copiar la imagen, compartir directo desde el teléfono, o bajarla **en video**. También «Con mi frase»: la persona escribe la suya con el estilo de la casa. |
-| **Textos** | Para Instagram, TikTok, YouTube, Facebook y X, con la liga ya puesta, y las etiquetas. |
-| **WhatsApp** | Cinco mensajes (para una amiga, un amigo, un grupo, quien ya tiene pareja y el estado) y el corazón para la foto del grupo. |
+| **Galería · Imágenes** | 275 frases en 12 series, en 5 medidas y 3 fondos. «Todas» sale mezclada, una de cada serie por vuelta. |
+| **Galería · Videos** | 154 de esas frases como video vertical de 5 a 9 segundos. Ya vienen hechos: bajan al instante, **sin audio** o **con música**. |
+| **El taller** | Una pieza en grande, con dos pestañas. **Imagen:** descargar, compartir, copiar; cambiar medida, fondo y acomodo; liga personal o código QR. **Video:** verlo, oír la música, elegir otra, y los dos botones: «Video sin audio» y «Video con música». También «Con mi frase». |
+| **Textos** | Para Instagram, TikTok, YouTube, Facebook y X. La sección está plegada: cada imagen ya trae su texto. |
+| **WhatsApp** | Cinco mensajes, vistos como llegan en el chat (con la vista previa de la liga), y el corazón para la foto del grupo. |
 | **Qué va en cada red** | La tabla red → pieza → medida. Tocar una fila acomoda la galería. |
-| **Código para tu página** | Botón (solo HTML), insignia (imagen), tarjeta con frase (iframe) e imagen con liga. Todos llevan la liga de quien los copia. |
-| **La marca** | Logotipo, color, tipografía, cómo suena, tres reglas y la guía de estilos descargable. |
-| **Descargar todo** | Un zip con todo lo anterior (339 archivos, unos 40 MB). |
+| **Código para tu página** | Botón, insignia, tarjeta con frase e imagen con liga. Un solo selector de color (negro, blanco, rosa) cambia las cuatro. |
+| **La marca** | Logotipo, color, tipografía (se descarga de aquí, con licencia), cómo suena, tres reglas y la guía de estilos. |
+| **Descargar todo** | Cuatro paquetes: las 275 imágenes en vertical, los 154 videos sin audio, los 154 con música y el kit de marca. |
 
 ## La idea de estilo
 
 **Texto negro, fondo blanco y un solo color: el corazón.** Lo contrario a como se ven las apps de citas, porque Cupido es lo contrario.
 
-- **Fraunces 600** para decir; su cursiva, para lo que importa. **Inter 500** para explicar, en gris y en chico. Las dos son libres (SIL OFL).
+- **Fraunces 600** para decir; su cursiva, para lo que importa. **Inter 500** para explicar, en gris y en chico. Las dos son libres (SIL OFL) y se descargan desde `/letras/`.
 - El corazón es el mismo trazo del favicon, en rosa `#d6455f`. Texto `#111111` sobre `#ffffff`.
 - El negro y el rosa de fondo existen para variar un muro, no como estilo principal.
 - Tres acomodos: arriba, al centro y abajo. La marca siempre va al pie; la dirección, a su lado.
-- Tres recursos de texto: `\n` parte el renglón, `*así*` va en cursiva y `~así~` va tachado (con la raya en rosa).
 
-## Las piezas no son archivos
+### Cómo se escribe una frase (`frases.js`)
 
-Cada pieza es una **receta** (frase + medida + fondo) que `piezas.js` pinta en un lienzo, en el navegador de quien la baja, a la medida exacta. Por eso:
+| Campo | Qué es |
+|---|---|
+| `t` | La frase. `\n` parte el renglón, `*así*` va en cursiva y `~así~` va tachado (con la raya en rosa). |
+| `e` | La letra chica: el dato, la cifra o la razón. |
+| `g` | El gancho: la pregunta o el pie que abre la pieza. Va arriba, en cursiva y más chico («¿Y cuánto cuesta?» → «Nada.»). |
+| `n` | El número gigante, cuando la pieza es una cantidad. |
+| `gr` | El dibujo de esa cantidad: `{ puntos: 43 }`, `{ puntos: 100, llenos: 9 }` o `{ barra: 88, raya: 90 }`. |
+| `c` | El acomodo de inicio. |
+| `v` | `1` si también es video. |
 
-- La galería no pesa: no hay 960 imágenes en el servidor.
-- Una frase nueva aparece en las cinco medidas y los tres fondos el mismo día.
-- La pieza puede llevar la liga personal o su código QR.
-- El zip se arma en el equipo de la persona, con su liga adentro.
+El `id` no se cambia nunca: es el nombre del archivo y la dirección de la tarjeta (`/incrustar?frase=<id>`).
+
+## Las imágenes no son archivos
+
+Cada imagen es una **receta** (frase + medida + fondo) que `piezas.js` pinta en un lienzo, en el navegador de quien la baja, a la medida exacta. Por eso la galería no pesa (no hay 4,125 imágenes en el servidor), una frase nueva aparece en todas las medidas el mismo día, y la pieza puede llevar la liga personal o su código QR.
 
 El pintor busca solo el tamaño de letra más grande que quepa, respeta los renglones partidos a mano mientras la letra no tenga que achicarse demasiado, y empareja los renglones para que no quede una palabra sola al final.
-
-### Las medidas
 
 | Medida | Tamaño | Para |
 |---|---|---|
 | Vertical 4:5 | 1080 × 1350 | Publicación de Instagram y Facebook |
 | Cuadrado | 1080 × 1080 | Instagram, Facebook y grupos de WhatsApp |
-| Historia 9:16 | 1080 × 1920 | Historias, Reels, TikTok, Shorts y estados. Lo importante va entre 270 y 1570 px: arriba y abajo lo tapan los botones de cada red. |
+| Historia 9:16 | 1080 × 1920 | Historias, Reels, TikTok, Shorts y estados. Lo importante va entre 270 y 1570 px. |
 | Horizontal 16:9 | 1920 × 1080 | YouTube: miniatura, video y pantalla final |
 | Liga | 1200 × 630 | Facebook, X y LinkedIn con liga |
-| Portadas | 1640 × 624 · 2560 × 1440 · 1500 × 500 | Facebook, banner de YouTube (lo importante en el centro de 1546 × 423) y encabezado de X |
-| Perfil | 1080 × 1080 | Todas las redes lo recortan en círculo: el corazón va al centro |
+| Portadas | 1640 × 624 · 2560 × 1440 · 1500 × 500 | Facebook, banner de YouTube y encabezado de X |
+| Perfil | 1080 × 1080 | Todas las redes lo recortan en círculo |
 
-### El video
+## Los videos sí son archivos
 
-«En video» graba el mismo lienzo mientras las palabras van entrando una por una, luego la letra chica y al final la marca. Dura de 5 a 7 segundos según el largo de la frase. Sale en **MP4** (H.264) donde el navegador puede y en WebM donde no. Va **sin sonido**: la música la pone cada quien en su red. En el teléfono son dos toques: el primero graba y el segundo abre «guardar o mandar», porque el sistema pide un toque fresco para eso.
+Para que bajen al instante y se vean igual en cualquier teléfono, los 154 videos de la galería se hacen una vez y viven en `public/videos/`: `<id>.mp4` (sin audio) y `<id>-audio.mp4` (con música). La lista con duración y peso es `public/videos/lista.json`.
+
+**Cómo es cada video:** vertical, 1080 × 1920, 30 cuadros por segundo, H.264 con AAC, de 5 a 9 segundos. El mismo pintor dibuja cada instante:
+
+1. **Abre con la pieza completa** un instante y se desvanece. Así su primer cuadro —la portada que enseñan WhatsApp, TikTok y la galería del teléfono— nunca es un cuadro en blanco, y cuando la red lo repite en bucle, el final empata con el principio.
+2. El gancho entra primero y se queda arriba.
+3. El número cuenta desde cero, y su dibujo (puntos o barra) se va llenando.
+4. Las palabras entran una por una. Lo tachado aparece entero, y luego la raya rosa lo cruza.
+5. Entra la letra chica; después la marca, y el corazón late dos veces.
+6. La pieza completa se queda quieta de dos a tres segundos, para leerla.
+
+**Cómo se hacen** (con el servidor local corriendo):
+
+```bash
+node scripts/videos-compartir.mjs
+```
+
+Hace los que falten. Con `--todos` los rehace todos (si cambió el pintor o una frase); con nombres, solo esos. Un Chrome sin ventana pinta cada cuadro y ffmpeg los une: el video es idéntico a lo que se ve en la galería y no pierde cuadros. Tarda unos 2 segundos por video.
+
+**En el taller**, si la combinación es la de la galería (vertical, fondo blanco, su acomodo y su música), el video baja ya hecho. Con cualquier cambio —otra medida, otro fondo, otra música, una frase propia— se graba en el navegador, en lo que dura el video (MP4 en Chrome y Safari; WebM en Firefox).
+
+### La música
+
+Cuatro fondos de 16 segundos, suaves y sin voz, **hechos con ElevenLabs**: piano, guitarra, cuerdas y ritmo suave. Cada serie tiene el suyo (`m` en `SERIES`).
+
+- Los crea el servidor con la llave que ya tiene ligada (`generarMusica` en `src/sonidos.js`): primero intenta el compositor de música de ElevenLabs y, si esa llave no lo tiene, usa el de efectos. La tarea de cada tres minutos crea la que falte, una por vuelta y con tope de tres intentos. Los originales quedan en R2 (`musica/<id>.mp3`).
+- Los que suenan están en `public/musica/`, ya emparejados de volumen (−16 LUFS) y sin silencio al inicio.
+- En el video la música entra suave y se va suave segundo y medio antes del final.
+- En **Admin → Sonidos** se oyen y se vuelven a crear (gasta créditos; solo una cuenta administradora). Después de crear una nueva: bajarla de R2, emparejarla y rehacer los videos con `--todos`.
 
 ## Las frases dicen la verdad
 
-Regla: **toda frase de la galería se puede comprobar en la plataforma.** Si el producto cambia, la frase se cambia o se quita.
+Regla: **toda frase se puede comprobar en la plataforma, o es una invitación de corazón. Ninguna promete pareja.** Si el producto cambia, la frase se cambia o se quita.
 
-| Serie | Lo que afirma | Dónde se comprueba |
-|---|---|---|
-| Ellas mandan | Bloquear es inmediato; diez bloqueos retiran la cuenta; su foto la enciende ella; él no insiste (cinco mensajes); modo discreta | [`docs/ELLA.md`](ELLA.md), `src/ella.js` |
-| Lo contrario | No hay perfiles que navegar ni fotos que deslizar; el corte es 90 % | `/`, [`MODELO.md`](../MODELO.md) |
-| El 90 % | 43 preguntas una sola vez; se avisa a los dos; el cruce es en las dos direcciones | `public/js/motor.js`, `public/js/preguntas.js` |
-| Dos síes | La puerta se abre con dos síes; nadie se entera de un no; primero la carta; el perfil se libera por elementos | `src/datos.js`, `public/js/elementos.js` |
-| Sin publicidad | Cero anuncios; nadie paga por aparecer primero; gratis en 2026 y 2027; sin contraseña | `/programa`, `src/programa.js` |
-| En serio · Para él · Para invitar | Invitaciones y opinión de la casa; no prometen resultados | — |
+| Serie | Frases | Lo que afirma | Dónde se comprueba |
+|---|---|---|---|
+| Ellas mandan | 27 | Bloquear es inmediato; 10 bloqueos retiran la cuenta; 3 reportes sacan del matching; 5 mensajes sin respuesta y espera; ella enciende foto, llamada y coqueteo; ve cuántas lo han bloqueado | [`ELLA.md`](ELLA.md), `src/ella.js` |
+| Con sentimiento | 43 | Nada del producto: lo que se siente buscar en serio. Varias son del manifiesto, tal cual | [`MANIFIESTO.md`](../MANIFIESTO.md) |
+| En números | 32 | 43 preguntas, 10 dimensiones, 10 bloques, 10 partes del perfil (4 delicadas), 3 tonos, 4 maneras de irse, enlace de 20 minutos, 40 a 60 minutos, 9 de 100 en el demo | `preguntas.js`, `elementos.js`, `motor.js`, [`MODELO.md`](../MODELO.md) |
+| Lo contrario | 24 | No hay perfiles que navegar ni fotos que deslizar | `/` |
+| Preguntas | 22 | Las que la gente se hace, con su respuesta verdadera | — |
+| El 90 % | 19 | El corte, el cruce en dos direcciones, que una dimensión mala no se compensa | [`MODELO.md`](../MODELO.md) |
+| Dos síes | 14 | La puerta, la carta primero, nadie se entera de un no, se puede reabrir | `src/datos.js`, `src/chispa.js` |
+| Cómo funciona | 18 | Correo como llave, pausa, llamadas, «No cruzarme con», correos discretos | el tablero |
+| Sin publicidad | 20 | Cero anuncios, nada compra ventaja, gratis en 2026 y 2027, código abierto | `/programa` |
+| En serio · Para él · Para invitar | 56 | Invitaciones y opinión de la casa | — |
 
-**Lo que no se dice nunca:** «pareja garantizada», plazos («en 30 días»), «perfiles verificados» (todavía no se verifica identidad), cifras de usuarios, ni el nombre de otras apps.
-
-Para agregar una frase: una línea en `FRASES` de `piezas.js` (`id`, serie `s`, acomodo `c`, texto `t`, explicación `e`). El `id` no se cambia después: es parte del nombre del archivo y de la dirección de la tarjeta (`/incrustar?frase=<id>`).
+**Lo que no se dice nunca:** «pareja garantizada», plazos («en 30 días»), «perfiles verificados» (todavía no se verifica identidad), cifras de usuarios, ni el nombre de otras apps. El dato del demo («9 de cada 100 cruces») siempre dice que es del demo.
 
 ## Lo que sí vive como archivo
 
-Solo lo que otra página tiene que pedir por dirección. Está en `public/img/compartir/` y se regenera con el servidor local corriendo:
+| Carpeta | Qué | Cómo se rehace |
+|---|---|---|
+| `public/videos/` | Los 154 videos, en dos versiones, y `lista.json` | `node scripts/videos-compartir.mjs` |
+| `public/musica/` | Los cuatro fondos, emparejados | Bajar de R2 y pasar por ffmpeg (ver arriba) |
+| `public/img/compartir/` | La imagen de la liga (blanca, negra y rosa, más la de «ella» y la de «gratis»), las tres insignias y los perfiles | `node scripts/piezas-compartir.mjs fijas` |
+| `public/letras/` | Fraunces e Inter, cada una en un zip con su licencia y cómo instalarla | Bajarlas de Google Fonts y volver a empacar |
 
-```bash
-node scripts/piezas-compartir.mjs fijas
-```
-
-- `liga.png`, `liga-ella.png`, `liga-gratis.png`: la imagen que sale al pegar la liga en WhatsApp, Facebook, X o LinkedIn (`og:image` de la portada, `/bienvenida`, `/entrar`, `/compartir`, los artículos, `/ella` y `/programa`). Antes de esto, la liga se veía sin imagen.
-- `insignia-clara.png`, `insignia-oscura.png`: la insignia para páginas.
-- `perfil-*.png`: el corazón para la foto de perfil.
-
-El mismo script saca hojas de contacto con todas las frases (`hojas <carpeta>`), una pieza suelta (`una`) o un video (`video`), para revisar el pintor sin abrir el navegador. Abre un Chrome sin ventana y no usa librerías.
+`piezas-compartir.mjs` también saca hojas de contacto con todas las frases (`hojas <carpeta> [medida]`), una lista suelta (`lista`), la tira de cuadros de un video (`pelicula`) o una grabación de prueba (`video`), para revisar el pintor sin abrir el navegador.
 
 ## La tarjeta para páginas ajenas
 
 `/incrustar` es una página chica pensada para vivir dentro de un `iframe`. No guarda nada, no rastrea a nadie y solo carga sus letras.
 
-- `?frase=<id>` fija una frase. Sin eso, la frase **cambia cada día** (la misma para todo el mundo ese día; las de «Para invitar» no entran).
+- `?frase=<id>` fija una frase. Sin eso, la frase **cambia cada día**.
 - `?fondo=blanco|negro|rosa`
 - `?i=<código>` hace que el botón lleve a la liga de quien la pegó.
-- Si la frase es larga para el hueco, la letra se achica hasta que el botón cabe.
 
 ## Decisiones tomadas aquí
 
-- **«Con mi frase» está abierto.** Cualquiera puede escribir su frase con el estilo y la marca de Cupido. Se le recuerda decir lo que es cierto, pero nada lo impide. Si se abusa, se quita con una línea (el botón `mia` de `compartir.js`).
-- **Las piezas llevan la dirección de la casa, no la liga personal.** Una liga impresa en una imagen no se puede tocar; la personal va en el texto que acompaña. Quien quiera, la enciende («Que sea mi liga») o pone el código QR.
-- **La liga personal no da ventaja en el motor.** Solo cuenta a cuántas personas trajo cada quien. Así se dice en la sección.
-- **«Ocultar fotos» no emborrona las imágenes de la marca** de esta sección (`data-priv-no`): no son de nadie.
-- La frase de Ricardo «Encuentra tu pareja perfecta» quedó como **«Encuentra a tu pareja ideal»**, y se agregó «No buscas a alguien perfecto. Buscas a alguien que embone contigo.»: el corte es 90 %, no 100.
+- **154 videos, no 100.** Se pidieron 100; salieron 154 porque había frases que lo merecían. Bajar la cuenta es quitar `v: 1` y borrar el archivo.
+- **Los videos van en el repositorio** (unos 55 MB). Es lo más simple y cualquier copia puede publicar. Cada vez que se rehacen todos, el repositorio crece otro tanto: si eso llega a estorbar, se mudan a R2.
+- **Cada video trae una sola música**, la de su serie. Las otras tres se graban en el navegador al pedirlas.
+- **«Con mi frase» está abierto.** Cualquiera puede escribir su frase con el estilo y la marca de Cupido. Se quita con una línea (el botón `mia`).
+- **Las piezas llevan la dirección de la casa, no la liga personal.** Una liga impresa no se puede tocar; la personal va en el texto que acompaña. Quien quiera, la enciende o pone el código QR.
+- **La liga personal no da ventaja en el motor.** Solo cuenta a cuántas personas trajo cada quien.
+- «Encuentra tu pareja perfecta» quedó como **«Encuentra a tu pareja ideal»**: el corte es 90 %, no 100.
 
 ## Lo que falta probar con las manos
 
+- **Oír la música.** Se midió (duración, volumen, que empiece de inmediato), pero no la oyó nadie antes de publicarla.
+- Subir un video a TikTok, Reels y Shorts, y mandarlo por WhatsApp.
 - Compartir directo desde un teléfono de verdad (la hoja de compartir con la imagen y con el video).
-- Cómo se ve la vista previa de la liga dentro de WhatsApp, Facebook y X (las etiquetas están; cada red guarda su copia y puede tardar en refrescar).
-- Subir un MP4 de estos a TikTok, Reels y Shorts.
+- Cómo se ve la vista previa de la liga dentro de WhatsApp, Facebook y X.
 - La tarjeta incrustada en un sitio ajeno real.

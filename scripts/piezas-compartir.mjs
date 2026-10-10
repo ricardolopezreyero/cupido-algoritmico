@@ -21,7 +21,7 @@ const PUERTO = 9377 + Math.floor(Math.random() * 200);
 const [modo = 'fijas', destino] = process.argv.slice(2);
 
 const perfil = mkdtempSync(join(tmpdir(), 'cupido-piezas-'));
-const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${PUERTO}`, `--user-data-dir=${perfil}`, '--no-first-run', '--hide-scrollbars', '--force-device-scale-factor=1', 'about:blank'], { stdio: 'ignore' });
+const chrome = spawn(CHROME, ['--headless=new', `--remote-debugging-port=${PUERTO}`, `--user-data-dir=${perfil}`, '--no-first-run', '--hide-scrollbars', '--force-device-scale-factor=1', '--autoplay-policy=no-user-gesture-required', 'about:blank'], { stdio: 'ignore' });
 const espera = (ms) => new Promise((ok) => setTimeout(ok, ms));
 async function pestana() {
   for (let i = 0; i < 60; i++) { try { const r = await fetch(`http://127.0.0.1:${PUERTO}/json/new?${encodeURIComponent(ORIGEN + '/__piezas')}`, { method: 'PUT' }); if (r.ok) return (await r.json()).webSocketDebuggerUrl; } catch {} await espera(250); }
@@ -63,7 +63,7 @@ try {
       const H = document.createElement('canvas'); H.width = col * (ancho + sep) + sep; H.height = filas * (alto + sep) + sep; const c = H.getContext('2d'); c.fillStyle = '#d9d9d9'; c.fillRect(0, 0, H.width, H.height);
       minis.forEach((m, i) => { const x = sep + (i % col) * (ancho + sep), y = sep + Math.floor(i / col) * (alto + sep); if (lista[i].tipo === 'logo') { c.fillStyle = lista[i].tinta === 'blanco' ? '#111' : '#fff'; c.fillRect(x, y, ancho, m.height * ancho / m.width); c.drawImage(m, x, y, ancho, m.height * ancho / m.width); } else c.drawImage(m, x, y); });
       return H.toDataURL('image/jpeg', 0.9);`;
-    const formatos = await evalua(`return P.FORMATOS.map((f) => f.id);`);
+    const formatos = process.argv[4] ? [process.argv[4]] : await evalua(`return P.FORMATOS.map((f) => f.id);`);   // node … hojas <carpeta> [una sola medida]
     for (const f of formatos) {
       const ancho = f === 'horizontal' || f === 'liga' ? 460 : 300, col = f === 'horizontal' || f === 'liga' ? 4 : 6, por = col * (f === 'historia' ? 3 : f === 'horizontal' || f === 'liga' ? 6 : 4);
       const total = await evalua(`return P.FRASES.length;`);
@@ -73,11 +73,26 @@ try {
     guarda(`${dir}/codigo.jpg`, await evalua(hoja(`['retrato','cuadrado','historia'].flatMap((formato) => ['blanco','negro','rosa'].map((fondo) => ({ frase: fondo === 'negro' ? 'pareja-ideal' : 'mandan', formato, fondo, liga: 'cupido.capitaltorreon.com/i/k7m2p', qr: 'https://cupido.capitaltorreon.com/i/k7m2p' })))`, 3, 420)));
     guarda(`${dir}/portadas.jpg`, await evalua(hoja(`P.PORTADAS.flatMap((p) => ['blanco','negro'].map((fondo) => ({ frase: 'no-app', formato: p.id, fondo })))`, 2, 900)));
     guarda(`${dir}/marca.jpg`, await evalua(hoja(`[{ tipo: 'perfil', id: 'rosa' }, { tipo: 'perfil', id: 'blanco' }, { tipo: 'perfil', id: 'negro' }, { tipo: 'logo', tinta: 'negro' }, { tipo: 'logo', tinta: 'blanco' }, { tipo: 'logo', tinta: 'negro', una: true }, { tipo: 'logo', tinta: 'negro', solo: true }, { tipo: 'logo', tinta: 'blanco', solo: true, una: true }]`, 4, 420)));
+  } else if (modo === 'lista') {
+    // node scripts/piezas-compartir.mjs lista salida.jpg "<expresión que da una lista de recetas>" [columnas] [ancho]  → una hoja con esas piezas
+    const col = Number(process.argv[5]) || 4, ancho = Number(process.argv[6]) || 420;
+    guarda(destino, await evalua(`const lista = ${process.argv[4]}, col = ${col}, ancho = ${ancho}, sep = 14;
+      const minis = lista.map((r) => P.pintar(document.createElement('canvas'), r, { ancho }));
+      const alto = Math.max(...minis.map((m) => m.height)), filas = Math.ceil(minis.length / col);
+      const H = document.createElement('canvas'); H.width = col * (ancho + sep) + sep; H.height = filas * (alto + sep) + sep; const c = H.getContext('2d'); c.fillStyle = '#d9d9d9'; c.fillRect(0, 0, H.width, H.height);
+      minis.forEach((m, i) => c.drawImage(m, sep + (i % col) * (ancho + sep), sep + Math.floor(i / col) * (alto + sep))); return H.toDataURL('image/jpeg', 0.9);`));
+  } else if (modo === 'pelicula') {
+    // node scripts/piezas-compartir.mjs pelicula salida.jpg '{"frase":"mandan","formato":"historia"}'  → una tira con los cuadros del video, para revisar la animación sin grabarla
+    const r = await evalua(`const receta = ${process.argv[4] || '{}'}, D = P.duracionDe(receta), n = 14, ancho = 200, sep = 8, minis = [];
+      for (let i = 0; i < n; i++) minis.push(P.pintar(document.createElement('canvas'), receta, { ancho, momento: (D * i) / (n - 1) }));
+      const H = document.createElement('canvas'); H.width = n * (ancho + sep) + sep; H.height = minis[0].height + sep * 2; const c = H.getContext('2d'); c.fillStyle = '#d9d9d9'; c.fillRect(0, 0, H.width, H.height);
+      minis.forEach((m, i) => c.drawImage(m, sep + i * (ancho + sep), sep)); return { dura: D, quieto: P.quietoDesde(receta), datos: H.toDataURL('image/jpeg', 0.9) };`);
+    console.log('  dura', r.dura.toFixed(2) + ' s · quieto desde', r.quieto.toFixed(2) + ' s'); guarda(destino, r.datos);
   } else if (modo === 'video') {
     // node scripts/piezas-compartir.mjs video salida '{"frase":"mandan","formato":"historia"}'  → salida.mp4 (o .webm)
     const r = await evalua(`const l = document.createElement('canvas'); l.style.cssText = 'position:fixed;left:0;top:0;width:270px'; document.body.appendChild(l);
-      const v = await P.grabarVideo(l, ${process.argv[4] || '{}'}); const b = new Uint8Array(await v.blob.arrayBuffer()); let t = ''; for (let i = 0; i < b.length; i += 32768) t += String.fromCharCode.apply(null, b.subarray(i, i + 32768));
-      return { ext: v.ext, segundos: v.segundos, tipo: P.tipoDeVideo(), datos: 'data:;base64,' + btoa(t) };`);
+      const v = await P.grabarVideo(l, ${process.argv[4] || '{}'}, () => {}, { musica: '${process.argv[5] || ''}' }); const b = new Uint8Array(await v.blob.arrayBuffer()); let t = ''; for (let i = 0; i < b.length; i += 32768) t += String.fromCharCode.apply(null, b.subarray(i, i + 32768));
+      return { ext: v.ext, segundos: v.segundos, tipo: P.tipoDeVideo(${process.argv[5] ? 'true' : 'false'}), datos: 'data:;base64,' + btoa(t) };`);
     console.log(' ', r.tipo, r.segundos.toFixed(1) + ' s'); guarda(`${destino}.${r.ext}`, r.datos);
   } else if (modo === 'una') {
     // node scripts/piezas-compartir.mjs una salida.png '{"frase":"mandan","formato":"historia"}'

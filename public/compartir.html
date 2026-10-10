@@ -57,6 +57,7 @@ import { montarCompartir } from '/js/compartir.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 let op = {};
 try { const v = await api('/api/yo'); const demo = v?.sesion?.demo && v?.persona?.origen === 'demo'; op = demo ? { demo: true } : { codigo: v?.invitacion?.codigo, invitados: v?.invitacion?.invitados || 0 }; } catch { /* sin sesión: la liga de la casa */ }
+if (location.hash.length > 1) op.parte = location.hash.slice(1);   // /compartir#videos abre la galería de videos; #whatsapp, #marca… bajan a esa parte
 try { await montarCompartir($('#compartir'), op); } catch (e) { $('#compartir').innerHTML = `<p class="vacio">No se pudo abrir la galería: ${esc(e.message)}</p>`; }
 </script>
 <script type="module" src="/js/app.js"></script>

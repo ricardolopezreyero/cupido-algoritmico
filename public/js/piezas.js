@@ -11,8 +11,10 @@
    la baja. Por eso la galería no pesa y una frase nueva aparece en todos los
    formatos el mismo día.
 
-   Cada frase está cotejada contra lo que Cupido hace de verdad (ver
-   docs/COMPARTIR.md). Si el producto cambia, la frase se cambia o se quita.
+   Las frases viven en /js/frases.js. Aquí están las medidas, los fondos y el
+   pintor, que dibuja la pieza terminada (la imagen) o un instante de su video:
+   el gancho, el número que cuenta, las palabras que entran, el tachado que se
+   dibuja y el corazón que late al final.
    ───────────────────────────────────────────────────────────────────────────── */
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
@@ -20,105 +22,8 @@ export const CASA = 'cupido.capitaltorreon.com';
 export const NOMBRE = 'Cupido Algorítmico';
 export const ROSA = '#d6455f';
 
-/* ── las series: de qué habla cada frase ─────────────────────────────────── */
-export const SERIES = [
-  { id: 'ella', n: 'Ellas mandan', d: 'La regla de la casa: aquí manda ella.' },
-  { id: 'contrario', n: 'Lo contrario', d: 'Todo lo contrario a lo que conoces de citas.' },
-  { id: 'noventa', n: 'El 90 %', d: 'Solo avisamos cuando dos personas cruzan el 90 %.' },
-  { id: 'puerta', n: 'Dos síes', d: 'La puerta se abre solo si los dos quieren.' },
-  { id: 'limpio', n: 'Sin publicidad', d: 'Ni anuncios ni ventajas compradas. Gratis en 2026 y 2027.' },
-  { id: 'serio', n: 'En serio', d: 'Para quien busca en serio.' },
-  { id: 'el', n: 'Para él', d: 'Lo que un hombre encuentra aquí si es honesto y llena todo.' },
-  { id: 'invitar', n: 'Para invitar', d: 'Entre más somos, más fácil que cada quien encuentre.' },
-];
-
-/* ── las frases ───────────────────────────────────────────────────────────
-   t = la frase (\n parte el renglón, *así* va en cursiva, ~así~ va tachado)
-   e = la explicación en letra chica (se puede apagar)
-   n = el número gigante, cuando la pieza es un número
-   c = el acomodo de inicio: arriba, abajo o centro                        */
-export const FRASES = [
-  // Ellas mandan
-  { id: 'mandan', s: 'ella', c: 'arriba', t: 'Las mujeres\nmandan.', e: 'Es la regla de la casa. Los hombres son bienvenidos, y entran aceptándola.' },
-  { id: 'manda-ella', s: 'ella', c: 'abajo', t: 'Aquí\nmanda ella.', e: 'Segura, cómoda y en control.' },
-  { id: 'bloquea', s: 'ella', c: 'arriba', t: 'Si ella bloquea, queda bloqueado.', e: 'Al instante y sin dar explicaciones.' },
-  { id: 'su-foto', s: 'ella', c: 'abajo', t: 'Su foto la enseña ella. *Cuando quiera.*', e: 'Abrir una puerta no entrega su foto, su voz ni su video.' },
-  { id: 'sin-tu-si', s: 'ella', c: 'arriba', t: 'Nadie te ve.\nNadie te escribe\nsin tu sí.', e: 'No hay perfiles que navegar. La charla nace solo con dos síes.' },
-  { id: 'insistir', s: 'ella', c: 'centro', t: 'Él no puede insistir.', e: 'Cinco mensajes seguidos sin respuesta y le toca esperar.' },
-  { id: 'no-obliga', s: 'ella', c: 'abajo', t: 'Decir que sí *no te obliga* a nada.', e: 'Cierras la puerta cuando quieras, sin dar un motivo.' },
-  { id: 'diez', s: 'ella', c: 'arriba', n: '10', t: 'mujeres lo bloquean y queda fuera. Para siempre.', e: 'Diez mujeres distintas, con las que la puerta sí se abrió.' },
-  { id: 'en-control', s: 'ella', c: 'arriba', t: 'Segura.\nCómoda.\nEn control.', e: 'Así busca pareja una mujer aquí.' },
-  { id: 'discreta', s: 'ella', c: 'centro', t: 'Él no ve si estás en línea. *Ni si ya leíste.*', e: 'Se llama modo discreta, y lo enciendes tú.' },
-
-  // Lo contrario
-  { id: 'pareja-ideal', s: 'contrario', c: 'centro', t: 'Encuentra a tu pareja ideal.', e: 'Todo lo contrario a lo que conoces de citas.' },
-  { id: 'no-app', s: 'contrario', c: 'abajo', t: 'No es una app de citas.', e: 'Es un sistema de detección de parejas.' },
-  { id: 'lo-contrario', s: 'contrario', c: 'arriba', t: 'Todo lo contrario a lo que conoces de citas.', e: 'Sin perfiles, sin deslizar y sin anuncios.' },
-  { id: 'responder', s: 'contrario', c: 'arriba', t: '~Deslizar.~\nResponder.', e: '43 preguntas, una sola vez.' },
-  { id: 'tres-sin', s: 'contrario', c: 'arriba', t: 'Sin perfiles.\nSin deslizar.\nSin anuncios.', e: 'Y gratis en 2026 y 2027.' },
-  { id: 'por-foto', s: 'contrario', c: 'abajo', t: 'No vienes a que te escojan *por una foto.*', e: 'Primero su carta. Al final, su foto.' },
-  { id: 'te-vayas', s: 'contrario', c: 'centro', t: 'Hecho para que encuentres a alguien *y te vayas.*', e: 'Cupido no gana nada con que te quedes más tiempo.' },
-  { id: 'catalogo', s: 'contrario', c: 'centro', t: 'Una persona.\n*No un catálogo.*', e: 'Aquí no hay una lista de gente para escoger.' },
-  { id: 'mejor-foto', s: 'contrario', c: 'abajo', t: '~La mejor foto.~\nLa mejor respuesta.', e: 'Lo primero que se conoce de ti es lo que piensas.' },
-  { id: 'embone', s: 'contrario', c: 'arriba', t: 'No buscas a alguien perfecto. Buscas a alguien *que embone contigo.*', e: 'Por eso el corte es 90 %, no 100.' },
-
-  // El 90 %
-  { id: 'noventa', s: 'noventa', c: 'arriba', n: '90 %', t: 'Abajo de eso, silencio.', e: 'Arriba, les avisamos a los dos al mismo tiempo.' },
-  { id: 'avisamos', s: 'noventa', c: 'abajo', t: 'Solo te avisamos arriba del 90 %.', e: 'Si alguien cruza el 90 % contigo, les avisamos a los dos.' },
-  { id: 'silencio', s: 'noventa', c: 'centro', t: 'El silencio también es una respuesta.', e: 'Si nadie cruza el 90 % contigo, no te hacemos perder el tiempo.' },
-  { id: 'cuarenta-tres', s: 'noventa', c: 'arriba', n: '43', t: 'preguntas. Una sola vez.', e: 'Lo que eres y lo que necesitas. Con ejemplos, no con adjetivos.' },
-  { id: 'al-reves', s: 'noventa', c: 'arriba', t: 'Lo que tú necesitas contra lo que la otra persona da. *Y al revés.*', e: 'El motor cruza en las dos direcciones.' },
-  { id: 'para-uno', s: 'noventa', c: 'centro', t: 'Si solo funciona para uno, no funciona.', e: 'Tiene que embonar de ida y de vuelta.' },
-  { id: 'anos', s: 'noventa', c: 'abajo', t: 'Menos años con las personas incorrectas.', e: 'Abajo del 90 %, silencio.' },
-  { id: 'embona', s: 'noventa', c: 'arriba', t: 'No te mandamos gente. Te avisamos *cuando alguien embona.*', e: 'Y solo arriba del 90 %.' },
-
-  // Dos síes
-  { id: 'dos-sies', s: 'puerta', c: 'abajo', t: 'La puerta solo se abre con dos síes.', e: 'El tuyo y el de la otra persona.' },
-  { id: 'dijo-no', s: 'puerta', c: 'centro', t: 'Si dijo que no, *nunca te enteras.*', e: 'Y si tú dices que no, tampoco se entera nadie.' },
-  { id: 'carta-foto', s: 'puerta', c: 'arriba', t: 'Primero su carta.\nAl final, su foto.', e: 'Conoces a la persona antes que a su foto.' },
-  { id: 'piensa', s: 'puerta', c: 'abajo', t: 'Primero lo que piensa. Después, cómo se ve.', e: 'Así se abre una puerta en Cupido.' },
-  { id: 'dos', s: 'puerta', c: 'arriba', n: '2', t: 'síes. Ni uno menos.', e: 'La charla nace únicamente cuando los dos dijeron que sí.' },
-  { id: 'a-tu-ritmo', s: 'puerta', c: 'centro', t: 'Tu perfil se comparte por partes. *A tu ritmo.*', e: 'Elemento por elemento, y con tu confirmación.' },
-
-  // Sin publicidad
-  { id: 'sin-publicidad', s: 'limpio', c: 'arriba', t: 'Aquí no hay publicidad.\nNi una.\nNi la habrá.', e: '' },
-  { id: 'producto', s: 'limpio', c: 'centro', t: 'Quien busca pareja no debería ser *el producto de nadie.*', e: 'Por eso aquí no hay publicidad.' },
-  { id: 'primero', s: 'limpio', c: 'abajo', t: 'Nadie paga por aparecer primero.', e: 'No hay impulsos ni lugares comprados.' },
-  { id: 'no-se-venden', s: 'limpio', c: 'centro', t: 'Tus respuestas no se venden.', e: 'Lo íntimo solo lo lee el motor.' },
-  { id: 'gratis', s: 'limpio', c: 'arriba', t: 'Gratis en 2026\ny 2027.', e: 'Todo Cupido, sin letra chica.' },
-  { id: 'algoritmo', s: 'limpio', c: 'abajo', t: 'El algoritmo no se compra.', e: 'El 90 % es el 90 % para todos.' },
-  { id: 'cero', s: 'limpio', c: 'arriba', t: 'Cero anuncios.\nHoy y siempre.', e: 'Ni banners, ni «patrocinados», ni marcas metidas en tu charla.' },
-  { id: 'tres-sin-2', s: 'limpio', c: 'abajo', t: 'Sin anuncios.\nSin contraseña.\nSin letra chica.', e: 'Entras con tu correo, y todo es gratis en 2026 y 2027.' },
-
-  // En serio
-  { id: 'en-serio', s: 'serio', c: 'centro', t: 'Para quien busca *en serio.*', e: '' },
-  { id: 'verdad', s: 'serio', c: 'arriba', t: 'Responde con la verdad. Lo demás lo hace el motor.', e: '43 preguntas, una sola vez.' },
-  { id: 'ejemplos', s: 'serio', c: 'abajo', t: 'Con ejemplos, no con adjetivos.', e: 'Así se responden las 43 preguntas.' },
-  { id: 'trabajo', s: 'serio', c: 'arriba', t: 'Buscar pareja no debería sentirse como *un segundo trabajo.*', e: '' },
-  { id: 'de-cero', s: 'serio', c: 'centro', t: '¿Otra vez empezar de cero?', e: 'Aquí respondes una sola vez. El motor sigue buscando por ti.' },
-  { id: 'mejor', s: 'serio', c: 'abajo', t: 'No busques más.\n*Busca mejor.*', e: '' },
-  { id: 'ningun-lado', s: 'serio', c: 'arriba', t: 'Menos conversaciones que no van a ningún lado.', e: 'Una charla se abre solo cuando los dos cruzan el 90 % y los dos dicen que sí.' },
-  { id: 'una-vez', s: 'serio', c: 'centro', t: 'Lo cuentas una vez. *Y bien.*', e: '43 preguntas: lo que eres y lo que necesitas.' },
-
-  // Para él
-  { id: 'verdad-gana', s: 'el', c: 'arriba', t: 'Aquí no gana la mejor foto. *Gana la verdad.*', e: 'El motor cruza respuestas, no fotos.' },
-  { id: 'llena-todo', s: 'el', c: 'abajo', t: 'Llena todo.\nDi la verdad.\nEl motor hace lo demás.', e: 'Entre más completo, mejor te presenta.' },
-  { id: 'seguras', s: 'el', c: 'centro', t: 'Donde ellas se sienten seguras, *contestan en serio.*', e: 'Por eso aquí manda ella. No es en tu contra.' },
-  { id: 'no-compites', s: 'el', c: 'arriba', t: 'No compites con nadie. O embonas, o no.', e: 'Nadie paga por aparecer primero.' },
-  { id: 'bienvenidos', s: 'el', c: 'abajo', t: 'Hombres, bienvenidos. Con una regla: *manda ella.*', e: '' },
-  { id: 'sin-posar', s: 'el', c: 'centro', t: 'No hace falta posar. Hace falta ser claro.', e: 'Con ejemplos, no con adjetivos.' },
-
-  // Para invitar
-  { id: 'compartas', s: 'invitar', c: 'arriba', t: 'Entre más compartas, más nos ayudas a todos a encontrar a la pareja ideal.', e: '' },
-  { id: 'enterarse', s: 'invitar', c: 'abajo', t: 'Compártelo. Tu pareja ideal *también tiene que enterarse.*', e: '' },
-  { id: 'pasaselo', s: 'invitar', c: 'centro', t: 'Alguien que quieres lleva tiempo buscando. *Pásaselo.*', e: '' },
-  { id: 'cada-persona', s: 'invitar', c: 'arriba', t: 'Cada persona seria que entra sube las probabilidades de todos.', e: 'También las tuyas.' },
-  { id: 'ya-encontraste', s: 'invitar', c: 'centro', t: '¿Tú ya encontraste? Ayuda a alguien a encontrar.', e: 'Compartir Cupido no cuesta nada.' },
-  { id: 'conoces', s: 'invitar', c: 'abajo', t: '¿Conoces a alguien que busca en serio?', e: 'Esto es para esa persona.' },
-  { id: 'amiga', s: 'invitar', c: 'arriba', t: 'Mándaselo a tu amiga, la que ya se cansó de las apps.', e: '' },
-  { id: 'mas-somos', s: 'invitar', c: 'abajo', t: 'Entre más somos, más fácil que cada quien encuentre a su persona.', e: '' },
-];
-export const FRASE = Object.fromEntries(FRASES.map((f) => [f.id, f]));
+import { SERIES, FRASES, FRASE, SERIE, VIDEOS, musicaDe } from '/js/frases.js';
+export { SERIES, FRASES, FRASE, SERIE, VIDEOS, musicaDe };   // las frases viven en su propio archivo
 
 /* ── las medidas de cada red ──────────────────────────────────────────────
    u = cuánto crecen la marca y la letra chica respecto al cuadrado
@@ -163,6 +68,7 @@ export function cargarLetras() {
       const muestra = 'Cupido Algorítmico 90 % ¿síes?';
       await Promise.race([Promise.all([serif(80), serif(80, true), serif(80, false, 700), sans(30), sans(30, 600)].map((f) => document.fonts.load(f, muestra))), new Promise((ok) => setTimeout(ok, 6000))]);
     } catch { /* sin las letras de la casa se pinta con las del equipo: se ve distinto, pero se ve */ }
+    letrasListas = true; PLANOS.clear();   // lo medido con otras letras ya no sirve
   })();
   return letras;
 }
@@ -191,28 +97,28 @@ function partir(texto) {
   }).filter((r) => r.length);
 }
 const APRIETE = -0.004;   // las letras grandes van apenas más juntas
-// Acomoda los renglones en el ancho dado. Devuelve null si una sola palabra no cabe.
-function acomodar(ctx, parrafos, tam, ancho, peso = 600) {
+// Acomoda los renglones en el ancho dado. Devuelve null si una sola palabra no cabe. Cada fila recuerda de qué renglón escrito viene (pr).
+function acomodar(ctx, parrafos, tam, ancho, peso = 600, todoCursiva = false) {
   const filas = []; const tinta = 'letterSpacing' in ctx; if (tinta) ctx.letterSpacing = `${(APRIETE * tam).toFixed(2)}px`;
-  ctx.font = serif(tam, false, peso); const espacio = (ctx.measureText(' ').width || tam * 0.24) * 1.06;
-  for (const palabras of parrafos) {
-    let fila = { p: [], w: 0 };
+  ctx.font = serif(tam, todoCursiva, peso); const espacio = (ctx.measureText(' ').width || tam * 0.24) * 1.06;
+  parrafos.forEach((palabras, pr) => {
+    let fila = { p: [], w: 0, pr };
     for (const p of palabras) {
-      ctx.font = serif(tam, p.cursiva, peso); const w = ctx.measureText(p.t).width;
-      if (w > ancho) { if (tinta) ctx.letterSpacing = '0px'; return null; }
-      if (fila.p.length && fila.w + espacio + w > ancho) { filas.push(fila); fila = { p: [], w: 0 }; }
+      ctx.font = serif(tam, p.cursiva || todoCursiva, peso); const w = ctx.measureText(p.t).width;
+      if (w > ancho) { filas.length = 0; filas.push(null); return; }
+      if (fila.p.length && fila.w + espacio + w > ancho) { filas.push(fila); fila = { p: [], w: 0, pr }; }
       const x = fila.p.length ? fila.w + espacio : 0; fila.p.push({ ...p, x, w }); fila.w = x + w;
     }
     filas.push(fila);
-  }
+  });
   if (tinta) ctx.letterSpacing = '0px';
-  return filas;
+  return filas.includes(null) ? null : filas;
 }
 const INTERLINEA = 1.07, SUBE = 0.78, BAJA = 0.2;
 const altoDe = (filas, tam) => (filas.length - 1) * tam * INTERLINEA + tam * (SUBE + BAJA);
 // La letra más grande que quepa en la caja; y luego renglones parejos (que no quede una palabra sola al final).
-function ajustar(ctx, parrafos, tope, minimo, ancho, alto, peso = 600) {
-  const cabe = (tam, enteros) => { const f = acomodar(ctx, parrafos, tam, ancho, peso); return !!f && altoDe(f, tam) <= alto && (!enteros || f.length === parrafos.length); };
+function ajustar(ctx, parrafos, tope, minimo, ancho, alto, peso = 600, todoCursiva = false, aguante = 0.6) {
+  const cabe = (tam, enteros) => { const f = acomodar(ctx, parrafos, tam, ancho, peso, todoCursiva); return !!f && altoDe(f, tam) <= alto && (!enteros || f.length === parrafos.length); };
   const busca = (enteros) => {   // la letra más grande que cabe: si cabe a un tamaño, cabe a cualquiera menor
     if (cabe(tope, enteros)) return Math.round(tope);
     if (!cabe(minimo, enteros)) return 0;
@@ -221,32 +127,14 @@ function ajustar(ctx, parrafos, tope, minimo, ancho, alto, peso = 600) {
   };
   // Si la frase viene partida a mano, cada renglón se queda entero mientras la letra no tenga que achicarse demasiado
   const libre = busca(false), entero = parrafos.length > 1 ? busca(true) : 0;
-  let tam = entero && entero >= libre * 0.6 ? entero : libre || minimo;
-  let filas = acomodar(ctx, parrafos, tam, ancho, peso) || acomodar(ctx, parrafos, tam, 1e6, peso);
+  const tam = entero && entero >= libre * aguante ? entero : libre || minimo;
+  let filas = acomodar(ctx, parrafos, tam, ancho, peso, todoCursiva) || acomodar(ctx, parrafos, tam, 1e6, peso, todoCursiva);
   if (filas.length > parrafos.length) {   // hay renglones partidos por el ancho: se emparejan, para que no quede una palabra sola
     let lo = Math.max(...filas.flatMap((f) => f.p.map((p) => p.w))), hi = ancho;
-    for (let i = 0; i < 14 && hi - lo > 2; i++) { const mid = (lo + hi) / 2, f = acomodar(ctx, parrafos, tam, mid, peso); if (f && f.length <= filas.length) hi = mid; else lo = mid; }
-    filas = acomodar(ctx, parrafos, tam, hi, peso) || filas;
+    for (let i = 0; i < 14 && hi - lo > 2; i++) { const mid = (lo + hi) / 2, f = acomodar(ctx, parrafos, tam, mid, peso, todoCursiva); if (f && f.length <= filas.length) hi = mid; else lo = mid; }
+    filas = acomodar(ctx, parrafos, tam, hi, peso, todoCursiva) || filas;
   }
-  return { tam, filas, alto: altoDe(filas, tam), ancho: Math.max(...filas.map((f) => f.w)) };
-}
-function escribir(ctx, bloque, x, y, anchoCaja, alinea, K, peso = 600, anim = null) {   // y = orilla de arriba del bloque
-  const { tam, filas } = bloque; const tinta = 'letterSpacing' in ctx;
-  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
-  filas.forEach((f, i) => {
-    const bx = alinea === 'centro' ? x + (anchoCaja - f.w) / 2 : x, by = y + tam * SUBE + i * tam * INTERLINEA;
-    if (tinta) ctx.letterSpacing = `${(APRIETE * tam).toFixed(2)}px`;
-    let raya = 1;
-    for (const p of f.p) {
-      const a = anim ? anim.palabra() : 1; if (p.tachado) raya = a;   // en video, cada palabra entra a su tiempo, subiendo un poco
-      ctx.globalAlpha = a; ctx.font = serif(tam, p.cursiva, peso); ctx.fillStyle = p.tachado ? K.tenue : K.tx; ctx.fillText(p.t, bx + p.x, by + (1 - a) * tam * 0.16);
-    }
-    if (tinta) ctx.letterSpacing = '0px';
-    // la raya del tachado corre de la primera a la última palabra tachada del renglón
-    const t = f.p.filter((p) => p.tachado);
-    if (t.length) { const a = t[0].x, b = t[t.length - 1].x + t[t.length - 1].w; ctx.globalAlpha = raya; ctx.strokeStyle = K.raya; ctx.lineWidth = Math.max(2, tam * 0.07); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(bx + a - tam * 0.04, by - tam * 0.25); ctx.lineTo(bx + a - tam * 0.04 + (b - a + tam * 0.08) * raya, by - tam * 0.25 - tam * 0.04 * raya); ctx.stroke(); }
-    ctx.globalAlpha = 1;
-  });
+  return { tam, filas, alto: altoDe(filas, tam), ancho: Math.max(...filas.map((f) => f.w)), peso, todoCursiva };
 }
 // La letra chica: Inter, en gris, con renglones cómodos
 function parrafo(ctx, texto, tam, ancho, peso = 500) {
@@ -255,109 +143,256 @@ function parrafo(ctx, texto, tam, ancho, peso = 500) {
   if (fila) filas.push(fila);
   return { tam, filas, alto: filas.length ? (filas.length - 1) * tam * 1.42 + tam * 1.05 : 0, ancho: Math.max(0, ...filas.map((f) => ctx.measureText(f).width)) };
 }
-function escribirParrafo(ctx, b, x, y, anchoCaja, alinea, color, peso = 500) {
-  ctx.font = sans(b.tam, peso); ctx.fillStyle = color; ctx.textBaseline = 'alphabetic'; ctx.textAlign = alinea === 'centro' ? 'center' : 'left';
+function medirMarca(ctx, u) { const alto = 42 * u, letra = 36 * u; ctx.font = serif(letra); return { alto, letra, hueco: 14 * u, w: alto + 14 * u + ctx.measureText(NOMBRE).width }; }
+
+/* ── la receta completa ──────────────────────────────────────────────────
+   receta = { frase: 'mandan' } o { t, e, n } · formato · fondo · c (acomodo) · conE (con letra chica)
+            liga (lo que se lee abajo; '' = sin dirección) · qr (adonde lleva el código; '' = sin código)
+            g (el gancho con que abre el video) · gr (el dibujo de la cantidad)                          */
+export function completar(receta = {}) {
+  const fr = receta.frase ? FRASE[receta.frase] : null, propia = receta.t != null;
+  return { formato: 'retrato', fondo: 'blanco', liga: CASA, qr: '', conE: true, ...receta,
+    t: receta.t ?? fr?.t ?? '', e: receta.conE === false ? '' : (receta.e ?? fr?.e ?? ''), n: receta.n ?? (propia ? '' : fr?.n) ?? '', c: receta.c || fr?.c || 'centro',
+    g: receta.g ?? (propia ? '' : fr?.g) ?? '', gr: receta.gr ?? (propia ? null : fr?.gr) ?? null };
+}
+
+/* ── el plano: dónde va cada cosa y cuándo entra. Se calcula una vez por receta y se guarda ── */
+const PLANOS = new Map(); let letrasListas = false;
+const suave = (x) => { x = Math.max(0, Math.min(1, x)); return 1 - (1 - x) ** 3; };
+// El video abre con la pieza completa un instante y luego se desvanece para armarse. Así su primer cuadro —la portada que enseñan
+// WhatsApp, TikTok y la galería del teléfono— nunca es un cuadro en blanco; y en bucle, el final empata con el principio.
+const PORTADA = 0.62;
+const entre = (x, a, b) => Math.max(a, Math.min(b, x));
+function planear(ctx, R) {
+  const F = FORMATO[R.formato] || FORMATOS[0], K = FONDO[R.fondo] || FONDOS[0], W = F.w, H = F.h, u = F.u;
+  const m = F.m ?? 0, [x0, y0, x1, y1] = F.caja || [m, m, W - m, H - m], cw = x1 - x0;
+  const portada = !FORMATOS.includes(F), c = portada ? 'centro' : R.c, alinea = c === 'centro' ? 'centro' : 'izq';
+  const P = { F, K, W, H, u, x0, x1, cw, alinea };
+
+  // el pie: la marca y la dirección (y el código, si se pidió)
+  const M = medirMarca(ctx, u), dirTam = 25 * u; ctx.font = sans(dirTam, 500); const dirW = R.liga ? ctx.measureText(R.liga).width : 0;
+  const Q = R.qr ? qr(R.qr) : null, qLado = Q ? Math.round((W > H ? 150 : 168) * u) : 0;
+  let pieH, tipo;
+  if (Q) { pieH = Math.max(qLado, M.alto + 14 * u + dirTam); tipo = 'codigo'; }
+  else if (alinea === 'centro') { pieH = M.alto + (R.liga ? 14 * u + dirTam : 0); tipo = 'centro'; }
+  else if (!R.liga || M.w + 40 * u + dirW <= cw) { pieH = M.alto; tipo = 'renglon'; }
+  else { pieH = M.alto + 14 * u + dirTam; tipo = 'pila'; }
+  const pieY = y1 - pieH, pie = { M, dirTam, liga: R.liga, Q, qLado };
+  if (tipo === 'centro') Object.assign(pie, { mx: x0 + (cw - M.w) / 2, my: pieY, dx: x0 + cw / 2, dy: y1 - dirTam * 0.18, da: 'center' });
+  else if (tipo === 'renglon') Object.assign(pie, { mx: x0, my: pieY, dx: x1, dy: pieY + M.alto * 0.5 + dirTam * 0.36, da: 'right' });
+  else Object.assign(pie, { mx: x0, my: y1 - (M.alto + (R.liga ? 14 * u + dirTam : 0)), dx: x0, dy: y1 - dirTam * 0.18, da: 'left', qx: x1 - qLado, qy: y1 - qLado });
+  P.pie = pie;
+
+  // el cuerpo: el número (y su dibujo), la frase y la letra chica
+  const aire = Math.round((portada ? 30 : 58) * u), arriba = y0, abajo = pieY - aire, alto = abajo - arriba;
+  const anchoTexto = W > H && !portada ? cw * 0.86 : cw;
+  const subTam = Math.round((portada ? 27 : 34) * u), sub = R.e ? parrafo(ctx, R.e, subTam, Math.min(anchoTexto, subTam * 27)) : null, subHueco = sub ? Math.round(34 * u) : 0;
+  const parrafos = partir(R.t); let num, numHueco, graf, grafHueco, gan, ganHueco, frase, total, tope;
+  // Si la pieza trae mucho (gancho, número, dibujo, frase y letra chica) y la medida es bajita, el número y su dibujo se achican hasta que todo cabe
+  for (let vuelta = 0, k = 1; vuelta < 5; vuelta++) {
+    num = null; numHueco = 0; graf = null; grafHueco = 0; gan = null; ganHueco = 0;
+    // el gancho: la pregunta o el pie que abre la pieza. Va arriba de la frase, en cursiva y más chico; en el video entra primero y se queda
+    if (R.g) { gan = ajustar(ctx, partir(R.g), Math.min(cw * (W > H ? 0.05 : 0.086), alto * 0.09) * Math.max(k, 0.8), 24 * u, anchoTexto, alto * 0.3, 600, true); ganHueco = Math.round(gan.tam * 0.5); }
+    if (R.n) {
+      const topeN = Math.min(alto * (W > H ? 0.46 : R.gr ? 0.3 : 0.36), cw * 0.62) * k;
+      num = ajustar(ctx, partir(R.n), topeN, 44 * u, cw, topeN * 1.2, 700); numHueco = Math.round(num.tam * 0.02);
+      const v = String(R.n).match(/^(\d{1,3})(\D.*)?$/); num.cuenta = v && Number(v[1]) <= 100 ? { hasta: Number(v[1]), resto: v[2] || '' } : null;   // los años y los miles no se cuentan: se ven raros corriendo
+      if (R.gr?.puntos) {   // tantos puntos como diga la cifra: hasta 10 en un renglón, hasta 50 de diez en diez, y de veinte en veinte después
+        const n = Math.min(120, R.gr.puntos), col = n <= 10 ? n : n <= 50 ? 10 : 20, filas = Math.ceil(n / col), d = (n <= 5 ? 34 : n <= 10 ? 30 : n <= 50 ? 24 : 18) * u * (W > H ? 0.9 : 1) * k, sep = d * (n <= 50 ? 0.55 : 0.5);
+        graf = { tipo: 'puntos', n, llenos: Math.min(n, R.gr.llenos ?? n), col, d, sep, w: col * d + (col - 1) * sep, h: filas * d + (filas - 1) * sep };
+      } else if (R.gr?.barra != null) {
+        graf = { tipo: 'barra', pct: entre(R.gr.barra, 0, 100), raya: R.gr.raya ?? null, w: Math.min(cw, 640 * u), h: Math.round(16 * u * Math.max(k, 0.7)), cresta: Math.round(22 * u * Math.max(k, 0.7)) };
+        graf.h += graf.raya != null ? graf.cresta : 0;
+      }
+      if (graf) grafHueco = Math.round((graf.tipo === 'barra' ? 30 : 26) * u * Math.max(k, 0.6));
+    }
+    const fijo = (gan ? gan.alto + ganHueco : 0) + (sub ? sub.alto + subHueco : 0) + (num ? num.alto + numHueco : 0) + (graf ? graf.h + grafHueco : 0), libre = alto - fijo;
+    tope = num ? Math.min(num.tam * 0.36, cw * 0.11) : Math.min(cw * (alinea === 'centro' ? 0.168 : 0.2), alto * (W > H ? 0.3 : 0.2)) * (portada ? 0.82 : 1);
+    // en las medidas paradas la letra grande manda: un renglón escrito se parte antes que achicarse mucho
+    frase = parrafos.length ? ajustar(ctx, parrafos, tope, 26 * u, anchoTexto, Math.max(libre * (c === 'centro' ? 0.9 : 1), 40 * u), 600, false, W > H ? 0.6 : 0.74) : null;
+    total = fijo + (frase ? frase.alto : 0);
+    if (total <= alto || !(num || gan)) break;
+    k *= Math.max(0.55, alto / total) * 0.96;
+  }
+  let y = c === 'arriba' ? arriba : c === 'abajo' ? abajo - total : arriba + (alto - total) / 2;
+  if (gan) { P.gancho = { b: gan, x: x0, y }; y += gan.alto + ganHueco; }
+  if (num) { P.num = { b: num, x: x0 - (alinea === 'centro' ? 0 : num.tam * 0.035), y }; y += num.alto + numHueco; }
+  if (graf) { y += grafHueco * 0.35; P.graf = { ...graf, x: alinea === 'centro' ? x0 + (cw - graf.w) / 2 : x0, y }; y += graf.h + grafHueco * 0.65; }
+  if (frase) { P.frase = { b: frase, x: x0, y }; y += frase.alto; }
+  if (sub) P.sub = { b: sub, x: x0, y: y + subHueco };
+
+  // los tiempos (en segundos): gancho → número y dibujo → palabras (y tachados) → letra chica → marca → latido
+  const T = {}; let t = PORTADA + 0.12;
+  if (P.gancho) {
+    const pal = P.gancho.b.filas.reduce((s, f) => s + f.p.length, 0), paso = Math.min(0.13, 1.3 / pal), letras = sinMarcas(R.g).length;
+    T.g = { ini: t, paso }; t += (pal - 1) * paso + 0.3 + entre(0.7 + 0.04 * letras, 0.95, 2.1);   // entra, y se deja leer antes de que llegue la respuesta
+  }
+  if (P.num) { T.num = { ini: t, dura: num.cuenta ? 0.95 : 0.4 }; if (P.graf) T.graf = { ini: t + 0.08, dura: 1.05 }; t += num.cuenta || P.graf ? 0.8 : 0.42; }
+  T.pal = []; let finFrase = t;
+  if (P.frase) {
+    const todas = frase.filas.reduce((s, f) => s + f.p.length, 0), paso = Math.min(0.2, 2.5 / Math.max(1, todas)); let prAntes = 0;
+    frase.filas.forEach((f, i) => {
+      if (f.pr !== prAntes) { t += 0.1; prAntes = f.pr; }   // un respiro en cada renglón que el autor partió
+      const ult = f.p.reduce((u2, p, j) => (p.tachado ? j : u2), -1); let raya = null;
+      f.p.forEach((p, j) => { T.pal.push(t); finFrase = t + 0.32; t += paso; if (j === ult) { raya = { ini: t + 0.2, dura: 0.32 }; t = raya.ini + raya.dura + 0.22; finFrase = t; } });
+      f.raya = raya;
+    });
+  }
+  T.sub = finFrase + 0.12; T.pie = T.sub + (P.sub ? 0.4 : 0); T.late = T.pie + 0.8;
+  const lectura = entre(1.5 + 0.03 * (sinMarcas(R.t).length + String(R.e || '').length), 2.2, 3.4);   // lo que se queda quieto al final, para leerlo
+  T.quieto = T.late + 0.75; T.total = Math.max(5, T.pie + 0.55 + lectura);
+  P.T = T;
+  return P;
+}
+function planoDe(ctx, R) {
+  const llave = [R.formato, R.fondo, R.c, R.t, R.e, R.n, R.g, R.liga, R.qr, JSON.stringify(R.gr || 0)].join('\u0001');
+  let P = PLANOS.get(llave); if (P) return P;
+  P = planear(ctx, R);
+  if (letrasListas) { if (PLANOS.size > 900) PLANOS.clear(); PLANOS.set(llave, P); }   // sin las letras de la casa las medidas son otras: no se guardan
+  return P;
+}
+export const duracionDe = (receta) => planoDe(medidor(), completar(receta)).T.total;
+export const quietoDesde = (receta) => planoDe(medidor(), completar(receta)).T.quieto;   // de aquí en adelante todos los cuadros son iguales
+let lienzoMedidor = null; const medidor = () => (lienzoMedidor ||= document.createElement('canvas')).getContext('2d');
+
+/* ── el pintor ───────────────────────────────────────────────────────────
+   momento = null pinta la pieza terminada (la imagen). Con momento (segundos) pinta ese instante del video. */
+function escribir(ctx, bloque, x, y, anchoCaja, alinea, K, anim) {   // y = orilla de arriba del bloque
+  const { tam, filas, peso, todoCursiva } = bloque; const tinta = 'letterSpacing' in ctx;
+  ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left';
+  filas.forEach((f, i) => {
+    const bx = alinea === 'centro' ? x + (anchoCaja - f.w) / 2 : x, by = y + tam * SUBE + i * tam * INTERLINEA;
+    const raya = !f.p.some((p) => p.tachado) ? 0 : anim ? (f.raya ? suave((anim.m - f.raya.ini) / f.raya.dura) : anim.todo) : 1;   // qué tanto va la raya del tachado
+    if (tinta) ctx.letterSpacing = `${(APRIETE * tam).toFixed(2)}px`;
+    for (const p of f.p) {
+      const a = anim ? anim.palabra() : 1; if (a <= 0) continue;
+      ctx.globalAlpha = a * (anim?.todo ?? 1); ctx.font = serif(tam, p.cursiva || todoCursiva, peso);
+      ctx.fillStyle = K.tx; ctx.fillText(p.t, bx + p.x, by + (1 - a) * tam * 0.16);
+      if (p.tachado && raya > 0) { ctx.globalAlpha = a * raya; ctx.fillStyle = K.bg; ctx.fillText(p.t, bx + p.x, by); ctx.fillStyle = K.tenue; ctx.fillText(p.t, bx + p.x, by); }   // lo tachado se apaga a gris cuando pasa la raya
+    }
+    if (tinta) ctx.letterSpacing = '0px';
+    const t = f.p.filter((p) => p.tachado);
+    if (t.length && raya > 0) { const a = t[0].x, b = t[t.length - 1].x + t[t.length - 1].w; ctx.globalAlpha = 1; ctx.strokeStyle = K.raya; ctx.lineWidth = Math.max(2, tam * 0.07); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(bx + a - tam * 0.04, by - tam * 0.25); ctx.lineTo(bx + a - tam * 0.04 + (b - a + tam * 0.08) * raya, by - tam * 0.25 - tam * 0.04 * raya); ctx.stroke(); }
+    ctx.globalAlpha = 1;
+  });
+}
+function escribirParrafo(ctx, b, x, y, anchoCaja, alinea, color) {
+  ctx.font = sans(b.tam, 500); ctx.fillStyle = color; ctx.textBaseline = 'alphabetic'; ctx.textAlign = alinea === 'centro' ? 'center' : 'left';
   b.filas.forEach((f, i) => ctx.fillText(f, alinea === 'centro' ? x + anchoCaja / 2 : x, y + b.tam * 0.86 + i * b.tam * 1.42));
   ctx.textAlign = 'left';
 }
+function dibujar(ctx, P, R, m) {
+  const { K, W, H, T, x0, cw, alinea, pie } = P, vivo = m != null, v = (ini, dura) => (vivo ? suave((m - ini) / dura) : 1);
+  if (vivo && m < PORTADA) { dibujar(ctx, P, R, null); const velo = suave((m - 0.22) / (PORTADA - 0.26)); if (velo > 0) { ctx.globalAlpha = velo; ctx.fillStyle = K.bg; ctx.fillRect(0, 0, W, H); ctx.globalAlpha = 1; } return; }
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.fillStyle = K.bg; ctx.fillRect(0, 0, W, H);
 
-/* ── la marca: corazón + nombre ──────────────────────────────────────────── */
-function medirMarca(ctx, u) { const alto = 42 * u, letra = 36 * u; ctx.font = serif(letra); return { alto, letra, hueco: 14 * u, w: alto + 14 * u + ctx.measureText(NOMBRE).width }; }
-function pintarMarca(ctx, M, x, y, K) {   // y = orilla de arriba
-  corazon(ctx, x, y, M.alto, K.cor, K.punto);
-  ctx.font = serif(M.letra); ctx.fillStyle = K.tx; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.fillText(NOMBRE, x + M.alto + M.hueco, y + M.alto * 0.5 + M.letra * 0.33);
-}
-
-/* ── el pintor ────────────────────────────────────────────────────────────
-   receta = { frase: 'mandan' } o { t, e, n } · formato · fondo · c (acomodo)
-            conE (con explicación) · liga (lo que se lee abajo; '' = sin liga)
-            qr (la dirección completa a la que lleva el código; '' = sin código) */
-export function completar(receta = {}) {
-  const fr = receta.frase ? FRASE[receta.frase] : null;
-  return { formato: 'retrato', fondo: 'blanco', liga: CASA, qr: '', conE: true, ...receta,
-    t: receta.t ?? fr?.t ?? '', e: receta.conE === false ? '' : (receta.e ?? fr?.e ?? ''), n: receta.n ?? (receta.t == null ? fr?.n : '') ?? '', c: receta.c || fr?.c || 'centro' };
-}
-// En video: cuándo entra cada cosa (segundos). Las palabras, una por una; luego la letra chica; al final, la marca.
-const suave = (x) => { x = Math.max(0, Math.min(1, x)); return 1 - (1 - x) ** 3; };
-function tiempos(R) {
-  const n = [...partir(R.n), ...partir(R.t)].reduce((s, r) => s + r.length, 0) || 1, inicio = 0.4, paso = Math.min(0.2, 2.5 / n), entra = 0.32;
-  const frase = inicio + (n - 1) * paso + entra, sub = frase + 0.12, pie = sub + (R.e ? 0.4 : 0);
-  return { n, inicio, paso, entra, sub, pie, total: Math.max(5, pie + 0.6 + 2.6) };
-}
-export const duracionDe = (receta) => tiempos(completar(receta)).total;
-export function pintar(lienzo, receta, { ancho, momento = null } = {}) {
-  const R = completar(receta), F = FORMATO[R.formato] || FORMATOS[0], K = FONDO[R.fondo] || FONDOS[0];
-  const W = F.w, H = F.h, esc = ancho ? ancho / W : 1, u = F.u;
-  const lw = Math.max(1, Math.round(W * esc)), lh = Math.max(1, Math.round(H * esc));
-  if (lienzo.width !== lw) lienzo.width = lw; if (lienzo.height !== lh) lienzo.height = lh;   // solo si cambia: en video el lienzo es el mismo cuadro tras cuadro
-  const ctx = lienzo.getContext('2d'); ctx.setTransform(lienzo.width / W, 0, 0, lienzo.height / H, 0, 0); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over';
-  ctx.fillStyle = K.bg; ctx.fillRect(0, 0, W, H);
-  const m = F.m ?? 0, [x0, y0, x1, y1] = F.caja || [m, m, W - m, H - m], cw = x1 - x0;
-  const portada = !FORMATOS.includes(F), c = portada ? 'centro' : R.c, alinea = c === 'centro' ? 'centro' : 'izq';
-  const T = momento == null ? null : tiempos(R); let k = 0;
-  const anim = T && { palabra: () => suave((momento - T.inicio - (k++) * T.paso) / T.entra), sub: suave((momento - T.sub) / 0.45), pie: suave((momento - T.pie) / 0.55) };
-
-  // el pie: la marca y la dirección (y el código, si se pidió)
-  if (anim) ctx.globalAlpha = anim.pie;
-  const M = medirMarca(ctx, u), dirTam = 25 * u; ctx.font = sans(dirTam, 500); const dirW = R.liga ? ctx.measureText(R.liga).width : 0;
-  const Q = R.qr ? qr(R.qr) : null, qLado = Q ? Math.round((F.w > F.h ? 150 : 168) * u) : 0;
-  let pieH, pie;
-  if (Q) { pieH = Math.max(qLado, M.alto + 14 * u + dirTam); pie = 'codigo'; }
-  else if (alinea === 'centro') { pieH = M.alto + (R.liga ? 14 * u + dirTam : 0); pie = 'centro'; }
-  else if (!R.liga || M.w + 40 * u + dirW <= cw) { pieH = M.alto; pie = 'renglon'; }
-  else { pieH = M.alto + 14 * u + dirTam; pie = 'pila'; }
-  const pieY = y1 - pieH;
-  if (pie === 'centro') {
-    pintarMarca(ctx, M, x0 + (cw - M.w) / 2, pieY, K);
-    if (R.liga) { ctx.font = sans(dirTam, 500); ctx.fillStyle = K.sub; ctx.textAlign = 'center'; ctx.fillText(R.liga, x0 + cw / 2, y1 - dirTam * 0.18); ctx.textAlign = 'left'; }
-  } else if (pie === 'renglon') {
-    pintarMarca(ctx, M, x0, pieY, K);
-    if (R.liga) { ctx.font = sans(dirTam, 500); ctx.fillStyle = K.sub; ctx.textAlign = 'right'; ctx.fillText(R.liga, x1, pieY + M.alto * 0.5 + dirTam * 0.36); ctx.textAlign = 'left'; }
-  } else {
-    pintarMarca(ctx, M, x0, y1 - (M.alto + (R.liga ? 14 * u + dirTam : 0)), K);
-    if (R.liga) { ctx.font = sans(dirTam, 500); ctx.fillStyle = K.sub; ctx.fillText(R.liga, x0, y1 - dirTam * 0.18); }
-    if (Q) pintarQr(ctx, Q, x1 - qLado, y1 - qLado, qLado, K);
+  // la marca al pie; al final del video el corazón late dos veces
+  const aPie = v(T.pie, 0.55);
+  if (aPie > 0) {
+    const M = pie.M, pulso = (d) => { const x = vivo ? (m - T.late - d) / 0.28 : -1; return x > 0 && x < 1 ? Math.sin(Math.PI * x) : 0; }, late = 1 + 0.2 * pulso(0) + 0.13 * pulso(0.36);
+    ctx.globalAlpha = aPie;
+    ctx.save(); ctx.translate(pie.mx + M.alto / 2, pie.my + M.alto / 2); ctx.scale(late, late); corazon(ctx, -M.alto / 2, -M.alto / 2, M.alto, K.cor, K.punto); ctx.restore();
+    ctx.font = serif(M.letra); ctx.fillStyle = K.tx; ctx.textBaseline = 'alphabetic'; ctx.textAlign = 'left'; ctx.fillText(NOMBRE, pie.mx + M.alto + M.hueco, pie.my + M.alto * 0.5 + M.letra * 0.33);
+    if (pie.liga) { ctx.font = sans(pie.dirTam, 500); ctx.fillStyle = K.sub; ctx.textAlign = pie.da; ctx.fillText(pie.liga, pie.dx, pie.dy); ctx.textAlign = 'left'; }
+    if (pie.Q) pintarQr(ctx, pie.Q, pie.qx, pie.qy, pie.qLado, K);
+    ctx.globalAlpha = 1;
   }
-  ctx.globalAlpha = 1;
 
-  // el cuerpo: la frase (y el número, y la explicación)
-  const aire = Math.round((portada ? 30 : 58) * u), arriba = y0, abajo = pieY - aire, alto = abajo - arriba;
-  const anchoTexto = F.w > F.h && !portada ? Math.min(cw, cw * 0.86) : cw;
-  const subTam = Math.round((portada ? 27 : 34) * u), sub = R.e ? parrafo(ctx, R.e, subTam, Math.min(anchoTexto, subTam * 27)) : null, subHueco = sub ? Math.round(34 * u) : 0;
-  const parrafos = partir(R.t); let num = null, numHueco = 0;
-  if (R.n) { const topeN = Math.min(alto * (F.w > F.h ? 0.5 : 0.36), cw * 0.62); num = ajustar(ctx, partir(R.n), topeN, 60 * u, cw, topeN * 1.2, 700); numHueco = Math.round(num.tam * 0.02); }
-  const libre = alto - (sub ? sub.alto + subHueco : 0) - (num ? num.alto + numHueco : 0);
-  const tope = num ? Math.min(num.tam * 0.36, cw * 0.11) : Math.min(cw * (alinea === 'centro' ? 0.168 : 0.2), alto * (F.w > F.h ? 0.3 : 0.2)) * (portada ? 0.82 : 1);
-  const frase = parrafos.length ? ajustar(ctx, parrafos, tope, 26 * u, anchoTexto, Math.max(libre * (c === 'centro' ? 0.9 : 1), 40 * u)) : { tam: 0, filas: [], alto: 0, ancho: 0 };
-  const total = (num ? num.alto + numHueco : 0) + frase.alto + (sub ? subHueco + sub.alto : 0);
-  let y = c === 'arriba' ? arriba : c === 'abajo' ? abajo - total : arriba + (alto - total) / 2;
-  if (num) { escribir(ctx, num, x0 - (alinea === 'centro' ? 0 : num.tam * 0.035), y, cw, alinea, K, 700, anim); y += num.alto + numHueco; }
-  if (frase.filas.length) { escribir(ctx, frase, x0, y, cw, alinea, K, 600, anim); y += frase.alto; }
-  if (sub) { if (anim) ctx.globalAlpha = anim.sub; escribirParrafo(ctx, sub, x0, y + subHueco, cw, alinea, K.sub); ctx.globalAlpha = 1; }
+  // el gancho: entra primero y se queda arriba
+  if (P.gancho) { let k = 0; escribir(ctx, P.gancho.b, P.gancho.x, P.gancho.y, cw, alinea, K, vivo ? { m, todo: 1, palabra: () => suave((m - T.g.ini - (k++) * T.g.paso) / 0.3) } : null); }
+
+  // el número: si es una cantidad chica, cuenta desde cero
+  if (P.num) {
+    const a = v(T.num.ini, 0.35), b = P.num.b;
+    if (a > 0) {
+      let bloque = b;
+      if (vivo && b.cuenta && m < T.num.ini + T.num.dura) {   // el número corriendo: mismo tamaño y mismo lugar, otra cifra
+        const p = suave((m - T.num.ini) / T.num.dura), txt = `${Math.round(b.cuenta.hasta * p)}${b.cuenta.resto}`;
+        ctx.font = serif(b.tam, false, 700); const palabras = txt.trim().split(/\s+/); let x = 0; const esp = ctx.measureText(' ').width * 1.06;
+        const fila = { p: palabras.map((t) => { const w = ctx.measureText(t).width, o = { t, x, w }; x += w + esp; return o; }), pr: 0 }; fila.w = x - esp; bloque = { ...b, filas: [fila] };
+        if (alinea === 'centro') fila.w = b.filas[0].w;   // centrado con el ancho final, para que no baile
+      }
+      ctx.save(); ctx.translate(0, (1 - a) * b.tam * 0.08); escribir(ctx, bloque, P.num.x, P.num.y, cw, alinea, K, vivo ? { m, todo: a, palabra: () => 1 } : null); ctx.restore();
+    }
+  }
+  // el dibujo de la cantidad
+  if (P.graf) {
+    const g = P.graf, p = v(T.graf.ini, T.graf.dura);
+    if (g.tipo === 'puntos') {
+      for (let i = 0; i < g.n; i++) {
+        const cx = g.x + (i % g.col) * (g.d + g.sep) + g.d / 2, cy = g.y + Math.floor(i / g.col) * (g.d + g.sep) + g.d / 2;
+        const lleno = i < g.llenos, sale = vivo ? suave((m - T.graf.ini - (i / g.n) * T.graf.dura * (lleno ? 1 : 0.45)) / 0.22) : 1; if (sale <= 0) continue;
+        ctx.globalAlpha = sale; ctx.beginPath(); ctx.arc(cx, cy, (g.d / 2) * (0.55 + 0.45 * sale) - (lleno ? 0 : g.d * 0.05), 0, Math.PI * 2);
+        if (lleno) { ctx.fillStyle = K.tx; ctx.fill(); } else { ctx.strokeStyle = K.tenue; ctx.lineWidth = Math.max(1.5, g.d * 0.09); ctx.stroke(); }
+      }
+      ctx.globalAlpha = 1;
+    } else {
+      const alto = g.h - (g.raya != null ? g.cresta : 0), y = g.y + (g.raya != null ? g.cresta : 0), r = alto / 2, redonda = (x, w, color, alfa = 1) => { if (w <= 0) return; ctx.globalAlpha = alfa; ctx.fillStyle = color; ctx.beginPath(); if (ctx.roundRect) ctx.roundRect(x, y, Math.max(w, alto), alto, r); else ctx.rect(x, y, w, alto); ctx.fill(); ctx.globalAlpha = 1; };
+      redonda(g.x, g.w, K.tenue, 0.32 * v(T.graf.ini, 0.3)); redonda(g.x, g.w * (g.pct / 100) * p, K.tx);
+      if (g.raya != null) { const a = v(T.graf.ini + T.graf.dura * 0.55, 0.35), x = g.x + g.w * (g.raya / 100); ctx.globalAlpha = a; ctx.strokeStyle = K.raya; ctx.lineWidth = Math.max(3, alto * 0.3); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(x, g.y + 2); ctx.lineTo(x, y + alto + g.cresta * 0.45); ctx.stroke(); ctx.globalAlpha = 1; }
+    }
+  }
+  // la frase, palabra por palabra
+  if (P.frase) { let k = 0; escribir(ctx, P.frase.b, P.frase.x, P.frase.y, cw, alinea, K, vivo ? { m, todo: 1, palabra: () => suave((m - T.pal[k++]) / 0.32) } : null); }
+  // la letra chica
+  if (P.sub) { const a = v(T.sub, 0.45); if (a > 0) { ctx.globalAlpha = a; escribirParrafo(ctx, P.sub.b, P.sub.x, P.sub.y + (1 - a) * P.sub.b.tam * 0.3, cw, alinea, K.sub); ctx.globalAlpha = 1; } }
+}
+export function pintar(lienzo, receta, { ancho, momento = null } = {}) {
+  const R = completar(receta), F = FORMATO[R.formato] || FORMATOS[0], esc = ancho ? ancho / F.w : 1;
+  const lw = Math.max(1, Math.round(F.w * esc)), lh = Math.max(1, Math.round(F.h * esc));
+  if (lienzo.width !== lw) lienzo.width = lw; if (lienzo.height !== lh) lienzo.height = lh;   // solo si cambia: en video el lienzo es el mismo cuadro tras cuadro
+  const ctx = lienzo.getContext('2d'); ctx.setTransform(1, 0, 0, 1, 0, 0);
+  const P = planoDe(ctx, R); ctx.setTransform(lienzo.width / F.w, 0, 0, lienzo.height / F.h, 0, 0);
+  dibujar(ctx, P, R, momento);
   return lienzo;
 }
 
-/* ── la pieza en video: las palabras van llegando. Para TikTok, Reels y Shorts, que piden movimiento ──
-   Se graba el mismo lienzo que se ve (MP4 donde el navegador puede; si no, WebM). Va sin sonido: la música la pone cada quien en su red. */
-const VIDEOS = ['video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.42E01F', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
-export const tipoDeVideo = () => { try { return (window.MediaRecorder && HTMLCanvasElement.prototype.captureStream && VIDEOS.find((t) => MediaRecorder.isTypeSupported(t))) || ''; } catch { return ''; } };
-export async function grabarVideo(lienzo, receta, alAvance = () => {}) {
-  const tipo = tipoDeVideo(); if (!tipo) throw new Error('Este navegador no puede grabar video. Prueba con Chrome o Safari.');
+/* ── la música de fondo (hecha con ElevenLabs; los archivos viven en /musica/) ── */
+export const MUSICAS = [{ id: 'piano', n: 'Piano' }, { id: 'guitarra', n: 'Guitarra' }, { id: 'cuerdas', n: 'Cuerdas' }, { id: 'ritmo', n: 'Ritmo suave' }];
+let audio = null; const TONADAS = new Map();
+const contexto = () => (audio ||= new (window.AudioContext || window.webkitAudioContext)());
+export function cargarMusica(id) {
+  if (!TONADAS.has(id)) TONADAS.set(id, (async () => { const r = await fetch(`/musica/${id}.mp3`); if (!r.ok) throw new Error('No se pudo bajar la música'); const datos = await r.arrayBuffer(); return new Promise((ok, mal) => contexto().decodeAudioData(datos, ok, mal)); })().catch((e) => { TONADAS.delete(id); throw e; }));
+  return TONADAS.get(id);
+}
+// Pone a sonar un fondo durante `segundos`, con entrada suave y salida suave. Devuelve cómo callarlo. `destino` es para grabarlo en el video.
+export async function sonar(id, segundos, destino = null) {
+  const ac = contexto();
+  if (ac.state !== 'running') { await Promise.race([ac.resume(), new Promise((ok) => setTimeout(ok, 1500))]); if (ac.state !== 'running') throw new Error('el navegador no dejó sonar el audio. Toca otra vez.'); }   // sin un toque de la persona, el navegador no suelta el sonido
+  const buf = await cargarMusica(id), fuente = ac.createBufferSource(), vol = ac.createGain(), t0 = ac.currentTime + 0.02, fin = Math.min(segundos, buf.duration);
+  fuente.buffer = buf; fuente.connect(vol); vol.connect(destino || ac.destination);
+  vol.gain.setValueAtTime(0, t0); vol.gain.linearRampToValueAtTime(0.85, t0 + 0.3); vol.gain.setValueAtTime(0.85, t0 + Math.max(0.4, fin - 1.5)); vol.gain.linearRampToValueAtTime(0, t0 + fin);
+  fuente.start(t0); fuente.stop(t0 + fin + 0.05);
+  return () => { try { vol.gain.cancelScheduledValues(ac.currentTime); vol.gain.setTargetAtTime(0, ac.currentTime, 0.04); fuente.stop(ac.currentTime + 0.2); } catch { /* ya había terminado */ } };
+}
+
+/* ── la pieza en video: para TikTok, Reels y Shorts, que piden movimiento ──
+   Los videos de la galería ya vienen hechos (public/videos/, con scripts/videos-compartir.mjs). Esto graba en el navegador
+   cualquier otra combinación: otra medida, otro fondo, otra música o una frase propia. MP4 donde se puede; si no, WebM. */
+const TIPOS_VIDEO = ['video/mp4;codecs="avc1.640028,mp4a.40.2"', 'video/mp4;codecs="avc1.42E01F,mp4a.40.2"', 'video/mp4;codecs=avc1.640028', 'video/mp4;codecs=avc1.42E01F', 'video/mp4', 'video/webm;codecs=vp9,opus', 'video/webm;codecs=vp8,opus', 'video/webm'];
+export const tipoDeVideo = (conAudio = false) => { try { const lista = conAudio ? TIPOS_VIDEO : [...TIPOS_VIDEO.filter((t) => !/mp4a|opus/.test(t)), ...TIPOS_VIDEO]; return (window.MediaRecorder && HTMLCanvasElement.prototype.captureStream && lista.find((t) => MediaRecorder.isTypeSupported(t))) || ''; } catch { return ''; } };
+export async function grabarVideo(lienzo, receta, alAvance = () => {}, { musica = '' } = {}) {
+  const tipo = tipoDeVideo(!!musica); if (!tipo) throw new Error('Este navegador no puede grabar video. Prueba con Chrome o Safari.');
   await cargarLetras(); const D = duracionDe(receta);
   pintar(lienzo, receta, { momento: 0 });
-  const flujo = lienzo.captureStream(30), grabadora = new MediaRecorder(flujo, { mimeType: tipo, videoBitsPerSecond: 8e6 }), trozos = [];
+  const flujo = lienzo.captureStream(30); let pistas = flujo.getVideoTracks(), salida = null;
+  if (musica) { await cargarMusica(musica); salida = contexto().createMediaStreamDestination(); pistas = [...pistas, ...salida.stream.getAudioTracks()]; }
+  const grabadora = new MediaRecorder(new MediaStream(pistas), { mimeType: tipo, videoBitsPerSecond: 8e6, audioBitsPerSecond: 160000 }), trozos = [];
   grabadora.ondataavailable = (e) => { if (e.data && e.data.size) trozos.push(e.data); };
   const listo = new Promise((ok, mal) => { grabadora.onstop = ok; grabadora.onerror = (e) => mal(e.error || new Error('No se pudo grabar')); });
+  let callar = null; if (musica) callar = await sonar(musica, D, salida);
   grabadora.start(); const t0 = performance.now();
   await new Promise((ok) => {
     const cuadro = () => { const t = (performance.now() - t0) / 1000; pintar(lienzo, receta, { momento: Math.min(t, D) }); alAvance(Math.min(1, t / D)); if (t >= D + 0.12) ok(); else if (document.hidden) setTimeout(cuadro, 33); else requestAnimationFrame(cuadro); };
     cuadro();
   });
-  grabadora.stop(); await listo; flujo.getTracks().forEach((p) => p.stop());
+  grabadora.stop(); await listo; callar?.(); flujo.getTracks().forEach((p) => p.stop());
   pintar(lienzo, receta);   // el lienzo vuelve a quedar como la imagen fija
   const mp4 = tipo.startsWith('video/mp4');
   return { blob: new Blob(trozos, { type: mp4 ? 'video/mp4' : 'video/webm' }), ext: mp4 ? 'mp4' : 'webm', segundos: D };
 }
+// Dónde vive el video ya hecho de una frase (solo los de la galería: historia, fondo blanco, tal cual)
+export const videoHecho = (id, conAudio) => `/videos/${id}${conAudio ? '-audio' : ''}.mp4`;
 
 /* ── el perfil (todas las redes lo recortan en círculo) y el logotipo suelto ── */
 export const PERFILES = [{ id: 'rosa', n: 'Rosa', bg: ROSA, cor: '#ffffff', punto: ROSA }, { id: 'blanco', n: 'Blanco', bg: '#ffffff', cor: ROSA, punto: '#ffffff' }, { id: 'negro', n: 'Negro', bg: '#0e0e0e', cor: ROSA, punto: '#0e0e0e' }];

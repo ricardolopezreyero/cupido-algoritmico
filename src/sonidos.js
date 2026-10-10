@@ -68,4 +68,67 @@ export async function estadoSonidos(env) {
   const hay = new Map(lista.objects.map((o) => [o.key.replace('sonidos/', '').replace('.mp3', ''), o.size]));
   return Object.keys(PROMPTS).map((id) => ({ id, bytes: hay.get(id) || 0, listo: hay.has(id) }));
 }
+
+/* ── La música de fondo de los videos para compartir ────────────────────────
+   Cuatro fondos cortos, hechos con ElevenLabs una sola vez y guardados en R2.
+   De ahí se bajan a public/musica/ y se mezclan en los videos (scripts/videos-compartir.mjs).
+   Primero se intenta el compositor de música; si esa llave no lo tiene, se usa el de efectos.     */
+const FONDO = 'Instrumental background music for a short, heartfelt social video about finding real love. Minimal, warm, intimate and hopeful. No vocals, no lyrics, no sound effects. Starts gently right away and resolves softly at the end.';
+export const MUSICA = {
+  piano:    { n: 'Piano', d: 16, p: `${FONDO} Solo felt piano at a slow tempo: a simple, tender melody in a major key over soft sustained chords.` },
+  guitarra: { n: 'Guitarra', d: 16, p: `${FONDO} Fingerpicked nylon-string acoustic guitar, slow and gentle: sweet, calm arpeggios with a little warm room reverb.` },
+  cuerdas:  { n: 'Cuerdas', d: 16, p: `${FONDO} A soft string ensemble swelling slowly, with a few delicate piano notes on top. Emotional and cinematic, but quiet.` },
+  ritmo:    { n: 'Ritmo suave', d: 16, p: `${FONDO} Mellow lo-fi: warm electric piano chords and a soft brushed beat at a slow tempo. Cozy, modern, light and optimistic.` },
+};
+const INTENTOS_MUSICA = 3;   // por fondo: si ElevenLabs falla tres veces, no se insiste sola (cada intento puede costar créditos)
+
+export async function generarMusica(env, id) {
+  const M = MUSICA[id]; if (!M) return { error: 'No existe esa música', status: 404 };
+  const llave = await secreto(env.ELEVENLABS_API_KEY); if (!llave) return { error: 'Sin llave de ElevenLabs', status: 503 };
+  const cab = { 'xi-api-key': llave, 'content-type': 'application/json' };
+  let mp3 = null, motor = '', falla = '';
+  for (const cuerpo of [{ prompt: M.p, music_length_ms: M.d * 1000, force_instrumental: true }, { prompt: M.p, music_length_ms: M.d * 1000 }]) {
+    try {
+      const r = await fetch('https://api.elevenlabs.io/v1/music?output_format=mp3_44100_128', { method: 'POST', headers: cab, body: JSON.stringify(cuerpo), signal: AbortSignal.timeout(120000) });
+      if (r.ok) { mp3 = await r.arrayBuffer(); motor = 'musica'; break; }
+      falla = `música ${r.status}: ${(await r.text()).slice(0, 160)}`;
+      if (r.status !== 400 && r.status !== 422) break;   // si no es un problema del pedido, repetirlo no ayuda
+    } catch (e) { falla = 'música: ' + e.message; break; }
+  }
+  if (!mp3) {
+    try {
+      const r = await fetch('https://api.elevenlabs.io/v1/sound-generation?output_format=mp3_44100_128', { method: 'POST', headers: cab, body: JSON.stringify({ text: M.p, duration_seconds: Math.min(M.d, 22), prompt_influence: 0.4 }), signal: AbortSignal.timeout(120000) });
+      if (r.ok) { mp3 = await r.arrayBuffer(); motor = 'efectos'; } else falla += ` · efectos ${r.status}: ${(await r.text()).slice(0, 160)}`;
+    } catch (e) { falla += ' · efectos: ' + e.message; }
+  }
+  if (!mp3) { console.error('elevenlabs música', id, falla); await anotar(env, 'sistema', 'No se pudo crear una música con ElevenLabs', `${id} · ${falla}`.slice(0, 400)); return { error: `ElevenLabs: ${falla}`.slice(0, 300), status: 502 }; }
+  await env.MEDIOS.put(`musica/${id}.mp3`, mp3, { httpMetadata: { contentType: 'audio/mpeg', cacheControl: 'public, max-age=300' }, customMetadata: { motor, creada: new Date().toISOString() } });
+  await anotar(env, 'sistema', 'Se creó una música con ElevenLabs', `${id} · ${motor} · ${Math.round(mp3.byteLength / 1024)} KB`);
+  return { ok: true, id, motor, bytes: mp3.byteLength };
+}
+export async function servirMusica(env, id) {
+  if (!MUSICA[id]) return new Response('No existe', { status: 404 });
+  const obj = await env.MEDIOS.get(`musica/${id}.mp3`);
+  if (!obj) return new Response('Aún no se crea', { status: 404 });
+  return new Response(obj.body, { headers: { 'content-type': 'audio/mpeg', 'cache-control': 'public, max-age=300', 'access-control-allow-origin': '*', etag: obj.httpEtag, 'x-motor': obj.customMetadata?.motor || '', 'x-creada': obj.customMetadata?.creada || '' } });
+}
+export async function estadoMusica(env) {
+  const lista = await env.MEDIOS.list({ prefix: 'musica/' });
+  const hay = new Map(lista.objects.map((o) => [o.key.replace('musica/', '').replace('.mp3', ''), o.size]));
+  return Object.entries(MUSICA).map(([id, m]) => ({ id, n: m.n, bytes: hay.get(id) || 0, lista: hay.has(id) }));
+}
+// La que falte se crea sola (la llama la tarea de cada tres minutos). Con todo creado, esto es una sola consulta a R2.
+export async function asegurarMusica(env) {
+  const faltan = (await estadoMusica(env)).filter((m) => !m.lista); if (!faltan.length) return 0;
+  let intentos = {}; try { intentos = (await (await env.MEDIOS.get('musica/_intentos.json'))?.json()) || {}; } catch { /* primera vez */ }
+  let hechas = 0;
+  for (const m of faltan) {
+    if ((intentos[m.id] || 0) >= INTENTOS_MUSICA) continue;
+    intentos[m.id] = (intentos[m.id] || 0) + 1;
+    await env.MEDIOS.put('musica/_intentos.json', JSON.stringify(intentos), { httpMetadata: { contentType: 'application/json' } });   // se apunta antes de pedir: si la tarea se corta, el intento ya cuenta
+    const r = await generarMusica(env, m.id); if (r.ok) hechas++;
+    break;   // una por vuelta: la tarea corre cada tres minutos y no debe alargarse
+  }
+  return hechas;
+}
 // fin · RLR

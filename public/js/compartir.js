@@ -60,10 +60,10 @@ const WHATSAPP = [
   { id: 'estado', quien: 'Para tu estado', sub: 'lo ven tus contactos por 24 horas', foto: 'estado', x: 'No es una app de citas 💘\n{liga}' },
 ];
 const REDES = [
-  ['Instagram', 'Publicación', 'retrato'], ['Instagram', 'Historia y portada de Reel', 'historia'], ['Instagram', 'Carrusel o cuadrícula', 'cuadrado'],
+  ['Instagram', 'Publicación', 'retrato'], ['Instagram', 'Reel', 'video'], ['Instagram', 'Historia y portada de Reel', 'historia'], ['Instagram', 'Carrusel o cuadrícula', 'cuadrado'],
   ['Facebook', 'Publicación', 'retrato'], ['Facebook', 'Publicación con liga', 'liga'], ['Facebook', 'Portada de la página', 'portada-facebook'],
-  ['TikTok', 'Foto, portada o fondo del video', 'historia'],
-  ['YouTube', 'Miniatura y pantalla final', 'horizontal'], ['YouTube', 'Shorts', 'historia'], ['YouTube', 'Banner del canal', 'banner-youtube'],
+  ['TikTok', 'Video corto', 'video'], ['TikTok', 'Foto o portada', 'historia'],
+  ['YouTube', 'Miniatura y pantalla final', 'horizontal'], ['YouTube', 'Shorts', 'video'], ['YouTube', 'Banner del canal', 'banner-youtube'],
   ['WhatsApp', 'Estado', 'historia'], ['WhatsApp', 'Mensaje o grupo', 'cuadrado'], ['WhatsApp', 'Foto del grupo', 'perfil'],
   ['X · LinkedIn', 'Publicación', 'liga'], ['X · LinkedIn', 'Encabezado', 'encabezado-x'],
   ['Todas', 'Foto de perfil', 'perfil'],
@@ -100,7 +100,7 @@ export async function montarCompartir(raiz, op = {}) {
   const liga = codigo ? `${base}/i/${codigo}` : base;                    // adonde llevan los botones y los textos
   const leida = codigo ? `${P.CASA}/i/${codigo}` : P.CASA;               // lo que se lee en una pieza con «mi liga»
   const tocar = op.tocar || (() => {});
-  const E = { serie: 'todas', formato: 'retrato', fondo: 'blanco', red: 'instagram', boton: 'negro' };
+  const E = { modo: 'imagenes', serie: 'todas', formato: 'retrato', fondo: 'blanco', red: 'instagram', boton: 'negro' };
   try { const g = JSON.parse(localStorage.getItem(LLAVE) || '{}'); if (P.FORMATOS.some((f) => f.id === g.formato)) E.formato = g.formato; if (P.FONDO[g.fondo]) E.fondo = g.fondo; } catch {}
   const recordar = () => { try { localStorage.setItem(LLAVE, JSON.stringify({ formato: E.formato, fondo: E.fondo })); } catch {} };
   const llenar = (x) => x.replaceAll('{liga}', liga).replaceAll('{etiquetas}', ETIQUETAS);
@@ -108,9 +108,7 @@ export async function montarCompartir(raiz, op = {}) {
     try { await navigator.clipboard.writeText(txt); } catch { const t = document.createElement('textarea'); t.value = txt; t.style.cssText = 'position:fixed;opacity:0'; document.body.appendChild(t); t.select(); try { document.execCommand('copy'); } catch {} t.remove(); }
     tocar('guardado'); avisar(msj);
   };
-  const visibles = () => (E.serie === 'todas' ? P.FRASES : P.FRASES.filter((f) => f.s === E.serie));
-  const delMuro = (f) => ({ frase: f.id, formato: E.formato, fondo: E.fondo, liga: P.CASA });
-  const textoDe = (r) => { const R = P.completar(r); return `${P.sinMarcas((R.n ? R.n + ' ' : '') + R.t)}${R.e ? ' ' + R.e : ''}\n\nCupido Algorítmico: no es una app de citas. Gratis y sin anuncios.\n${liga}`; };
+  const textoDe = (r) => { const R = P.completar(r); return `${R.g ? P.sinMarcas(R.g) + ' ' : ''}${P.sinMarcas((R.n ? R.n + ' ' : '') + R.t)}${R.e ? ' ' + R.e : ''}\n\nCupido Algorítmico: no es una app de citas. Gratis y sin anuncios.\n${liga}`; };
 
   /* ── el código para páginas ── */
   const codigos = () => {
@@ -124,7 +122,6 @@ export async function montarCompartir(raiz, op = {}) {
   };
 
   /* ── la sección ── */
-  const cuenta = (s) => (s === 'todas' ? P.FRASES.length : P.FRASES.filter((f) => f.s === s).length);
   raiz.classList.add('cmp');
   raiz.innerHTML = `
     <section class="tarjeta cmp-liga">
@@ -148,16 +145,17 @@ export async function montarCompartir(raiz, op = {}) {
     </nav>
 
     <section class="tarjeta" id="cmp-galeria">
-      <div class="cmp-cab"><div><h2>Galería</h2><p class="sub">${P.FRASES.length} frases en la medida de cada red. Texto negro, fondo blanco y el corazón de Cupido como único color. Toca una para descargarla, copiarla o mandarla.</p></div>
+      <div class="cmp-cab"><div><h2>Galería</h2><p class="sub">${P.FRASES.length} frases para publicar y ${P.VIDEOS.length} videos cortitos, listos para descargar. Texto negro, fondo blanco y el corazón de Cupido como único color.</p></div>
         <div class="acciones"><button class="boton boton-chico" data-a="azar">🎲 Una al azar</button><button class="boton boton-claro boton-chico" data-a="mia">✍️ Con mi frase</button></div></div>
-      <div class="cmp-series" id="cmp-series">${[{ id: 'todas', n: 'Todas' }, ...P.SERIES].map((s) => `<button data-a="serie" data-s="${s.id}" class="${s.id === E.serie ? 'on' : ''}" title="${esc(s.d || 'Las ' + P.FRASES.length + ' frases')}">${esc(s.n)} <small>${cuenta(s.id)}</small></button>`).join('')}</div>
-      <div class="cmp-mandos-muro">
+      <div class="cmp-modos" id="cmp-modos"><button data-a="modo" data-m="imagenes" class="on">🖼 Imágenes <small>${P.FRASES.length}</small></button><button data-a="modo" data-m="videos">🎬 Videos <small>${P.VIDEOS.length}</small></button></div>
+      <div class="cmp-series" id="cmp-series"></div>
+      <div class="cmp-mandos-muro" id="cmp-mandos-muro">
         <div class="cmp-grupo"><span>Medida</span><div class="cmp-seg" id="cmp-formatos">${P.FORMATOS.map((f) => `<button data-a="formato" data-f="${f.id}" class="${f.id === E.formato ? 'on' : ''}" title="${esc(f.para)} · ${f.w} × ${f.h}"><i style="aspect-ratio:${f.w}/${f.h}"></i>${esc(f.n)}</button>`).join('')}</div></div>
         <div class="cmp-grupo"><span>Fondo</span><div class="cmp-seg" id="cmp-fondos">${P.FONDOS.map((f) => `<button data-a="fondo" data-f="${f.id}" class="${f.id === E.fondo ? 'on' : ''}"><i class="cmp-gota" style="background:${f.bg}"></i>${esc(f.n)}</button>`).join('')}</div></div>
       </div>
       <p class="cmp-para" id="cmp-para"></p>
       <div class="cmp-rejilla" id="cmp-rejilla"></div>
-      <div class="acciones cmp-pie-muro"><button class="boton boton-claro boton-chico" data-a="zip-muro" id="cmp-zip-muro"></button></div>
+      <div class="acciones cmp-pie-muro" id="cmp-pie-muro"></div>
     </section>
 
     <section class="tarjeta cmp-plegada" id="cmp-textos"><details>
@@ -186,7 +184,7 @@ export async function montarCompartir(raiz, op = {}) {
     <section class="tarjeta" id="cmp-redes">
       <h2>Qué va en cada red</h2><p class="sub">Cada red pide su medida. Toca la pieza y la galería se acomoda sola.</p>
       <div class="cmp-tabla"><table><thead><tr><th>Red</th><th>Para qué</th><th>Medida</th><th></th></tr></thead><tbody>
-        ${REDES.map(([red, que, f]) => { const F = P.FORMATO[f]; return `<tr><td><b>${red}</b></td><td>${que}</td><td>${F ? `${F.w} × ${F.h}` : '1080 × 1080'}</td><td><button class="enlace" data-a="red-pieza" data-f="${f}">${f === 'perfil' ? 'Descargar' : P.FORMATOS.some((x) => x.id === f) ? 'Ver en la galería' : 'Abrir'}</button></td></tr>`; }).join('')}
+        ${REDES.map(([red, que, f]) => { const F = P.FORMATO[f]; return `<tr><td><b>${red}</b></td><td>${que}</td><td>${F ? `${F.w} × ${F.h}` : f === 'video' ? '1080 × 1920 · MP4' : '1080 × 1080'}</td><td><button class="enlace" data-a="red-pieza" data-f="${f}">${f === 'perfil' ? 'Descargar' : f === 'video' ? 'Ver los videos' : P.FORMATOS.some((x) => x.id === f) ? 'Ver en la galería' : 'Abrir'}</button></td></tr>`; }).join('')}
       </tbody></table></div>
       <ul class="razones" style="padding:0;margin-top:14px">
         <li><span class="i si">✓</span><span><b>En historias, lo importante va al centro.</b> Instagram y TikTok tapan la parte de arriba y la de abajo con sus botones. La pieza «Historia» ya deja ese espacio libre.</span></li>
@@ -237,28 +235,82 @@ export async function montarCompartir(raiz, op = {}) {
     </section>
 
     <section class="tarjeta cmp-todo" id="cmp-todo">
-      <div><h2>Descargar todo</h2><p class="sub">Un solo archivo con las ${P.FRASES.length} frases en las ${P.FORMATOS.length} medidas, las portadas, los perfiles, el logotipo, tu código QR, los textos, el código para páginas y la guía de estilos. Se arma aquí mismo, en tu equipo, con tu liga. Pesa unos 40 MB; si solo quieres una medida, baja esa desde la galería.</p></div>
-      <div class="acciones"><button class="boton" data-a="kit">⬇ Bajar el kit completo (.zip)</button></div>
+      <div><h2>Descargar todo</h2><p class="sub">Por paquetes, para que nada pese de más. Las imágenes y el kit se arman aquí mismo, en tu equipo, con tu liga.</p></div>
+      <div class="cmp-paquetes">
+        <button data-a="todas-imagenes"><b>🖼 Las ${P.FRASES.length} imágenes</b><small>Todas las frases en vertical 4:5, la medida que mejor se ve en Instagram y Facebook. Las demás medidas se bajan desde la galería.</small><em>⬇ .zip · unos 35 MB</em></button>
+        <button data-a="todos-videos" data-audio="0"><b>🎬 Los ${P.VIDEOS.length} videos, sin audio</b><small>Verticales, de 5 a 9 segundos. Para ponerles la música de tu red.</small><em id="cmp-peso-mudos">⬇ .zip</em></button>
+        <button data-a="todos-videos" data-audio="1"><b>🎵 Los ${P.VIDEOS.length} videos, con música</b><small>Los mismos, con un fondo suave de piano, guitarra, cuerdas o ritmo.</small><em id="cmp-peso-sonoros">⬇ .zip</em></button>
+        <button data-a="kit"><b>🎨 Kit de marca</b><small>Logotipo, perfiles, portadas, tipografías, tu código QR, los textos, el código para páginas y la guía de estilos.</small><em>⬇ .zip · unos 2 MB</em></button>
+      </div>
       <p class="cmp-gracias">🤍 Entre más compartas, más nos ayudas a todos a encontrar a la pareja ideal. Gracias.</p>
     </section>`;
 
-  /* ── el muro de piezas ── */
-  let turno = 0;
+  /* ── el muro de piezas: imágenes o videos ── */
+  let HECHOS = {};   // los videos que ya vienen hechos (public/videos/lista.json): { id: { s: segundos, m: música, kb, kba } }
+  const enRonda = (lista) => {   // «Todas» va mezclada, una de cada serie por vuelta, para que el muro no salga en bloques
+    const porSerie = P.SERIES.map((s) => lista.filter((f) => f.s === s.id)), sal = [];
+    for (let i = 0; sal.length < lista.length; i++) for (const g of porSerie) if (g[i]) sal.push(g[i]);
+    return sal;
+  };
+  const RONDA = { imagenes: enRonda(P.FRASES), videos: enRonda(P.VIDEOS) };
+  const deModo = () => (E.modo === 'videos' ? P.VIDEOS : P.FRASES);
+  const visibles = () => (E.serie === 'todas' ? RONDA[E.modo] : deModo().filter((f) => f.s === E.serie));
+  const delMuro = (f) => (E.modo === 'videos' ? { frase: f.id, formato: 'historia', fondo: 'blanco', liga: P.CASA } : { frase: f.id, formato: E.formato, fondo: E.fondo, liga: P.CASA });
+  const reloj = (s) => `0:${String(Math.round(s)).padStart(2, '0')}`;
+  const cuantos = (n, uno, varios) => (n === 1 ? uno : varios.replace('#', n));
+  function pintarSeries() {
+    const base = deModo(), n = (s) => (s === 'todas' ? base.length : base.filter((f) => f.s === s).length);
+    if (E.serie !== 'todas' && !n(E.serie)) E.serie = 'todas';
+    $('#cmp-series', raiz).innerHTML = [{ id: 'todas', n: 'Todas' }, ...P.SERIES].filter((s) => n(s.id)).map((s) => `<button data-a="serie" data-s="${s.id}" class="${s.id === E.serie ? 'on' : ''}" title="${esc(s.d || '')}">${esc(s.n)} <small>${n(s.id)}</small></button>`).join('');
+  }
+  // Un lienzo que se mueve: pinta el video de la receta cuadro por cuadro. Devuelve cómo pararlo (y lo deja en su imagen final).
+  function animar(lienzo, receta, ancho, { bucle = false, alEmpezar = null } = {}) {
+    let vivo = true, t0 = 0, cuadro = 0; const D = P.duracionDe(receta);
+    const paso = (ahora) => {
+      if (!vivo) return; if (!lienzo.isConnected) { vivo = false; return; }
+      if (!t0) { t0 = ahora; alEmpezar?.(D); }
+      const t = (ahora - t0) / 1000;
+      if (t >= D + (bucle ? 1.2 : 0)) { if (!bucle) { vivo = false; P.pintar(lienzo, receta, { ancho }); return; } t0 = 0; }
+      else P.pintar(lienzo, receta, { ancho, momento: Math.min(t, D) });
+      cuadro = requestAnimationFrame(paso);
+    };
+    cuadro = requestAnimationFrame(paso);
+    return () => { if (!vivo) return; vivo = false; cancelAnimationFrame(cuadro); if (lienzo.isConnected) P.pintar(lienzo, receta, { ancho }); };
+  }
+  let turno = 0, enMano = null;
   async function pintarMuro() {
-    const mio = ++turno, F = P.FORMATO[E.formato], lista = visibles(), caja = $('#cmp-rejilla', raiz);
-    $('#cmp-para', raiz).innerHTML = `<b>${esc(F.n)} · ${F.w} × ${F.h}</b> — ${esc(F.para)}`;
-    $('#cmp-zip-muro', raiz).textContent = `⬇ Bajar ${lista.length === 1 ? 'esta' : 'estas ' + lista.length} en ${F.n.toLowerCase()} (.zip)`;
-    caja.className = `cmp-rejilla f-${F.id}`;
-    caja.innerHTML = lista.map((f, i) => `<button class="cmp-pieza" data-a="abrir" data-i="${i}" style="aspect-ratio:${F.w}/${F.h}" aria-label="${esc(P.sinMarcas((f.n ? f.n + ' ' : '') + f.t))}"><canvas></canvas></button>`).join('');
+    const mio = ++turno, videos = E.modo === 'videos'; enMano?.(); pintarSeries();
+    const F = P.FORMATO[videos ? 'historia' : E.formato], lista = visibles(), caja = $('#cmp-rejilla', raiz);
+    $('#cmp-mandos-muro', raiz).hidden = videos;
+    $('#cmp-para', raiz).innerHTML = videos ? '<b>Video vertical · 1080 × 1920</b> — Para TikTok, Reels, Shorts e historias. De 5 a 9 segundos. Pasa el cursor para verlo; tócalo para descargarlo, con música o sin ella.' : `<b>${esc(F.n)} · ${F.w} × ${F.h}</b> — ${esc(F.para)}`;
+    $('#cmp-pie-muro', raiz).innerHTML = videos
+      ? `<button class="boton boton-claro boton-chico" data-a="zip-videos" data-audio="0">⬇ Bajar ${cuantos(lista.length, 'este', 'estos #')} sin audio (.zip)</button><button class="boton boton-claro boton-chico" data-a="zip-videos" data-audio="1">⬇ Bajar ${cuantos(lista.length, 'este', 'estos #')} con música (.zip)</button>`
+      : `<button class="boton boton-claro boton-chico" data-a="zip-muro">⬇ Bajar ${cuantos(lista.length, 'esta', 'estas #')} en ${F.n.toLowerCase()} (.zip)</button>`;
+    caja.className = `cmp-rejilla f-${F.id}${videos ? ' de-videos' : ''}`;
+    caja.innerHTML = lista.map((f, i) => `<button class="cmp-pieza${videos ? ' cmp-video' : ''}" data-a="abrir" data-i="${i}" style="aspect-ratio:${F.w}/${F.h}" aria-label="${esc(P.sinMarcas((f.g ? f.g + ' ' : '') + (f.n ? f.n + ' ' : '') + f.t))}"><canvas></canvas>${videos ? '<span class="cmp-play">▶ <i></i></span>' : ''}</button>`).join('');
     await P.cargarLetras(); if (mio !== turno) return;
-    const lienzos = $$('canvas', caja), punto = Math.min(2, window.devicePixelRatio || 1);
-    for (let i = 0; i < lienzos.length; i++) {
+    const piezas = $$('.cmp-pieza', caja), punto = Math.min(2, window.devicePixelRatio || 1);
+    for (let i = 0; i < piezas.length; i++) {
       if (mio !== turno) return;
-      const ancho = Math.max(120, Math.round((lienzos[i].parentElement.clientWidth || 220) * punto));
-      try { P.pintar(lienzos[i], delMuro(lista[i]), { ancho }); } catch {}
+      const receta = delMuro(lista[i]), ancho = Math.max(120, Math.round((piezas[i].clientWidth || 220) * punto));
+      try { P.pintar(piezas[i].firstElementChild, receta, { ancho }); if (videos) piezas[i].querySelector('.cmp-play i').textContent = reloj(P.duracionDe(receta)); } catch { /* una pieza que no se pudo pintar no detiene el muro */ }
       if (i % 6 === 5) await respiro();
     }
   }
+  // En la vista de videos, el que tienes bajo el cursor se mueve; y cada rato uno se mueve solo, para que el muro se sienta vivo
+  const rejilla = $('#cmp-rejilla', raiz), quieto = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  rejilla.addEventListener('pointerover', (e) => {
+    if (E.modo !== 'videos' || e.pointerType === 'touch') return; const p = e.target.closest('.cmp-video'); if (!p || p === enMano?.pieza) return;
+    enMano?.(); const lienzo = p.firstElementChild, parar = animar(lienzo, delMuro(visibles()[Number(p.dataset.i)]), lienzo.width, { bucle: true });
+    enMano = Object.assign(() => { parar(); enMano = null; }, { pieza: p });
+  });
+  rejilla.addEventListener('pointerleave', () => enMano?.());
+  const ola = setInterval(() => {
+    if (!raiz.isConnected) return clearInterval(ola);
+    if (E.modo !== 'videos' || quieto || enMano || document.hidden || velo.classList.contains('on')) return;
+    const aLaVista = $$('.cmp-video', rejilla).filter((p) => { const r = p.getBoundingClientRect(); return r.bottom > 60 && r.top < innerHeight - 60; }); if (!aLaVista.length) return;
+    const p = aLaVista[Math.floor(Math.random() * aLaVista.length)], lienzo = p.firstElementChild; if (lienzo.width > 10) animar(lienzo, delMuro(visibles()[Number(p.dataset.i)]), lienzo.width);
+  }, 2800);
   function pintarTextos() {
     const T = TEXTOS.find((t) => t.id === E.red) || TEXTOS[0];
     $('#cmp-textos-lista', raiz).innerHTML = `<p class="cmp-nota">💡 ${esc(T.nota)}</p>` + T.lista.map((x, i) => `<article class="cmp-texto"><div class="cmp-texto-cab"><b>${esc(x.t)}</b><button class="boton boton-claro boton-chico" data-a="copiar-texto" data-i="${i}">Copiar</button></div><p>${esc(llenar(x.x)).replace(/\n/g, '<br>')}</p></article>`).join('')
@@ -279,51 +331,64 @@ export async function montarCompartir(raiz, op = {}) {
     $$('canvas[data-logo]', raiz).forEach((c) => { const l = c.dataset.logo; P.pintarLogo(c, { tinta: l === 'blanco' ? 'blanco' : 'negro', una: l === 'una', solo: l === 'solo', alto: 96 }); });
   }
 
-  /* ── el taller: una pieza en grande, con sus mandos ── */
-  const T = { r: null, i: null, mia: false, blob: null, clave: '', grabando: false, video: null };
+  /* ── el taller: una pieza en grande, con sus mandos. Dos vistas: la imagen y el video ── */
+  const T = { r: null, i: null, mia: false, vista: 'imagen', musica: 'piano', oir: false, ajustes: false, blob: null, clave: '', grabando: false, video: null, parar: null, callar: null };
   const velo = document.createElement('div'); velo.className = 'modal-velo cmp-velo'; velo.id = 'cmp-taller';
   document.getElementById('cmp-taller')?.remove(); document.body.appendChild(velo);
-  const cerrarTaller = () => { velo.classList.remove('on'); document.removeEventListener('keydown', teclas); };
+  const pararVista = () => { T.parar?.(); T.parar = null; T.callar?.(); T.callar = null; };
+  const cerrarTaller = () => { pararVista(); velo.classList.remove('on'); document.removeEventListener('keydown', teclas); };
   const teclas = (e) => {
     if (T.grabando) return;
     if (e.key === 'Escape') { cerrarTaller(); return; }
     if (/^(INPUT|TEXTAREA)$/.test(document.activeElement?.tagName || '')) return;
     if (e.key === 'ArrowRight') mover(1); else if (e.key === 'ArrowLeft') mover(-1);
   };
-  function mover(d) { if (T.mia) return; const l = visibles(); if (!l.length) return; T.i = ((T.i ?? 0) + d + l.length) % l.length; T.r = { ...T.r, frase: l[T.i].id, c: undefined }; pintarTaller(); }
-  function abrirTaller(r, i = null, mia = false) {
-    T.r = { formato: E.formato, fondo: E.fondo, conE: true, conLiga: true, miLiga: false, conQr: false, ...r }; T.i = i; T.mia = mia;
+  const suMusica = () => { if (!T.mia) T.musica = P.musicaDe(P.FRASE[T.r.frase]); };   // cada frase llega con la música de su serie; después se cambia a gusto
+  function mover(d) { if (T.mia || T.grabando) return; const l = visibles(); if (!l.length) return; T.i = ((T.i ?? 0) + d + l.length) % l.length; T.r = { ...T.r, frase: l[T.i].id, c: undefined }; suMusica(); pintarTaller(); }
+  function abrirTaller(r, i = null, mia = false, vista = 'imagen') {
+    const video = vista === 'video';
+    T.r = { formato: video ? 'historia' : E.formato, fondo: video ? 'blanco' : E.fondo, conE: true, conLiga: true, miLiga: false, conQr: false, ...r }; T.i = i; T.mia = mia; T.vista = vista; T.oir = false; T.ajustes = false; suMusica();
     velo.classList.add('on'); document.addEventListener('keydown', teclas); pintarTaller(true);
   }
   const recetaTaller = () => { const r = T.r, x = { formato: r.formato, fondo: r.fondo, conE: r.conE, c: r.c, liga: r.conLiga ? (r.miLiga && codigo ? leida : P.CASA) : '', qr: r.conQr ? liga : '' }; return T.mia ? { ...x, t: r.t || '', e: r.conE ? r.e || '' : '', n: '' } : { ...x, frase: r.frase }; };
+  // ¿Este video ya viene hecho? Solo los de la galería, tal cual: vertical, fondo blanco, su acomodo, la dirección de la casa y su música
+  const yaHecho = (receta, musica) => { const h = !T.mia && HECHOS[receta.frase], fr = P.FRASE[receta.frase]; return !!h && receta.formato === 'historia' && receta.fondo === 'blanco' && receta.conE !== false && receta.liga === P.CASA && !receta.qr && (!receta.c || receta.c === fr.c) && (!musica || musica === h.m); };
   async function pintarTaller(armar = false) {
-    const r = T.r, R = P.completar(recetaTaller()), F = P.FORMATO[r.formato], formatos = P.FORMATOS.some((f) => f.id === r.formato) ? P.FORMATOS : [...P.FORMATOS, F];
+    const r = T.r, R = P.completar(recetaTaller()), F = P.FORMATO[r.formato], formatos = P.FORMATOS.some((f) => f.id === r.formato) ? P.FORMATOS : [...P.FORMATOS, F], video = T.vista === 'video';
     if (armar || !$('.cmp-taller', velo)) {
       velo.innerHTML = `<div class="cmp-taller" role="dialog" aria-modal="true" aria-label="Una pieza para compartir">
         <button class="cmp-x" data-a="cerrar" aria-label="Cerrar">✕</button>
         <div class="cmp-vista"><button class="cmp-flecha" data-a="antes" aria-label="La anterior">‹</button><div class="cmp-marco"><canvas id="cmp-lienzo"></canvas></div><button class="cmp-flecha" data-a="despues" aria-label="La siguiente">›</button></div>
         <div class="cmp-mandos">
+          <div class="cmp-modos chico" id="t-vistas"></div>
           <div class="cmp-escribir" id="cmp-escribir"></div>
-          <div class="cmp-grupo"><span>Medida</span><div class="cmp-seg" id="t-formatos"></div><small id="t-para"></small></div>
-          <div class="cmp-grupo"><span>Fondo</span><div class="cmp-seg" id="t-fondos"></div></div>
-          <div class="cmp-grupo"><span>Acomodo</span><div class="cmp-seg" id="t-acomodos"></div></div>
-          <div class="cmp-casillas" id="t-casillas"></div>
-          <div class="acciones cmp-acciones">
-            <button class="boton" data-a="t-bajar">⬇ Descargar</button>
-            ${navigator.canShare ? '<button class="boton boton-claro" data-a="t-compartir">📤 Compartir</button>' : ''}
-            ${window.ClipboardItem ? '<button class="boton boton-claro" data-a="t-copiar">📋 Copiar imagen</button>' : ''}
-            ${P.tipoDeVideo() ? '<button class="boton boton-claro" data-a="t-video" title="Las palabras van apareciendo. Para TikTok, Reels y Shorts.">🎬 Descargar video</button><button class="boton boton-claro" data-a="t-video-compartir" hidden>📤 Compartir video</button>' : ''}
-          </div>
+          <div id="t-musica"></div>
+          <div class="acciones cmp-acciones" id="t-acciones"></div>
+          <p class="cmp-pista" id="t-aviso-graba"></p>
+          <details class="cmp-ajustes" id="t-ajustes"><summary>Cambiar medida, fondo o acomodo</summary>
+            <div class="cmp-grupo"><span>Medida</span><div class="cmp-seg" id="t-formatos"></div><small id="t-para"></small></div>
+            <div class="cmp-grupo"><span>Fondo</span><div class="cmp-seg" id="t-fondos"></div></div>
+            <div class="cmp-grupo"><span>Acomodo</span><div class="cmp-seg" id="t-acomodos"></div></div>
+            <div class="cmp-casillas" id="t-casillas"></div>
+          </details>
           <div class="cmp-acompana"><div class="cmp-texto-cab"><b>Texto para acompañarla</b><button class="boton boton-claro boton-chico" data-a="t-texto">Copiar</button></div><p id="t-texto"></p></div>
         </div></div>`;
+      $('#t-ajustes', velo).ontoggle = (e) => { T.ajustes = e.target.open; };
     }
-    const portada = !P.FORMATOS.includes(F);
+    const portada = !P.FORMATOS.includes(F), receta = recetaTaller();
+    $('#t-vistas', velo).innerHTML = `<button data-a="t-vista" data-v="imagen" class="${video ? '' : 'on'}">🖼 Imagen</button><button data-a="t-vista" data-v="video" class="${video ? 'on' : ''}">🎬 Video</button>`;
     $('#cmp-escribir', velo).innerHTML = T.mia
       ? `<label class="campo"><small>Tu frase <em>(Enter parte el renglón · *así* va en cursiva · ~así~ va tachado)</em></small><textarea id="t-frase" rows="3" maxlength="140" placeholder="Escribe aquí lo que quieras decir de Cupido">${esc(r.t || '')}</textarea></label>
          <label class="campo"><small>La letra chica (opcional)</small><input id="t-sub" maxlength="110" value="${esc(r.e || '')}" placeholder="Una explicación corta"></label>
          <p class="cmp-nota">Di lo que es cierto: gratis es gratis, y Cupido no promete pareja a nadie. <button class="enlace" data-a="t-frases">Volver a las frases de la casa</button></p>`
-      : `<div class="cmp-frase-cab"><span class="chip">${esc(P.SERIES.find((s) => s.id === P.FRASE[r.frase]?.s)?.n || '')}</span><span class="acciones"><button class="boton boton-claro boton-chico" data-a="t-azar">🎲 Otra</button><button class="boton boton-claro boton-chico" data-a="t-mia">✍️ Escribir la mía</button></span></div>`;
-    $('#t-formatos', velo).innerHTML = formatos.map((f) => `<button data-a="t-formato" data-f="${f.id}" class="${f.id === r.formato ? 'on' : ''}" title="${f.w} × ${f.h}">${f.w > 0 && P.FORMATOS.includes(f) ? `<i style="aspect-ratio:${f.w}/${f.h}"></i>` : ''}${esc(f.n)}</button>`).join('');
+      : `<div class="cmp-frase-cab"><span class="chip">${esc(P.SERIE[P.FRASE[r.frase]?.s]?.n || '')}</span><span class="acciones"><button class="boton boton-claro boton-chico" data-a="t-azar">🎲 Otra</button><button class="boton boton-claro boton-chico" data-a="t-mia">✍️ Escribir la mía</button></span></div>`;
+    $('#t-musica', velo).innerHTML = video ? `<div class="cmp-grupo"><span>Música</span><div class="cmp-seg" id="t-musicas">${P.MUSICAS.map((m) => `<button data-a="t-musica" data-m="${m.id}" class="${m.id === T.musica ? 'on' : ''}">${esc(m.n)}</button>`).join('')}</div>
+        <button class="cmp-oir ${T.oir ? 'on' : ''}" data-a="t-oir" aria-pressed="${T.oir}">${T.oir ? '🔊 Sonando' : '🔈 Oírla'}</button><small>Fondos suaves y sin voz, hechos para Cupido. Si prefieres la música de tu red, baja el video sin audio.</small></div>` : '';
+    $('#t-acciones', velo).innerHTML = video
+      ? `<button class="boton" data-a="t-video-bajar" data-audio="0">⬇ Video sin audio</button><button class="boton" data-a="t-video-bajar" data-audio="1">⬇ Video con música</button>${navigator.canShare ? '<button class="boton boton-claro" data-a="t-video-compartir">📤 Compartir video</button>' : ''}`
+      : `<button class="boton" data-a="t-bajar">⬇ Descargar imagen</button>${navigator.canShare ? '<button class="boton boton-claro" data-a="t-compartir">📤 Compartir</button>' : ''}${window.ClipboardItem ? '<button class="boton boton-claro" data-a="t-copiar">📋 Copiar imagen</button>' : ''}`;
+    const aj = $('#t-ajustes', velo); aj.open = video ? T.ajustes : true; aj.classList.toggle('fijo', !video);
+    $('#t-formatos', velo).innerHTML = formatos.map((f) => `<button data-a="t-formato" data-f="${f.id}" class="${f.id === r.formato ? 'on' : ''}" title="${f.w} × ${f.h}">${P.FORMATOS.includes(f) ? `<i style="aspect-ratio:${f.w}/${f.h}"></i>` : ''}${esc(f.n)}</button>`).join('');
     $('#t-para', velo).textContent = `${F.w} × ${F.h} · ${F.para}`;
     $('#t-fondos', velo).innerHTML = P.FONDOS.map((f) => `<button data-a="t-fondo" data-f="${f.id}" class="${f.id === r.fondo ? 'on' : ''}"><i class="cmp-gota" style="background:${f.bg}"></i>${esc(f.n)}</button>`).join('');
     $('#t-acomodos', velo).innerHTML = P.ACOMODOS.map((a) => `<button data-a="t-acomodo" data-c="${a.id}" class="${a.id === R.c ? 'on' : ''}" ${portada ? 'disabled' : ''}>${a.n}</button>`).join('');
@@ -332,7 +397,12 @@ export async function montarCompartir(raiz, op = {}) {
       <label><input type="checkbox" data-k="conLiga" ${r.conLiga ? 'checked' : ''}> Con la dirección</label>
       ${codigo ? `<label><input type="checkbox" data-k="miLiga" ${r.miLiga ? 'checked' : ''} ${r.conLiga ? '' : 'disabled'}> Que sea mi liga</label>` : ''}
       <label title="Lleva a ${esc(liga)}"><input type="checkbox" data-k="conQr" ${r.conQr ? 'checked' : ''}> Con código QR${codigo ? ' de mi liga' : ''}</label>`;
-    $('#t-texto', velo).innerHTML = esc(textoDe(recetaTaller())).replace(/\n/g, '<br>');
+    // si la combinación ya viene hecha, baja al instante; si no, se graba aquí mismo y hay que decirlo
+    const instante = yaHecho(receta, ''), conSuMusica = yaHecho(receta, T.musica);
+    const enIphone = /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    $('#t-aviso-graba', velo).textContent = !video ? '' : (instante && conSuMusica ? 'Ya está hecho: baja al instante.' : instante ? 'Sin audio baja al instante. Con esta música se graba aquí mismo, en lo que dura el video.' : P.tipoDeVideo() ? 'Con estos cambios el video se graba aquí mismo, en lo que dura. Deja esta ventana a la vista mientras tanto.' : 'Este navegador no graba video: los de la galería sí se descargan, tal como vienen.')
+      + (enIphone ? ' En iPhone, para dejarlo en tus fotos: «Compartir video» y luego «Guardar video».' : '');
+    $('#t-texto', velo).innerHTML = esc(textoDe(receta)).replace(/\n/g, '<br>');
     $$('.cmp-flecha', velo).forEach((b) => b.hidden = T.mia || visibles().length < 2);
     $$('#t-casillas input', velo).forEach((c) => c.onchange = () => { T.r[c.dataset.k] = c.checked; pintarTaller(); });
     const tf = $('#t-frase', velo), ts = $('#t-sub', velo);
@@ -341,20 +411,42 @@ export async function montarCompartir(raiz, op = {}) {
     await repintar();
   }
   async function repintar() {
-    await P.cargarLetras(); const receta = recetaTaller(), lienzo = $('#cmp-lienzo', velo); if (!lienzo) return;
-    P.pintar(lienzo, receta); const F = P.FORMATO[receta.formato]; lienzo.style.aspectRatio = `${F.w}/${F.h}`; lienzo.parentElement.className = `cmp-marco ${F.w > F.h * 1.2 ? 'ancho' : F.h > F.w * 1.5 ? 'alto' : ''}`;
-    // la imagen se deja lista de una vez: así «Compartir» y «Copiar» responden al toque (Safari no espera)
-    const clave = JSON.stringify(receta); T.clave = clave; T.blob = P.aBlob(lienzo); T.blob.catch(() => {});
-    const bv = $('[data-a="t-video"]', velo), bc = $('[data-a="t-video-compartir"]', velo);
-    if (bv && (!T.video || T.video.clave !== clave)) { T.video = null; bv.textContent = '🎬 Descargar video'; if (bc) bc.hidden = true; }
+    await P.cargarLetras(); const receta = recetaTaller(), lienzo = $('#cmp-lienzo', velo); if (!lienzo || T.grabando) return;
+    pararVista();
+    const F = P.FORMATO[receta.formato]; lienzo.style.aspectRatio = `${F.w}/${F.h}`; lienzo.parentElement.className = `cmp-marco ${F.w > F.h * 1.2 ? 'ancho' : F.h > F.w * 1.5 ? 'alto' : ''}`;
+    P.pintar(lienzo, receta); const clave = JSON.stringify(receta); T.clave = clave;
+    if (T.vista === 'video') {
+      // la vista se pinta al tamaño en que se ve (no a 1080), para que corra suave en cualquier equipo; al grabar se pinta completa
+      const ancho = Math.min(F.w, Math.max(240, Math.round((lienzo.clientWidth || 360) * Math.min(2, window.devicePixelRatio || 1))));
+      T.blob = null;
+      T.parar = animar(lienzo, receta, ancho, { bucle: true, alEmpezar: (D) => { T.callar?.(); T.callar = null; if (T.oir && T.musica) P.sonar(T.musica, D).then((c) => { if (T.parar && T.vista === 'video' && T.oir) T.callar = c; else c(); }).catch(() => {}); } });
+    } else {
+      // la imagen se deja lista de una vez: así «Compartir» y «Copiar» responden al toque (Safari no espera)
+      T.blob = P.aBlob(lienzo); T.blob.catch(() => {});
+    }
+    if (T.video && T.video.clave !== clave) T.video = null;
     const tx = $('#t-texto', velo); if (tx) tx.innerHTML = esc(textoDe(receta)).replace(/\n/g, '<br>');
+  }
+  // El archivo del video: el que ya viene hecho, si la combinación es la de la galería; si no, se graba aquí
+  async function archivoDeVideo(conMusica, boton) {
+    const receta = recetaTaller(), clave = JSON.stringify(receta), musica = conMusica ? T.musica : '', llave = `${clave}|${musica}`;
+    if (T.video?.llave === llave) return T.video.archivo;
+    const nombre = P.nombreDe(receta).replace(/\.png$/, `${conMusica ? '_con-musica' : ''}.mp4`); let archivo = null;
+    if (yaHecho(receta, musica)) { try { const r = await fetch(P.videoHecho(receta.frase, conMusica)); if (r.ok) archivo = new File([await r.blob()], nombre, { type: 'video/mp4' }); } catch { /* sin red o sin archivo: se graba */ } }
+    if (!archivo) {
+      if (!P.tipoDeVideo(conMusica)) throw new Error('este navegador no graba video. Los de la galería sí se descargan, tal como vienen.');
+      const etiqueta = boton.innerHTML; pararVista(); T.grabando = true; velo.classList.add('grabando'); boton.classList.add('grabando');
+      try { const v = await P.grabarVideo($('#cmp-lienzo', velo), receta, (p) => { boton.textContent = `Grabando… ${Math.round(p * 100)} %`; }, { musica }); archivo = new File([v.blob], nombre.replace(/\.mp4$/, '.' + v.ext), { type: v.blob.type }); }
+      finally { boton.innerHTML = etiqueta; boton.classList.remove('grabando'); T.grabando = false; velo.classList.remove('grabando'); repintar(); }
+    }
+    T.video = { clave, llave, archivo }; return archivo;
   }
 
   /* ── los paquetes ── */
   const aBytes = async (b) => (b instanceof Uint8Array ? b : new Uint8Array(await (b instanceof Blob ? b : new Blob([b])).arrayBuffer()));
   async function paquete(nombre, tareas) {
     const tapa = document.createElement('div'); tapa.className = 'modal-velo on cmp-avance';
-    tapa.innerHTML = `<div class="modal claro"><h2>Armando tu paquete</h2><p class="sub" id="cmp-av-t">Pintando las piezas…</p><div class="cmp-barra"><i></i></div><div class="acciones" style="margin-top:16px"><button class="boton boton-claro boton-chico" id="cmp-av-no">Cancelar</button></div></div>`;
+    tapa.innerHTML = `<div class="modal claro"><h2>Armando tu paquete</h2><p class="sub" id="cmp-av-t">Un momento…</p><div class="cmp-barra"><i></i></div><div class="acciones" style="margin-top:16px"><button class="boton boton-claro boton-chico" id="cmp-av-no">Cancelar</button></div></div>`;
     document.body.appendChild(tapa); let cancelado = false; $('#cmp-av-no', tapa).onclick = () => { cancelado = true; };
     try {
       await P.cargarLetras(); const archivos = [];
@@ -371,7 +463,7 @@ export async function montarCompartir(raiz, op = {}) {
   const textosPlanos = () => TEXTOS.map((t) => `══ ${t.n.toUpperCase()} ══\n${t.nota}\n\n` + t.lista.map((x) => `— ${x.t} —\n${llenar(x.x)}`).join('\n\n')).join('\n\n\n') + `\n\n\n══ ETIQUETAS ══\n${ETIQUETAS}\n`;
   const whatsPlano = () => WHATSAPP.map((w) => `— ${w.quien} —\n${llenar(w.x)}`).join('\n\n') + '\n';
   const codigoPlano = () => { const c = codigos(); return `<!-- Cupido Algorítmico · código para tu página. Copia el bloque que quieras y pégalo donde deba verse. -->\n\n<!-- Botón -->\n${c.boton}\n\n<!-- Insignia -->\n${c.insignia}\n\n<!-- Tarjeta con una frase distinta cada día -->\n${c.tarjeta}\n\n<!-- Imagen con liga -->\n${c.imagen}\n`; };
-  const leeme = (sello) => `CUPIDO ALGORÍTMICO · Kit para compartir ${VERSION_KIT} · ${sello}
+  const leeme = (sello) => `CUPIDO ALGORÍTMICO · Kit de marca ${VERSION_KIT} · ${sello}
 ${P.CASA}/compartir
 Hecho por Ing. Ricardo López Reyero
 
@@ -381,17 +473,19 @@ TU LIGA
 
 QUÉ HAY AQUÍ
   Cupido_Guia_de_Estilos.html   La guía completa: ábrela en tu navegador (se imprime o se guarda en PDF)
-${P.FORMATOS.map((f, i) => `  ${`0${i + 1}-${f.id}/`.padEnd(16)}${P.FRASES.length} frases · ${f.w} × ${f.h} · ${f.para}`).join('\n')}
-  06-portadas/    Portada de Facebook, banner de YouTube y encabezado de X, en blanco y en negro
-  07-perfil/      El corazón para la foto de perfil o del grupo (todas las redes lo recortan en círculo)
-  08-logotipo/    El logotipo sin fondo (PNG) y el corazón (SVG)
-  09-codigo-qr/   El código QR de tu liga, para imprimir o pegar en un video
-  textos/         Textos para cada red, mensajes de WhatsApp y el código para páginas
+  01-logotipo/     El logotipo sin fondo (PNG) y el corazón (SVG)
+  02-perfil/       El corazón para la foto de perfil o del grupo (todas las redes lo recortan en círculo)
+  03-portadas/     Portada de Facebook, banner de YouTube y encabezado de X, en blanco y en negro
+  04-tipografia/   Fraunces e Inter, con su licencia y cómo instalarlas
+  05-codigo-qr/    El código QR de tu liga, para imprimir o pegar en un video
+  06-textos/       Textos para cada red, mensajes de WhatsApp y el código para páginas
+
+LO DEMÁS SE BAJA EN ${P.CASA}/compartir
+  Las ${P.FRASES.length} imágenes (en cinco medidas y tres fondos) y los ${P.VIDEOS.length} videos verticales, sin audio o con música.
 
 CÓMO SE VE CUPIDO
   Texto negro sobre fondo blanco. El único color es el corazón: rosa #d6455f.
-  Letras: Fraunces 600 para decir (cursiva para lo que importa) e Inter 500 para explicar. Las dos son libres:
-  fonts.google.com/specimen/Fraunces · fonts.google.com/specimen/Inter
+  Letras: Fraunces 600 para decir (cursiva para lo que importa) e Inter 500 para explicar. Las dos son libres.
 
 TRES REGLAS
   1. El corazón no se deforma ni se pinta de otro color: rosa, blanco o negro.
@@ -436,7 +530,7 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
 <p class="g">Las dos son libres y gratis: fonts.google.com/specimen/Fraunces · fonts.google.com/specimen/Inter</p>
 
 <h2>Las medidas de cada red</h2>
-<table><tr><th>Red</th><th>Para qué</th><th>Medida</th></tr>${REDES.map(([red, que, f]) => { const F = P.FORMATO[f]; return `<tr><td>${red}</td><td>${que}</td><td>${F ? `${F.w} × ${F.h}` : '1080 × 1080'}</td></tr>`; }).join('')}</table>
+<table><tr><th>Red</th><th>Para qué</th><th>Medida</th></tr>${REDES.map(([red, que, f]) => { const F = P.FORMATO[f]; return `<tr><td>${red}</td><td>${que}</td><td>${F ? `${F.w} × ${F.h}` : f === 'video' ? '1080 × 1920 · MP4' : '1080 × 1080'}</td></tr>`; }).join('')}</table>
 <p class="g" style="margin-top:10px">En historias, lo importante va al centro: Instagram y TikTok tapan arriba y abajo con sus botones.</p>
 
 <h2>Cómo suena</h2>
@@ -451,23 +545,29 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
 
 <footer>Cupido Algorítmico · Guía de estilos ${VERSION_KIT} · ${sello} · Ing. Ricardo López Reyero<br>Entre más compartas, más nos ayudas a todos a encontrar a la pareja ideal.</footer>
 </main></body></html>`;
-  async function bajarKit() {
+  const deLaRed = (nombre, url) => ({ nombre, hacer: async () => { const r = await fetch(url); if (!r.ok) throw new Error('no se pudo bajar ' + nombre); return r.blob(); } });
+  async function bajarKit() {   // el kit de marca: lo que no cambia de una frase a otra
     const sello = P.sello(), t = [], txt = (nombre, contenido) => ({ nombre, hacer: async () => new Blob([contenido], { type: 'text/plain' }) });
-    t.push(txt('LEEME.txt', leeme(sello)));
-    t.push(txt('Cupido_Guia_de_Estilos.html', guiaHtml(sello)));
-    P.FORMATOS.forEach((f, i) => P.FRASES.forEach((fr) => t.push(tareaPieza(`0${i + 1}-${f.id}/`, { frase: fr.id, formato: f.id, fondo: 'blanco', liga: P.CASA }))));
-    P.PORTADAS.forEach((p) => ['blanco', 'negro'].forEach((fondo) => t.push(tareaPieza('06-portadas/', { frase: 'no-app', formato: p.id, fondo, liga: P.CASA }))));
-    P.PERFILES.forEach((p) => t.push({ nombre: `07-perfil/Cupido_perfil_${p.id}_1080x1080.png`, hacer: () => P.aBytes(P.pintarPerfil(mesa, p.id, 1080)) }));
-    [['negro', 'sobre-claro'], ['blanco', 'sobre-oscuro']].forEach(([tinta, n]) => t.push({ nombre: `08-logotipo/Cupido_logotipo_${n}.png`, hacer: () => P.aBytes(P.pintarLogo(mesa, { tinta, alto: 320 })) }));
-    t.push({ nombre: '08-logotipo/Cupido_logotipo_una-tinta.png', hacer: () => P.aBytes(P.pintarLogo(mesa, { una: true, alto: 320 })) });
-    t.push(txt('08-logotipo/Cupido_corazon.svg', P.SVG_CORAZON()));
-    t.push({ nombre: '09-codigo-qr/Cupido_codigo-qr.png', hacer: () => P.aBytes(P.pintarCodigo(mesa, liga, 1200)) });
-    t.push(txt('textos/textos-para-cada-red.txt', textosPlanos()), txt('textos/mensajes-de-whatsapp.txt', whatsPlano()), txt('textos/codigo-para-tu-pagina.html', codigoPlano()));
-    await paquete(`Cupido_Kit_para_Compartir_${VERSION_KIT}_${sello}.zip`, t);
+    t.push(txt('LEEME.txt', leeme(sello)), txt('Cupido_Guia_de_Estilos.html', guiaHtml(sello)));
+    [['negro', 'sobre-claro'], ['blanco', 'sobre-oscuro']].forEach(([tinta, n]) => t.push({ nombre: `01-logotipo/Cupido_logotipo_${n}.png`, hacer: () => P.aBytes(P.pintarLogo(mesa, { tinta, alto: 320 })) }));
+    t.push({ nombre: '01-logotipo/Cupido_logotipo_una-tinta.png', hacer: () => P.aBytes(P.pintarLogo(mesa, { una: true, alto: 320 })) }, txt('01-logotipo/Cupido_corazon.svg', P.SVG_CORAZON()));
+    P.PERFILES.forEach((p) => t.push({ nombre: `02-perfil/Cupido_perfil_${p.id}_1080x1080.png`, hacer: () => P.aBytes(P.pintarPerfil(mesa, p.id, 1080)) }));
+    P.PORTADAS.forEach((p) => ['blanco', 'negro'].forEach((fondo) => t.push(tareaPieza('03-portadas/', { frase: 'no-app', formato: p.id, fondo, liga: P.CASA }))));
+    t.push(deLaRed('04-tipografia/Cupido_Tipografia_Fraunces.zip', '/letras/Cupido_Tipografia_Fraunces.zip'), deLaRed('04-tipografia/Cupido_Tipografia_Inter.zip', '/letras/Cupido_Tipografia_Inter.zip'));
+    t.push({ nombre: '05-codigo-qr/Cupido_codigo-qr.png', hacer: () => P.aBytes(P.pintarCodigo(mesa, liga, 1200)) });
+    t.push(txt('06-textos/textos-para-cada-red.txt', textosPlanos()), txt('06-textos/mensajes-de-whatsapp.txt', whatsPlano()), txt('06-textos/codigo-para-tu-pagina.html', codigoPlano()));
+    await paquete(`Cupido_Kit_de_Marca_${VERSION_KIT}_${sello}.zip`, t);
   }
   async function bajarMuro() {
     const F = P.FORMATO[E.formato], lista = visibles();
     await paquete(`Cupido_${F.id}${E.serie === 'todas' ? '' : '_' + E.serie}${E.fondo === 'blanco' ? '' : '_' + E.fondo}_${VERSION_KIT}_${P.sello()}.zip`, lista.map((f) => tareaPieza('', delMuro(f))));
+  }
+  // todas las imágenes en vertical, cada serie en su carpeta
+  const bajarImagenes = () => paquete(`Cupido_Imagenes_vertical_${VERSION_KIT}_${P.sello()}.zip`, P.SERIES.flatMap((s, i) => P.FRASES.filter((f) => f.s === s.id).map((f) => tareaPieza(`${String(i + 1).padStart(2, '0')}-${s.id}/`, { frase: f.id, formato: 'retrato', fondo: 'blanco', liga: P.CASA }))));
+  // los videos ya vienen hechos: el paquete solo los junta
+  async function bajarVideos(lista, conMusica, etiqueta = '') {
+    const hechos = lista.filter((f) => HECHOS[f.id]); if (!hechos.length) return avisar('Los videos no se pudieron cargar. Revisa tu conexión y vuelve a intentar.');
+    await paquete(`Cupido_Videos${etiqueta}${conMusica ? '_con-musica' : '_sin-audio'}_${VERSION_KIT}_${P.sello()}.zip`, hechos.map((f) => deLaRed(`Cupido_${f.id}_1080x1920${conMusica ? '_con-musica' : ''}.mp4`, P.videoHecho(f.id, conMusica))));
   }
   function abrirQr() {
     const tapa = document.createElement('div'); tapa.className = 'modal-velo on';
@@ -480,8 +580,9 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
   }
 
   /* ── los toques ── */
-  const blobListo = async () => { if (T.clave !== JSON.stringify(recetaTaller()) || !T.blob) await repintar(); return T.blob; };
+  const blobListo = async () => { if (T.clave !== JSON.stringify(recetaTaller()) || !T.blob) { T.blob = P.aBlob(P.pintar(lienzoNuevo(), recetaTaller())); } return T.blob; };
   const marcar = (caja, attr, valor) => $$(`${caja} button`, raiz).forEach((b) => b.classList.toggle('on', b.dataset[attr] === valor));
+  const ponerModo = (m) => { E.modo = m; marcar('#cmp-modos', 'm', m); return pintarMuro(); };
   async function alTocar(e) {
     if (T.grabando) return;   // mientras se graba el video no se toca nada: el lienzo es la película
     const b = e.target.closest('[data-a]'); if (!b) { if (e.target === velo) cerrarTaller(); return; }
@@ -490,22 +591,27 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
     if (a === 'copiar-liga') return copiar(liga, codigo ? 'Tu liga quedó copiada. Compártela con alguien que busque en serio.' : 'Liga copiada.');
     if (a === 'compartir-liga') { try { await navigator.share({ title: 'Cupido Algorítmico', text: 'No es una app de citas. 43 preguntas, una sola vez. Gratis y sin anuncios.', url: liga }); } catch {} return; }
     if (a === 'qr') return abrirQr();
-    if (a === 'serie') { E.serie = b.dataset.s; marcar('#cmp-series', 's', E.serie); return pintarMuro(); }
+    if (a === 'modo') return ponerModo(b.dataset.m);
+    if (a === 'serie') { E.serie = b.dataset.s; return pintarMuro(); }
     if (a === 'formato') { E.formato = b.dataset.f; recordar(); marcar('#cmp-formatos', 'f', E.formato); return pintarMuro(); }
     if (a === 'fondo') { E.fondo = b.dataset.f; recordar(); marcar('#cmp-fondos', 'f', E.fondo); return pintarMuro(); }
-    if (a === 'abrir') { const i = Number(b.dataset.i); return abrirTaller({ frase: visibles()[i].id }, i); }
-    if (a === 'azar') { const l = visibles(), i = Math.floor(Math.random() * l.length); return abrirTaller({ frase: l[i].id }, i); }
-    if (a === 'mia') return abrirTaller({ t: 'Escribe aquí\ntu frase.', e: '', c: 'arriba' }, null, true);
+    if (a === 'abrir') { const i = Number(b.dataset.i); return abrirTaller({ frase: visibles()[i].id }, i, false, E.modo === 'videos' ? 'video' : 'imagen'); }
+    if (a === 'azar') { const l = visibles(), i = Math.floor(Math.random() * l.length); return abrirTaller({ frase: l[i].id }, i, false, E.modo === 'videos' ? 'video' : 'imagen'); }
+    if (a === 'mia') return abrirTaller({ t: 'Escribe aquí\ntu frase.', e: '', c: 'arriba' }, null, true, E.modo === 'videos' ? 'video' : 'imagen');
     if (a === 'zip-muro') return bajarMuro();
+    if (a === 'zip-videos') return bajarVideos(visibles(), b.dataset.audio === '1', E.serie === 'todas' ? '' : '_' + E.serie);
+    if (a === 'todas-imagenes') return bajarImagenes();
+    if (a === 'todos-videos') return bajarVideos(P.VIDEOS, b.dataset.audio === '1');
     if (a === 'red') { E.red = b.dataset.r; marcar('#cmp-red', 'r', E.red); return pintarTextos(); }
     if (a === 'copiar-texto') return copiar(llenar(TEXTOS.find((t) => t.id === E.red).lista[Number(b.dataset.i)].x), 'Texto copiado. Pégalo donde vayas a publicar.');
     if (a === 'copiar-etiquetas') return copiar(ETIQUETAS, 'Etiquetas copiadas.');
     if (a === 'copiar-wa') return copiar(llenar(WHATSAPP.find((w) => w.id === b.dataset.w).x), 'Mensaje copiado.');
     if (a === 'perfil') { bajar(await P.aBlob(P.pintarPerfil(lienzoNuevo(), b.dataset.p, 1080)), `Cupido_perfil_${b.dataset.p}_1080x1080.png`); return tocar('guardado'); }
     if (a === 'red-pieza') {
-      const f = b.dataset.f;
+      const f = b.dataset.f, aLaGaleria = () => $('#cmp-galeria', raiz).scrollIntoView({ behavior: 'smooth', block: 'start' });
       if (f === 'perfil') { bajar(await P.aBlob(P.pintarPerfil(lienzoNuevo(), 'rosa', 1080)), 'Cupido_perfil_rosa_1080x1080.png'); return tocar('guardado'); }
-      if (P.FORMATOS.some((x) => x.id === f)) { E.formato = f; recordar(); marcar('#cmp-formatos', 'f', f); pintarMuro(); return $('#cmp-galeria', raiz).scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      if (f === 'video') { ponerModo('videos'); return aLaGaleria(); }
+      if (P.FORMATOS.some((x) => x.id === f)) { E.formato = f; recordar(); marcar('#cmp-formatos', 'f', f); ponerModo('imagenes'); return aLaGaleria(); }
       return abrirTaller({ frase: 'no-app', formato: f });
     }
     if (a === 'boton') { E.boton = b.dataset.b; marcar('#cmp-boton', 'b', E.boton); return pintarCodigos(); }
@@ -524,34 +630,20 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
     if (a === 'cerrar') return cerrarTaller();
     if (a === 'antes') return mover(-1);
     if (a === 'despues') return mover(1);
+    if (a === 't-vista') { T.vista = b.dataset.v; T.oir = false; return pintarTaller(); }
+    if (a === 't-musica') { T.musica = b.dataset.m; T.oir = true; return pintarTaller(); }   // elegir una música es querer oírla
+    if (a === 't-oir') { T.oir = !T.oir; return pintarTaller(); }
     if (a === 't-formato') { T.r.formato = b.dataset.f; return pintarTaller(); }
     if (a === 't-fondo') { T.r.fondo = b.dataset.f; return pintarTaller(); }
     if (a === 't-acomodo') { T.r.c = b.dataset.c; return pintarTaller(); }
-    if (a === 't-azar') { const l = P.FRASES, i = Math.floor(Math.random() * l.length); T.r = { ...T.r, frase: l[i].id, c: undefined }; T.i = visibles().indexOf(l[i]); if (T.i < 0) T.i = null; return pintarTaller(); }
+    if (a === 't-azar') { const l = T.vista === 'video' ? P.VIDEOS : P.FRASES, f = l[Math.floor(Math.random() * l.length)]; T.r = { ...T.r, frase: f.id, c: undefined }; T.i = visibles().indexOf(f); if (T.i < 0) T.i = null; suMusica(); return pintarTaller(); }
     if (a === 't-mia') { const R = P.completar({ frase: T.r.frase }); T.mia = true; T.r = { ...T.r, t: (R.n ? R.n + ' ' : '') + R.t, e: R.e, c: R.c }; await pintarTaller(); $('#t-frase', velo)?.focus(); return; }
-    if (a === 't-frases') { T.mia = false; T.r = { ...T.r, frase: T.r.frase || visibles()[0].id, c: undefined }; return pintarTaller(); }
+    if (a === 't-frases') { T.mia = false; T.r = { ...T.r, frase: T.r.frase || visibles()[0].id, c: undefined }; suMusica(); return pintarTaller(); }
     if (a === 't-bajar') { bajar(await blobListo(), P.nombreDe(recetaTaller())); tocar('guardado'); return avisar('Imagen descargada. El texto para acompañarla está aquí abajo.'); }
     if (a === 't-texto') return copiar(textoDe(recetaTaller()), 'Texto copiado.');
     if (a === 't-copiar') {
       try { await navigator.clipboard.write([new ClipboardItem({ 'image/png': blobListo() })]); tocar('guardado'); avisar('Imagen copiada. Pégala donde quieras.'); }
       catch { avisar('Este navegador no deja copiar imágenes. Usa «Descargar».'); }
-      return;
-    }
-    if (a === 't-video-compartir') {   // compartir es aparte de descargar: abre la hoja del sistema con el video ya grabado
-      if (!T.video) return; try { await navigator.share({ files: [T.video.archivo], text: textoDe(recetaTaller()) }); tocar('logro'); } catch {} return;
-    }
-    if (a === 't-video') {
-      const receta = recetaTaller(), clave = JSON.stringify(receta), bc = $('[data-a="t-video-compartir"]', velo);
-      if (T.video && T.video.clave === clave) { bajar(T.video.archivo, T.video.archivo.name); return tocar('guardado'); }   // ya está grabado: se vuelve a bajar sin esperar
-      T.grabando = true; velo.classList.add('grabando');
-      try {
-        const v = await P.grabarVideo($('#cmp-lienzo', velo), receta, (p) => { b.textContent = `Grabando… ${Math.round(p * 100)} %`; });
-        const archivo = new File([v.blob], P.nombreDe(receta).replace(/\.png$/, '.' + v.ext), { type: v.blob.type });
-        T.video = { clave, archivo }; bajar(archivo, archivo.name);
-        if (bc) bc.hidden = !navigator.canShare?.({ files: [archivo] });
-        avisar(v.ext === 'mp4' ? 'Video descargado. Va sin sonido: la música la pones tú en tu red.' : 'Video descargado en WebM. Desde Chrome o Safari sale en MP4.', 6000); tocar('logro');
-      } catch (err) { avisar('No se pudo grabar el video: ' + err.message); }
-      finally { b.textContent = '🎬 Descargar video'; T.grabando = false; velo.classList.remove('grabando'); T.blob = P.aBlob($('#cmp-lienzo', velo)); T.blob.catch(() => {}); }
       return;
     }
     if (a === 't-compartir') {
@@ -560,14 +652,38 @@ table{width:100%;border-collapse:collapse;font-size:14px}td,th{text-align:left;p
       try { navigator.clipboard?.writeText(texto).catch(() => {}); await navigator.share({ files: [archivo], text: texto }); tocar('logro'); avisar('El texto quedó copiado, por si la red no lo puso: pégalo.', 5000); } catch {}
       return;
     }
+    // el video: descargar siempre descarga (sin audio o con música); compartir es otro botón
+    if (a === 't-video-bajar') {
+      const conMusica = b.dataset.audio === '1';
+      try { const archivo = await archivoDeVideo(conMusica, b); bajar(archivo, archivo.name); tocar('logro'); avisar(/\.webm$/.test(archivo.name) ? 'Video descargado en WebM. Desde Chrome o Safari sale en MP4.' : conMusica ? 'Video descargado, con su música.' : 'Video descargado, sin audio: la música la pones tú en tu red.', 5000); }
+      catch (err) { avisar('No se pudo hacer el video: ' + err.message); }
+      return;
+    }
+    if (a === 't-video-compartir') {
+      const receta = recetaTaller(), clave = JSON.stringify(receta);
+      try {
+        const archivo = T.video?.clave === clave ? T.video.archivo : await archivoDeVideo(true, b);   // si todavía no bajaste ninguno, se comparte el que trae música
+        if (!navigator.canShare?.({ files: [archivo] })) { bajar(archivo, archivo.name); return avisar('Este equipo no comparte videos directo: quedó descargado.'); }
+        await navigator.share({ files: [archivo], text: textoDe(receta) }); tocar('logro');
+      } catch (err) { if (err?.name === 'NotAllowedError') avisar('El video ya está listo. Toca «Compartir video» otra vez.', 5000); else if (err?.name !== 'AbortError') avisar('No se pudo compartir: ' + err.message); }
+      return;
+    }
   }
   raiz.onclick = alTocar; velo.onclick = alTocar;
 
-  pintarTextos(); pintarCodigos(); await P.cargarLetras(); pintarMarca(); await pintarMuro();
-  if (op.parte) $('#cmp-' + op.parte, raiz)?.scrollIntoView({ block: 'start' });
+  pintarTextos(); pintarCodigos(); await P.cargarLetras(); pintarMarca();
+  if (op.parte === 'videos') { E.modo = 'videos'; marcar('#cmp-modos', 'm', 'videos'); }
+  await pintarMuro();
+  // qué videos ya vienen hechos (y cuánto pesan, para decirlo en los paquetes)
+  fetch('/videos/lista.json').then((r) => (r.ok ? r.json() : {})).then((j) => {
+    HECHOS = j || {}; const ids = P.VIDEOS.filter((f) => HECHOS[f.id]), mb = (k) => Math.max(1, Math.round(ids.reduce((s, f) => s + HECHOS[f.id][k], 0) / 1024));
+    if (!raiz.isConnected || !ids.length) return;
+    $('#cmp-peso-mudos', raiz).textContent = `⬇ .zip · unos ${mb('kb')} MB`; $('#cmp-peso-sonoros', raiz).textContent = `⬇ .zip · unos ${mb('kba')} MB`;
+  }).catch(() => {});
+  if (op.parte && op.parte !== 'videos') $('#cmp-' + op.parte, raiz)?.scrollIntoView({ block: 'start' });
   // si cambia el ancho (girar el teléfono, abrir el menú), el muro se vuelve a pintar a la nitidez nueva
   let anchoAntes = raiz.clientWidth, espera = null;
   const alCambiar = () => { if (!raiz.isConnected) { window.removeEventListener('resize', alCambiar); return; } clearTimeout(espera); espera = setTimeout(() => { if (Math.abs(raiz.clientWidth - anchoAntes) > 40) { anchoAntes = raiz.clientWidth; pintarMuro(); } }, 250); };
   window.addEventListener('resize', alCambiar);
-  return { abrir: (frase) => abrirTaller({ frase: P.FRASE[frase] ? frase : P.FRASES[0].id }) };
+  return { abrir: (frase, vista = 'imagen') => abrirTaller({ frase: P.FRASE[frase] ? frase : P.FRASES[0].id }, null, false, vista) };
 }

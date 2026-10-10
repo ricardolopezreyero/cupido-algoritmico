@@ -1550,7 +1550,6 @@ html[data-app] .bv-pie { padding-bottom: calc(10px + env(safe-area-inset-bottom)
 .cmp-casillas label { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; }
 .cmp-casillas input { accent-color: var(--rosa); width: 17px; height: 17px; }
 .cmp-acciones .boton { flex: 1 1 auto; }
-.cmp-velo.grabando .cmp-mandos > :not(.cmp-acciones), .cmp-velo.grabando .cmp-acciones > :not([data-a="t-video"]), .cmp-velo.grabando .cmp-flecha, .cmp-velo.grabando .cmp-x { opacity: .35; pointer-events: none; }
 .cmp-acompana { border: 1px solid var(--linea); border-radius: 12px; padding: 12px 14px; background: var(--crema); }
 .cmp-avance .modal { width: min(420px, 100%); }
 .cmp-barra { height: 8px; border-radius: 99px; background: #eee6df; overflow: hidden; } .cmp-barra i { display: block; height: 100%; width: 0; background: var(--rosa); border-radius: 99px; transition: width .2s; }
@@ -1632,3 +1631,44 @@ html[data-app] .bv-pie { padding-bottom: calc(10px + env(safe-area-inset-bottom)
 .cmp-plegada details[open] .cmp-abre i:first-child { display: none; } .cmp-plegada details[open] .cmp-abre i + i { display: inline; }
 .cmp-plegada summary:hover .cmp-abre { border-color: var(--rosa-linea); color: var(--rosa-osc); }
 .cmp-plegada details[open] summary { margin-bottom: 14px; }
+
+/* Compartir · imágenes y videos · RLR */
+.cmp-modos { display: inline-flex; gap: 4px; background: #f0ece8; border-radius: 14px; padding: 4px; margin: 4px 0 14px; }
+.cmp-modos button { border: 0; background: transparent; color: var(--tinta-2); font: 600 15px/1 var(--sans); padding: 11px 18px; border-radius: 11px; cursor: pointer; white-space: nowrap; }
+.cmp-modos button.on { background: var(--tinta); color: #fff; }
+.cmp-modos button small { font-weight: 500; opacity: .6; margin-left: 3px; }
+.cmp-modos.chico { margin: 0; align-self: start; justify-self: start; margin-right: 44px; } .cmp-modos.chico button { padding: 9px 14px; font-size: 14px; }
+.cmp-rejilla.de-videos { grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); }
+.cmp-video { position: relative; }
+.cmp-play { position: absolute; left: 8px; bottom: 8px; display: inline-flex; align-items: center; gap: 5px; background: rgba(17,17,17,.82); color: #fff; font: 600 11.5px/1 var(--sans); padding: 6px 9px; border-radius: 999px; pointer-events: none; }
+.cmp-play i { font-style: normal; font-variant-numeric: tabular-nums; }
+.cmp-video:hover .cmp-play { background: var(--rosa); }
+.cmp-oir { border: 1px solid var(--linea-2); background: var(--blanco); color: var(--tinta-2); font: 600 13px/1 var(--sans); padding: 9px 13px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.cmp-oir.on { background: var(--rosa-suave); border-color: var(--rosa-linea); color: var(--rosa-osc); }
+.cmp-ajustes { border: 1px solid var(--linea); border-radius: 12px; padding: 0 14px; }
+.cmp-ajustes summary { cursor: pointer; font: 600 13.5px/1 var(--sans); color: var(--tinta-2); padding: 13px 0; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+.cmp-ajustes summary::-webkit-details-marker { display: none; }
+.cmp-ajustes summary::after { content: '▾'; opacity: .6; } .cmp-ajustes[open] summary::after { content: '▴'; }
+.cmp-ajustes[open] { padding-bottom: 14px; } .cmp-ajustes > :not(summary) + :not(summary) { margin-top: 12px; }
+.cmp-mandos > .cmp-pista { margin: -4px 0 0; } .cmp-mandos > .cmp-pista:empty { display: none; }
+/* en la vista de imagen, los ajustes van siempre a la vista, sin marco */
+.cmp-ajustes.fijo { border: 0; padding: 0; } .cmp-ajustes.fijo summary { display: none; }
+.cmp-acciones .boton.grabando { background: var(--tinta); box-shadow: none; }
+.cmp-velo.grabando .cmp-mandos > :not(.cmp-acciones), .cmp-velo.grabando .cmp-acciones > :not(.grabando), .cmp-velo.grabando .cmp-flecha, .cmp-velo.grabando .cmp-x { opacity: .35; pointer-events: none; }
+.cmp-paquetes { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(min(230px, 100%), 1fr)); }
+.cmp-paquetes button { display: grid; gap: 6px; align-content: start; text-align: left; background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.14); border-radius: 14px; padding: 16px; color: #fff; cursor: pointer; font-family: var(--sans); transition: background .2s, border-color .2s, transform .25s var(--ease); }
+.cmp-paquetes button:hover { background: rgba(255,255,255,.12); border-color: var(--rosa); transform: translateY(-2px); }
+.cmp-paquetes b { font-size: 15.5px; } .cmp-paquetes small { font-size: 13px; line-height: 1.45; color: #c9bfd1; }
+.cmp-paquetes em { font-style: normal; font: 600 13px/1 var(--sans); color: #fff; background: var(--rosa); padding: 8px 12px; border-radius: 999px; justify-self: start; margin-top: 4px; }
+
+/* Admin · la música de los videos · RLR */
+.mus-lista { display: grid; gap: 10px; }
+.mus { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; border: 1px solid var(--linea); border-radius: 12px; padding: 10px 14px; }
+.mus b { min-width: 110px; } .mus audio { height: 36px; flex: 1 1 220px; min-width: 200px; max-width: 420px; }
+.mus-nueva { display: flex; align-items: center; gap: 8px; flex-basis: 100%; } .mus-nueva:empty { display: none; } .mus-nueva small { color: var(--gris); }
+@media (max-width: 820px) {
+  .cmp-rejilla.de-videos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cmp-modos { display: flex; max-width: 100%; } .cmp-modos button { flex: 1 1 0; padding: 11px 10px; }
+  .cmp-modos.chico { display: inline-flex; } .cmp-modos.chico button { flex: none; padding: 9px 14px; }
+  .cmp-acciones .boton { flex: 1 1 0; padding: 13px 8px; font-size: 14px; white-space: nowrap; }
+}

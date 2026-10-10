@@ -44,3 +44,7 @@ Son 26. Cuándo suena cada uno está en el catálogo (`SONIDOS`, campo `c`) y se
 2. La misma clave en `SONIDOS` (`public/js/sonido.js`) con su familia, su volumen, su respaldo por código y **cuándo suena**.
 3. El archivo en `public/sonidos/<clave>.mp3`.
 4. `tocar('<clave>')` donde pase el evento. Un sonido que nadie toca no se queda en el catálogo.
+
+## La música de los videos para compartir
+
+No es parte de los sonidos de la app (no suena sola nunca): son cuatro fondos de 16 segundos para los videos de «Compartir», hechos también con ElevenLabs. Se oyen y se vuelven a crear en **Admin → Sonidos → La música de los videos**. Cómo se crean, dónde viven y cómo entran a los videos está en [`COMPARTIR.md`](COMPARTIR.md#la-música).
