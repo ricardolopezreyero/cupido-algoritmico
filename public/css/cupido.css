@@ -1197,7 +1197,10 @@ button.ab:hover { border-color: var(--rosa); background: var(--rosa-suave); tran
 .co-dir { font-style: normal; font-weight: 600; color: var(--tinta); word-break: break-all; }
 
 /* ── admin · la galería de correos: todos juntos, cada uno es el correo de verdad encogido ── */
-.correo-galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 16px; }
+.correo-galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(230px, 100%), 1fr)); gap: 16px; }
+.banda.banda-4 { grid-template-columns: repeat(4, 1fr); }
+@media (max-width: 640px) { .banda.banda-4 { grid-template-columns: repeat(2, 1fr); } }
+.correo-controles select { max-width: 100%; }
 .correo-ficha { display: flex; flex-direction: column; text-decoration: none; color: var(--tinta); border: 1px solid var(--linea); border-radius: 16px; overflow: hidden; background: var(--blanco); transition: transform .25s var(--ease), box-shadow .25s, border-color .2s; }
 .correo-ficha:hover { transform: translateY(-3px); box-shadow: var(--sombra); border-color: var(--rosa-linea); }
 .correo-mini { display: block; height: 400px; overflow: hidden; background: var(--crema); border-bottom: 1px solid var(--linea); }
