@@ -17,6 +17,8 @@
   var _k = "eye", _rev = 181218;
   const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const liga = (u) => (/^https?:\/\/[^\s<>"']+$/i.test(String(u || "")) ? String(u) : "");
+  // no toda ficha sale de LinkedIn: a veces lo único que hay es una nota de prensa sobre su trabajo
+  const esLinkedIn = (u) => /^https?:\/\/([a-z0-9-]+\.)?linkedin\.com\//i.test(String(u || ""));
   const NIVEL = { 3: ["Se ve", "ve"], 2: ["Probable", "prob"], 1: ["Por comprobar", "comp"], 0: ["Bandera", "band"] };
   const ESTADOS = [["por_contactar", "Por contactar"], ["contactado", "Contactado"], ["en_platica", "En plática"], ["prueba", "Mandó la prueba"], ["descartado", "Descartado"]];
   const nombreEstado = (e) => (ESTADOS.find((x) => x[0] === e) || ESTADOS[0])[1];
@@ -155,7 +157,7 @@
             <div class="cand-chips">${f.nuevo ? `<span class="cand-nuevo">${esc(f.nuevo)}</span>` : ""}${chips(f)}<span class="cand-estado e-${esc(f.estado)}">${nombreEstado(f.estado)}</span></div>
           </div>
           <div class="cand-acciones">
-            ${url ? `<a class="cand-btn lleno" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Abrir LinkedIn ↗</a>` : ""}
+            ${url ? `<a class="cand-btn lleno" href="${esc(url)}" target="_blank" rel="noopener noreferrer">${esLinkedIn(url) ? "Abrir LinkedIn ↗" : "Abrir la nota ↗"}</a>` : ""}
             ${url ? `<button type="button" class="cand-btn" data-copiar="liga">Copiar liga</button>` : ""}
             <button type="button" class="cand-btn" data-copiar="ficha">Copiar ficha</button>
           </div>
@@ -178,7 +180,7 @@
           <div class="cand-quien">
             <h3>${esc(f.nombre)}</h3>
             <p class="cand-titular">${esc(f.titular || "")}</p>
-            <div class="cand-chips">${chips(f)}<span class="cand-estado e-${esc(f.estado)}">${nombreEstado(f.estado)}</span></div>
+            <div class="cand-chips">${f.nuevo ? `<span class="cand-nuevo">${esc(f.nuevo)}</span>` : ""}${chips(f)}<span class="cand-estado e-${esc(f.estado)}">${nombreEstado(f.estado)}</span></div>
           </div>
           <div class="cand-acciones">
             ${url ? `<a class="cand-btn lleno" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Abrir ↗</a>` : ""}
