@@ -4,13 +4,12 @@
    las tareas y las fichas viajan solo en /api/gtm, y solo a quien tiene permiso.
    Quién entra: los correos de la casa (DOMINIOS_CASA) y nadie más. Se entra con
    el login de la casa (el pase de login.capitaltorreon.com) o con la sesión de
-   Cupido. Quien entra ve todo y pone palomitas; cada una queda con su correo y
-   su hora. Las fichas de candidatos piden además ser cuenta administradora.
+   Cupido. Quien entra ve todo (también los candidatos y las pruebas recibidas)
+   y pone palomitas; cada una queda con su correo y su hora.
    Los puntos de control (usuarios al mes e ingreso al mes) no se palomean:
    se alcanzan solos el día en que los dos números reales llegan a la meta.
    ───────────────────────────────────────────────────────────────────── */
 import { verificarPase } from './verificar.js';
-import { huella } from './ella.js';
 import { etiqueta } from '../public/js/preguntas.js';
 import { TAREAS, FASES, AREAS, QUIENES, ESFUERZOS, RITMOS, PASOS, CONTROLES, SUPUESTOS_CONTROL } from './gtm-tareas.js';
 import { PLAN } from './gtm-plan.js';
@@ -38,7 +37,6 @@ const esCorreo = (c) => /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,}$/.test(c);
 // Quién entra a /gtm (y, por lo mismo, quién pone y quita palomitas): solo correos de estos dominios
 export const DOMINIOS_CASA = ['ingenieriadigital.mx', 'superleads.mx'];
 const deCasa = (correo) => DOMINIOS_CASA.includes(limpio(correo).split('@')[1] || '');
-const admines = (env) => String(env.ADMINES || '').split(',').map((x) => x.trim()).filter(Boolean);
 
 /* ── quién toca la puerta: { email, nombre, admin } · { falta: 'sesion' } · { falta: 'permiso', email } ── */
 export async function quienGtm(env, req, url, yo) {
@@ -48,7 +46,8 @@ export async function quienGtm(env, req, url, yo) {
   if (!email && yo && !yo.sesion?.demo && yo.P?.correo) { email = limpio(yo.P.correo); nombre = yo.P.nombre === 'Sin nombre' ? '' : yo.P.nombre; }
   if (!email) return { falta: 'sesion' };
   if (!deCasa(email)) return { falta: 'permiso', email };
-  return { email, nombre: nombre || email.split('@')[0], admin: admines(env).includes(await huella(email)) };
+  // Dentro de /gtm toda la casa ve lo mismo: candidatos y pruebas incluidos (decisión de Ricardo, 11-oct-2026)
+  return { email, nombre: nombre || email.split('@')[0], admin: true };
 }
 
 /* ── dónde vamos hoy: los números de verdad, para que el plan no se discuta en el aire ── */

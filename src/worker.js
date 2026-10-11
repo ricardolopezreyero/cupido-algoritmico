@@ -319,9 +319,8 @@ async function api(req, env, ctx, url) {
     if (q.falta === 'sesion') return json({ error: 'Entra con tu cuenta para ver el plan.', falta: 'sesion' }, 401);
     if (q.falta === 'permiso') return json({ error: 'Aquí solo entran correos de la casa.', falta: 'permiso', correo: q.email, dominios: DOMINIOS_CASA }, 403);
     if (ruta === '/api/gtm' && metodo === 'GET') return json(await verGtm(env, q));
-    // Candidatas: las fichas de quien salimos a buscar. Traen nombres y lo que pensamos de cada quien: solo cuentas administradoras
+    // Candidatos: las fichas de quien salimos a buscar. Las ve quien entra a /gtm, es decir, cualquier correo de la casa
     if (ruta === '/api/gtm/candidatos' || ruta.startsWith('/api/gtm/candidatos/')) {
-      if (!q.admin) return error('Las fichas solo las ve una cuenta administradora.', 403);
       if (ruta === '/api/gtm/candidatos' && metodo === 'GET') return json(await listarCandidatos(env, url.searchParams.get('vacante') || 'ceo'));
       if (ruta === '/api/gtm/candidatos' && metodo === 'POST') { const r = await agregarCandidato(env, await leerJson(req, 8000), q.email); return json(r, r.ok ? 200 : 422); }
       if ((x = m(/^\/api\/gtm\/candidatos\/([a-z0-9_-]{3,60})$/)) && metodo === 'POST') { const r = await moverCandidato(env, x[1], await leerJson(req, 8000), q.email); return json(r, r.ok ? 200 : r.error === 'no_existe' ? 404 : 422); }

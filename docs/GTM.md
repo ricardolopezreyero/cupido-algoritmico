@@ -45,7 +45,7 @@ Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verda
 
 ## Candidatos: a quién salimos a buscar (`/gtm` → Candidatos)
 
-`/ceo` espera a que alguien llegue. Esta pestaña es lo contrario: con el perfil en la mano se sale a buscar, y se guarda una ficha por persona. Solo la ven las **cuentas administradoras** (ni siquiera el equipo: quien sea contratada no debe leer lo que se pensó de las demás).
+`/ceo` espera a que alguien llegue. Esta pestaña es lo contrario: con el perfil en la mano se sale a buscar, y se guarda una ficha por persona. La ve cualquier correo de la casa que entre a `/gtm`.
 
 - **Qué trae cada ficha:** quién es y su liga, por qué esto le estaba destinado, trayectoria, lo publicado sobre su trabajo, los doce rasgos uno por uno (se ve, probable, por comprobar o bandera, con su evidencia), qué revisar, quién puede presentarla, la nota de invitación (cabe en 200 caracteres), el mensaje completo y tres preguntas para la primera llamada.
 - **La foto:** la de su perfil de LinkedIn, chica (176 px), guardada dentro de la ficha. Quien no la tiene sale con sus iniciales. Las fotos viven en `privado/fotos/<id>.jpg` y en la base; nunca en el repositorio. El sembrador las mete solo.
@@ -69,8 +69,8 @@ Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verda
 ## Quién entra
 
 - **Solo correos de la casa:** `@ingenieriadigital.mx` y `@superleads.mx` (`DOMINIOS_CASA` en `src/gtm.js`). Nadie más, aunque se le quiera dar acceso: ya no hay lista de invitados.
-- Quien entra ve la Estrategia, las Tareas y El CEO, y pone palomitas (cada una queda con su correo y su hora).
-- **Candidatos y las pruebas recibidas** piden además ser cuenta administradora (las huellas de `ADMINES`): traen nombres, fotos y lo que pensamos de cada persona.
+- Quien entra ve **todo**: la Estrategia, las Tareas, El CEO con las pruebas recibidas y los Candidatos con sus fichas y fotos. Y pone palomitas (cada una queda con su correo y su hora).
+- Ya no hay distinción de cuenta administradora dentro de `/gtm`: la decide el dominio del correo. Por eso conviene no darle correo de la casa a nadie que no deba leer lo que se escribió de las candidatas.
 - Se entra con el **login de la casa** (el botón de Google de `login.capitaltorreon.com`); también abre con una sesión de Cupido hecha con uno de esos correos.
 - La página (`public/gtm.html`) es un cascarón: todo viaja solo en `/api/gtm`, y solo a quien tiene permiso. Sin sesión responde 401; con un correo de otro dominio, 403.
 
