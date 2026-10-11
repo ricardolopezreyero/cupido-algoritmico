@@ -10,7 +10,7 @@
 // Volver a sembrar actualiza el contenido de cada ficha y respeta el estado y
 // las notas que el equipo ya escribió. Con --podar borra las fichas sembradas
 // que ya no vengan en el archivo (nunca las que agregó el equipo a mano).
-// Fotos: si junto al archivo hay una carpeta fotos/ con <id>.jpg (chica: unos 176 px), se guarda dentro de la ficha.
+// Fotos: si junto al archivo hay una carpeta fotos/ con <id>.jpg (unos 320 px, para verla en grande), se guarda dentro de la ficha.
 // Las fotos tampoco van al repositorio: viven en privado/ y en la base.
 import { readFileSync, writeFileSync, mkdtempSync, rmSync, existsSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -38,7 +38,7 @@ for (const f of j.fichas || []) {
   const foto = join(dirname(archivo), "fotos", id + ".jpg");
   if (existsSync(foto)) {
     const b = readFileSync(foto);
-    if (b.length > 40_000) throw new Error(`la foto de ${id} pesa ${b.length} bytes: achícala a unos 176 px`);
+    if (b.length > 60_000) throw new Error(`la foto de ${id} pesa ${b.length} bytes: achícala a unos 320 px`);
     datos.foto = "data:image/jpeg;base64," + b.toString("base64");
   }
   filas.push({ id, grupo, orden: Number(orden) || 100, datos });

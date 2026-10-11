@@ -63,13 +63,18 @@
 .cand-tabla-caja { overflow-x: auto; border: .5px solid var(--cand-borde); border-radius: 16px; background: var(--cand-tarjeta); -webkit-overflow-scrolling: touch; }
 .cand-matriz { width: 100%; border-collapse: collapse; min-width: 720px; }
 .cand-matriz thead th { font-size: 11px; font-weight: 700; color: var(--cand-tenue); padding: 12px 4px 10px; text-align: center; white-space: nowrap; }
-.cand-matriz tbody tr { border-top: .5px solid var(--cand-borde); cursor: pointer; transition: background .15s; }
-.cand-matriz tbody tr:hover { background: var(--cand-acento-suave); }
-.cand-matriz tbody th { text-align: left; padding: 11px 10px 11px 14px; display: flex; gap: 11px; align-items: center; font-weight: 400; min-width: 232px; }
-.cand-matriz tbody th i { font-style: normal; font-size: 12px; font-weight: 800; color: var(--cand-acento); font-variant-numeric: tabular-nums; }
-.cand-matriz tbody th b { display: block; color: var(--cand-fuerte); font-size: 14.5px; font-weight: 700; }
-.cand-matriz tbody th small { display: block; color: var(--cand-tenue); font-size: 12px; }
-.cand-matriz td { text-align: center; padding: 8px 4px; }
+.cand-matriz tbody { border-top: .5px solid var(--cand-borde); cursor: pointer; transition: background .15s; }
+.cand-matriz tbody:hover { background: var(--cand-acento-suave); }
+.cand-matriz td.cand-m-cara { padding: 13px 0 13px 14px; width: 1%; vertical-align: middle; }
+.cand-m-cara div { display: flex; align-items: center; gap: 11px; }
+.cand-m-cara i { font-style: normal; font-size: 12px; font-weight: 800; color: var(--cand-acento); font-variant-numeric: tabular-nums; }
+.cand-matriz tbody th { text-align: left; padding: 14px 10px 3px 13px; font-weight: 400; min-width: 210px; vertical-align: bottom; }
+.cand-matriz tbody th b { display: block; color: var(--cand-fuerte); font-size: 15.5px; font-weight: 700; }
+.cand-matriz tbody th small { display: block; color: var(--cand-tenue); font-size: 12.5px; }
+.cand-matriz td { text-align: center; padding: 14px 4px 3px; vertical-align: middle; }
+.cand-matriz tbody tr:only-child th, .cand-matriz tbody tr:only-child td { padding-bottom: 14px; vertical-align: middle; }
+.cand-matriz tr.cand-m-clave td { text-align: left; padding: 0 14px 14px 13px; vertical-align: top; }
+.cand-m-clave span { display: block; color: var(--cand-fuerte); font-size: 13.5px; line-height: 1.45; text-wrap: pretty; }
 .cand-suma { font-weight: 800; color: var(--cand-fuerte); font-size: 16px; white-space: nowrap; padding-right: 14px !important; font-variant-numeric: tabular-nums; }
 .cand-suma small { font-weight: 500; color: var(--cand-tenue); font-size: 11px; margin-left: 3px; }
 .cand-leyenda { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 12.5px; color: var(--cand-tenue); margin: 12px 0 6px !important; }
@@ -93,7 +98,7 @@
 
 /* la ficha */
 .cand-pila { display: flex; flex-direction: column; gap: 14px; }
-.cand-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 12px; }
+.cand-rejilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 12px; }
 .cand-ficha { background: var(--cand-tarjeta); border: .5px solid var(--cand-borde); border-radius: 20px; padding: 20px 22px 16px; scroll-margin-top: 76px; min-width: 0; }
 .cand-ficha.fuera { opacity: .55; }
 .cand-ficha.chica { padding: 16px 16px 12px; border-radius: 16px; display: flex; flex-direction: column; }
@@ -110,7 +115,10 @@
 .cand-chips .cand-estado.e-contactado, .cand-chips .cand-estado.e-en_platica, .cand-chips .cand-estado.e-prueba { background: var(--cand-acento-suave); color: var(--cand-acento); }
 .cand-chips .cand-estado.e-descartado { background: var(--cand-alerta-suave); color: var(--cand-alerta); }
 .cand-acciones { display: flex; flex-direction: column; gap: 6px; flex-shrink: 0; align-items: stretch; }
-.cand-ficha.chica .cand-acciones { flex-direction: column; }
+.cand-ficha.chica .cand-acciones { flex-direction: row; flex-wrap: wrap; }
+.cand-ficha.chica .cand-acciones .cand-btn { padding: 6px 13px; }
+.cand-ficha.chica .cand-frente { align-items: center; margin-bottom: 12px; }
+.cand-ficha.chica .cand-titular { font-size: 13.5px; }
 .cand-resumen { color: var(--cand-fuerte); font-size: 15.5px; margin: 16px 0 0 !important; max-width: 820px; }
 .cand-ficha.chica .cand-resumen { font-size: 14px; color: var(--cand-texto); margin-top: 12px !important; }
 .cand-porque { font-size: 13.5px; color: var(--cand-tenue); margin: 8px 0 0 !important; }
@@ -198,8 +206,26 @@
 
 /* la cara de cada ficha: su foto o sus iniciales */
 .cand-cara { flex-shrink: 0; border-radius: 50%; object-fit: cover; background: var(--cand-hundido); border: 1px solid var(--cand-borde); display: inline-grid; place-items: center; font-weight: 800; color: var(--cand-acento); letter-spacing: .02em; }
-.cand-cara.grande { width: 76px; height: 76px; font-size: 24px; }
-.cand-cara.media { width: 48px; height: 48px; font-size: 16px; }
-.cand-cara.mini { width: 28px; height: 28px; font-size: 10.5px; margin-right: 2px; vertical-align: middle; }
-@media (max-width: 640px) { .cand-cara.grande { width: 60px; height: 60px; font-size: 20px; } }
+.cand-cara.grande { width: 136px; height: 136px; font-size: 40px; }
+.cand-cara.media { width: 88px; height: 88px; font-size: 27px; }
+.cand-cara.mini { width: 64px; height: 64px; font-size: 20px; }
+.cand-cara-btn { flex-shrink: 0; padding: 0; border: 0; background: none; border-radius: 50%; cursor: zoom-in; line-height: 0; }
+.cand-cara-btn .cand-cara { transition: transform .15s, box-shadow .15s; }
+.cand-cara-btn:hover .cand-cara { transform: scale(1.03); box-shadow: 0 0 0 3px var(--cand-acento-suave); }
+.cand-cara-btn:focus-visible { outline: 2px solid var(--cand-acento); outline-offset: 3px; }
+@media (max-width: 820px) { .cand-cara.grande { width: 96px; height: 96px; font-size: 30px; } .cand-cara.media { width: 72px; height: 72px; font-size: 23px; } .cand-cara.mini { width: 52px; height: 52px; font-size: 17px; } .cand-m-clave span { max-width: calc(100vw - 150px); } }
+
+/* la línea de cada ficha: qué hizo o qué tiene que le serviría a la casa */
+.cand-clave { color: var(--cand-fuerte); font-size: 15.5px; font-weight: 600; line-height: 1.45; margin: 0 0 11px !important; max-width: 720px; }
+.cand-clave b { display: block; font-size: 11px; font-weight: 800; letter-spacing: .8px; text-transform: uppercase; color: var(--cand-acento); margin-bottom: 2px; }
+.cand-ficha.chica .cand-clave { font-size: 14px; }
+
+/* la foto en grande */
+.cand-visor { position: fixed; inset: 0; z-index: 95; background: rgba(20,16,22,.78); display: grid; place-items: center; padding: 20px; cursor: zoom-out; }
+.cand-visor figure { margin: 0; background: var(--cand-tarjeta); border-radius: 22px; padding: 18px 18px 16px; max-width: min(420px, 100%); text-align: center; display: flex; flex-direction: column; gap: 12px; align-items: center; }
+.cand.cand-claro .cand-visor figure { background: #fff; }
+.cand-visor img { width: min(360px, 78vw); height: auto; aspect-ratio: 1; object-fit: cover; border-radius: 16px; display: block; }
+.cand-visor figcaption b { display: block; color: var(--cand-fuerte); font-size: 19px; }
+.cand-visor figcaption span { display: block; color: var(--cand-tenue); font-size: 13.5px; line-height: 1.4; margin-top: 3px; }
+.cand-visor figcaption em { display: block; font-style: normal; color: var(--cand-fuerte); font-size: 14.5px; line-height: 1.45; margin-top: 9px; }
 

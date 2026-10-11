@@ -12,6 +12,8 @@
 //   POST {api}/{id}               → { estado } o { notas }   (se guarda solo)
 //   POST {api}                    → { vacante, nombre, liga, titular, ciudad, porque }
 // Y un par de archivos: este y candidatos.css. Todo lo demás es dato.
+// De cada ficha, dos datos le dan cara: `foto` (imagen chica dentro de la ficha; se abre en grande con un toque)
+// y `clave` (una línea: qué hizo o qué tiene esa persona que le sirve a la casa; su letrero es meta.etiqueta_clave).
 (function () {
   "use strict";
   var _k = "eye", _rev = 181218;
@@ -27,8 +29,11 @@
   const quien = (correo) => String(correo || "").split("@")[0];
   // La cara de cada ficha: su foto si la hay (viene dentro de la ficha, como imagen chica) o sus iniciales
   const iniciales = (n) => String(n || "?").replace(/\(.*?\)/g, "").trim().split(/\s+/).slice(0, 2).map((x) => x[0] || "").join("").toUpperCase();
-  const cara = (f, clase) => (/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(String(f.foto || ""))
-    ? `<img class="cand-cara ${clase || ""}" src="${f.foto}" alt="Foto de ${esc(f.nombre)}" loading="lazy">`
+  const conFoto = (f) => /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(String(f.foto || ""));
+  // con «ver» la foto es un botón que la abre en grande (en la tabla no: ahí el renglón entero lleva a la ficha)
+  const cara = (f, clase, ver) => (conFoto(f)
+    ? (ver ? `<button type="button" class="cand-cara-btn" data-ver-foto aria-label="Ver en grande la foto de ${esc(f.nombre)}"><img class="cand-cara ${clase || ""}" src="${f.foto}" alt="Foto de ${esc(f.nombre)}" loading="lazy"></button>`
+      : `<img class="cand-cara ${clase || ""}" src="${f.foto}" alt="Foto de ${esc(f.nombre)}" loading="lazy">`)
     : `<span class="cand-cara sin ${clase || ""}" aria-hidden="true">${esc(iniciales(f.nombre))}</span>`);
 
   async function copiar(texto) {
@@ -56,6 +61,9 @@
     const top = () => D.fichas.filter((f) => f.grupo === "top");
     const banca = () => D.fichas.filter((f) => f.grupo !== "top");
     const pasa = (f) => filtro === "todos" || f.estado === filtro;
+    // la línea de cada ficha: qué hizo o qué tiene que le serviría a esta casa (el letrero lo pone la búsqueda)
+    const letrero = () => String((D.meta || {}).etiqueta_clave || "Por qué");
+    const clave = (f) => (f.clave ? `<p class="cand-clave"><b>${esc(letrero())}</b>${esc(f.clave)}</p>` : "");
     const cuenta = (f) => { const c = { 3: 0, 2: 0, 1: 0, 0: 0 }; Object.values(f.rasgos || {}).forEach((r) => (c[r[0]] = (c[r[0]] || 0) + 1)); return c; };
 
     /* ── la ficha como texto, para pegarla donde sea ──────────────────── */
@@ -63,6 +71,7 @@
       const L = [];
       L.push((f.grupo === "top" ? `#${f.orden} · ` : "") + f.nombre);
       if (f.titular) L.push(f.titular);
+      if (f.clave) L.push(`${letrero()}: ${f.clave}`);
       const sub = [f.ciudad, f.grado ? `contacto de ${f.grado} grado` : "", f.comun && f.comun.n ? `${f.comun.n} en común` : ""].filter(Boolean).join(" · "); if (sub) L.push(sub);
       if (liga(f.liga)) L.push(f.liga);
       L.push(`Estado: ${nombreEstado(f.estado)}`);
@@ -98,11 +107,12 @@
       const R = rasgosDe(), T = top(); if (!T.length || !R.length) return "";
       const fila = (f) => {
         const c = cuenta(f);
-        return `<tr data-ir="${esc(f.id)}"><th scope="row"><i>${String(f.orden).padStart(2, "0")}</i>${cara(f, "mini")}<span><b>${esc(f.nombre)}</b><small>${esc([f.ciudad, f.comun && f.comun.n ? f.comun.n + " en común" : ""].filter(Boolean).join(" · "))}</small></span></th>${R.map((k) => { const r = (f.rasgos || {})[k] || [1, ""]; return `<td><span class="cand-punto ${NIVEL[r[0]][1]}" title="${esc(k + ": " + NIVEL[r[0]][0].toLowerCase() + ". " + (r[1] || ""))}"></span></td>`; }).join("")}<td class="cand-suma">${c[3]}<small>de ${R.length}</small></td></tr>`;
+        // cada persona es un bloque de dos renglones: arriba su nombre y sus puntos; abajo, a todo lo ancho, su línea
+        return `<tbody data-ir="${esc(f.id)}"><tr><td class="cand-m-cara"${f.clave ? ` rowspan="2"` : ""}><div><i>${String(f.orden).padStart(2, "0")}</i>${cara(f, "mini")}</div></td><th scope="row"><b>${esc(f.nombre)}</b><small>${esc([f.ciudad, f.comun && f.comun.n ? f.comun.n + " en común" : ""].filter(Boolean).join(" · "))}</small></th>${R.map((k) => { const r = (f.rasgos || {})[k] || [1, ""]; return `<td><span class="cand-punto ${NIVEL[r[0]][1]}" title="${esc(k + ": " + NIVEL[r[0]][0].toLowerCase() + ". " + (r[1] || ""))}"></span></td>`; }).join("")}<td class="cand-suma">${c[3]}<small>de ${R.length}</small></td></tr>${f.clave ? `<tr class="cand-m-clave"><td colspan="${R.length + 2}"><span>${esc(f.clave)}</span></td></tr>` : ""}</tbody>`;
       };
       return `<section class="cand-sec">
         <h3>Los ${T.length} de un vistazo</h3>
-        <div class="cand-tabla-caja"><table class="cand-matriz"><thead><tr><th></th>${R.map((k) => `<th><span>${esc(k)}</span></th>`).join("")}<th><span>Se ven</span></th></tr></thead><tbody>${T.map(fila).join("")}</tbody></table></div>
+        <div class="cand-tabla-caja"><table class="cand-matriz"><thead><tr><th colspan="2"></th>${R.map((k) => `<th><span>${esc(k)}</span></th>`).join("")}<th><span>Se ven</span></th></tr></thead>${T.map(fila).join("")}</table></div>
         <p class="cand-leyenda">${[3, 2, 1, 0].map((n) => `<span><i class="cand-punto ${NIVEL[n][1]}"></i>${NIVEL[n][0]}</span>`).join("")}</p>
         <p class="cand-chica">«Se ve» quiere decir que su perfil lo demuestra con hechos. «Por comprobar» no es malo: es lo que hay que preguntar. La honradez nunca se ve en un perfil; se comprueba con quien le confió dinero.</p>
       </section>`;
@@ -156,10 +166,11 @@
       return `<article class="cand-ficha${f.estado === "descartado" ? " fuera" : ""}" id="cand-${esc(f.id)}" data-id="${esc(f.id)}">
         <div class="cand-frente">
           <span class="cand-lugar">${String(f.orden).padStart(2, "0")}</span>
-          ${cara(f, "grande")}
+          ${cara(f, "grande", true)}
           <div class="cand-quien">
             <h3>${esc(f.nombre)}</h3>
             <p class="cand-titular">${esc(f.titular || "")}</p>
+            ${clave(f)}
             <div class="cand-chips">${f.nuevo ? `<span class="cand-nuevo">${esc(f.nuevo)}</span>` : ""}${chips(f)}<span class="cand-estado e-${esc(f.estado)}">${nombreEstado(f.estado)}</span></div>
           </div>
           <div class="cand-acciones">
@@ -183,17 +194,18 @@
       const url = liga(f.liga);
       return `<article class="cand-ficha chica${f.estado === "descartado" ? " fuera" : ""}${abiertas.has(f.id) && tieneDetalle(f) ? " ancha" : ""}" id="cand-${esc(f.id)}" data-id="${esc(f.id)}">
         <div class="cand-frente">
-          ${cara(f, "media")}
+          ${cara(f, "media", true)}
           <div class="cand-quien">
             <h3>${esc(f.nombre)}</h3>
             <p class="cand-titular">${esc(f.titular || "")}</p>
-            <div class="cand-chips">${f.nuevo ? `<span class="cand-nuevo">${esc(f.nuevo)}</span>` : ""}${chips(f)}<span class="cand-estado e-${esc(f.estado)}">${nombreEstado(f.estado)}</span></div>
-          </div>
-          <div class="cand-acciones">
-            ${url ? `<a class="cand-btn lleno" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Abrir ↗</a>` : ""}
-            <button type="button" class="cand-btn" data-copiar="ficha">Copiar</button>
+            <div class="cand-acciones">
+              ${url ? `<a class="cand-btn lleno" href="${esc(url)}" target="_blank" rel="noopener noreferrer">Abrir ↗</a>` : ""}
+              <button type="button" class="cand-btn" data-copiar="ficha">Copiar</button>
+            </div>
           </div>
         </div>
+        ${clave(f)}
+        <div class="cand-chips">${f.nuevo ? `<span class="cand-nuevo">${esc(f.nuevo)}</span>` : ""}${chips(f)}<span class="cand-estado e-${esc(f.estado)}">${nombreEstado(f.estado)}</span></div>
         ${f.resumen ? `<p class="cand-resumen">${esc(f.resumen)}</p>` : ""}
         ${f.por_que_no ? `<p class="cand-porque"><b>Por qué no quedó entre las principales:</b> ${esc(f.por_que_no)}</p>` : ""}
         ${f.agregado_por ? `<p class="cand-chica">Ficha agregada por ${esc(quien(f.agregado_por))}.</p>` : ""}
@@ -229,6 +241,18 @@
       enlazar();
     }
 
+    /* ── la foto en grande ────────────────────────────────────────────── */
+    function verFoto(f, desde) {
+      if (!conFoto(f)) return;
+      const v = document.createElement("div");
+      v.className = "cand-visor"; v.setAttribute("role", "dialog"); v.setAttribute("aria-modal", "true"); v.setAttribute("aria-label", "Foto de " + f.nombre);
+      v.innerHTML = `<figure><img src="${f.foto}" alt="Foto de ${esc(f.nombre)}"><figcaption><b>${esc(f.nombre)}</b>${f.titular ? `<span>${esc(f.titular)}</span>` : ""}${f.clave ? `<em>${esc(f.clave)}</em>` : ""}</figcaption><button type="button" class="cand-btn">Cerrar</button></figure>`;
+      const tecla = (e) => { if (e.key === "Escape") cerrar(); };
+      const cerrar = () => { document.removeEventListener("keydown", tecla); v.remove(); if (desde && desde.isConnected) desde.focus(); };
+      v.onclick = cerrar; document.addEventListener("keydown", tecla);
+      el.appendChild(v); v.querySelector("button").focus();
+    }
+
     /* ── guardar ──────────────────────────────────────────────────────── */
     async function guardar(id, cambios, caja) {
       const f = D.fichas.find((x) => x.id === id); if (!f) return false;
@@ -251,6 +275,7 @@
       if (ct) ct.onclick = async () => aviso((await copiar(D.fichas.filter(pasa).map(textoFicha).join("\n\n────────────\n\n"))) ? "Fichas copiadas." : "No se pudo copiar.");
       el.querySelectorAll(".cand-ficha").forEach((caja) => {
         const id = caja.dataset.id, f = D.fichas.find((x) => x.id === id); if (!f) return;
+        const foto = caja.querySelector("[data-ver-foto]"); if (foto) foto.onclick = () => verFoto(f, foto);
         const abrir = caja.querySelector("[data-abrir]");
         if (abrir) abrir.onclick = () => { if (abiertas.has(id)) abiertas.delete(id); else abiertas.add(id); recordar(); const y = window.scrollY; pintar(); window.scrollTo(0, y); };
         caja.querySelectorAll("[data-copiar]").forEach((b) => (b.onclick = async () => {
