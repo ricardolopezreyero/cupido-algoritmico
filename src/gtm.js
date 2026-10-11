@@ -4,7 +4,7 @@
    las tareas y las fichas viajan solo en /api/gtm, y solo a quien tiene permiso.
    Quién entra: los correos de la casa (DOMINIOS_CASA) y nadie más. Se entra con
    el login de la casa (el pase de login.capitaltorreon.com) o con la sesión de
-   Cupido. Quien entra ve todo (también los candidatos y las pruebas recibidas)
+   Cupido. Quien entra ve todo (también las candidatas y las pruebas recibidas)
    y pone palomitas; cada una queda con su correo y su hora.
    Los puntos de control (usuarios al mes e ingreso al mes) no se palomean:
    se alcanzan solos el día en que los dos números reales llegan a la meta.
@@ -15,6 +15,7 @@ import { TAREAS, FASES, AREAS, QUIENES, ESFUERZOS, RITMOS, PASOS, CONTROLES, SUP
 import { PLAN } from './gtm-plan.js';
 import { ESQUEMA_CEO, listarPostulaciones } from './ceo.js';
 import { ESQUEMA_CANDIDATOS } from './candidatos.js';
+import { proyecciones } from './gtm-proyecciones.js';
 import { ingresoDe, sociosVivos, saludPagos } from './pagos.js';
 
 export const _RLR = 'Ricardo López Reyero';
@@ -46,7 +47,7 @@ export async function quienGtm(env, req, url, yo) {
   if (!email && yo && !yo.sesion?.demo && yo.P?.correo) { email = limpio(yo.P.correo); nombre = yo.P.nombre === 'Sin nombre' ? '' : yo.P.nombre; }
   if (!email) return { falta: 'sesion' };
   if (!deCasa(email)) return { falta: 'permiso', email };
-  // Dentro de /gtm toda la casa ve lo mismo: candidatos y pruebas incluidos (decisión de Ricardo, 11-oct-2026)
+  // Dentro de /gtm toda la casa ve lo mismo: candidatas y pruebas incluidas (decisión de Ricardo, 11-oct-2026)
   return { email, nombre: nombre || email.split('@')[0], admin: true };
 }
 
@@ -98,7 +99,7 @@ export async function verGtm(env, q) {
   // las pruebas de /ceo traen datos de personas: solo las ve una cuenta administradora. Y a esa cuenta se le avisará de las que lleguen.
   const postulaciones = q.admin ? await listarPostulaciones(env) : [];
   if (q.admin && esCorreo(q.email)) await env.DB.prepare(`INSERT OR IGNORE INTO gtm_avisos (email) VALUES (?)`).bind(q.email).run();
-  return { yo: { email: q.email, nombre: q.nombre, admin: q.admin, palomea: deCasa(q.email) }, dominios: DOMINIOS_CASA, plan: PLAN, tareas: TAREAS, catalogo: { fases: FASES, areas: AREAS, quienes: QUIENES, esfuerzos: ESFUERZOS, ritmos: RITMOS, pasos: PASOS }, hechas, controles: CONTROLES, alcanzados, supuestos: SUPUESTOS_CONTROL, postulaciones, hoy: h };
+  return { yo: { email: q.email, nombre: q.nombre, admin: q.admin, palomea: deCasa(q.email) }, dominios: DOMINIOS_CASA, plan: PLAN, tareas: TAREAS, catalogo: { fases: FASES, areas: AREAS, quienes: QUIENES, esfuerzos: ESFUERZOS, ritmos: RITMOS, pasos: PASOS }, hechas, controles: CONTROLES, alcanzados, supuestos: SUPUESTOS_CONTROL, postulaciones, hoy: h, proyecciones: proyecciones() };
 }
 
 /* ── una palomita: se pone o se quita, y queda quién y cuándo ── */

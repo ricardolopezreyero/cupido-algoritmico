@@ -8,7 +8,7 @@
   "scripts": {
     "semilla": "node scripts/armar-seed.mjs",
     "probar": "node scripts/probar-motor.mjs",
-    "pruebas": "node scripts/pruebas-motor.mjs && node --no-warnings scripts/pruebas-pagos.mjs",
+    "pruebas": "node scripts/pruebas-motor.mjs && node --no-warnings scripts/pruebas-pagos.mjs && node scripts/pruebas-proyecciones.mjs",
     "dev": "npm run semilla && wrangler dev",
     "deploy": "npm run pruebas && npm run semilla && wrangler deploy"
   }

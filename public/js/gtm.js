@@ -2,7 +2,7 @@
    Cupido Algorítmico · Go-to-market (/gtm) — RLR · Ricardo López Reyero
    La página no trae el plan: lo pide a /api/gtm con el pase del login de la casa
    (o la sesión de Cupido) y solo lo recibe un correo de la casa.
-   Cuatro partes, en el orden en que se trabaja: Estrategia · Tareas · El CEO · Candidatos.
+   Cinco partes, en el orden en que se trabaja: Estrategia · Tareas · El CEO · Candidatas · Proyecciones.
    Pestañas de lectura (bloques que manda el servidor) + la lista, que se lee en
    el orden en que conviene hacerla (pasos). Cada palomita se guarda con el correo
    de quien la puso y la hora, y solo la ponen los correos de la casa. Mezclados van los
@@ -14,17 +14,18 @@ const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
 const raiz = $('#gtm');
 let D = null;                                   // lo que mandó el servidor
-// Las cuatro partes, en el orden en que se trabaja. Estrategia y El CEO tienen adentro sus propias pestañas.
-const PARTES = [['estrategia', 'Estrategia'], ['tareas', 'Tareas'], ['ceo', 'El CEO'], ['candidatos', 'Candidatos']];
+// Las cinco partes, en el orden en que se trabaja. Estrategia y El CEO tienen adentro sus propias pestañas.
+const PARTES = [['estrategia', 'Estrategia'], ['tareas', 'Tareas'], ['ceo', 'El CEO'], ['candidatas', 'Candidatas'], ['proyecciones', 'Proyecciones']];
 const DE_ESTRATEGIA = ['resumen', 'atajos', 'lanzamiento', 'creadores', 'alianzas', 'numeros', 'ritmo'];
 const DE_CEO = [['perfil', 'El perfil'], ['elegir', 'Cómo elegir'], ['pruebas', 'Pruebas recibidas']];
 let parte = 'estrategia';
 const sub = { estrategia: 'resumen', ceo: 'perfil' };   // la pestaña de adentro en la que se quedó cada parte
-// A dónde lleva cada nombre. Los de antes (checklist, equipo, candidatas…) siguen sirviendo: hay ligas guardadas y botones del plan que los usan
+// A dónde lleva cada nombre. Los de antes (checklist, equipo, candidatos…) siguen sirviendo: hay ligas guardadas y botones del plan que los usan
 function destino(p) {
   if (p === 'control') { F.estado = 'control'; return 'tareas'; }
   if (['checklist', 'tareas', 'lista'].includes(p)) return 'tareas';
-  if (['candidatas', 'candidatos'].includes(p)) return 'candidatos';
+  if (['candidatas', 'candidatos'].includes(p)) return 'candidatas';
+  if (['proyecciones', 'proyeccion'].includes(p)) return 'proyecciones';
   if (p === 'ceo') return 'ceo';
   if (['perfil', 'elegir', 'pruebas', 'equipo'].includes(p)) { sub.ceo = p === 'equipo' ? 'elegir' : p; return 'ceo'; }
   if (DE_ESTRATEGIA.includes(p)) { sub.estrategia = p; return 'estrategia'; }
@@ -301,7 +302,7 @@ function refrescarTarea(id) {
 // Las pruebas que llegan por /ceo: quién quiere dirigir Cupido. Traen datos de personas, así que solo las ve una cuenta administradora
 function pruebas() {
   const l = D.postulaciones || [], liga = (u, t) => (u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>` : ''), parte = (t, v) => (v ? `<h5>${t}</h5><p>${esc(v).replace(/\n/g, '<br>')}</p>` : '');
-  return `<section class="gtm-pruebas"><header class="gtm-cabeza"><p class="eyebrow">Dirección</p><h2>Pruebas recibidas <i>${l.length}</i></h2><p class="lead">Lo que mandó cada persona desde <a href="/ceo">/ceo</a>. Solo lo ven las cuentas administradoras, y a ellas les llega un aviso por correo con cada prueba nueva. A quienes salimos a buscar nosotros están en <button class="enlace" data-p="candidatos">Candidatos</button>.</p></header>
+  return `<section class="gtm-pruebas"><header class="gtm-cabeza"><p class="eyebrow">Dirección</p><h2>Pruebas recibidas <i>${l.length}</i></h2><p class="lead">Lo que mandó cada persona desde <a href="/ceo">/ceo</a>. Solo lo ven las cuentas administradoras, y a ellas les llega un aviso por correo con cada prueba nueva. A quienes salimos a buscar nosotros están en <button class="enlace" data-p="candidatas">Candidatas</button>.</p></header>
     ${l.length ? l.map((p) => `<details class="gtm-prueba"><summary><b>${esc(p.nombre)}</b><span>${esc(p.ciudad || 'sin ciudad')} · ${fecha(p.creado)}</span>${p.video ? '<span class="gtm-et ok">🎥 mandó video</span>' : ''}</summary>
       <p class="gtm-prueba-contacto"><a href="mailto:${esc(p.correo)}">${esc(p.correo)}</a>${p.whatsapp ? ` · ${esc(p.whatsapp)}` : ''}${p.video ? ` · ${liga(p.video, 'Ver su video')}` : ''}${p.enlace ? ` · ${liga(p.enlace, 'Lo que construyó')}` : ''}</p>
       ${parte('1 · La vez que juntó gente desde cero', p.sala)}${parte('2 · Diez días y cero pesos', p.diez_dias)}${parte('3 · Tres cosas que cambiaría', p.cambiarias)}${parte('4 · Lo correcto sobre lo conveniente', p.correcto)}</details>`).join('') : '<p class="vacio">Todavía no llega ninguna. La liga para mandar es cupido.capitaltorreon.com/ceo</p>'}</section>`;
@@ -320,6 +321,82 @@ function ajustarMarco() {
   m.addEventListener('load', () => { mide(); try { new ResizeObserver(mide).observe(m.contentDocument.body); } catch { setTimeout(mide, 1200); } });
 }
 
+/* ═══ proyecciones: los próximos 18 años, en dos curvas y una tabla ═══ */
+// La cuenta la hace el servidor (src/gtm-proyecciones.js) con la escalera de Tareas; aquí solo se dibuja
+let escenario = 'plan';
+const MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+// el dinero, como se dice en voz alta: $2,700 · $774,000 · $4.6 millones · $207 millones · $14,380 millones
+function plata(n) {
+  const a = Math.abs(n), s = n < 0 ? '−' : '';
+  if (a < 1e4) return s + '$' + num(Math.round(a));
+  if (a < 1e6) return s + '$' + num(Math.round(a / 1000) * 1000);
+  if (a < 1e7) return s + '$' + (a / 1e6).toLocaleString('es-MX', { maximumFractionDigits: 1 }) + ' millones';
+  return s + '$' + num(Math.round(a / 1e6)) + ' millones';
+}
+const gentes = (n) => (n < 1e6 ? num(n < 1e4 ? Math.round(n) : Math.round(n / 100) * 100) : (n / 1e6).toLocaleString('es-MX', { maximumFractionDigits: 1 }) + (Math.round(n / 1e5) === 10 ? ' millón' : ' millones'));
+
+const usuariosAlMes = (n) => `${gentes(n)}${n >= 1e6 ? ' de' : ''} usuarios al mes`;   // «10 millones de usuarios», pero «400,000 usuarios»
+// La gráfica: lo que entra (rosa, relleno) y lo que se gasta (negro), un punto por año. Lo que hay entre las dos líneas es lo que queda
+function graficaProy(e, P) {
+  const F = e.filas, W = 1000, H = 400, iz = 78, de = 22, ar = 30, ab = 40, n = F.length;
+  const tope = Math.max(...F.map((f) => f.ingreso)), paso = Math.pow(10, Math.floor(Math.log10(tope))), unidad = [1, 2, 2.5, 5, 10].map((k) => k * paso / 5).find((u) => tope / u <= 6) || paso;
+  const max = Math.ceil(tope / unidad) * unidad;
+  const x = (i) => iz + (i * (W - iz - de)) / (n - 1), y = (v) => H - ab - (v / max) * (H - ar - ab);
+  const linea = (k) => F.map((f, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)} ${y(f[k]).toFixed(1)}`).join(' ');
+  const rejilla = []; for (let v = 0; v <= max + 1; v += unidad) rejilla.push(`<line x1="${iz}" x2="${W - de}" y1="${y(v)}" y2="${y(v)}" class="gp-rejilla"/><text x="${iz - 10}" y="${y(v) + 4}" class="gp-eje" text-anchor="end">${num(Math.round(v / 1e6))}</text>`);
+  const marca = (anio, t, lado) => { const i = F.findIndex((f) => f.anio === anio); return i < 0 ? '' : `<line x1="${x(i)}" x2="${x(i)}" y1="${ar - 8}" y2="${H - ab}" class="gp-marca"/><text x="${x(i) + (lado === 'iz' ? -7 : 7)}" y="${ar - 12}" class="gp-marca-t" text-anchor="${lado === 'iz' ? 'end' : 'start'}">${esc(t)}</text>`; };
+  return `<figure class="gtm-proy-fig">
+    <figcaption><span class="gp-l entra"><i></i>Lo que entra en el año</span><span class="gp-l gasta"><i></i>Lo que se gasta</span><span class="gp-l queda"><i></i>Lo que queda, antes de impuestos</span><small>Millones de pesos de hoy</small></figcaption>
+    <div class="gtm-proy-lienzo" tabindex="0" aria-label="Gráfica de ingresos y gastos por año. En celular se desliza a los lados.">
+      <svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Ingresos y gastos de ${F[0].anio} a ${F[n - 1].anio}, escenario ${esc(e.nombre)}: en ${F[n - 1].anio} entran ${plata(F[n - 1].ingreso)} y se gastan ${plata(F[n - 1].gastos)}.">
+        ${rejilla.join('')}
+        <path d="${linea('ingreso')} L${x(n - 1)} ${y(0)} L${x(0)} ${y(0)} Z" class="gp-entra-fondo"/>
+        <path d="${linea('gastos')} L${x(n - 1)} ${y(0)} L${x(0)} ${y(0)} Z" class="gp-gasta-fondo"/>
+        ${marca(e.cobra, 'Empieza el cobro', 'iz')}${marca(P.planHasta, 'De aquí en adelante, supuesto de techo', 'de')}
+        <path d="${linea('ingreso')}" class="gp-entra"/><path d="${linea('gastos')}" class="gp-gasta"/>
+        ${F.map((f, i) => `<g class="gp-punto"><title>${f.anio} · entran ${plata(f.ingreso)} · se gastan ${plata(f.gastos)} · ${f.queda < 0 ? 'faltan' : 'quedan'} ${plata(Math.abs(f.queda))}</title><rect x="${x(i) - (W - iz - de) / (n - 1) / 2}" y="${ar}" width="${(W - iz - de) / (n - 1)}" height="${H - ar - ab}"/><circle cx="${x(i)}" cy="${y(f.ingreso)}" r="4.5" class="e"/><circle cx="${x(i)}" cy="${y(f.gastos)}" r="3.5" class="g"/><text x="${x(i)}" y="${H - ab + 22}" class="gp-eje${f.anio % 2 ? ' non' : ''}" text-anchor="middle">${f.anio}</text></g>`).join('')}
+      </svg>
+    </div>
+    <p class="gtm-chica">El arranque no se alcanza a ver: en 2026 y 2027 se mueven miles y millones, y aquí la escala son miles de millones. Esos dos años están en la tabla, peso por peso.</p>
+  </figure>`;
+}
+
+function proyeccionesVista() {
+  const P = D.proyecciones; if (!P) return '<p class="vacio">Las proyecciones no llegaron. Recarga la página.</p>';
+  const e = P.escenarios.find((x) => x.id === escenario) || P.escenarios[0], F = e.filas, fin = F[F.length - 1], a30 = F.find((f) => f.anio === P.planHasta) || fin;
+  const etapa = (f) => (f.anio === P.desde ? 'Arranque · todo gratis' : !f.cobra ? 'Todo gratis · apoyos voluntarios' : f.anio === e.cobra ? 'Empieza a cobrar el programa' : f.anio <= P.planHasta ? 'La escalera del plan' : 'Hacia el techo (supuesto)');
+  const celda = (t, v, clase = '') => `<td data-t="${esc(t)}" class="${clase}">${v}</td>`;
+  const CAB = ['Año', 'Qué pasa', 'Usuarios al mes', 'Entra al mes', 'Entra en el año', 'Se gasta en el año', 'Queda en el año', 'Acumulado'];
+  // cuánto deja cada usuario se dice solo en el año en que cambia: repetirlo en cada renglón estorba
+  const filas = F.map((f, i) => `<tr class="${f.anio === e.cobra ? 'cobro' : ''}${f.anio === P.planHasta ? ' corte' : ''}">
+      ${celda(CAB[0], f.anio + (f.anio === P.desde ? ' <small>oct–dic</small>' : ''))}
+      ${celda(CAB[1], `${etapa(f)}${escenario === 'plan' && P.hitos[f.anio] ? `<small>${esc(P.hitos[f.anio])}</small>` : ''}`, 'que')}
+      ${celda(CAB[2], gentes(f.usuarios), 'n')}${celda(CAB[3], `${plata(f.ingresoMes)}${!i || F[i - 1].porUsuario !== f.porUsuario ? `<small>$${f.porUsuario} por usuario</small>` : ''}`, 'n')}
+      ${celda(CAB[4], plata(f.ingreso), 'n fuerte')}${celda(CAB[5], plata(f.gastos), 'n')}
+      ${celda(CAB[6], plata(f.queda), 'n ' + (f.queda < 0 ? 'falta' : 'sobra'))}${celda(CAB[7], plata(f.acumulado), 'n ' + (f.acumulado < 0 ? 'falta' : ''))}</tr>`).join('');
+  const R = P.renglones, pct = (x) => Math.round(x * 100) + ' %', alMes = (v) => (v == null ? '8 % de lo que entra' : v ? plata(v) + ' al mes' : '—');
+  return bloques([{ k: 'cabeza', e: `Proyecciones · de ${P.desde + 1} a ${P.hasta}`, t: `Los próximos ${P.anios} años: lo que entra y lo que se gasta`, s: 'La misma escalera de Tareas, llevada hasta 2030, y de ahí en adelante un supuesto de techo. Sirve para dar una idea del tamaño de lo que estamos armando; no es un pronóstico. Todo en pesos de hoy.' }])
+    + `<div class="gtm-proy-esc" role="group" aria-label="Escenario">${P.escenarios.map((x) => `<button class="gtm-f${x.id === e.id ? ' activo' : ''}" data-esc="${esc(x.id)}" aria-pressed="${x.id === e.id}">${esc(x.nombre)}</button>`).join('')}<p class="gtm-chica">${esc(e.nota)}</p></div>`
+    + bloques([{ k: 'cifras', l: [
+      { n: plata(e.hacenFalta), t: 'hacen falta antes de que Cupido se pague solo', s: `Es lo más hondo de la cuenta: ${MES[e.fondoEn.mes - 1]} de ${e.fondoEn.anio}. Hasta ahí se gasta más de lo que entra, y alguien tiene que ponerlo.` },
+      { n: String(e.primerAnioBueno || '—'), t: 'primer año en que entra más de lo que se gasta', s: e.primerAnioBueno ? `El año en que empieza a cobrar el programa. Ese año quedan ${plata(F.find((f) => f.anio === e.primerAnioBueno).queda)}.` : 'Con estos supuestos no llega.' },
+      { n: plata(a30.ingreso), t: `entran en ${a30.anio}`, s: `Con ${usuariosAlMes(a30.usuarios)}. Quedan ${plata(a30.queda)} antes de impuestos.` },
+      { n: plata(fin.ingreso), t: `entran en ${fin.anio}`, s: `Con ${usuariosAlMes(fin.usuarios)}. Quedan ${plata(fin.queda)} antes de impuestos.` },
+    ] }])
+    + graficaProy(e, P)
+    + bloques([{ k: 'cabeza', e: 'En números', t: 'Año por año', s: `Escenario: ${e.nombre}. «Entra al mes» es diciembre de cada año, el mismo número que llevan los puntos de control. «Acumulado» es todo lo que ha quedado (o faltado) desde octubre de ${P.desde}.` }])
+    + `<div class="gtm-tabla gtm-proy-tabla"><table><thead><tr>${CAB.map((c, i) => `<th class="${i > 1 ? 'n' : ''}">${c}</th>`).join('')}</tr></thead><tbody>${filas}</tbody></table></div>
+      <p class="gtm-chica">Antes de impuestos y sin inflación. Las cantidades grandes van redondeadas al millón.</p>`
+    + bloques([
+      { k: 'cabeza', e: 'Los gastos', t: 'En qué se va el dinero', s: 'Mientras todo es gratis, los gastos son montos fijos que salen del plan. Desde que el programa cobra, cada renglón es una parte de lo que entra.' },
+      { k: 'tabla', cab: ['Renglón', `En ${P.desde}`, `En ${P.desde + 1}`, 'Desde que se cobra', 'De dónde sale'], filas: R.map((r) => [r.nombre, alMes(r.en2026), alMes(r.en2027), pct(r.parte) + ' de lo que entra', r.de]),
+        nota: `Suma ${pct(R.reduce((s, r) => s + r.parte, 0))} de lo que entra; el resto queda antes de impuestos. Cuidado y seguridad lleva además $${P.verificacion} por cada perfil nuevo mientras no se cobra.` },
+      { k: 'cabeza', e: 'Para leerlo bien', t: 'Los supuestos, a la vista' },
+      { k: 'lista', l: P.supuestos },
+      { k: 'boton', t: 'Ver los puntos de control en Tareas', ir: 'control' },
+    ]);
+}
+
 /* ═══ armar la página ═════════════════════════════════════════════════ */
 function pintar() {
   const P = D.plan.pestanas, n = Object.keys(D.hechas).length, plan = (id) => P.find((p) => p.id === id) || P[0];
@@ -330,20 +407,21 @@ function pintar() {
   const adentro = parte === 'estrategia' ? DE_ESTRATEGIA.map((id) => [id, plan(id).t]) : parte === 'ceo' ? DE_CEO.map(([id, t]) => [id, t + (id === 'pruebas' && D.yo.admin ? ` <i>${(D.postulaciones || []).length}</i>` : '')]) : [];
   const soloAdmin = (que) => `<section class="gtm-puerta tarjeta"><h2>${que} piden una cuenta administradora</h2><p class="lead">Traen nombres de personas y lo que pensamos de cada una. Entraste como <b>${esc(D.yo.email)}</b>.</p></section>`;
   const cuerpo = parte === 'tareas' ? lista()
-    : parte === 'candidatos' ? (D.yo.admin ? '<div id="gtm-candidatas"></div>' : soloAdmin('Las fichas de candidatos'))
+    : parte === 'candidatas' ? (D.yo.admin ? '<div id="gtm-candidatas"></div>' : soloAdmin('Las fichas de las candidatas'))
+    : parte === 'proyecciones' ? proyeccionesVista()
     : parte === 'ceo' ? (sub.ceo === 'perfil' ? perfilCeo() : sub.ceo === 'pruebas' ? (D.yo.admin ? pruebas() : soloAdmin('Las pruebas recibidas')) : bloques(plan('equipo').bloques))
     : bloques(plan(sub.estrategia).bloques);
   raiz.innerHTML = `<header class="gtm-titulo"><p class="eyebrow">Go-to-market · versión ${esc(D.plan.version)} · ${esc(D.plan.fecha)}</p><h1>${tx(D.plan.titulo || 'El plan para llevar a Cupido a millones')}</h1>${D.plan.bajada ? `<p class="lead">${tx(D.plan.bajada)}</p>` : ''}</header>
     ${franja()}
     <div class="gtm-nav" id="gtm-nav">
-      <nav class="gtm-pestanas gtm-partes" id="gtm-pestanas" aria-label="Las cuatro partes">${PARTES.map(([id, t], k) => `<button data-p="${id}" class="${id === parte ? 'activo' : ''}"><b>${k + 1}</b>${t}${id === 'tareas' ? ` <i>${n}/${D.tareas.length}</i>` : ''}</button>`).join('')}</nav>
+      <nav class="gtm-pestanas gtm-partes" id="gtm-pestanas" aria-label="Las cinco partes">${PARTES.map(([id, t], k) => `<button data-p="${id}" class="${id === parte ? 'activo' : ''}"><b>${k + 1}</b>${t}${id === 'tareas' ? ` <i>${n}/${D.tareas.length}</i>` : ''}</button>`).join('')}</nav>
       ${adentro.length ? `<nav class="gtm-pestanas gtm-adentro" id="gtm-adentro" aria-label="Dentro de ${esc(PARTES.find((x) => x[0] === parte)[1])}">${adentro.map(([id, t]) => `<button data-p="${id}" class="${id === sub[parte] ? 'activo' : ''}">${t}</button>`).join('')}</nav>` : ''}
     </div>
     <div class="gtm-cuerpo" id="gtm-cuerpo">${cuerpo}</div>`;
   calculadora(); ajustarMarco();
   const cp = $('#gtm-ceo-copiar'); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText($('#gtm-ceo-url').value); avisar('Liga copiada.'); } catch { $('#gtm-ceo-url').select(); } };
   // La pantalla de fichas es un módulo aparte (candidatos.js): pide las fichas con el mismo pase y las pinta
-  if (parte === 'candidatos' && D.yo.admin && window.Candidatos) window.Candidatos.montar($('#gtm-candidatas'), { api: '/api/gtm/candidatos', vacante: 'ceo', claro: true, toast: avisar, cabeceras: () => (pase() ? { authorization: 'Bearer ' + pase() } : {}) });
+  if (parte === 'candidatas' && D.yo.admin && window.Candidatos) window.Candidatos.montar($('#gtm-candidatas'), { api: '/api/gtm/candidatos', vacante: 'ceo', claro: true, toast: avisar, cabeceras: () => (pase() ? { authorization: 'Bearer ' + pase() } : {}) });
 }
 function ir(p, arriba = true) {
   // tocar la parte en la que ya se está no cambia su pestaña de adentro; tocar otra la abre donde se quedó
@@ -355,6 +433,7 @@ function ir(p, arriba = true) {
 
 raiz.addEventListener('click', (e) => {
   const p = e.target.closest('[data-p]'); if (p) return ir(p.dataset.p, false);
+  const es = e.target.closest('[data-esc]'); if (es) { escenario = es.dataset.esc; const y = scrollY; pintar(); scrollTo(0, y); return; }
   const i = e.target.closest('[data-ir]'); if (i) return ir(i.dataset.ir);
   const c = e.target.closest('.gtm-palomita'); if (c) return palomear(c.closest('.gtm-tarea').dataset.id);
   const v = e.target.closest('[data-ver-pc]');
@@ -380,6 +459,9 @@ async function abrir() {
   if (F.fase === -1) F.fase = (D.catalogo.fases.find((f) => D.tareas.some((t) => t[1] === f.n && !D.hechas[t[0]])) || { n: 0 }).n;
   pintar();
 }
+
+// Si alguien cambia la dirección a mano (o toca una liga con #…), se va a esa parte sin tener que recargar
+addEventListener('hashchange', () => { if (!D) return; const h = location.hash.slice(1); if (h && h !== marca()) { parte = destino(h); pintar(); } });
 
 // El login de la casa carga con «defer»: se le espera un momento, y si la sesión cambia se vuelve a pedir el plan
 for (let i = 0; i < 30 && !window.LoginCT; i++) await new Promise((ok) => setTimeout(ok, 100));

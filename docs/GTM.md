@@ -6,16 +6,17 @@
 
 El plan para llevar a Cupido a 10 millones de perfiles vivos, y la lista de todo lo que hay que hacer para llegar. A quien llegue a ejecutar se le dice una sola cosa: **«sigue el go-to-market»**.
 
-## Las cuatro partes
+## Las cinco partes
 
 La página se recorre en el orden en que se trabaja:
 
 1. **Estrategia** — lo que se lee una vez: Resumen, Atajos, Lanzamiento, Creadores, Alianzas, Números y Ritmo.
 2. **Tareas** — la lista de 244 actividades en orden, con sus puntos de control y el marcador de palomitas.
 3. **El CEO** — el perfil de quien va a dirigir (la página pública `/ceo`, vista adentro), cómo elegir y las pruebas que han llegado.
-4. **Candidatos** — las fichas de quien salimos a buscar, con su foto.
+4. **Candidatas** — las fichas de quien salimos a buscar, con su foto.
+5. **Proyecciones** — los próximos 18 años en una gráfica y una tabla: lo que entra, lo que se gasta y lo que queda.
 
-Las direcciones de antes siguen sirviendo (`#checklist`, `#control`, `#equipo`, `#candidatas`, `#numeros`…): cada una lleva a su parte nueva.
+Las direcciones de antes siguen sirviendo (`#checklist`, `#control`, `#equipo`, `#candidatos`, `#numeros`…): cada una lleva a su parte nueva.
 
 ## Qué trae
 
@@ -43,7 +44,7 @@ Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verda
 - **Lo que hay que decidir antes de mandar la liga** (está escrito en Equipo): la paga, si vivir en La Laguna de noviembre a febrero es requisito, y cómo se llama el puesto.
 - La vacante no pide género ni edad.
 
-## Candidatos: a quién salimos a buscar (`/gtm` → Candidatos)
+## Candidatas: a quién salimos a buscar (`/gtm` → Candidatas)
 
 `/ceo` espera a que alguien llegue. Esta pestaña es lo contrario: con el perfil en la mano se sale a buscar, y se guarda una ficha por persona. La ve cualquier correo de la casa que entre a `/gtm`.
 
@@ -67,10 +68,23 @@ Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verda
 
 - **De dónde salió:** es el módulo suelto de Video Room (`public/js/candidatos.js`, `public/css/candidatos.css`, `src/candidatos.js`, tres rutas bajo `/api/gtm/candidatos` y el sembrador). Aquí se le agregó la opción `cabeceras`, para mandar el pase del login en cada petición.
 
+## Proyecciones: los próximos 18 años (`/gtm` → Proyecciones)
+
+Para dar una idea del tamaño de lo que se está armando. Arriba cuatro cifras, en medio la gráfica de lo que entra y lo que se gasta por año, y abajo la tabla año por año (2026, que es el arranque, y de 2027 a 2044). **No es un pronóstico:** es la consecuencia de unos supuestos, y todos están escritos al final de la pantalla.
+
+- **No inventa una escalera nueva.** Hasta 2030 los usuarios son los puntos de control de Tareas (`CONTROLES`). De 2031 en adelante ya no hay plan escrito: se supone un techo y que cada año se crece menos.
+- **El ingreso** es usuarios por pesos por usuario al mes (`POR_USUARIO`): $2 mientras todo es gratis, $40 desde que cobra el programa.
+- **Los gastos**, mientras no se cobra, son montos que salen del plan: el tope de arranque ($105,000 en 90 días), quien ejecuta, el equipo de cinco y la verificación de identidad. Desde que se cobra, 70 de cada 100 pesos: equipo 25, crecimiento y comunidad 18, cuidado y seguridad 12, cobro con tarjeta y devoluciones 8, tecnología 7.
+- **Tres escenarios:** Prudente (40 % de la escalera, el cobro se recorre a 2029, $25 por usuario), El plan y Ambicioso (130 %, $50 por usuario).
+- **Lo que dice «El plan»:** hacen falta unos $4.6 millones antes de que Cupido se pague solo (lo más hondo es diciembre de 2027), 2028 es el primer año en que entra más de lo que se gasta, y en 2044 entran unos $14,400 millones al año con 30 millones de usuarios al mes.
+- **Dónde vive:** todo el modelo está en `src/gtm-proyecciones.js` (`MODELO`, los supuestos y la cuenta, mes por mes). Para mover un supuesto se cambia ahí y la página se recalcula sola. La página solo dibuja.
+- **Se prueba** con `node scripts/pruebas-proyecciones.mjs` (10 pruebas: que pase por cada punto de control, que las sumas cuadren, que sin cobrar nunca haya ganancia). Corre sola antes de cada despliegue.
+- **Lo que no trae:** impuestos, inflación, dinero de inversionistas ni la comisión de las tiendas de apps.
+
 ## Quién entra
 
 - **Solo correos de la casa:** `@ingenieriadigital.mx` y `@superleads.mx` (`DOMINIOS_CASA` en `src/gtm.js`). Nadie más, aunque se le quiera dar acceso: ya no hay lista de invitados.
-- Quien entra ve **todo**: la Estrategia, las Tareas, El CEO con las pruebas recibidas y los Candidatos con sus fichas y fotos. Y pone palomitas (cada una queda con su correo y su hora).
+- Quien entra ve **todo**: la Estrategia, las Tareas, El CEO con las pruebas recibidas, las Candidatas con sus fichas y fotos, y las Proyecciones. Y pone palomitas (cada una queda con su correo y su hora).
 - Ya no hay distinción de cuenta administradora dentro de `/gtm`: la decide el dominio del correo. Por eso conviene no darle correo de la casa a nadie que no deba leer lo que se escribió de las candidatas.
 - Se entra con el **login de la casa** (el botón de Google de `login.capitaltorreon.com`); también abre con una sesión de Cupido hecha con uno de esos correos.
 - La página (`public/gtm.html`) es un cascarón: todo viaja solo en `/api/gtm`, y solo a quien tiene permiso. Sin sesión responde 401; con un correo de otro dominio, 403.
@@ -94,6 +108,7 @@ Todo lo que hay en la Lista existe para mover dos números. Por eso van metidos 
 |---|---|
 | `src/gtm-plan.js` | El texto de todas las pestañas, como bloques (`cabeza`, `p`, `cifras`, `tarjetas`, `pasos`, `tabla`, `lista`, `nota`, `gente`, `calc`, `boton`, `fuentes`). Ahí se corrige una cifra o se agrega un creador. |
 | `src/gtm-tareas.js` | La lista: un renglón por actividad, `[clave, fase, área, quién, esfuerzo, ritmo, título, detalle]`, y los catálogos de fases y áreas. Luego el orden (`PASOS`): `[fase, cuándo, título, [claves en orden]]`. Al final, los puntos de control (`CONTROLES`): `[clave, fase, tras, fecha, usuarios al mes, ingreso al mes, título, de dónde sale, si no se llega]`, y sus supuestos (`SUPUESTOS_CONTROL`). |
+| `src/gtm-proyecciones.js` | Las proyecciones a 18 años: el modelo (`MODELO`), los tres escenarios, los supuestos escritos y la cuenta mes por mes. Lee `CONTROLES` y `POR_USUARIO` de `gtm-tareas.js`; no repite ningún número de la escalera. |
 | `src/gtm.js` | Quién entra (`quienGtm`), quién palomea (`DOMINIOS_PALOMITA`), los números de hoy (con usuarios e ingreso al mes), guardar una palomita, anotar el punto de control que se alcanza y cambiar el equipo. Tablas `gtm_tareas` y `gtm_equipo`. |
 | `src/verificar.js` | Verifica el pase del login de la casa (copia de `Login_CapitalTorreon/publico/verificar.js`). |
 | `public/gtm.html`, `public/js/gtm.js`, `public/css/gtm.css` | El cascarón, lo que pinta y el estilo. |
