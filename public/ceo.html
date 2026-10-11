@@ -22,6 +22,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/css/cupido.css">
 <link rel="stylesheet" href="/css/ceo.css">
+<!-- Cuando esta página se enseña dentro del go-to-market (/gtm → El CEO) va sin barra ni pie, y sus ligas abren fuera del marco -->
+<script>if (new URLSearchParams(location.search).has("dentro")) { document.documentElement.classList.add("dentro"); document.write('<base target="_blank">'); }</script>
+<style>html.dentro .barra, html.dentro .pie { display: none !important; } html.dentro body { background: transparent; } html.dentro .ceo-portada { margin-top: 8px !important; }</style>
 </head>
 <body data-author="RLR" class="ceo">
 <!-- Cupido Algorítmico · Dirección: el perfil de quien va a dirigir Cupido y ejecutar el go-to-market · RLR · Ricardo López Reyero -->

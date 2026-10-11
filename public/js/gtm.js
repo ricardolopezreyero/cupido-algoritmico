@@ -1,7 +1,8 @@
 /* ─────────────────────────────────────────────────────────────────────
    Cupido Algorítmico · Go-to-market (/gtm) — RLR · Ricardo López Reyero
    La página no trae el plan: lo pide a /api/gtm con el pase del login de la casa
-   (o la sesión de Cupido) y solo lo recibe quien está en el equipo.
+   (o la sesión de Cupido) y solo lo recibe un correo de la casa.
+   Cuatro partes, en el orden en que se trabaja: Estrategia · Tareas · El CEO · Candidatos.
    Pestañas de lectura (bloques que manda el servidor) + la lista, que se lee en
    el orden en que conviene hacerla (pasos). Cada palomita se guarda con el correo
    de quien la puso y la hora, y solo la ponen los correos de la casa. Mezclados van los
@@ -13,7 +14,23 @@ const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
 
 const raiz = $('#gtm');
 let D = null;                                   // lo que mandó el servidor
-let pestana = 'resumen';
+// Las cuatro partes, en el orden en que se trabaja. Estrategia y El CEO tienen adentro sus propias pestañas.
+const PARTES = [['estrategia', 'Estrategia'], ['tareas', 'Tareas'], ['ceo', 'El CEO'], ['candidatos', 'Candidatos']];
+const DE_ESTRATEGIA = ['resumen', 'atajos', 'lanzamiento', 'creadores', 'alianzas', 'numeros', 'ritmo'];
+const DE_CEO = [['perfil', 'El perfil'], ['elegir', 'Cómo elegir'], ['pruebas', 'Pruebas recibidas']];
+let parte = 'estrategia';
+const sub = { estrategia: 'resumen', ceo: 'perfil' };   // la pestaña de adentro en la que se quedó cada parte
+// A dónde lleva cada nombre. Los de antes (checklist, equipo, candidatas…) siguen sirviendo: hay ligas guardadas y botones del plan que los usan
+function destino(p) {
+  if (p === 'control') { F.estado = 'control'; return 'tareas'; }
+  if (['checklist', 'tareas', 'lista'].includes(p)) return 'tareas';
+  if (['candidatas', 'candidatos'].includes(p)) return 'candidatos';
+  if (p === 'ceo') return 'ceo';
+  if (['perfil', 'elegir', 'pruebas', 'equipo'].includes(p)) { sub.ceo = p === 'equipo' ? 'elegir' : p; return 'ceo'; }
+  if (DE_ESTRATEGIA.includes(p)) { sub.estrategia = p; return 'estrategia'; }
+  return 'estrategia';
+}
+const marca = () => (parte === 'estrategia' ? sub.estrategia : parte === 'ceo' ? (sub.ceo === 'perfil' ? 'ceo' : sub.ceo) : parte);   // lo que va en la dirección (#…)
 const LLAVE = 'cupido.gtm.filtros';
 const F = (() => { try { return { fase: -1, area: '', quien: '', estado: 'pendientes', q: '', ...JSON.parse(localStorage.getItem(LLAVE) || '{}'), q: '' }; } catch { return { fase: -1, area: '', quien: '', estado: 'pendientes', q: '' }; } })();   // fase −1 = todavía no elige: se abre en la fase que toca
 const recordar = () => { try { localStorage.setItem(LLAVE, JSON.stringify({ fase: F.fase, area: F.area, quien: F.quien, estado: F.estado === 'control' ? 'pendientes' : F.estado })); } catch { /* sin memoria: no pasa nada */ } };
@@ -42,10 +59,10 @@ function puerta(falta, correo) {
   const sinPermiso = falta === 'permiso';
   raiz.innerHTML = `<section class="gtm-puerta tarjeta">
     <p class="eyebrow">Go-to-market</p>
-    <h1>${sinPermiso ? 'Esta cuenta no está en el equipo' : 'Esta página es del equipo'}</h1>
-    <p class="lead">${sinPermiso ? `Entraste como <b>${esc(correo)}</b>. Pídele a Ricardo que agregue ese correo en la pestaña Equipo, o entra con otra cuenta.` : 'Aquí vive el plan para llevar a Cupido a millones de personas: la estrategia, los atajos y la lista de todo lo que hay que hacer. Entra con tu cuenta de Google para verlo.'}</p>
+    <h1>${sinPermiso ? 'Aquí solo entran correos de la casa' : 'Esta página es de la casa'}</h1>
+    <p class="lead">${sinPermiso ? `Entraste como <b>${esc(correo)}</b>. Esta parte es solo para correos @ingenieriadigital.mx y @superleads.mx: entra con uno de esos.` : 'Aquí vive el plan para llevar a Cupido a millones de personas: la estrategia, las tareas, el perfil de quien lo dirige y a quién salimos a buscar. Entra con tu correo @ingenieriadigital.mx o @superleads.mx.'}</p>
     <div class="gtm-puerta-botones">${sinPermiso ? '<button class="boton boton-claro" id="gtm-salir">Entrar con otra cuenta</button>' : '<div data-login-ct="ancho" data-texto="Entrar con Google" id="gtm-entrar"></div>'}</div>
-    <p class="gtm-chica">También abre con una sesión de Cupido de una cuenta administradora.</p>
+    <p class="gtm-chica">También abre con una sesión de Cupido hecha con uno de esos correos.</p>
   </section>`;
   const b = $('#gtm-entrar'); if (b && window.LoginCT) window.LoginCT.montar(b, 'ancho');
   $('#gtm-salir')?.addEventListener('click', () => window.LoginCT?.salir());
@@ -276,7 +293,7 @@ function refrescarTarea(id) {
   const h = $('.gtm-hoy'); if (h) h.outerHTML = franja();
   const m = $('#gtm-marcador'); if (m) m.innerHTML = marcador();
   if (t) { const k = D.catalogo.pasos.filter((x) => x[0] === t[1]).findIndex((x) => x[3].includes(id)), x = D.catalogo.pasos.filter((y) => y[0] === t[1])[k], c = $(`[data-paso="${t[1]}-${k}"]`); if (x && c) c.textContent = `${x[3].filter((y) => D.hechas[y]).length} de ${x[3].length}`; }
-  const n = Object.keys(D.hechas).length; const b = $('#gtm-pestanas [data-p="checklist"] i'); if (b) b.textContent = `${n}/${D.tareas.length}`;
+  const n = Object.keys(D.hechas).length; const b = $('#gtm-pestanas [data-p="tareas"] i'); if (b) b.textContent = `${n}/${D.tareas.length}`;
   for (const f of D.catalogo.fases) { const l = D.tareas.filter((x) => x[1] === f.n), hh = l.filter((x) => D.hechas[x[0]]).length, bt = $(`.gtm-fase[data-v="${f.n}"]`); if (bt) { $('.gtm-barra i', bt).style.width = Math.round((hh / l.length) * 100) + '%'; $('small', bt).textContent = `${hh} de ${l.length}`; } }
 }
 
@@ -284,45 +301,56 @@ function refrescarTarea(id) {
 // Las pruebas que llegan por /ceo: quién quiere dirigir Cupido. Traen datos de personas, así que solo las ve una cuenta administradora
 function pruebas() {
   const l = D.postulaciones || [], liga = (u, t) => (u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>` : ''), parte = (t, v) => (v ? `<h5>${t}</h5><p>${esc(v).replace(/\n/g, '<br>')}</p>` : '');
-  return `<section class="gtm-pruebas"><header class="gtm-cabeza"><p class="eyebrow">Dirección</p><h2>Pruebas recibidas <i>${l.length}</i></h2><p class="lead">Lo que mandó cada persona desde <a href="/ceo">/ceo</a>. Solo lo ven las cuentas administradoras, y a ellas les llega un aviso por correo con cada prueba nueva. A quienes salimos a buscar nosotros están en <button class="enlace" data-p="candidatas">la pestaña Candidatas</button>.</p></header>
+  return `<section class="gtm-pruebas"><header class="gtm-cabeza"><p class="eyebrow">Dirección</p><h2>Pruebas recibidas <i>${l.length}</i></h2><p class="lead">Lo que mandó cada persona desde <a href="/ceo">/ceo</a>. Solo lo ven las cuentas administradoras, y a ellas les llega un aviso por correo con cada prueba nueva. A quienes salimos a buscar nosotros están en <button class="enlace" data-p="candidatos">Candidatos</button>.</p></header>
     ${l.length ? l.map((p) => `<details class="gtm-prueba"><summary><b>${esc(p.nombre)}</b><span>${esc(p.ciudad || 'sin ciudad')} · ${fecha(p.creado)}</span>${p.video ? '<span class="gtm-et ok">🎥 mandó video</span>' : ''}</summary>
       <p class="gtm-prueba-contacto"><a href="mailto:${esc(p.correo)}">${esc(p.correo)}</a>${p.whatsapp ? ` · ${esc(p.whatsapp)}` : ''}${p.video ? ` · ${liga(p.video, 'Ver su video')}` : ''}${p.enlace ? ` · ${liga(p.enlace, 'Lo que construyó')}` : ''}</p>
       ${parte('1 · La vez que juntó gente desde cero', p.sala)}${parte('2 · Diez días y cero pesos', p.diez_dias)}${parte('3 · Tres cosas que cambiaría', p.cambiarias)}${parte('4 · Lo correcto sobre lo conveniente', p.correcto)}</details>`).join('') : '<p class="vacio">Todavía no llega ninguna. La liga para mandar es cupido.capitaltorreon.com/ceo</p>'}</section>`;
 }
-function equipo() {
-  if (!D.yo.admin) return '';
-  return pruebas() + `<section class="gtm-equipo tarjeta"><h3>Quién puede ver esta página</h3>
-    <p class="gtm-chica">Las cuentas administradoras de Cupido entran siempre. Aquí se agrega a quien va a ejecutar el plan, con su correo de Google. Ve todo el plan y no puede cambiar el equipo. Las palomitas de la lista solo las pone o las quita una cuenta ${D.dominios.map((d) => '@' + d).join(' o ')}.</p>
-    <ul id="gtm-eq-lista">${D.equipo.length ? D.equipo.map((e) => `<li><b>${esc(e.email)}</b><span>desde el ${fecha(e.at)}</span><button class="gtm-quitar" data-quitar="${esc(e.email)}">Quitar</button></li>`).join('') : '<li class="vacio">Todavía no hay nadie más.</li>'}</ul>
-    <form id="gtm-eq-form"><input type="email" id="gtm-eq-correo" placeholder="correo@gmail.com" required aria-label="Correo de la persona"><button class="boton boton-chico">Dar acceso</button></form>
-  </section>`;
+// El perfil de quien dirige es la página pública /ceo: aquí se enseña adentro, en su marco, para no salir del tablero
+function perfilCeo() {
+  const liga = location.origin + '/ceo';
+  return `<header class="gtm-cabeza"><p class="eyebrow">El CEO</p><h2>El perfil de quien va a dirigir Cupido</h2><p class="lead">Es la página pública que se le manda a quien queremos que dirija: cómo es, qué tiene que saber y poder hacer, y la prueba que se pide en vez de currículum.</p>
+      <p class="gtm-ceo-liga"><input readonly value="${esc(liga)}" aria-label="La liga del perfil" id="gtm-ceo-url"><button class="boton boton-chico" id="gtm-ceo-copiar">Copiar la liga</button></p></header>
+    <iframe class="gtm-ceo-marco" id="gtm-ceo-marco" src="/ceo?dentro=1" title="El perfil de quien va a dirigir Cupido" loading="lazy"></iframe>`;
 }
-async function cambiarEquipo(email, quitar) {
-  const r = await pedir('/api/gtm/equipo', { email, quitar });
-  if (!r.ok) return avisar(r.j.error || 'No se pudo cambiar el equipo.');
-  D.equipo = r.j.equipo; pintar(); avisar(quitar ? 'Listo: ya no tiene acceso.' : 'Listo: ya puede entrar con ese correo.');
+// El marco crece a lo que mida la página de adentro: se lee de corrido, sin una segunda barra para desplazarse
+function ajustarMarco() {
+  const m = $('#gtm-ceo-marco'); if (!m) return;
+  const mide = () => { try { const d = m.contentDocument; if (d?.body) m.style.height = Math.max(600, d.documentElement.scrollHeight) + 'px'; } catch { /* otra casa: se queda con su alto */ } };
+  m.addEventListener('load', () => { mide(); try { new ResizeObserver(mide).observe(m.contentDocument.body); } catch { setTimeout(mide, 1200); } });
 }
 
 /* ═══ armar la página ═════════════════════════════════════════════════ */
 function pintar() {
-  const P = D.plan.pestanas, n = Object.keys(D.hechas).length;
-  // «Candidatas» (las fichas de quien salimos a buscar) solo existe para una cuenta administradora
-  const orden = [P[0], { id: 'checklist', t: 'Lista' }, ...P.slice(1), ...(D.yo.admin ? [{ id: 'candidatas', t: 'Candidatas' }] : [])].filter(Boolean);
-  if (!orden.some((p) => p.id === pestana)) pestana = orden[0].id;
-  const actual = P.find((p) => p.id === pestana);
+  const P = D.plan.pestanas, n = Object.keys(D.hechas).length, plan = (id) => P.find((p) => p.id === id) || P[0];
+  if (!PARTES.some((x) => x[0] === parte)) parte = 'estrategia';
+  if (!DE_ESTRATEGIA.includes(sub.estrategia)) sub.estrategia = 'resumen';
+  if (!DE_CEO.some((x) => x[0] === sub.ceo)) sub.ceo = 'perfil';
+  // las pestañas de adentro: en Estrategia, las siete lecturas del plan; en El CEO, el perfil, cómo elegir y las pruebas que han llegado
+  const adentro = parte === 'estrategia' ? DE_ESTRATEGIA.map((id) => [id, plan(id).t]) : parte === 'ceo' ? DE_CEO.map(([id, t]) => [id, t + (id === 'pruebas' && D.yo.admin ? ` <i>${(D.postulaciones || []).length}</i>` : '')]) : [];
+  const soloAdmin = (que) => `<section class="gtm-puerta tarjeta"><h2>${que} piden una cuenta administradora</h2><p class="lead">Traen nombres de personas y lo que pensamos de cada una. Entraste como <b>${esc(D.yo.email)}</b>.</p></section>`;
+  const cuerpo = parte === 'tareas' ? lista()
+    : parte === 'candidatos' ? (D.yo.admin ? '<div id="gtm-candidatas"></div>' : soloAdmin('Las fichas de candidatos'))
+    : parte === 'ceo' ? (sub.ceo === 'perfil' ? perfilCeo() : sub.ceo === 'pruebas' ? (D.yo.admin ? pruebas() : soloAdmin('Las pruebas recibidas')) : bloques(plan('equipo').bloques))
+    : bloques(plan(sub.estrategia).bloques);
   raiz.innerHTML = `<header class="gtm-titulo"><p class="eyebrow">Go-to-market · versión ${esc(D.plan.version)} · ${esc(D.plan.fecha)}</p><h1>${tx(D.plan.titulo || 'El plan para llevar a Cupido a millones')}</h1>${D.plan.bajada ? `<p class="lead">${tx(D.plan.bajada)}</p>` : ''}</header>
     ${franja()}
-    <nav class="gtm-pestanas" id="gtm-pestanas" aria-label="Partes del plan">${orden.map((p) => `<button data-p="${p.id}" class="${p.id === pestana ? 'activo' : ''}">${esc(p.t)}${p.id === 'checklist' ? ` <i>${n}/${D.tareas.length}</i>` : ''}</button>`).join('')}</nav>
-    <div class="gtm-cuerpo" id="gtm-cuerpo">${pestana === 'checklist' ? lista() : pestana === 'candidatas' ? '<div id="gtm-candidatas"></div>' : bloques(actual.bloques) + (pestana === 'equipo' ? equipo() : '')}</div>`;
-  calculadora();
+    <div class="gtm-nav" id="gtm-nav">
+      <nav class="gtm-pestanas gtm-partes" id="gtm-pestanas" aria-label="Las cuatro partes">${PARTES.map(([id, t], k) => `<button data-p="${id}" class="${id === parte ? 'activo' : ''}"><b>${k + 1}</b>${t}${id === 'tareas' ? ` <i>${n}/${D.tareas.length}</i>` : ''}</button>`).join('')}</nav>
+      ${adentro.length ? `<nav class="gtm-pestanas gtm-adentro" id="gtm-adentro" aria-label="Dentro de ${esc(PARTES.find((x) => x[0] === parte)[1])}">${adentro.map(([id, t]) => `<button data-p="${id}" class="${id === sub[parte] ? 'activo' : ''}">${t}</button>`).join('')}</nav>` : ''}
+    </div>
+    <div class="gtm-cuerpo" id="gtm-cuerpo">${cuerpo}</div>`;
+  calculadora(); ajustarMarco();
+  const cp = $('#gtm-ceo-copiar'); if (cp) cp.onclick = async () => { try { await navigator.clipboard.writeText($('#gtm-ceo-url').value); avisar('Liga copiada.'); } catch { $('#gtm-ceo-url').select(); } };
   // La pantalla de fichas es un módulo aparte (candidatos.js): pide las fichas con el mismo pase y las pinta
-  if (pestana === 'candidatas' && window.Candidatos) window.Candidatos.montar($('#gtm-candidatas'), { api: '/api/gtm/candidatos', vacante: 'ceo', claro: true, toast: avisar, cabeceras: () => (pase() ? { authorization: 'Bearer ' + pase() } : {}) });
+  if (parte === 'candidatos' && D.yo.admin && window.Candidatos) window.Candidatos.montar($('#gtm-candidatas'), { api: '/api/gtm/candidatos', vacante: 'ceo', claro: true, toast: avisar, cabeceras: () => (pase() ? { authorization: 'Bearer ' + pase() } : {}) });
 }
 function ir(p, arriba = true) {
-  if (p === 'control') { F.estado = 'control'; p = 'checklist'; }
-  pestana = p; try { history.replaceState(null, '', '#' + p); } catch { /* sin historial */ }
-  pintar(); if (arriba) $('#gtm-pestanas').scrollIntoView({ block: 'start' });
-  $('#gtm-pestanas .activo')?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  // tocar la parte en la que ya se está no cambia su pestaña de adentro; tocar otra la abre donde se quedó
+  parte = PARTES.some((x) => x[0] === p) && p !== 'ceo' ? p : destino(p);
+  try { history.replaceState(null, '', '#' + marca()); } catch { /* sin historial */ }
+  pintar(); if (arriba) $('#gtm-nav').scrollIntoView({ block: 'start' });
+  $('#gtm-pestanas .activo')?.scrollIntoView({ block: 'nearest', inline: 'center' }); $('#gtm-adentro .activo')?.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
 
 raiz.addEventListener('click', (e) => {
@@ -333,9 +361,7 @@ raiz.addEventListener('click', (e) => {
   if (v) { let el = $('#gtm-' + v.dataset.verPc); if (!el) { F.estado = 'todas'; F.area = ''; F.q = ''; pintar(); el = $('#gtm-' + v.dataset.verPc); } el?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
   const f = e.target.closest('[data-f]');
   if (f) { const k = f.dataset.f, v = k === 'fase' ? Number(f.dataset.v) : f.dataset.v; if (k === 'fase' && soloControl()) { F.estado = 'pendientes'; F.fase = v; } else F[k] = k === 'fase' && F.fase === v ? 0 : v; recordar(); const y = scrollY; pintar(); scrollTo(0, y); return; }
-  const q = e.target.closest('[data-quitar]'); if (q) return cambiarEquipo(q.dataset.quitar, true);
 });
-raiz.addEventListener('submit', (e) => { if (e.target.id === 'gtm-eq-form') { e.preventDefault(); cambiarEquipo($('#gtm-eq-correo').value, false); } });
 let espera = 0;
 raiz.addEventListener('input', (e) => {
   if (e.target.id !== 'gtm-q') return;
@@ -349,7 +375,7 @@ async function abrir() {
   if (r.status === 401) return puerta('sesion');
   if (r.status === 403) return puerta('permiso', r.j.correo);
   if (!r.ok) { raiz.innerHTML = `<p class="vacio">No se pudo abrir el plan: ${esc(r.j.error || 'intenta de nuevo en un momento')}.</p>`; return; }
-  D = r.j; const h = location.hash.slice(1); if (h === 'control') { F.estado = 'control'; pestana = 'checklist'; } else if (h) pestana = h;
+  D = r.j; const h = location.hash.slice(1); if (h) parte = destino(h);
   // La lista abre en la fase que toca (la primera con pendientes), para no enseñar 244 tarjetas de golpe
   if (F.fase === -1) F.fase = (D.catalogo.fases.find((f) => D.tareas.some((t) => t[1] === f.n && !D.hechas[t[0]])) || { n: 0 }).n;
   pintar();

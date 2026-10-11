@@ -3,7 +3,7 @@
    La página pública (public/ceo.html) describe a quien va a dirigir Cupido y
    ejecutar el go-to-market. No pide currículum: pide una prueba. Aquí se
    guarda esa prueba y se arma el aviso para quien administra.
-   Las pruebas se leen en /gtm → Equipo (solo cuentas administradoras).
+   Las pruebas se leen en /gtm → El CEO → Pruebas (solo cuentas administradoras).
    ───────────────────────────────────────────────────────────────────── */
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -64,9 +64,9 @@ export const avisoPostulacion = (env, f) => ({
   tipo: 'ceo_prueba', asunto: 'Llegó una prueba para dirigir Cupido',
   contenido: {
     tono: 'claro', figura: { tipo: 'emoji', v: '🧭' }, eyebrow: 'Dirección', titulo: 'Llegó una prueba.',
-    sub: `${esc(f.nombre)}${f.ciudad ? `, de ${esc(f.ciudad)}` : ''}.`, vista: 'Está completa en el go-to-market, en la pestaña Equipo.',
-    parrafos: ['Está completa en el go-to-market, en la pestaña Equipo. Ahí también está la guía para leerla.'],
-    boton: { url: `${env.BASE_URL || 'https://cupido.capitaltorreon.com'}/gtm#equipo`, txt: 'Leer la prueba' },
+    sub: `${esc(f.nombre)}${f.ciudad ? `, de ${esc(f.ciudad)}` : ''}.`, vista: 'Está completa en el go-to-market, en El CEO.',
+    parrafos: ['Está completa en el go-to-market, en la parte «El CEO». Ahí también está la guía para leerla.'],
+    boton: { url: `${env.BASE_URL || 'https://cupido.capitaltorreon.com'}/gtm#pruebas`, txt: 'Leer la prueba' },
     pieCuenta: 'Te llega porque administras Cupido.',
   },
 });

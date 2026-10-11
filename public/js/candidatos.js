@@ -25,6 +25,11 @@
   const NOTA_MAX = 200; // lo que cabe en la nota de una invitación de LinkedIn
   const fecha = (s) => { try { return new Date(s * 1000).toLocaleDateString("es-MX", { day: "numeric", month: "short" }); } catch (e) { return ""; } };
   const quien = (correo) => String(correo || "").split("@")[0];
+  // La cara de cada ficha: su foto si la hay (viene dentro de la ficha, como imagen chica) o sus iniciales
+  const iniciales = (n) => String(n || "?").replace(/\(.*?\)/g, "").trim().split(/\s+/).slice(0, 2).map((x) => x[0] || "").join("").toUpperCase();
+  const cara = (f, clase) => (/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/.test(String(f.foto || ""))
+    ? `<img class="cand-cara ${clase || ""}" src="${f.foto}" alt="Foto de ${esc(f.nombre)}" loading="lazy">`
+    : `<span class="cand-cara sin ${clase || ""}" aria-hidden="true">${esc(iniciales(f.nombre))}</span>`);
 
   async function copiar(texto) {
     try { await navigator.clipboard.writeText(texto); return true; } catch (e) {}
@@ -93,7 +98,7 @@
       const R = rasgosDe(), T = top(); if (!T.length || !R.length) return "";
       const fila = (f) => {
         const c = cuenta(f);
-        return `<tr data-ir="${esc(f.id)}"><th scope="row"><i>${String(f.orden).padStart(2, "0")}</i><span><b>${esc(f.nombre)}</b><small>${esc([f.ciudad, f.comun && f.comun.n ? f.comun.n + " en común" : ""].filter(Boolean).join(" · "))}</small></span></th>${R.map((k) => { const r = (f.rasgos || {})[k] || [1, ""]; return `<td><span class="cand-punto ${NIVEL[r[0]][1]}" title="${esc(k + ": " + NIVEL[r[0]][0].toLowerCase() + ". " + (r[1] || ""))}"></span></td>`; }).join("")}<td class="cand-suma">${c[3]}<small>de ${R.length}</small></td></tr>`;
+        return `<tr data-ir="${esc(f.id)}"><th scope="row"><i>${String(f.orden).padStart(2, "0")}</i>${cara(f, "mini")}<span><b>${esc(f.nombre)}</b><small>${esc([f.ciudad, f.comun && f.comun.n ? f.comun.n + " en común" : ""].filter(Boolean).join(" · "))}</small></span></th>${R.map((k) => { const r = (f.rasgos || {})[k] || [1, ""]; return `<td><span class="cand-punto ${NIVEL[r[0]][1]}" title="${esc(k + ": " + NIVEL[r[0]][0].toLowerCase() + ". " + (r[1] || ""))}"></span></td>`; }).join("")}<td class="cand-suma">${c[3]}<small>de ${R.length}</small></td></tr>`;
       };
       return `<section class="cand-sec">
         <h3>Los ${T.length} de un vistazo</h3>
@@ -151,6 +156,7 @@
       return `<article class="cand-ficha${f.estado === "descartado" ? " fuera" : ""}" id="cand-${esc(f.id)}" data-id="${esc(f.id)}">
         <div class="cand-frente">
           <span class="cand-lugar">${String(f.orden).padStart(2, "0")}</span>
+          ${cara(f, "grande")}
           <div class="cand-quien">
             <h3>${esc(f.nombre)}</h3>
             <p class="cand-titular">${esc(f.titular || "")}</p>
@@ -177,6 +183,7 @@
       const url = liga(f.liga);
       return `<article class="cand-ficha chica${f.estado === "descartado" ? " fuera" : ""}${abiertas.has(f.id) && tieneDetalle(f) ? " ancha" : ""}" id="cand-${esc(f.id)}" data-id="${esc(f.id)}">
         <div class="cand-frente">
+          ${cara(f, "media")}
           <div class="cand-quien">
             <h3>${esc(f.nombre)}</h3>
             <p class="cand-titular">${esc(f.titular || "")}</p>

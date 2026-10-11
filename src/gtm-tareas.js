@@ -93,12 +93,12 @@ export const TAREAS = [
 
   ['f1-60', 1, 'ADM', 'P', 2, 'u', 'Presupuesto de 90 días con tope', 'La propuesta está en Números. Decidir el tope, de dónde sale y qué gasto pide autorización.'],
   ['f1-61', 1, 'ADM', 'P', 2, 'u', 'Mandar el perfil de quien va a dirigir', 'La página ya existe: cupido.capitaltorreon.com/ceo, con la prueba en vez de currículum. Antes de mandarla, cerrar la paga y si vivir en La Laguna es requisito. Luego, por WhatsApp a diez personas que conozcan gente así, y en LinkedIn.'],
-  ['f1-62', 1, 'ADM', 'P', 2, 'u', 'Leer las pruebas y hacer la prueba pagada', 'Las pruebas escritas llegan a Equipo, con su guía para leerlas. A dos o tres finalistas: diez días pagados para organizar una Noche de las 43 con 40 personas. Se elige a quien lo logra, no a quien mejor lo explica.'],
+  ['f1-62', 1, 'ADM', 'P', 2, 'u', 'Leer las pruebas y hacer la prueba pagada', 'Las pruebas escritas llegan a El CEO → Pruebas, con su guía para leerlas. A dos o tres finalistas: diez días pagados para organizar una Noche de las 43 con 40 personas. Se elige a quien lo logra, no a quien mejor lo explica.'],
   ['f1-63', 1, 'ADM', 'A', 2, 'u', 'Una sola hoja de contactos', 'Creadores, medios, sedes y comunidades con estado y siguiente paso. Si no está en la hoja, no pasó.'],
   ['f1-64', 1, 'ADM', 'P', 2, 'u', 'Cuenta de cobro propia para los apoyos', 'Hoy los apoyos voluntarios pasan por la cuenta de SuperLeads. Abrir la de CapitalTorreon y cambiar la liga.'],
   ['f1-65', 1, 'ADM', 'P', 1, 'u', 'Nombrar a quien da la cara', 'Quién habla con medios, quién aparece en video y quién contesta cuando algo sale mal. Puede ser la misma persona; que esté escrito.'],
   ['f1-66', 1, 'ADM', 'A', 2, 'u', 'Cuentas claras del Fondo de atracción', 'Una página pública: cuánto entró, en qué se gastó y cuánta gente trajo, por ciudad. Es lo que permite pedir apoyo sin pena.'],
-  ['f1-67', 1, 'ADM', 'P', 1, 'u', 'Dar acceso a esta página al equipo', 'En la pestaña Equipo, con el correo de Google de cada persona. Todo el equipo ve el plan; las palomitas solo las ponen los correos de la casa (@ingenieriadigital.mx y @superleads.mx), y cada una queda con su correo y su hora.'],
+  ['f1-67', 1, 'ADM', 'P', 1, 'u', 'Darle correo de la casa a quien va a ejecutar', 'A esta página solo entran correos @ingenieriadigital.mx y @superleads.mx. Quien vaya a ejecutar el plan necesita uno: con él ve todo y pone palomitas, que quedan con su correo y su hora.'],
 
   /* ═══ FASE 2 · LAS PRIMERAS 1,000 (LA LAGUNA) ══════════════════════ */
   ['f2-01', 2, 'COM', 'P', 3, 'u', 'Lista de las 100 fundadoras', 'Cien mujeres de La Laguna, de 27 a 45 años, conocidas de conocidos. Se invitan una por una, con nombre. Ellas llenan primero el lado que más cuesta.'],
@@ -122,7 +122,7 @@ export const TAREAS = [
   ['f2-19', 2, 'COM', 'P', 2, 's', 'Una mesa en Paseo Colón cada domingo', 'Pasan unas siete mil personas. Una sola pregunta de las 43 en un pizarrón, el QR y alguien que sonría. Es gratis y es donde está la ciudad.'],
   ['f2-31', 2, 'COM', 'P', 2, 'u', 'Las filas de los conciertos de noviembre', 'Mägo de Oz el 12, Caifanes el 19 y Manuel Medrano el 27. Una hora de fila con gente de la edad correcta: una pregunta y una tarjeta.'],
 
-  ['f2-20', 2, 'CRE', 'A', 3, 'u', 'Lista de 60 creadores locales y regionales', 'Con contacto, alcance, de qué hablan y por qué les importaría. La base está en la pestaña Creadores; completarla con los que salgan en la ciudad.'],
+  ['f2-20', 2, 'CRE', 'A', 3, 'u', 'Lista de 60 creadores locales y regionales', 'Con contacto, alcance, de qué hablan y por qué les importaría. La base está en Estrategia → Creadores; completarla con los que salgan en la ciudad.'],
   ['f2-21', 2, 'CRE', 'P', 2, 'd', 'Diez acercamientos al día a creadores', 'Mensaje propio para cada uno, que demuestre que viste su trabajo. Nada de plantilla pegada.'],
   ['f2-22', 2, 'CRE', 'A', 2, 'u', 'La oferta para creadores, por escrito', 'De inicio no se paga por publicar: liga propia, sus números a los siete días y el crédito de haber encendido su ciudad. Lo pagado se prueba después y siempre se dice que es pagado.'],
   ['f2-23', 2, 'CRE', 'P', 3, 'u', 'Cinco terapeutas de pareja revisan el cuestionario', 'De la región. Que lo contesten, lo critiquen y digan en cámara lo que opinan, sin guion nuestro. Lo que corrijan, se corrige.'],
@@ -298,7 +298,7 @@ export const TAREAS = [
   ['f5-08', 5, 'MKT', 'P', 4, 'u', '«Las 43» como programa', 'El formato de las preguntas, en una plataforma de video o de audio grande.'],
   ['f5-09', 5, 'MKT', 'A', 3, 'u', 'Campaña de las primeras mil parejas', 'Cuando existan y quieran. Solo hechos: cuántas, de dónde, cuánto tardaron.'],
   ['f5-10', 5, 'MKT', 'A', 3, 'u', 'Adaptar el habla por país', 'Las mismas frases no suenan igual en Bogotá que en Monterrey. Cada país con alguien de ahí que revise.'],
-  ['f5-11', 5, 'CRE', 'P', 3, 'u', 'Creadores de cada país', 'La lista de la pestaña Creadores, repetida por país con alguien local.'],
+  ['f5-11', 5, 'CRE', 'P', 3, 'u', 'Creadores de cada país', 'La lista de Estrategia → Creadores, repetida por país con alguien local.'],
   ['f5-12', 5, 'CRE', 'A', 3, 'u', 'Publicar los resultados del estudio', 'Lo que salga, aunque no sea perfecto. La confianza se gana enseñando también lo que no salió.'],
   ['f5-13', 5, 'COM', 'P', 3, 'u', 'Encuentro anual de responsables de ciudad', 'Un fin de semana. Se escribe la siguiente versión del manual entre todos.'],
   ['f5-14', 5, 'COM', 'A', 3, 'u', 'Las noches, organizadas por la comunidad', 'Que no dependan del equipo: cualquiera pide el paquete y la suya aparece en el calendario.'],

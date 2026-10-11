@@ -1,10 +1,21 @@
 # El go-to-market (`/gtm`)
 
-**Ver en vivo: https://cupido.capitaltorreon.com/gtm** (privado: pide entrar con una cuenta del equipo)
+**Ver en vivo: https://cupido.capitaltorreon.com/gtm** (privado: solo entran correos @ingenieriadigital.mx y @superleads.mx)
 
 <!-- Autor: Ricardo López Reyero · RLR · rev 181218 -->
 
 El plan para llevar a Cupido a 10 millones de perfiles vivos, y la lista de todo lo que hay que hacer para llegar. A quien llegue a ejecutar se le dice una sola cosa: **«sigue el go-to-market»**.
+
+## Las cuatro partes
+
+La página se recorre en el orden en que se trabaja:
+
+1. **Estrategia** — lo que se lee una vez: Resumen, Atajos, Lanzamiento, Creadores, Alianzas, Números y Ritmo.
+2. **Tareas** — la lista de 244 actividades en orden, con sus puntos de control y el marcador de palomitas.
+3. **El CEO** — el perfil de quien va a dirigir (la página pública `/ceo`, vista adentro), cómo elegir y las pruebas que han llegado.
+4. **Candidatos** — las fichas de quien salimos a buscar, con su foto.
+
+Las direcciones de antes siguen sirviendo (`#checklist`, `#control`, `#equipo`, `#candidatas`, `#numeros`…): cada una lleva a su parte nueva.
 
 ## Qué trae
 
@@ -32,11 +43,12 @@ Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verda
 - **Lo que hay que decidir antes de mandar la liga** (está escrito en Equipo): la paga, si vivir en La Laguna de noviembre a febrero es requisito, y cómo se llama el puesto.
 - La vacante no pide género ni edad.
 
-## Candidatas: a quién salimos a buscar (`/gtm` → Candidatas)
+## Candidatos: a quién salimos a buscar (`/gtm` → Candidatos)
 
 `/ceo` espera a que alguien llegue. Esta pestaña es lo contrario: con el perfil en la mano se sale a buscar, y se guarda una ficha por persona. Solo la ven las **cuentas administradoras** (ni siquiera el equipo: quien sea contratada no debe leer lo que se pensó de las demás).
 
 - **Qué trae cada ficha:** quién es y su liga, por qué esto le estaba destinado, trayectoria, lo publicado sobre su trabajo, los doce rasgos uno por uno (se ve, probable, por comprobar o bandera, con su evidencia), qué revisar, quién puede presentarla, la nota de invitación (cabe en 200 caracteres), el mensaje completo y tres preguntas para la primera llamada.
+- **La foto:** la de su perfil de LinkedIn, chica (176 px), guardada dentro de la ficha. Quien no la tiene sale con sus iniciales. Las fotos viven en `privado/fotos/<id>.jpg` y en la base; nunca en el repositorio. El sembrador las mete solo.
 - **Seguimiento:** estado (por contactar, contactada, en plática, mandó la prueba, descartada) y notas, que se guardan solas con quién y cuándo. Se puede agregar a alguien a mano: entra a la banca.
 - **Cómo se buscó** (está escrito en la propia pestaña): solo trayectoria profesional, por oficio y no por nombre. La primera ronda usó una sola fuente (LinkedIn). En la segunda la cuenta llegó al límite mensual de búsquedas de LinkedIn, que entonces enseña tres resultados por consulta: los nombres se descubren en prensa sobre su trabajo (nombramientos, entrevistas de negocio, notas de sus proyectos) y la trayectoria se lee completa en LinkedIn, que sigue abierto. Si una ficha sale de prensa y no de un perfil, lo avisa y su botón dice «Abrir la nota». **No se busca la vida personal de nadie**: ni estado civil, ni divorcios, ni familia. Si a alguien le importa el problema por su historia, lo cuenta ella; para eso está el rasgo «Motivo», que se pregunta. Solo se escribe en femenino de quien así se presenta en su perfil.
 - **Rondas:** el orden es uno solo. Cada ronda marca sus fichas con una etiqueta (campo `nuevo`), y la que baja a la banca conserva su ficha completa y la razón (campo `por_que_no`).
@@ -56,10 +68,11 @@ Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verda
 
 ## Quién entra
 
-- Las **cuentas administradoras** de Cupido (las huellas de la variable `ADMINES`) entran siempre.
-- Una cuenta administradora agrega a quien haga falta en **Equipo → Dar acceso**, con su correo de Google. Esa persona puede palomear la lista; no puede cambiar el equipo.
-- Se entra con el **login de la casa** (el botón de Google de `login.capitaltorreon.com`); también abre con una sesión de Cupido de una cuenta administradora.
-- La página (`public/gtm.html`) es un cascarón: el plan y la lista viajan solo en `/api/gtm`, y solo a quien tiene permiso. Sin sesión responde 401; con una cuenta que no es del equipo, 403.
+- **Solo correos de la casa:** `@ingenieriadigital.mx` y `@superleads.mx` (`DOMINIOS_CASA` en `src/gtm.js`). Nadie más, aunque se le quiera dar acceso: ya no hay lista de invitados.
+- Quien entra ve la Estrategia, las Tareas y El CEO, y pone palomitas (cada una queda con su correo y su hora).
+- **Candidatos y las pruebas recibidas** piden además ser cuenta administradora (las huellas de `ADMINES`): traen nombres, fotos y lo que pensamos de cada persona.
+- Se entra con el **login de la casa** (el botón de Google de `login.capitaltorreon.com`); también abre con una sesión de Cupido hecha con uno de esos correos.
+- La página (`public/gtm.html`) es un cascarón: todo viaja solo en `/api/gtm`, y solo a quien tiene permiso. Sin sesión responde 401; con un correo de otro dominio, 403.
 
 **Ojo:** el repositorio es público. Mientras lo sea, el texto del plan se puede leer en GitHub aunque la página esté cerrada. Por eso aquí no se copian correos ni teléfonos de nadie: cada persona lleva a su página oficial. Decidir si el repositorio sigue abierto es una actividad de la fase 1.
 
@@ -89,7 +102,7 @@ Rutas: `GET /api/gtm` (todo), `POST /api/gtm/tarea {id, hecha}`, `POST /api/gtm/
 
 ## Reglas para tocar la lista
 
-- **Quién pone palomitas:** solo los correos `@ingenieriadigital.mx` y `@superleads.mx`, porque es un acto administrativo. Pueden ponerlas y quitarlas. El resto del equipo ve la lista y el marcador, pero su palomita aparece cerrada; el servidor lo rechaza aunque se intente por fuera. Cada palomita guarda el correo y la hora, y se ve en la tarjeta.
+- **Quién pone palomitas:** quien entra, es decir, solo correos `@ingenieriadigital.mx` y `@superleads.mx`. Pueden ponerlas y quitarlas. Cada palomita guarda el correo y la hora, y se ve en la tarjeta.
 - **Mover una actividad** es cambiar su clave de lugar en `PASOS`; el renglón de `TAREAS` no se toca. Una actividad que no esté en ningún paso sale al final de su fase, en «Lo demás». Si se mueve la última de un paso, hay que actualizar el `tras` de su punto de control.
 - **La clave de una actividad nunca cambia** (`f2-17`): ahí se guarda su palomita. Para agregar, se usa un número nuevo; para retirar, se borra el renglón.
 - Las que se repiten (↻ diario, semanal, mensual) se palomean cuando la rutina ya quedó andando.

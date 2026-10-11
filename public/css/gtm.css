@@ -27,6 +27,20 @@
 .gtm-hoy-ciudades { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.14); display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: rgba(255,255,255,.8); }
 .gtm-hoy-ciudades i { font-style: normal; color: rgba(255,255,255,.5); }
 
+/* las cuatro partes (y, debajo, las pestañas de adentro): se quedan pegadas arriba al bajar */
+.gtm-nav { position: sticky; top: 61px; z-index: 30; background: var(--crema); margin: 0 -20px 22px; border-bottom: 1px solid var(--linea); }
+.gtm-nav .gtm-pestanas { position: static; margin: 0; border-bottom: 0; }
+.gtm-partes button { font-size: 15.5px; padding: 11px 16px; display: inline-flex; align-items: center; gap: 8px; }
+.gtm-partes button b { display: inline-grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; background: var(--linea-2); color: var(--tinta-2); font: 700 12px/1 var(--sans); }
+.gtm-partes button.activo b { background: var(--rosa); color: #fff; }
+.gtm-adentro { padding-top: 0 !important; }
+.gtm-adentro button { font-size: 13.5px; padding: 8px 12px; }
+.gtm-adentro button.activo { background: var(--rosa-suave); color: var(--rosa-osc); }
+/* el perfil de quien dirige, dentro de su marco */
+.gtm-ceo-liga { display: flex; gap: 8px; max-width: 560px; margin: 14px 0 0; }
+.gtm-ceo-liga input { flex: 1; min-width: 0; font: 500 14.5px/1.2 var(--sans); padding: 10px 14px; border: 1px solid var(--linea-2); border-radius: 999px; background: var(--blanco); color: var(--tinta-2); }
+.gtm-ceo-marco { display: block; width: 100%; height: 900px; border: 1px solid var(--linea); border-radius: var(--radio); background: var(--crema); }
+
 /* las pestañas */
 .gtm-pestanas { position: sticky; top: 61px; z-index: 30; display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; background: var(--crema); padding: 8px 0; margin: 0 -20px 22px; padding-left: 20px; padding-right: 20px; border-bottom: 1px solid var(--linea); }
 .gtm-pestanas::-webkit-scrollbar { display: none; }

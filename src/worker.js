@@ -19,7 +19,7 @@ import { generarSonido, servirSonido, estadoSonidos, generarMusica, servirMusica
 import { avance } from '../public/js/preguntas.js';
 import { llamada, conectarVoz, cambiarTono, responderChispa, verAlbum, misCharlas, verCharla, enviar, escribiendo, adjuntar, servirAdjunto, liberar, retirar, perfilCompartido, reaccionar, buscarGif, conectarVivo, guardar, losGuardados, buscarEnCharla, hitosDelDia } from './charla.js';
 import { empezarSubida, subirParte, subirVista, terminarSubida, cancelarSubida, limpiarSubidas } from './subidas.js';
-import { quienGtm, verGtm, marcarTarea, cambiarEquipo } from './gtm.js';
+import { quienGtm, verGtm, marcarTarea, DOMINIOS_CASA } from './gtm.js';
 import { guardarPostulacion, avisoPostulacion, aQuienAvisar } from './ceo.js';
 import { listarCandidatos, moverCandidato, agregarCandidato } from './candidatos.js';
 import { mandar as correoSuelto } from './correos.js';   // un correo que no sale del catálogo: el aviso a quien administra
@@ -313,11 +313,11 @@ async function api(req, env, ctx, url) {
   }
 
   /* ── El programa: todo gratis hoy; apoyar es voluntario ─────────────────── */
-  /* ── El go-to-market (/gtm): privado para el equipo. Se entra con el pase del login de la casa o con una sesión de Cupido ── */
+  /* ── El go-to-market (/gtm): privado. Solo entran los correos de la casa, con el pase del login de la casa o con una sesión de Cupido ── */
   if (ruta === '/api/gtm' || ruta.startsWith('/api/gtm/')) {
     const q = await quienGtm(env, req, url, yo);
     if (q.falta === 'sesion') return json({ error: 'Entra con tu cuenta para ver el plan.', falta: 'sesion' }, 401);
-    if (q.falta === 'permiso') return json({ error: 'Esta cuenta no está en el equipo.', falta: 'permiso', correo: q.email }, 403);
+    if (q.falta === 'permiso') return json({ error: 'Aquí solo entran correos de la casa.', falta: 'permiso', correo: q.email, dominios: DOMINIOS_CASA }, 403);
     if (ruta === '/api/gtm' && metodo === 'GET') return json(await verGtm(env, q));
     // Candidatas: las fichas de quien salimos a buscar. Traen nombres y lo que pensamos de cada quien: solo cuentas administradoras
     if (ruta === '/api/gtm/candidatos' || ruta.startsWith('/api/gtm/candidatos/')) {
@@ -328,7 +328,6 @@ async function api(req, env, ctx, url) {
       return error('No existe', 404);
     }
     if (ruta === '/api/gtm/tarea' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await marcarTarea(env, q, String(b.id || ''), !!b.hecha); return json(r, r.ok ? 200 : 422); }
-    if (ruta === '/api/gtm/equipo' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await cambiarEquipo(env, q, b.email, !!b.quitar); return json(r, r.ok ? 200 : r.status || 422); }
     return error('No existe', 404);
   }
 

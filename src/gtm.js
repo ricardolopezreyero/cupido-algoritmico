@@ -1,13 +1,11 @@
 /* ─────────────────────────────────────────────────────────────────────
    Cupido Algorítmico · El go-to-market (/gtm) — RLR · Ricardo López Reyero
-   Privado para el equipo. La página pública (public/gtm.html) es un cascarón:
-   la estrategia y la lista viajan solo en /api/gtm, y solo a quien tiene permiso.
-   Quién entra: las cuentas administradoras (huellas en ADMINES) y los correos
-   que una de ellas haya puesto en el equipo. Se entra con el login de la casa
-   (el pase de login.capitaltorreon.com) o con la sesión de Cupido.
-   Cada palomita de la lista se guarda con el correo de quien la puso y la hora.
-   Palomear es un acto administrativo: solo lo hacen los correos de la casa
-   (DOMINIOS_PALOMITA). El resto del equipo ve la lista, pero no la marca.
+   Privado. La página pública (public/gtm.html) es un cascarón: la estrategia,
+   las tareas y las fichas viajan solo en /api/gtm, y solo a quien tiene permiso.
+   Quién entra: los correos de la casa (DOMINIOS_CASA) y nadie más. Se entra con
+   el login de la casa (el pase de login.capitaltorreon.com) o con la sesión de
+   Cupido. Quien entra ve todo y pone palomitas; cada una queda con su correo y
+   su hora. Las fichas de candidatos piden además ser cuenta administradora.
    Los puntos de control (usuarios al mes e ingreso al mes) no se palomean:
    se alcanzan solos el día en que los dos números reales llegan a la meta.
    ───────────────────────────────────────────────────────────────────── */
@@ -37,9 +35,9 @@ const IDS = new Set(TAREAS.map((t) => t[0]));
 const PCS = new Set(CONTROLES.map((c) => c[0]));
 const limpio = (c) => String(c || '').trim().toLowerCase();
 const esCorreo = (c) => /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,}$/.test(c);
-// Quién puede poner y quitar palomitas: solo correos de estos dominios
-export const DOMINIOS_PALOMITA = ['ingenieriadigital.mx', 'superleads.mx'];
-const palomea = (correo) => DOMINIOS_PALOMITA.includes(limpio(correo).split('@')[1] || '');
+// Quién entra a /gtm (y, por lo mismo, quién pone y quita palomitas): solo correos de estos dominios
+export const DOMINIOS_CASA = ['ingenieriadigital.mx', 'superleads.mx'];
+const deCasa = (correo) => DOMINIOS_CASA.includes(limpio(correo).split('@')[1] || '');
 const admines = (env) => String(env.ADMINES || '').split(',').map((x) => x.trim()).filter(Boolean);
 
 /* ── quién toca la puerta: { email, nombre, admin } · { falta: 'sesion' } · { falta: 'permiso', email } ── */
@@ -49,10 +47,8 @@ export async function quienGtm(env, req, url, yo) {
   if (pase) { const q = await verificarPase(pase, url.hostname); if (q?.email) { email = limpio(q.email); nombre = q.name || ''; } }
   if (!email && yo && !yo.sesion?.demo && yo.P?.correo) { email = limpio(yo.P.correo); nombre = yo.P.nombre === 'Sin nombre' ? '' : yo.P.nombre; }
   if (!email) return { falta: 'sesion' };
-  const admin = admines(env).includes(await huella(email));
-  if (admin) return { email, nombre: nombre || email.split('@')[0], admin: true };
-  const fila = await env.DB.prepare(`SELECT email FROM gtm_equipo WHERE email = ?`).bind(email).first();
-  return fila ? { email, nombre: nombre || email.split('@')[0], admin: false } : { falta: 'permiso', email };
+  if (!deCasa(email)) return { falta: 'permiso', email };
+  return { email, nombre: nombre || email.split('@')[0], admin: admines(env).includes(await huella(email)) };
 }
 
 /* ── dónde vamos hoy: los números de verdad, para que el plan no se discuta en el aire ── */
@@ -100,31 +96,20 @@ export async function verGtm(env, q) {
     await env.DB.prepare(`INSERT OR IGNORE INTO gtm_tareas (id, hecha_por, hecha_nombre) VALUES (?, 'automatico', 'Cupido')`).bind(id).run();
     alcanzados[id] = { at: new Date().toISOString().slice(0, 19).replace('T', ' ') };
   }
-  const equipo = q.admin ? (await env.DB.prepare(`SELECT email, agregado_por, at FROM gtm_equipo ORDER BY at`).all()).results : [];
   // las pruebas de /ceo traen datos de personas: solo las ve una cuenta administradora. Y a esa cuenta se le avisará de las que lleguen.
   const postulaciones = q.admin ? await listarPostulaciones(env) : [];
   if (q.admin && esCorreo(q.email)) await env.DB.prepare(`INSERT OR IGNORE INTO gtm_avisos (email) VALUES (?)`).bind(q.email).run();
-  return { yo: { email: q.email, nombre: q.nombre, admin: q.admin, palomea: palomea(q.email) }, dominios: DOMINIOS_PALOMITA, plan: PLAN, tareas: TAREAS, catalogo: { fases: FASES, areas: AREAS, quienes: QUIENES, esfuerzos: ESFUERZOS, ritmos: RITMOS, pasos: PASOS }, hechas, controles: CONTROLES, alcanzados, supuestos: SUPUESTOS_CONTROL, equipo, postulaciones, hoy: h };
+  return { yo: { email: q.email, nombre: q.nombre, admin: q.admin, palomea: deCasa(q.email) }, dominios: DOMINIOS_CASA, plan: PLAN, tareas: TAREAS, catalogo: { fases: FASES, areas: AREAS, quienes: QUIENES, esfuerzos: ESFUERZOS, ritmos: RITMOS, pasos: PASOS }, hechas, controles: CONTROLES, alcanzados, supuestos: SUPUESTOS_CONTROL, postulaciones, hoy: h };
 }
 
 /* ── una palomita: se pone o se quita, y queda quién y cuándo ── */
 export async function marcarTarea(env, q, id, hecha) {
   if (PCS.has(id)) return { ok: false, error: 'Un punto de control no se palomea: se alcanza solo, cuando los dos números llegan.' };
   if (!IDS.has(id)) return { ok: false, error: 'Esa actividad no existe.' };
-  if (!palomea(q.email)) return { ok: false, error: `Las palomitas solo las pone o las quita una cuenta ${DOMINIOS_PALOMITA.map((d) => '@' + d).join(' o ')}. Entraste como ${q.email}.` };
+  if (!deCasa(q.email)) return { ok: false, error: `Las palomitas solo las pone o las quita una cuenta ${DOMINIOS_CASA.map((d) => '@' + d).join(' o ')}. Entraste como ${q.email}.` };
   if (!hecha) { await env.DB.prepare(`DELETE FROM gtm_tareas WHERE id = ?`).bind(id).run(); return { ok: true, id, hecha: null }; }
   await env.DB.prepare(`INSERT INTO gtm_tareas (id, hecha_por, hecha_nombre) VALUES (?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET hecha_por = excluded.hecha_por, hecha_nombre = excluded.hecha_nombre, hecha_at = datetime('now')`).bind(id, q.email, q.nombre || null).run();
   const f = await env.DB.prepare(`SELECT hecha_at FROM gtm_tareas WHERE id = ?`).bind(id).first();
   return { ok: true, id, hecha: { por: q.email, nombre: q.nombre || q.email.split('@')[0], at: f.hecha_at } };
-}
-
-/* ── el equipo: solo una cuenta administradora agrega o quita correos ── */
-export async function cambiarEquipo(env, q, correo, quitar) {
-  if (!q.admin) return { ok: false, error: 'Solo una cuenta administradora cambia el equipo.', status: 403 };
-  const email = limpio(correo);
-  if (!esCorreo(email)) return { ok: false, error: 'Ese correo no se ve bien.' };
-  if (quitar) await env.DB.prepare(`DELETE FROM gtm_equipo WHERE email = ?`).bind(email).run();
-  else await env.DB.prepare(`INSERT OR IGNORE INTO gtm_equipo (email, agregado_por) VALUES (?, ?)`).bind(email, q.email).run();
-  return { ok: true, equipo: (await env.DB.prepare(`SELECT email, agregado_por, at FROM gtm_equipo ORDER BY at`).all()).results };
 }

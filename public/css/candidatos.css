@@ -195,3 +195,11 @@
 .cand-prensa small { color: var(--cand-tenue); font-size: 12px; }
 .cand-ficha.chica.ancha { grid-column: 1 / -1; }
 .cand-ficha.chica .cand-proposito { margin-top: 12px; }
+
+/* la cara de cada ficha: su foto o sus iniciales */
+.cand-cara { flex-shrink: 0; border-radius: 50%; object-fit: cover; background: var(--cand-hundido); border: 1px solid var(--cand-borde); display: inline-grid; place-items: center; font-weight: 800; color: var(--cand-acento); letter-spacing: .02em; }
+.cand-cara.grande { width: 76px; height: 76px; font-size: 24px; }
+.cand-cara.media { width: 48px; height: 48px; font-size: 16px; }
+.cand-cara.mini { width: 28px; height: 28px; font-size: 10.5px; margin-right: 2px; vertical-align: middle; }
+@media (max-width: 640px) { .cand-cara.grande { width: 60px; height: 60px; font-size: 20px; } }
+
