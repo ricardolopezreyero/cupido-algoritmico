@@ -8,6 +8,8 @@
      ritmo    u una vez · d diario · s semanal · m mensual
    La clave NUNCA cambia (ahí se guarda la palomita). Para agregar una actividad se usa un número nuevo;
    para retirar una, se borra el renglón y su palomita deja de contarse.
+   Después de las actividades va EL ORDEN (PASOS): en qué orden se hacen. Los renglones de TAREAS siguen
+   agrupados por área solo para encontrarlos; lo que se ve en la página es el orden de PASOS.
    Al final van los PUNTOS DE CONTROL (CONTROLES): no son actividades, son los dos números
    —usuarios al mes e ingreso al mes— que dicen si las actividades están sirviendo.
    ───────────────────────────────────────────────────────────────────── */
@@ -96,7 +98,7 @@ export const TAREAS = [
   ['f1-64', 1, 'ADM', 'P', 2, 'u', 'Cuenta de cobro propia para los apoyos', 'Hoy los apoyos voluntarios pasan por la cuenta de SuperLeads. Abrir la de CapitalTorreon y cambiar la liga.'],
   ['f1-65', 1, 'ADM', 'P', 1, 'u', 'Nombrar a quien da la cara', 'Quién habla con medios, quién aparece en video y quién contesta cuando algo sale mal. Puede ser la misma persona; que esté escrito.'],
   ['f1-66', 1, 'ADM', 'A', 2, 'u', 'Cuentas claras del Fondo de atracción', 'Una página pública: cuánto entró, en qué se gastó y cuánta gente trajo, por ciudad. Es lo que permite pedir apoyo sin pena.'],
-  ['f1-67', 1, 'ADM', 'P', 1, 'u', 'Dar acceso a esta página al equipo', 'En la pestaña Equipo, con el correo de Google de cada persona. Cada palomita queda con nombre y fecha.'],
+  ['f1-67', 1, 'ADM', 'P', 1, 'u', 'Dar acceso a esta página al equipo', 'En la pestaña Equipo, con el correo de Google de cada persona. Todo el equipo ve el plan; las palomitas solo las ponen los correos de la casa (@ingenieriadigital.mx y @superleads.mx), y cada una queda con su correo y su hora.'],
 
   /* ═══ FASE 2 · LAS PRIMERAS 1,000 (LA LAGUNA) ══════════════════════ */
   ['f2-01', 2, 'COM', 'P', 3, 'u', 'Lista de las 100 fundadoras', 'Cien mujeres de La Laguna, de 27 a 45 años, conocidas de conocidos. Se invitan una por una, con nombre. Ellas llenan primero el lado que más cuesta.'],
@@ -314,9 +316,55 @@ export const TAREAS = [
   ['f5-26', 5, 'ADM', 'A', 2, 'm', 'Cuentas públicas', 'Cuánto entra, en qué se va. Una vez al año, a la vista de todos.'],
 ];
 
+/* ═══ EL ORDEN ════════════════════════════════════════════════════════
+   La lista se lee de arriba abajo, en el orden en que conviene hacerla. Cada paso junta lo de un tramo y,
+   cuando toca, termina en su punto de control: las actividades de arriba son las que tienen que estar
+   andando para que ese número llegue.
+   Cada renglón: [fase, cuándo, título, [claves de las actividades, en orden]]
+   Mover una actividad es cambiar su clave de lugar aquí; el renglón de TAREAS no se toca.
+   Una actividad que no esté en ningún paso sale al final de su fase. El punto de control de un paso
+   lleva en «tras» la última clave de ese paso.
+   ═════════════════════════════════════════════════════════════════════ */
+export const PASOS = [
+  /* ═══ FASE 1 ═══ */
+  [1, '', 'Decidir lo que destraba todo lo demás', ['f1-03', 'f1-60', 'f1-65', 'f1-67', 'f1-61', 'f1-15', 'f1-18', 'f1-33', 'f1-23', 'f1-37']],
+  [1, '', 'Lo que tarda: abogado, marca y nombres', ['f1-30', 'f1-31', 'f1-39', 'f1-45']],
+  [1, '', 'Poder medir', ['f1-01', 'f1-02', 'f1-05', 'f1-08', 'f1-04', 'f1-07', 'f1-06']],
+  [1, '', 'Ver a gente usarlo y arreglar', ['f1-10', 'f1-11', 'f1-12', 'f1-21', 'f1-51']],
+  [1, '', 'Las piezas de producto que el plan necesita', ['f1-16', 'f1-13', 'f1-22', 'f1-17', 'f1-14', 'f1-19', 'f1-20']],
+  [1, '', 'Cuidar: reportes, cuentas falsas y un día malo', ['f1-34', 'f1-32', 'f1-35', 'f1-36', 'f1-38', 'f1-40']],
+  [1, '', 'La casa armada por fuera', ['f1-57', 'f1-46', 'f1-47', 'f1-48', 'f1-49', 'f1-50', 'f1-52', 'f1-54', 'f1-53', 'f1-55', 'f1-56']],
+  [1, '', 'El dinero y la gente, antes de anunciar', ['f1-64', 'f1-66', 'f1-63', 'f1-62']],
+  /* ═══ FASE 2 ═══ */
+  [2, 'Del 1 al 10 de noviembre', 'Antes de abrir', ['f2-01', 'f2-05', 'f2-50', 'f2-60', 'f2-16', 'f2-08', 'f2-20', 'f2-22', 'f2-57', 'f2-65', 'f2-47', 'f2-63', 'f2-34', 'f2-43', 'f2-28', 'f2-74']],
+  [2, 'Del 11 al 18 de noviembre', 'La primera semana', ['f2-02', 'f2-17', 'f2-13', 'f2-36', 'f2-37', 'f2-35', 'f2-39', 'f2-21', 'f2-03', 'f2-24', 'f2-67', 'f2-64']],
+  [2, 'Del 19 al 30 de noviembre', 'Hasta trescientos', ['f2-06', 'f2-07', 'f2-09', 'f2-10', 'f2-04', 'f2-38', 'f2-40', 'f2-48', 'f2-25', 'f2-30', 'f2-29', 'f2-23', 'f2-31', 'f2-19', 'f2-46', 'f2-66', 'f2-12', 'f2-14', 'f2-70', 'f2-69', 'f2-68']],
+  [2, 'Del 1 al 15 de diciembre', 'Hasta seiscientos, con el Fondo abierto', ['f2-41', 'f2-49', 'f2-42', 'f2-26', 'f2-27', 'f2-11', 'f2-18', 'f2-52', 'f2-53', 'f2-55', 'f2-54', 'f2-59', 'f2-58', 'f2-45', 'f2-61', 'f2-62', 'f2-71', 'f2-73']],
+  [2, 'Del 16 al 31 de diciembre', 'Las primeras mil', ['f2-44', 'f2-51', 'f2-56', 'f2-15', 'f2-72']],
+  /* ═══ FASE 3 ═══ */
+  [3, 'Antes del 3 de enero', 'Todo listo para anunciar', ['f3-01', 'f3-40', 'f3-42', 'f3-43', 'f3-08', 'f3-02']],
+  [3, 'Del 3 al 17 de enero', 'La cuenta regresiva', ['f3-03', 'f3-04', 'f3-06', 'f3-22', 'f3-24', 'f3-34', 'f3-11', 'f3-14', 'f3-52', 'f3-12', 'f3-63']],
+  [3, 'Del 18 al 31 de enero', 'La semana de noches', ['f3-71', 'f3-10', 'f3-05', 'f3-20', 'f3-32', 'f3-13', 'f3-51', 'f3-41', 'f3-44', 'f3-33']],
+  [3, 'Del 1 al 14 de febrero', 'El Cruce', ['f3-07', 'f3-50', 'f3-15', 'f3-21', 'f3-30', 'f3-31', 'f3-23']],
+  [3, 'Del 15 al 28 de febrero', 'Después del Cruce', ['f3-60', 'f3-61', 'f3-62', 'f3-53', 'f3-70', 'f3-72', 'f3-73']],
+  /* ═══ FASE 4 ═══ */
+  [4, 'Del 1 al 15 de marzo', 'Que la gente vuelva', ['f4-01', 'f4-73', 'f4-74', 'f4-60', 'f4-24', 'f4-44', 'f4-45', 'f4-70']],
+  [4, 'Del 16 de marzo al 30 de abril', 'Tres ciudades con el manual', ['f4-03', 'f4-02', 'f4-51', 'f4-41', 'f4-40', 'f4-43', 'f4-26', 'f4-19', 'f4-71', 'f4-72']],
+  [4, 'Mayo y junio', 'Las redes nacionales', ['f4-16', 'f4-17', 'f4-07', 'f4-04', 'f4-05', 'f4-06', 'f4-42', 'f4-22', 'f4-23', 'f4-25', 'f4-61', 'f4-75']],
+  [4, 'Julio y agosto', 'Seis ciudades', ['f4-15', 'f4-21', 'f4-20', 'f4-30', 'f4-31', 'f4-34', 'f4-09', 'f4-50', 'f4-54']],
+  [4, 'Septiembre y octubre', 'Las pruebas de que funciona', ['f4-32', 'f4-33', 'f4-35', 'f4-63', 'f4-08', 'f4-10', 'f4-52']],
+  [4, 'Noviembre y diciembre', 'Cien mil', ['f4-55', 'f4-18', 'f4-36', 'f4-53', 'f4-62']],
+  /* ═══ FASE 5 ═══ */
+  [5, 'De enero a marzo de 2028', 'Empieza el cobro', ['f5-24', 'f5-15', 'f5-26', 'f5-19', 'f5-01', 'f5-07']],
+  [5, 'De abril a junio de 2028', 'Texas', ['f5-21', 'f5-02', 'f5-06', 'f5-09']],
+  [5, 'De julio a diciembre de 2028', 'Un millón', ['f5-03', 'f5-16', 'f5-12', 'f5-13', 'f5-20', 'f5-22']],
+  [5, '2029', 'Los países que hablan español', ['f5-10', 'f5-04', 'f5-05', 'f5-11', 'f5-23', 'f5-25', 'f5-14']],
+  [5, '2030', 'Diez millones', ['f5-08', 'f5-17', 'f5-18']],
+];
+
 /* ═══ PUNTOS DE CONTROL ═══════════════════════════════════════════════
    Cada renglón: [clave, fase, tras, fecha, usuarios al mes, ingreso al mes, título, de dónde sale, qué se decide si no se llega]
-     tras      la clave de la actividad después de la cual aparece en la lista: es la que debería producir ese número.
+     tras      la clave de la actividad después de la cual aparece en la lista: la última de su paso (ver PASOS).
                Si esa actividad se retira, el punto de control se va al final de su fase.
      fecha     AAAA-MM-DD, el día en que se revisa
      usuarios  personas reales que abrieron Cupido al menos una vez en los últimos 30 días
@@ -342,31 +390,31 @@ export const SUPUESTOS_CONTROL = [
 
 export const CONTROLES = [
   /* ═══ FASE 1 ═══ */
-  ['pc-01', 1, 'f1-06', '2026-10-31', 50, 500, 'La casa, probada con gente y con dinero de verdad', 'Antes de anunciar nada: cincuenta personas de confianza adentro (el equipo, las diez de la prueba y las primeras fundadoras) y los primeros cinco apoyos de $100, para comprobar que cobrar, agradecer y devolver funciona.', 'Se revisa qué le falta a la casa antes del 11 de noviembre: lo que nadie ha usado no se anuncia.'],
+  ['pc-01', 1, 'f1-62', '2026-10-31', 50, 500, 'La casa, probada con gente y con dinero de verdad', 'Antes de anunciar nada: cincuenta personas de confianza adentro (el equipo, las diez de la prueba y las primeras fundadoras) y los primeros cinco apoyos de $100, para comprobar que cobrar, agradecer y devolver funciona.', 'Se revisa qué le falta a la casa antes del 11 de noviembre: lo que nadie ha usado no se anuncia.'],
 
   /* ═══ FASE 2 ═══ */
-  ['pc-02', 2, 'f2-03', '2026-11-18', 150, 500, 'Una semana después del arranque', 'Las primeras fundadoras, a quien trajo cada una y la primera Noche de las 43. Cinco socios fundadores de $100 al mes.', 'Más invitaciones personales antes que más publicaciones: es el canal que sí convierte.'],
+  ['pc-02', 2, 'f2-64', '2026-11-18', 150, 500, 'Una semana después del arranque', 'Las primeras fundadoras, a quien trajo cada una y la primera Noche de las 43. Cinco socios fundadores de $100 al mes.', 'Más invitaciones personales antes que más publicaciones: es el canal que sí convierte.'],
   ['pc-03', 2, 'f2-68', '2026-11-30', 300, 1000, 'Trescientos: la primera lectura seria', 'Con 300 ya se leen la tasa de par y el equilibrio entre ellas y ellos. Los diez primeros socios fundadores, a $100 al mes.', 'Se corrige el cuestionario o la invitación antes de gastar un peso en anuncios.'],
   ['pc-04', 2, 'f2-73', '2026-12-15', 600, 1500, 'A medio camino de las mil, con el Fondo abierto', 'Diez socios y los primeros aportes al Fondo de atracción de La Laguna: «con esto traemos a 500 personas más».', 'Las dos semanas que quedan se dedican al lado que falte, ellas o ellos.'],
-  ['pc-05', 2, 'f2-74', '2026-12-31', 1000, 2000, 'Las primeras mil, y vuelven', 'La meta de la fase. Dos pesos al mes por usuario: diez socios de $100 y diez aportes de $100 al Fondo.', 'El Gran Cruce se anuncia cuando se entienda por qué: con menos de mil, el termómetro arranca frío.'],
+  ['pc-05', 2, 'f2-72', '2026-12-31', 1000, 2000, 'Las primeras mil, y vuelven', 'La meta de la fase. Dos pesos al mes por usuario: diez socios de $100 y diez aportes de $100 al Fondo.', 'El Gran Cruce se anuncia cuando se entienda por qué: con menos de mil, el termómetro arranca frío.'],
 
   /* ═══ FASE 3 ═══ */
-  ['pc-06', 3, 'f3-03', '2027-01-17', 2000, 4000, 'Dos semanas de cuenta regresiva', 'El primer domingo de enero y el termómetro de la ciudad. Veinte socios y veinte aportes en el mes.', 'Se adelanta la semana de noches y se suman creadores antes de que acabe enero.'],
-  ['pc-07', 3, 'f3-20', '2027-01-31', 3000, 6000, 'Faltan dos semanas para el Cruce', 'Tres mil usuarios al terminar la semana de noches. Treinta socios y treinta aportes.', 'Las últimas dos semanas van completas a invitación personal y al reto de fundadoras.'],
-  ['pc-08', 3, 'f3-60', '2027-02-14', 5000, 10000, 'El día del Cruce: La Laguna encendida', 'Cinco mil usuarios en el mes del Cruce. Cincuenta socios y cincuenta aportes: es el mes en que más gente quiere ayudar a su ciudad.', 'Monterrey y Saltillo abren con el manual corregido, no con el mismo.'],
+  ['pc-06', 3, 'f3-63', '2027-01-17', 2000, 4000, 'Dos semanas de cuenta regresiva', 'El primer domingo de enero y el termómetro de la ciudad. Veinte socios y veinte aportes en el mes.', 'Se adelanta la semana de noches y se suman creadores antes de que acabe enero.'],
+  ['pc-07', 3, 'f3-33', '2027-01-31', 3000, 6000, 'Faltan dos semanas para el Cruce', 'Tres mil usuarios al terminar la semana de noches. Treinta socios y treinta aportes.', 'Las últimas dos semanas van completas a invitación personal y al reto de fundadoras.'],
+  ['pc-08', 3, 'f3-23', '2027-02-14', 5000, 10000, 'El día del Cruce: La Laguna encendida', 'Cinco mil usuarios en el mes del Cruce. Cincuenta socios y cincuenta aportes: es el mes en que más gente quiere ayudar a su ciudad.', 'Monterrey y Saltillo abren con el manual corregido, no con el mismo.'],
 
   /* ═══ FASE 4 ═══ */
   ['pc-09', 4, 'f4-70', '2027-03-15', 6500, 13000, 'Un mes después del Cruce, la gente sigue entrando', 'Es la prueba de que un usuario no es una visita: dos de cada tres perfiles de febrero volvieron a entrar en marzo.', 'No se abre la ciudad siguiente hasta resolver «Mientras esperan a Cupido»: sin regreso no hay usuarios al mes.'],
-  ['pc-10', 4, 'f4-02', '2027-04-30', 10000, 20000, 'Diez mil en tres ciudades', 'La Laguna, Monterrey y Saltillo, con el manual funcionando sin el fundador en la sala. Cien socios y cien aportes.', 'La cuarta ciudad espera: primero se arregla lo que no viajó de La Laguna.'],
+  ['pc-10', 4, 'f4-72', '2027-04-30', 10000, 20000, 'Diez mil en tres ciudades', 'La Laguna, Monterrey y Saltillo, con el manual funcionando sin el fundador en la sala. Cien socios y cien aportes.', 'La cuarta ciudad espera: primero se arregla lo que no viajó de La Laguna.'],
   ['pc-11', 4, 'f4-75', '2027-06-30', 18000, 36000, 'Cupido paga lo que gasta en crecer', 'Con $36,000 al mes, los apoyos ya cubren un mes del tope de gasto de arranque ($105,000 en 90 días, sin sueldos).', 'El gasto del mes baja al ingreso del mes anterior, o se decide a la vista de dónde sale la diferencia.'],
-  ['pc-12', 4, 'f4-15', '2027-08-31', 32000, 64000, 'Seis ciudades encendidas', 'Una ciudad nueva cada cuatro a seis semanas desde marzo, cada una con su Cruce. 320 socios y 320 aportes.', 'Se abre más despacio: una ciudad a medias le quita gente a la siguiente.'],
-  ['pc-13', 4, 'f4-17', '2027-10-31', 56000, 112000, 'Antes del segundo 11 de noviembre', 'Con 56 mil usuarios, el Día del Soltero ya puede ser una campaña nacional. 560 socios y 560 aportes.', 'El 11 de noviembre se hace solo en las ciudades encendidas, no en todo el país.'],
-  ['pc-14', 4, 'f4-55', '2027-12-31', 100000, 200000, 'Cien mil en diez ciudades', 'Mil socios fundadores y mil aportes al mes. Es el último mes en que todo es gratis.', 'Con este número se decide si el cobro empieza en 2028 o se recorre: no se cobra donde todavía no convence gratis.'],
+  ['pc-12', 4, 'f4-54', '2027-08-31', 32000, 64000, 'Seis ciudades encendidas', 'Una ciudad nueva cada cuatro a seis semanas desde marzo, cada una con su Cruce. 320 socios y 320 aportes.', 'Se abre más despacio: una ciudad a medias le quita gente a la siguiente.'],
+  ['pc-13', 4, 'f4-52', '2027-10-31', 56000, 112000, 'Antes del segundo 11 de noviembre', 'Con 56 mil usuarios, el Día del Soltero ya puede ser una campaña nacional. 560 socios y 560 aportes.', 'El 11 de noviembre se hace solo en las ciudades encendidas, no en todo el país.'],
+  ['pc-14', 4, 'f4-62', '2027-12-31', 100000, 200000, 'Cien mil en diez ciudades', 'Mil socios fundadores y mil aportes al mes. Es el último mes en que todo es gratis.', 'Con este número se decide si el cobro empieza en 2028 o se recorre: no se cobra donde todavía no convence gratis.'],
 
   /* ═══ FASE 5 ═══ */
-  ['pc-15', 5, 'f5-15', '2028-03-31', 180000, 7200000, 'El primer trimestre cobrando: la gente se queda', 'Empieza el programa: $40 por usuario al mes. Cada mes llega gente nueva igual a 17 % de los usuarios, la mitad paga la entrada y el precio justo la deja en unos $480.', 'Si los usuarios bajan, primero se revisa el precio de entrada y después el ritmo de ciudades.'],
-  ['pc-16', 5, 'f5-02', '2028-06-30', 320000, 12800000, 'Medio año cobrando, y Texas abierto', 'Los mismos $40 por usuario, ya con las primeras ciudades de Estados Unidos.', 'Se frena la frontera y se vuelve a las ciudades de México que ya pagan.'],
-  ['pc-17', 5, 'f5-03', '2028-12-31', 1000000, 40000000, 'Un millón', 'México completo y los hispanos de Estados Unidos. $40 millones al mes, casi todo de entradas.', 'La meta de 2029 se vuelve a calcular con el ingreso real por usuario, no con el supuesto.'],
-  ['pc-18', 5, 'f5-04', '2029-12-31', 4000000, 160000000, 'Cuatro millones y el segundo ingreso', 'Siguen los $40 por usuario, pero cambia de dónde salen: menos de la entrada y más de «Mientras esperas», con 5 de cada 100 usuarios a $199 al mes.', 'Se abre un país menos y se trabaja en que la gente se quede.'],
+  ['pc-15', 5, 'f5-07', '2028-03-31', 180000, 7200000, 'El primer trimestre cobrando: la gente se queda', 'Empieza el programa: $40 por usuario al mes. Cada mes llega gente nueva igual a 17 % de los usuarios, la mitad paga la entrada y el precio justo la deja en unos $480.', 'Si los usuarios bajan, primero se revisa el precio de entrada y después el ritmo de ciudades.'],
+  ['pc-16', 5, 'f5-09', '2028-06-30', 320000, 12800000, 'Medio año cobrando, y Texas abierto', 'Los mismos $40 por usuario, ya con las primeras ciudades de Estados Unidos.', 'Se frena la frontera y se vuelve a las ciudades de México que ya pagan.'],
+  ['pc-17', 5, 'f5-22', '2028-12-31', 1000000, 40000000, 'Un millón', 'México completo y los hispanos de Estados Unidos. $40 millones al mes, casi todo de entradas.', 'La meta de 2029 se vuelve a calcular con el ingreso real por usuario, no con el supuesto.'],
+  ['pc-18', 5, 'f5-14', '2029-12-31', 4000000, 160000000, 'Cuatro millones y el segundo ingreso', 'Siguen los $40 por usuario, pero cambia de dónde salen: menos de la entrada y más de «Mientras esperas», con 5 de cada 100 usuarios a $199 al mes.', 'Se abre un país menos y se trabaja en que la gente se quede.'],
   ['pc-19', 5, 'f5-18', '2030-12-31', 10000000, 400000000, 'Diez millones', 'Entrada, puertas, «Mientras esperas», acompañamiento y comunidades propias: $40 por usuario al mes.', 'Antes que este número se revisa cuántas parejas siguen juntas un año después: ese pesa más.'],
 ];

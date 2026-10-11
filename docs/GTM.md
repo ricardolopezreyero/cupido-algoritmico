@@ -11,7 +11,7 @@ El plan para llevar a Cupido a 10 millones de perfiles vivos, y la lista de todo
 | Pestaña | Para qué |
 |---|---|
 | **Resumen** | La idea («no llenamos una app: encendemos ciudades»), por qué ahora, las siete ideas, la escalera de mil a diez millones, los cinco pasos y las fuentes de todos los datos. |
-| **Lista** | 244 actividades en cinco fases. Cada una dice el área, quién la hace (persona, IA o las dos), cuánto esfuerzo pide y si se repite. La palomita se guarda con nombre y fecha, para todo el equipo. Mezclados entre las actividades van **19 puntos de control**: las metas de usuarios al mes y de ingreso al mes. |
+| **Lista** | 244 actividades en cinco fases, **en el orden en que conviene hacerlas**: 29 pasos, y cada paso termina en su punto de control. Cada una dice el área, quién la hace (persona, IA o las dos), cuánto esfuerzo pide y si se repite. La palomita se guarda con el correo de quien la puso y la hora, y solo la ponen los correos de la casa. Mezclados van **19 puntos de control**: las metas de usuarios al mes y de ingreso al mes. Arriba, el marcador: cuántas palomitas van, quién lleva más, las últimas y cuántas faltan para el punto de control que sigue. |
 | **Atajos** | Dieciséis caminos cortos que hoy no se están usando, cada uno con por qué funciona, el primer paso y lo que cuesta. |
 | **Lanzamiento** | Cómo lucimos, cómo se acomoda cada red, en qué ciudades y en qué orden, para qué sirve cada red y el calendario de fechas. |
 | **Creadores** | A quién buscar, con nombre, tamaño y por dónde entrarle: los veinte para empezar, terapeutas, pódcasts, creadores y medios del norte, y prensa. |
@@ -68,7 +68,7 @@ Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verda
 Todo lo que hay en la Lista existe para mover dos números. Por eso van metidos entre las actividades, como tarjetas oscuras con 🎯: se ven distintas a propósito, porque **no son actividades, son objetivos**.
 
 - **Qué dice cada uno:** la fecha, la meta de usuarios al mes, la meta de ingreso al mes, el dato real de hoy junto a cada meta, de dónde sale el número y qué se decide si no se llega.
-- **Dónde aparece:** después de la actividad que debería producir ese número (por ejemplo, el de 300 usuarios va tras «A los 300 perfiles: primera lectura seria»). Cada fase enseña además sus puntos de control en una tira, en orden de fecha, y el filtro «🎯 Solo puntos de control» (o `/gtm#control`) los pone todos seguidos: la escalera completa.
+- **Dónde aparece:** al final de su paso: arriba quedan las actividades que tienen que estar andando para que ese número llegue (por ejemplo, el de 300 usuarios cierra el paso «Del 19 al 30 de noviembre» y va tras «A los 300 perfiles: primera lectura seria»). Cada fase enseña además sus puntos de control en una tira, en orden de fecha, y el filtro «🎯 Solo puntos de control» (o `/gtm#control`) los pone todos seguidos: la escalera completa.
 - **No se palomean.** Se alcanzan solos: el día en que los dos números reales llegan a la meta, el servidor lo anota con su fecha y ya no se borra aunque después bajen. Si la fecha pasa y no se llegó, la tarjeta dice hace cuántos días venció.
 - **Cómo se mide un usuario al mes:** una cuenta de verdad que abrió Cupido en los últimos 30 días. Para eso se guarda la última visita de cada cuenta (columna `personas.visita`, a lo más una escritura por hora; no se guarda qué hizo ni dónde).
 - **Cómo se mide el ingreso al mes:** lo aportado al Fondo de atracción en 30 días más lo que dan cada mes los socios fundadores. Ojo: las renovaciones y las bajas de los socios todavía no se registran una por una; cuentan mientras nadie anote su baja.
@@ -79,8 +79,8 @@ Todo lo que hay en la Lista existe para mover dos números. Por eso van metidos 
 | Archivo | Qué es |
 |---|---|
 | `src/gtm-plan.js` | El texto de todas las pestañas, como bloques (`cabeza`, `p`, `cifras`, `tarjetas`, `pasos`, `tabla`, `lista`, `nota`, `gente`, `calc`, `boton`, `fuentes`). Ahí se corrige una cifra o se agrega un creador. |
-| `src/gtm-tareas.js` | La lista: un renglón por actividad, `[clave, fase, área, quién, esfuerzo, ritmo, título, detalle]`, y los catálogos de fases y áreas. Al final, los puntos de control (`CONTROLES`): `[clave, fase, tras, fecha, usuarios al mes, ingreso al mes, título, de dónde sale, si no se llega]`, y sus supuestos (`SUPUESTOS_CONTROL`). |
-| `src/gtm.js` | Quién entra (`quienGtm`), los números de hoy (con usuarios e ingreso al mes), guardar una palomita, anotar el punto de control que se alcanza y cambiar el equipo. Tablas `gtm_tareas` y `gtm_equipo`. |
+| `src/gtm-tareas.js` | La lista: un renglón por actividad, `[clave, fase, área, quién, esfuerzo, ritmo, título, detalle]`, y los catálogos de fases y áreas. Luego el orden (`PASOS`): `[fase, cuándo, título, [claves en orden]]`. Al final, los puntos de control (`CONTROLES`): `[clave, fase, tras, fecha, usuarios al mes, ingreso al mes, título, de dónde sale, si no se llega]`, y sus supuestos (`SUPUESTOS_CONTROL`). |
+| `src/gtm.js` | Quién entra (`quienGtm`), quién palomea (`DOMINIOS_PALOMITA`), los números de hoy (con usuarios e ingreso al mes), guardar una palomita, anotar el punto de control que se alcanza y cambiar el equipo. Tablas `gtm_tareas` y `gtm_equipo`. |
 | `src/verificar.js` | Verifica el pase del login de la casa (copia de `Login_CapitalTorreon/publico/verificar.js`). |
 | `public/gtm.html`, `public/js/gtm.js`, `public/css/gtm.css` | El cascarón, lo que pinta y el estilo. |
 | `public/ceo.html`, `public/css/ceo.css`, `src/ceo.js` | El perfil de quien dirige, su estilo, y el guardado de las pruebas con su aviso. |
@@ -89,6 +89,8 @@ Rutas: `GET /api/gtm` (todo), `POST /api/gtm/tarea {id, hecha}`, `POST /api/gtm/
 
 ## Reglas para tocar la lista
 
+- **Quién pone palomitas:** solo los correos `@ingenieriadigital.mx` y `@superleads.mx`, porque es un acto administrativo. Pueden ponerlas y quitarlas. El resto del equipo ve la lista y el marcador, pero su palomita aparece cerrada; el servidor lo rechaza aunque se intente por fuera. Cada palomita guarda el correo y la hora, y se ve en la tarjeta.
+- **Mover una actividad** es cambiar su clave de lugar en `PASOS`; el renglón de `TAREAS` no se toca. Una actividad que no esté en ningún paso sale al final de su fase, en «Lo demás». Si se mueve la última de un paso, hay que actualizar el `tras` de su punto de control.
 - **La clave de una actividad nunca cambia** (`f2-17`): ahí se guarda su palomita. Para agregar, se usa un número nuevo; para retirar, se borra el renglón.
 - Las que se repiten (↻ diario, semanal, mensual) se palomean cuando la rutina ya quedó andando.
 - **Un punto de control se cambia en un solo lugar** (`CONTROLES`): la tabla de Números y las tarjetas de la Lista salen de ahí. Su clave (`pc-07`) tampoco cambia. Si se retira la actividad a la que está pegado, se va al final de su fase; conviene pegarlo a otra.

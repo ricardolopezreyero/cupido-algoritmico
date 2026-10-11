@@ -2,8 +2,9 @@
    Cupido Algorítmico · Go-to-market (/gtm) — RLR · Ricardo López Reyero
    La página no trae el plan: lo pide a /api/gtm con el pase del login de la casa
    (o la sesión de Cupido) y solo lo recibe quien está en el equipo.
-   Pestañas de lectura (bloques que manda el servidor) + la lista, donde cada
-   palomita se guarda con quién la puso y cuándo. Mezclados en la lista van los
+   Pestañas de lectura (bloques que manda el servidor) + la lista, que se lee en
+   el orden en que conviene hacerla (pasos). Cada palomita se guarda con el correo
+   de quien la puso y la hora, y solo la ponen los correos de la casa. Mezclados van los
    puntos de control: no se palomean, enseñan la meta de usuarios y de ingreso
    al mes junto al dato real de hoy, y se alcanzan solos.
    ───────────────────────────────────────────────────────────────────── */
@@ -32,6 +33,8 @@ const num = (n) => Number(n || 0).toLocaleString('es-MX');
 const tantos = (n, uno, varios) => `${num(n)} ${Number(n) === 1 ? uno : varios}`;
 const dinero = (n) => (n >= 1e6 ? `$${(n / 1e6).toLocaleString('es-MX', { maximumFractionDigits: 1 })} millones` : '$' + num(Math.round(n)));
 const dia = (iso, largo) => { const d = new Date(iso + 'T12:00:00'); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', largo ? { day: 'numeric', month: 'long', year: 'numeric' } : { day: 'numeric', month: 'short', year: '2-digit' }); };
+const hora = (iso) => { const d = new Date(String(iso).replace(' ', 'T') + 'Z'); return isNaN(d) ? '' : d.toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }); };
+const esHoy = (iso) => { const d = new Date(String(iso).replace(' ', 'T') + 'Z'); return !isNaN(d) && d.toLocaleDateString('en-CA') === new Date().toLocaleDateString('en-CA'); };
 const fecha = (iso) => { const d = new Date(String(iso).replace(' ', 'T') + 'Z'); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }); };
 
 /* ═══ la puerta ═══════════════════════════════════════════════════════ */
@@ -163,13 +166,35 @@ const tiraControl = (l) => `<p class="gtm-pc-tira"><em>Puntos de control</em>${l
 function tarjetaTarea(t) {
   const [id, , area, quien, esf, ritmo, titulo, detalle] = t, h = D.hechas[id];
   return `<article class="gtm-tarea${h ? ' hecha' : ''}" data-id="${id}">
-    <button class="gtm-palomita" role="checkbox" aria-checked="${h ? 'true' : 'false'}" aria-label="${h ? 'Quitar la palomita' : 'Marcar como hecha'}: ${esc(titulo)}">${h ? '✓' : ''}</button>
+    <button class="gtm-palomita${D.yo.palomea ? '' : ' cerrada'}" role="checkbox" aria-checked="${h ? 'true' : 'false'}"${D.yo.palomea ? '' : ' aria-disabled="true"'} aria-label="${h ? 'Quitar la palomita' : 'Marcar como hecha'}: ${esc(titulo)}">${h ? '✓' : ''}</button>
     <div class="gtm-tarea-c">
       <h4>${esc(titulo)}</h4>
       <p>${esc(detalle)}</p>
-      <p class="gtm-etiquetas"><span class="gtm-et area">${esc(cat('areas', area).t)}</span><span class="gtm-et q-${quien}">${quien === 'IA' ? '🤖 ' : quien === 'P' ? '🙋 ' : '🤝 '}${esc(cat('quienes', quien).t)}</span><span class="gtm-et">⏱ ${esc(cat('esfuerzos', esf).t)}</span>${ritmo !== 'u' ? `<span class="gtm-et ritmo">↻ ${esc(cat('ritmos', ritmo).t)}</span>` : ''}${h ? `<span class="gtm-et ok">✓ ${esc(h.nombre)} · ${fecha(h.at)}</span>` : ''}</p>
+      <p class="gtm-etiquetas"><span class="gtm-et area">${esc(cat('areas', area).t)}</span><span class="gtm-et q-${quien}">${quien === 'IA' ? '🤖 ' : quien === 'P' ? '🙋 ' : '🤝 '}${esc(cat('quienes', quien).t)}</span><span class="gtm-et">⏱ ${esc(cat('esfuerzos', esf).t)}</span>${ritmo !== 'u' ? `<span class="gtm-et ritmo">↻ ${esc(cat('ritmos', ritmo).t)}</span>` : ''}${h ? `<span class="gtm-et ok">✓ ${esc(h.por)} · ${hora(h.at)}</span>` : ''}</p>
     </div>
   </article>`;
+}
+// Lo que falta para el punto de control que toca: las actividades pendientes de todos los pasos hasta el suyo
+function faltanPara(c) {
+  if (!c) return 0;
+  const orden = D.catalogo.pasos.flatMap((x) => x[3]), hasta = orden.indexOf(c[2]);
+  return hasta < 0 ? 0 : orden.slice(0, hasta + 1).filter((id) => !D.hechas[id]).length;
+}
+function marcador() {
+  const l = Object.entries(D.hechas).map(([id, h]) => ({ id, ...h })).sort((a, b) => (a.at < b.at ? 1 : -1));
+  const titulo = (id) => (D.tareas.find((t) => t[0] === id) || [])[6] || id;
+  const porCorreo = new Map(); for (const h of l) { const x = porCorreo.get(h.por) || { n: 0, hoy: 0 }; x.n++; if (esHoy(h.at)) x.hoy++; porCorreo.set(h.por, x); }
+  const sigue = D.controles.find((x) => !D.alcanzados[x[0]]), faltan = faltanPara(sigue);
+  const quien = D.yo.palomea ? 'Tú puedes palomear.' : `Las palomitas solo las pone o las quita una cuenta ${D.dominios.map((d) => '@' + d).join(' o ')}. Entraste como ${esc(D.yo.email)}: puedes ver, no marcar.`;
+  return `<section class="gtm-marcador">
+    <div class="gtm-marcador-n"><b>${num(l.length)}<i>/${num(D.tareas.length)}</i></b><span>palomitas</span><small>${tantos(l.filter((h) => esHoy(h.at)).length, 'puesta hoy', 'puestas hoy')}</small></div>
+    <div class="gtm-marcador-c">
+      ${sigue ? `<p class="gtm-marcador-meta">${faltan ? `Faltan <b>${tantos(faltan, 'actividad', 'actividades')}</b> para el 🎯 del ${dia(sigue[3], true)}.` : `Todo lo que lleva al 🎯 del ${dia(sigue[3], true)} está palomeado: ahora faltan los dos números.`}</p>` : ''}
+      ${porCorreo.size ? `<p class="gtm-marcador-quien"><em>Quién lleva más</em>${[...porCorreo].sort((a, b) => b[1].n - a[1].n).map(([c, x], k) => `<span${c === D.yo.email ? ' class="yo"' : ''}>${k === 0 ? '🏆 ' : ''}${esc(c)} <b>${num(x.n)}</b>${x.hoy ? ` <i>+${x.hoy} hoy</i>` : ''}</span>`).join('')}</p>
+      <ol class="gtm-marcador-ult">${l.slice(0, 4).map((h) => `<li><b>✓ ${esc(titulo(h.id))}</b><span>${esc(h.por)} · ${hora(h.at)}</span></li>`).join('')}</ol>` : '<p class="gtm-chica">Todavía no hay ninguna palomita. La primera se va a quedar aquí con su correo y su hora.</p>'}
+      <p class="gtm-chica">${quien}</p>
+    </div>
+  </section>`;
 }
 function resumenCarga(lista) {
   const pend = lista.filter((t) => !D.hechas[t[0]]);
@@ -192,23 +217,29 @@ function lista() {
     const l = vistas.filter((t) => t[1] === f.n), pf = pcs.filter((c) => c[1] === f.n); if (!l.length && !pf.length) continue;
     const deFase = todas.filter((t) => t[1] === f.n), todosPc = D.controles.filter((c) => c[1] === f.n);
     cuerpo += `<section class="gtm-grupo"><header><p class="eyebrow">Fase ${f.n} · ${esc(f.cuando)}</p><h3>${esc(f.t)}</h3><p class="gtm-chica">${esc(f.meta)} · ${hechasDe(deFase)} de ${deFase.length} hechas</p>${todosPc.length ? tiraControl(todosPc) : ''}</header>`;
-    for (const a of D.catalogo.areas) {
-      // Cada punto de control va después de su actividad. Como ocupa el renglón completo, espera a que el renglón de actividades esté lleno para no dejar un hueco
+    // La fase se lee en orden: paso por paso, y cada punto de control al final del suyo. Como el punto de control ocupa
+    // el renglón completo, espera a que el renglón de actividades esté lleno para no dejar un hueco
+    const porId = new Map(deFase.map((t) => [t[0], t])), enPaso = new Set();
+    const pasos = D.catalogo.pasos.filter((x) => x[0] === f.n).map((x) => ({ cuando: x[1], t: x[2], l: x[3].map((id) => porId.get(id)).filter(Boolean) }));
+    pasos.forEach((x) => x.l.forEach((t) => enPaso.add(t[0])));
+    const demas = deFase.filter((t) => !enPaso.has(t[0])); if (demas.length) pasos.push({ cuando: '', t: 'Lo demás', l: demas, suelto: true });
+    pasos.forEach((x, k) => {
       let html = '', n = 0, espera = [];
-      for (const t of deFase) {
-        if (t[2] !== a.id) continue;
+      for (const t of x.l) {
         if (aLaVista.has(t[0])) { html += tarjetaTarea(t); n++; }
         espera.push(...pf.filter((c) => c[2] === t[0]));
         if (espera.length && n % 2 === 0) { html += espera.map(tarjetaControl).join(''); espera = []; }
       }
       html += espera.map(tarjetaControl).join('');
-      if (html) cuerpo += `<h5 class="gtm-area">${esc(a.t)} <i>${n}</i></h5><div class="gtm-tareas">${html}</div>`;
-    }
+      const hechasPaso = x.l.filter((t) => D.hechas[t[0]]).length;
+      if (html) cuerpo += `<h5 class="gtm-area gtm-paso"><b>${x.suelto ? '' : `Paso ${k + 1}`}</b><span>${x.cuando ? `${esc(x.cuando)} · ` : ''}${esc(x.t)}</span><i data-paso="${f.n}-${k}">${hechasPaso} de ${x.l.length}</i></h5><div class="gtm-tareas">${html}</div>`;
+    });
     const sueltos = pf.filter((c) => !anclaDe(c));   // su actividad se retiró de la lista: se quedan al final de la fase
     if (sueltos.length) cuerpo += `<div class="gtm-tareas gtm-sueltos">${sueltos.map(tarjetaControl).join('')}</div>`;
     cuerpo += '</section>';
   }
-  return `<header class="gtm-cabeza"><p class="eyebrow">La lista</p><h2>Todo lo que hay que hacer, en orden</h2><p class="lead">${num(todas.length)} actividades en cinco fases. Cada palomita se guarda con tu nombre y la fecha, para todo el equipo. Las que se repiten (↻) se palomean cuando la rutina ya quedó andando.</p>
+  return `<header class="gtm-cabeza"><p class="eyebrow">La lista</p><h2>Todo lo que hay que hacer, en orden</h2><p class="lead">${num(todas.length)} actividades en cinco fases, acomodadas en el orden en que conviene hacerlas: paso por paso, y cada paso termina en su punto de control. Cada palomita queda con el correo de quien la puso y la hora, a la vista de todo el equipo. Las que se repiten (↻) se palomean cuando la rutina ya quedó andando.</p>
+      <div id="gtm-marcador">${marcador()}</div>
       <p class="gtm-p">Entre las actividades hay <b>${num(D.controles.length)} puntos de control</b> (🎯). No son actividades y no se palomean: son los dos números que dicen si todo lo demás está sirviendo, <b>usuarios al mes</b> e <b>ingreso al mes</b>, cada uno con su fecha y con el dato real de hoy al lado. Se alcanzan solos el día en que los dos números llegan.</p>
       <details class="gtm-supuestos"><summary>De dónde salen las metas</summary><ul class="gtm-lista">${D.supuestos.map((x) => `<li>${tx(x)}</li>`).join('')}</ul></details></header>
     <div class="gtm-fases">${fases}</div>
@@ -224,6 +255,7 @@ function lista() {
 }
 
 async function palomear(id) {
+  if (!D.yo.palomea) return avisar(`Las palomitas solo las pone una cuenta ${D.dominios.map((d) => '@' + d).join(' o ')}. Entraste como ${D.yo.email}.`);
   const antes = D.hechas[id], quiero = !antes;
   if (quiero) D.hechas[id] = { por: D.yo.email, nombre: D.yo.nombre, at: new Date().toISOString().slice(0, 19).replace('T', ' ') }; else delete D.hechas[id];
   refrescarTarea(id);
@@ -231,12 +263,18 @@ async function palomear(id) {
   if (!r.ok) { if (antes) D.hechas[id] = antes; else delete D.hechas[id]; refrescarTarea(id); avisar(r.j.error || 'No se guardó. Revisa tu conexión e intenta de nuevo.'); return; }
   if (r.j.hecha) D.hechas[id] = r.j.hecha; else delete D.hechas[id];
   refrescarTarea(id);
+  if (!r.j.hecha) return;
+  $(`.gtm-tarea[data-id="${id}"]`)?.classList.add('recien');
+  const mias = Object.values(D.hechas).filter((h) => h.por === D.yo.email && esHoy(h.at)).length, sigue = D.controles.find((x) => !D.alcanzados[x[0]]), faltan = faltanPara(sigue);
+  avisar(`✓ Hecha. Llevas ${mias} hoy${sigue ? (faltan ? ` y faltan ${faltan} para el 🎯 del ${dia(sigue[3])}` : ` y ya no falta ninguna para el 🎯 del ${dia(sigue[3])}`) : ''}.`);
 }
 // Solo se repinta la tarjeta tocada y los contadores: la lista no brinca ni se pierde el lugar
 function refrescarTarea(id) {
   const el = $(`.gtm-tarea[data-id="${id}"]`), t = D.tareas.find((x) => x[0] === id);
   if (el && t) el.outerHTML = tarjetaTarea(t);
   const h = $('.gtm-hoy'); if (h) h.outerHTML = franja();
+  const m = $('#gtm-marcador'); if (m) m.innerHTML = marcador();
+  if (t) { const k = D.catalogo.pasos.filter((x) => x[0] === t[1]).findIndex((x) => x[3].includes(id)), x = D.catalogo.pasos.filter((y) => y[0] === t[1])[k], c = $(`[data-paso="${t[1]}-${k}"]`); if (x && c) c.textContent = `${x[3].filter((y) => D.hechas[y]).length} de ${x[3].length}`; }
   const n = Object.keys(D.hechas).length; const b = $('#gtm-pestanas [data-p="checklist"] i'); if (b) b.textContent = `${n}/${D.tareas.length}`;
   for (const f of D.catalogo.fases) { const l = D.tareas.filter((x) => x[1] === f.n), hh = l.filter((x) => D.hechas[x[0]]).length, bt = $(`.gtm-fase[data-v="${f.n}"]`); if (bt) { $('.gtm-barra i', bt).style.width = Math.round((hh / l.length) * 100) + '%'; $('small', bt).textContent = `${hh} de ${l.length}`; } }
 }
@@ -253,7 +291,7 @@ function pruebas() {
 function equipo() {
   if (!D.yo.admin) return '';
   return pruebas() + `<section class="gtm-equipo tarjeta"><h3>Quién puede ver esta página</h3>
-    <p class="gtm-chica">Las cuentas administradoras de Cupido entran siempre. Aquí se agrega a quien va a ejecutar el plan, con su correo de Google. Puede palomear la lista; no puede cambiar el equipo.</p>
+    <p class="gtm-chica">Las cuentas administradoras de Cupido entran siempre. Aquí se agrega a quien va a ejecutar el plan, con su correo de Google. Ve todo el plan y no puede cambiar el equipo. Las palomitas de la lista solo las pone o las quita una cuenta ${D.dominios.map((d) => '@' + d).join(' o ')}.</p>
     <ul id="gtm-eq-lista">${D.equipo.length ? D.equipo.map((e) => `<li><b>${esc(e.email)}</b><span>desde el ${fecha(e.at)}</span><button class="gtm-quitar" data-quitar="${esc(e.email)}">Quitar</button></li>`).join('') : '<li class="vacio">Todavía no hay nadie más.</li>'}</ul>
     <form id="gtm-eq-form"><input type="email" id="gtm-eq-correo" placeholder="correo@gmail.com" required aria-label="Correo de la persona"><button class="boton boton-chico">Dar acceso</button></form>
   </section>`;

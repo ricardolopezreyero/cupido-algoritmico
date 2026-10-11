@@ -5,14 +5,16 @@
    Quién entra: las cuentas administradoras (huellas en ADMINES) y los correos
    que una de ellas haya puesto en el equipo. Se entra con el login de la casa
    (el pase de login.capitaltorreon.com) o con la sesión de Cupido.
-   Cada palomita de la lista se guarda con quién la puso y cuándo.
+   Cada palomita de la lista se guarda con el correo de quien la puso y la hora.
+   Palomear es un acto administrativo: solo lo hacen los correos de la casa
+   (DOMINIOS_PALOMITA). El resto del equipo ve la lista, pero no la marca.
    Los puntos de control (usuarios al mes e ingreso al mes) no se palomean:
    se alcanzan solos el día en que los dos números reales llegan a la meta.
    ───────────────────────────────────────────────────────────────────── */
 import { verificarPase } from './verificar.js';
 import { huella } from './ella.js';
 import { etiqueta } from '../public/js/preguntas.js';
-import { TAREAS, FASES, AREAS, QUIENES, ESFUERZOS, RITMOS, CONTROLES, SUPUESTOS_CONTROL } from './gtm-tareas.js';
+import { TAREAS, FASES, AREAS, QUIENES, ESFUERZOS, RITMOS, PASOS, CONTROLES, SUPUESTOS_CONTROL } from './gtm-tareas.js';
 import { PLAN } from './gtm-plan.js';
 import { ESQUEMA_CEO, listarPostulaciones } from './ceo.js';
 import { ESQUEMA_CANDIDATOS } from './candidatos.js';
@@ -34,6 +36,9 @@ const IDS = new Set(TAREAS.map((t) => t[0]));
 const PCS = new Set(CONTROLES.map((c) => c[0]));
 const limpio = (c) => String(c || '').trim().toLowerCase();
 const esCorreo = (c) => /^[^\s@]{1,64}@[^\s@]{1,190}\.[a-z]{2,}$/.test(c);
+// Quién puede poner y quitar palomitas: solo correos de estos dominios
+export const DOMINIOS_PALOMITA = ['ingenieriadigital.mx', 'superleads.mx'];
+const palomea = (correo) => DOMINIOS_PALOMITA.includes(limpio(correo).split('@')[1] || '');
 const admines = (env) => String(env.ADMINES || '').split(',').map((x) => x.trim()).filter(Boolean);
 
 /* ── quién toca la puerta: { email, nombre, admin } · { falta: 'sesion' } · { falta: 'permiso', email } ── */
@@ -97,13 +102,14 @@ export async function verGtm(env, q) {
   // las pruebas de /ceo traen datos de personas: solo las ve una cuenta administradora. Y a esa cuenta se le avisará de las que lleguen.
   const postulaciones = q.admin ? await listarPostulaciones(env) : [];
   if (q.admin && esCorreo(q.email)) await env.DB.prepare(`INSERT OR IGNORE INTO gtm_avisos (email) VALUES (?)`).bind(q.email).run();
-  return { yo: { email: q.email, nombre: q.nombre, admin: q.admin }, plan: PLAN, tareas: TAREAS, catalogo: { fases: FASES, areas: AREAS, quienes: QUIENES, esfuerzos: ESFUERZOS, ritmos: RITMOS }, hechas, controles: CONTROLES, alcanzados, supuestos: SUPUESTOS_CONTROL, equipo, postulaciones, hoy: h };
+  return { yo: { email: q.email, nombre: q.nombre, admin: q.admin, palomea: palomea(q.email) }, dominios: DOMINIOS_PALOMITA, plan: PLAN, tareas: TAREAS, catalogo: { fases: FASES, areas: AREAS, quienes: QUIENES, esfuerzos: ESFUERZOS, ritmos: RITMOS, pasos: PASOS }, hechas, controles: CONTROLES, alcanzados, supuestos: SUPUESTOS_CONTROL, equipo, postulaciones, hoy: h };
 }
 
 /* ── una palomita: se pone o se quita, y queda quién y cuándo ── */
 export async function marcarTarea(env, q, id, hecha) {
   if (PCS.has(id)) return { ok: false, error: 'Un punto de control no se palomea: se alcanza solo, cuando los dos números llegan.' };
   if (!IDS.has(id)) return { ok: false, error: 'Esa actividad no existe.' };
+  if (!palomea(q.email)) return { ok: false, error: `Las palomitas solo las pone o las quita una cuenta ${DOMINIOS_PALOMITA.map((d) => '@' + d).join(' o ')}. Entraste como ${q.email}.` };
   if (!hecha) { await env.DB.prepare(`DELETE FROM gtm_tareas WHERE id = ?`).bind(id).run(); return { ok: true, id, hecha: null }; }
   await env.DB.prepare(`INSERT INTO gtm_tareas (id, hecha_por, hecha_nombre) VALUES (?, ?, ?)
     ON CONFLICT(id) DO UPDATE SET hecha_por = excluded.hecha_por, hecha_nombre = excluded.hecha_nombre, hecha_at = datetime('now')`).bind(id, q.email, q.nombre || null).run();

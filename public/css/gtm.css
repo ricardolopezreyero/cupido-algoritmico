@@ -162,6 +162,40 @@
 .gtm-et.ritmo { background: #efe9f7; color: #5b3d8a; }
 .gtm-et.ok { background: var(--ok-suave); color: var(--ok); }
 
+/* los pasos: la lista se lee en orden, y cada paso dice cuántas lleva */
+.gtm-paso b { background: var(--tinta); color: #fff; padding: 5px 9px; border-radius: 999px; letter-spacing: .08em; }
+.gtm-paso b:empty { display: none; }
+.gtm-paso span { text-transform: none; letter-spacing: 0; font-size: 15px; font-weight: 600; color: var(--tinta); }
+.gtm-paso i { white-space: nowrap; }
+
+/* el marcador de palomitas: cuántas van, quién lleva más y las últimas, con correo y hora */
+.gtm-marcador { display: grid; grid-template-columns: auto 1fr; gap: 6px 22px; align-items: start; background: var(--blanco); border: 1px solid var(--linea); border-radius: var(--radio); padding: 16px 18px; margin-top: 14px; }
+.gtm-marcador-n b { display: block; font: 600 40px/1 var(--serif); color: var(--ok); }
+.gtm-marcador-n b i { font-style: normal; font-size: 17px; color: var(--gris); }
+.gtm-marcador-n span { display: block; font-size: 13.5px; font-weight: 700; margin-top: 4px; }
+.gtm-marcador-n small { display: block; font-size: 12.5px; color: var(--gris); }
+.gtm-marcador-c > * { margin: 0; }
+.gtm-marcador-c > * + * { margin-top: 8px; }
+.gtm-marcador-meta { font-size: 15.5px; color: var(--tinta); }
+.gtm-marcador-quien { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 13px; }
+.gtm-marcador-quien em { font-style: normal; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gris); margin-right: 2px; }
+.gtm-marcador-quien span { background: #f3efeb; border-radius: 999px; padding: 5px 10px; color: var(--tinta-2); overflow-wrap: anywhere; }
+.gtm-marcador-quien span.yo { background: var(--ok-suave); color: var(--ok); }
+.gtm-marcador-quien span b { color: var(--tinta); }
+.gtm-marcador-quien span i { font-style: normal; color: var(--ok); font-weight: 600; }
+.gtm-marcador-ult { list-style: none; padding: 0; display: grid; gap: 4px; font-size: 13.5px; }
+.gtm-marcador-ult li { display: flex; flex-wrap: wrap; gap: 2px 10px; align-items: baseline; }
+.gtm-marcador-ult b { font-weight: 600; color: var(--tinta); }
+.gtm-marcador-ult span { color: var(--gris); font-size: 12.5px; overflow-wrap: anywhere; }
+/* quien no es de la casa ve la palomita, pero cerrada */
+.gtm-palomita.cerrada { cursor: not-allowed; border-style: dashed; }
+.gtm-palomita.cerrada:hover { border-color: var(--linea-2); transform: none; }
+/* el gusto de palomear */
+@keyframes gtm-palomazo { 0% { transform: scale(.6); } 55% { transform: scale(1.28); } 100% { transform: scale(1); } }
+@keyframes gtm-destello { 0% { box-shadow: 0 0 0 0 rgba(46,139,87,.45); } 100% { box-shadow: 0 0 0 18px rgba(46,139,87,0); } }
+.gtm-tarea.recien .gtm-palomita { animation: gtm-palomazo .45s var(--ease), gtm-destello .7s ease-out; }
+@media (prefers-reduced-motion: reduce) { .gtm-tarea.recien .gtm-palomita { animation: none; } }
+
 /* Puntos de control: metas de usuarios y de ingreso al mes, no actividades. Ocupan el renglón completo y se ven distintos a propósito */
 .gtm-pc { grid-column: 1 / -1; background: var(--noche); color: #fff; border-radius: 16px; border-left: 5px solid var(--rosa); padding: 16px 18px 18px; scroll-margin-top: 130px; }
 .gtm-pc > header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13.5px; }
@@ -228,6 +262,7 @@
   .gtm-hoy-fila { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; }
   .gtm-hoy-c b { font-size: 26px; }
   .gtm-pc-ms { grid-template-columns: 1fr; }
+  .gtm-marcador { grid-template-columns: 1fr; }
   .gtm-pc-e { margin-left: 0; width: 100%; }
   .gtm-pc-m > b { font-size: 27px; }
   .gtm-tarjetas.col2, .gtm-tarjetas.col3, .gtm-gente, .gtm-tareas { grid-template-columns: 1fr; }
