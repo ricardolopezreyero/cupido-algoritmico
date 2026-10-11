@@ -23,6 +23,7 @@
 .gtm-hoy-c b i { font-style: normal; font-size: 16px; color: rgba(255,255,255,.55); }
 .gtm-hoy-c span { display: block; font-size: 13.5px; font-weight: 600; margin-top: 3px; }
 .gtm-hoy-c small { display: block; font-size: 12px; color: rgba(255,255,255,.6); margin-top: 2px; line-height: 1.35; }
+.gtm-hoy-alerta { margin: 14px 0 0; padding: 10px 12px; border-radius: 10px; background: rgba(240,181,74,.16); color: #f6cf85; font-size: 13px; line-height: 1.45; }
 .gtm-hoy-ciudades { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid rgba(255,255,255,.14); display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: rgba(255,255,255,.8); }
 .gtm-hoy-ciudades i { font-style: normal; color: rgba(255,255,255,.5); }
 

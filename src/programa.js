@@ -7,11 +7,14 @@
    Lo único que se puede pagar hoy es voluntario: el Fondo de atracción y
    Socio fundador. Reglas de la casa (CapitalTorreon): mismo precio para todos,
    sin anuncios, devoluciones sin preguntas, tope de cuidado.
+   El dinero se anota en el libro de cobros (src/pagos.js): aquí se abre el pago,
+   se agradece y se enseña; qué entró, qué se renovó y qué se devolvió lo dice el libro.
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
 import { persona, anotar } from './datos.js';
 import { correoA } from './correos.js';
 import { precioPara, miPrecioJusto, BANDAS, SITUACIONES } from './precios.js';
+import { stripe, hayPagos, confirmarSesion, resumenPublico, misApoyos, dadoEn30, socioVivoDe, darDeBaja, saludPagos, libroAdmin } from './pagos.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -43,29 +46,32 @@ export async function sembrarPrograma(env) {
   await env.DB.batch(ACCIONES.map((a) => env.DB.prepare(`INSERT OR IGNORE INTO programa (clave, orden, nombre, que, cuando, etapa, precio, unidad, estado) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'gratis')`).bind(a.clave, a.orden, a.nombre, a.que, a.cuando, a.etapa, a.precio, a.unidad)));
 }
 
-async function secreto(v) { if (!v) return ''; if (typeof v === 'string') return v; try { return (await v.get()) || ''; } catch { return ''; } }
 
 /* ── lo público: el mapa y la transparencia ──────────────────────────────── */
 export async function verPrograma(env, P = null) {
   const acciones = (await env.DB.prepare(`SELECT clave, nombre, que, cuando, etapa, precio, unidad, estado FROM programa ORDER BY orden`).all()).results;
-  const t = await env.DB.prepare(`SELECT COALESCE(SUM(monto), 0) AS reunido, COUNT(DISTINCT COALESCE(persona, correo)) AS personas, COALESCE(SUM(CASE WHEN tipo = 'socio' THEN 1 ELSE 0 END), 0) AS socios FROM aportes WHERE estado = 'confirmado'`).first();
+  const t = await resumenPublico(env);   // lo reunido es neto (ya restado lo devuelto) y los socios son los que hoy siguen
   const ultimos = (await env.DB.prepare(`SELECT nombre_publico, tipo, monto, confirmado FROM aportes WHERE estado = 'confirmado' AND nombre_publico IS NOT NULL ORDER BY id DESC LIMIT 12`).all()).results;
-  const pagos = !!(await secreto(env.STRIPE_SECRET_KEY));
+  const pagos = await hayPagos(env);
   let mio = null;
-  if (P) { let aj = {}; try { aj = JSON.parse(P.ajustes || '{}'); } catch {} mio = { ...miPrecioJusto(aj), acciones: Object.fromEntries(acciones.map((a) => [a.clave, precioPara(aj, a.precio)])), bandas: BANDAS, situaciones: SITUACIONES }; }
+  if (P) { let aj = {}; try { aj = JSON.parse(P.ajustes || '{}'); } catch {} mio = { ...miPrecioJusto(aj), acciones: Object.fromEntries(acciones.map((a) => [a.clave, precioPara(aj, a.precio)])), bandas: BANDAS, situaciones: SITUACIONES, apoyos: await misApoyos(env, P.id) }; }
   return { gratisHasta: '2027', mio, acciones, fondo: { reunido: t.reunido, personas: t.personas, socios: t.socios, ultimos }, pagos, minimo: PRECIO_MIN, tope: TOPE_MES, destino: 'El 100 % del Fondo de atracción se usa para traer a la siguiente persona seria: anuncios cuidados, contenido y verificación de identidad. Se publica cada año en qué se gastó.' };
 }
 
 /* ── apoyar: Fondo de atracción (una vez) o Socio fundador (cada mes) ────── */
 export async function apoyar(env, url, P, { tipo, monto, nombrePublico, volver }) {
-  const stripe = await secreto(env.STRIPE_SECRET_KEY);
-  if (!stripe) return { error: 'Los pagos se activan pronto. Gracias por querer apoyar.', status: 503 };
+  if (!(await hayPagos(env))) return { error: 'Los pagos se activan pronto. Gracias por querer apoyar.', status: 503 };
   if (!P?.correo) return { error: 'Para apoyar hace falta tu cuenta con correo.', status: 403 };
   tipo = tipo === 'socio' ? 'socio' : 'fondo';
   monto = Math.round(Number(monto) || 0);
   if (monto < PRECIO_MIN || monto > 100000) return { error: `El mínimo es ${PRECIO_MIN} pesos.`, status: 400 };
-  const gastado = (await env.DB.prepare(`SELECT COALESCE(SUM(monto), 0) AS s FROM aportes WHERE persona = ? AND estado = 'confirmado' AND tipo = 'fondo' AND creado > datetime('now', '-30 days')`).bind(P.id).first()).s;
-  if (tipo === 'fondo' && gastado + monto > TOPE_MES) return { error: 'Gracias: este mes ya diste mucho. Vuelve el mes que entra.', status: 400 };
+  // Un socio a la vez: si ya lo es, no se le abre una segunda mensualidad por error
+  if (tipo === 'socio') {
+    const ya = await socioVivoDe(env, P.id);
+    if (ya) return { error: `Ya eres Socio fundador con $${Math.round(ya.centavos / 100)} al mes. Para cambiar la cantidad, deja de serlo aquí mismo y vuelve a entrar con la nueva.`, status: 409 };
+  }
+  // Tope de cuidado: lo que de verdad se le cobró en 30 días (ya restado lo devuelto), de una vez y como socio
+  if ((await dadoEn30(env, P.id)) + monto > TOPE_MES) return { error: 'Gracias: este mes ya diste mucho. Vuelve el mes que entra.', status: 400 };
   const nombre = String(nombrePublico || '').replace(/[<>]/g, '').trim().slice(0, 40) || null;
   const base = url.origin;
   let ok = base + '/persona'; try { const x = new URL(String(volver || ''), base); if (x.origin === base) ok = x.origin + x.pathname + x.hash; } catch {}
@@ -75,34 +81,47 @@ export async function apoyar(env, url, P, { tipo, monto, nombrePublico, volver }
   f.set('line_items[0][quantity]', '1'); f.set('line_items[0][price_data][currency]', 'mxn'); f.set('line_items[0][price_data][unit_amount]', String(monto * 100));
   f.set('line_items[0][price_data][product_data][name]', tipo === 'socio' ? 'Cupido Algorítmico · Socio fundador · cada mes' : 'Cupido Algorítmico · Fondo de atracción');
   if (tipo === 'socio') f.set('line_items[0][price_data][recurring][interval]', 'month');
-  f.set('metadata[persona]', P.id); f.set('metadata[tipo]', tipo); f.set('metadata[monto]', String(monto)); if (nombre) f.set('metadata[nombre]', nombre);
-  if (tipo === 'socio') { f.set('subscription_data[metadata][persona]', P.id); f.set('subscription_data[metadata][tipo]', 'socio'); }
+  // «app» marca lo que es de Cupido: la cuenta de Stripe se comparte con otras casas y el libro solo anota lo nuestro
+  const marcas = { app: 'cupido', persona: P.id, tipo, monto: String(monto) };
+  for (const [k, v] of Object.entries(marcas)) f.set(`metadata[${k}]`, v);
+  if (nombre) f.set('metadata[nombre]', nombre);
+  for (const [k, v] of Object.entries(marcas)) f.set(`${tipo === 'socio' ? 'subscription_data' : 'payment_intent_data'}[metadata][${k}]`, v);
+  if (tipo === 'fondo') f.set('customer_creation', 'always');   // con cliente, una devolución siempre se puede ligar a quien aportó
+  f.set('client_reference_id', P.id);
   f.set('locale', 'es-419'); f.set('customer_email', P.correo);
-  let r, ses;
-  try { r = await fetch('https://api.stripe.com/v1/checkout/sessions', { method: 'POST', headers: { authorization: 'Bearer ' + stripe, 'content-type': 'application/x-www-form-urlencoded' }, body: f, signal: AbortSignal.timeout(15000) }); ses = await r.json(); }
-  catch (e) { return { error: 'No se pudo abrir el pago: ' + e.message, status: 502 }; }
-  if (!r.ok || !ses.url) { console.error('stripe', JSON.stringify(ses).slice(0, 300)); return { error: 'No se pudo abrir el pago.', status: 502 }; }
+  // Dos toques seguidos al botón no abren dos pagos: misma persona, mismo tipo y monto en el mismo par de minutos = la misma sesión
+  const idem = `cupido-apoyo-${P.id}-${tipo}-${monto}-${Math.floor(Date.now() / 120000)}`;
+  const r = await stripe(env, 'POST', '/checkout/sessions', f, idem);
+  const ses = r.j;
+  if (!r.ok || !ses?.url) { console.error('stripe', r.status, JSON.stringify(ses?.error || {}).slice(0, 300)); return { error: 'No se pudo abrir el pago. Intenta otra vez en un momento.', status: 502 }; }
   await env.DB.prepare(`INSERT OR IGNORE INTO aportes (persona, correo, tipo, monto, sid, estado, nombre_publico) VALUES (?, ?, ?, ?, ?, 'pendiente', ?)`).bind(P.id, P.correo, tipo, monto, ses.id, nombre).run();
   return { url: ses.url };
 }
 
-// Al volver: se le pregunta a Stripe si de verdad se pagó (una sola vez por sesión)
+// Lo que pasa cuando el libro confirma algo: aquí viven los correos, para que el libro no dependa de ellos
+export const efectosPagos = (env) => ({
+  alConfirmar: async ({ persona: id, tipo, monto }) => { const Pp = await persona(env, id); if (Pp?.correo) await correoA(env, Pp, 'gracias', { tipo, monto }, { forzar: true }); },
+  alDarDeBaja: async ({ persona: id, monto }) => { const Pp = await persona(env, id); if (Pp?.correo) await correoA(env, Pp, 'baja_socio', { monto: monto || 0 }, { forzar: true }); },
+});
+
+// Al volver: se le pregunta a Stripe si de verdad se pagó. Es el mismo paso que da el aviso y la conciliación, así que
+// da igual quién llegue primero: el apoyo se confirma una vez, se anota una vez y se agradece una vez.
 export async function confirmarApoyo(env, P, sid) {
-  const stripe = await secreto(env.STRIPE_SECRET_KEY);
-  if (!stripe || !/^cs_[A-Za-z0-9_]{10,200}$/.test(String(sid || ''))) return { error: 'Datos inválidos', status: 400 };
+  if (!(await hayPagos(env)) || !/^cs_[A-Za-z0-9_]{10,200}$/.test(String(sid || ''))) return { error: 'Datos inválidos', status: 400 };
   const fila = await env.DB.prepare(`SELECT * FROM aportes WHERE sid = ?`).bind(sid).first();
   if (!fila || fila.persona !== P.id) return { error: 'No encuentro ese apoyo', status: 404 };
   if (fila.estado === 'confirmado') return { ok: true, ya: true, tipo: fila.tipo, monto: fila.monto };
-  let r, ses;
-  try { r = await fetch('https://api.stripe.com/v1/checkout/sessions/' + sid, { headers: { authorization: 'Bearer ' + stripe }, signal: AbortSignal.timeout(15000) }); ses = await r.json(); }
-  catch (e) { return { error: 'Stripe no respondió', status: 502 }; }
-  const pagado = r.ok && (ses.payment_status === 'paid' || (ses.mode === 'subscription' && ses.status === 'complete'));
-  if (!pagado) return { error: 'El pago no se completó', status: 402 };
-  await env.DB.prepare(`UPDATE aportes SET estado = 'confirmado', confirmado = datetime('now') WHERE sid = ?`).bind(sid).run();
-  await anotar(env, 'programa', fila.tipo === 'socio' ? 'Alguien se volvió Socio fundador' : 'Alguien aportó al Fondo de atracción', `${fila.monto} MXN`);
-  const Pp = await persona(env, P.id);
-  if (Pp?.correo) await correoA(env, Pp, 'gracias', { tipo: fila.tipo, monto: fila.monto }, { forzar: true });
-  return { ok: true, tipo: fila.tipo, monto: fila.monto };
+  const r = await stripe(env, 'GET', `/checkout/sessions/${sid}`);
+  if (!r.ok) return { error: 'Stripe no respondió. Si ya pagaste, tu apoyo se confirma solo en unos minutos.', status: 502 };
+  const c = await confirmarSesion(env, r.j, Math.floor(Date.now() / 1000), null, efectosPagos(env));
+  if (!c.ok) return { error: 'El pago no se completó', status: 402 };
+  return { ok: true, tipo: c.tipo, monto: c.monto };
+}
+
+// Dejar de ser socio: un clic, sin preguntas. No se cobra nada más; lo ya cobrado se devuelve si lo pide dentro de 15 días.
+export async function dejarDeSerSocio(env, P, id) {
+  if (!(await hayPagos(env))) return { error: 'Los pagos no están activos.', status: 503 };
+  return darDeBaja(env, P.id, id, efectosPagos(env));
 }
 
 /* ── admin: mover el mapa ────────────────────────────────────────────────── */
@@ -122,7 +141,10 @@ export async function distribucionPrecios(env) {
   for (const f of filas) { let aj = {}; try { aj = JSON.parse(f.ajustes || '{}'); } catch {} if (aj.banda) { d.declarado++; d.bandas[aj.banda] = (d.bandas[aj.banda] || 0) + 1; } const s = aj.situacion || 'bien'; d.situaciones[s] = (d.situaciones[s] || 0) + 1; }
   return d;
 }
-export async function aportesAdmin(env) {
-  return (await env.DB.prepare(`SELECT id, persona, correo, tipo, monto, estado, nombre_publico, creado, confirmado FROM aportes ORDER BY id DESC LIMIT 100`).all()).results;
+// El panel: el estado del libro lo ve cualquiera que entre al admin; de quién es cada cobro, solo una cuenta administradora
+export async function aportesAdmin(env, admin = false) {
+  const apoyos = (await env.DB.prepare(`SELECT id, persona, correo, tipo, monto, estado, nombre_publico, creado, confirmado FROM aportes ORDER BY id DESC LIMIT 100`).all()).results
+    .map((x) => (admin ? x : { id: x.id, tipo: x.tipo, monto: x.monto, estado: x.estado, creado: x.creado, confirmado: x.confirmado, nombre_publico: x.nombre_publico }));
+  return { admin, apoyos, ...(await libroAdmin(env, admin)), salud: await saludPagos(env) };
 }
 // fin · RLR

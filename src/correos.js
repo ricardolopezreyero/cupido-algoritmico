@@ -382,6 +382,15 @@ export const CORREOS = {
           boton: { txt: 'Ver el programa', url: tablero(env, 'apoyar') },
           nota: `${socio ? 'Puedes cancelar cuando quieras desde tu tablero, sin preguntas. ' : ''}Devoluciones sin preguntas durante 15 días escribiendo a contacto@ingenieriadigital.mx.` } };
     } },
+  baja_socio: { cat: 'cuenta', reenvio: true, cuando: 'Al dejar de ser Socio fundador (desde el tablero o porque el banco ya no dejó pasar el cobro).', muestra: () => ({ monto: 199 }),
+    arma: (env, { P, monto }) => ({ asunto: 'Ya no eres Socio fundador: no se te cobra nada más',
+      contenido: { tono: 'sereno', figura: { tipo: 'emoji', v: '🤍' }, eyebrow: 'Tu apoyo', titulo: 'Listo: ya no se te va a cobrar.', sub: 'Tu mensualidad de Socio fundador quedó cancelada.', vista: 'Tu mensualidad de Socio fundador quedó cancelada. No se te cobra nada más.',
+        cuerpo: [
+          p(`${hola(P)} Cancelamos tu mensualidad${monto ? ` de $${esc(monto)} MXN` : ''}. No hay ningún cobro más, y nada cambia en tu cuenta: tus respuestas, tus coincidencias y tus charlas siguen igual. Apoyar nunca dio ventaja y dejar de hacerlo no quita nada.`),
+          p('Gracias por lo que diste. Con eso llegó gente que hoy está adentro.'),
+        ],
+        boton: { txt: 'Ver mis apoyos', url: tablero(env, 'apoyar') },
+        nota: 'Si el último cobro fue hace menos de 15 días y lo quieres de vuelta, escribe a contacto@ingenieriadigital.mx: se devuelve sin preguntas. Si no fuiste tú quien canceló, escríbenos también.' } }) },
   revision: { cat: 'cuenta', cuando: 'Cada seis meses: ¿sigue igual tu ciudad, tu trabajo, tu situación?', muestra: () => ({}),
     arma: (env, { P }) => ({ asunto: '¿Sigue igual tu situación? Un minuto, cada seis meses',
       contenido: { tono: 'sol', figura: { tipo: 'emoji', v: '🗓️' }, eyebrow: 'Revisión de cada seis meses', titulo: '¿Sigue todo igual?', sub: 'Un minuto. Si nada cambió, solo confirmas.', vista: 'Ciudad, trabajo, hijos, tu situación: lo que sí cambia en seis meses.',

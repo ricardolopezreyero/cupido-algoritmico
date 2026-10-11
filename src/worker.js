@@ -12,7 +12,8 @@ import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './ar
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
 import { limpiarVida } from '../public/js/vida.js';
 import { CATEGORIAS as CATEGORIAS_CORREO, mandarMuestra, correoA, despacharNovedades, correosDelDia, paginaBaja, prefsDe, ponerPrefs, catalogoCorreos, vistaPrevia, revisarCorreos, armar, plantilla as plantillaCorreo } from './correos.js';
-import { verPrograma, apoyar, confirmarApoyo, ajustarPrograma, aportesAdmin, distribucionPrecios } from './programa.js';
+import { verPrograma, apoyar, confirmarApoyo, dejarDeSerSocio, efectosPagos, ajustarPrograma, aportesAdmin, distribucionPrecios } from './programa.js';
+import { recibirAviso, jalarEventos, tocaJalar, conciliar } from './pagos.js';
 import { limpiarPrecioJusto, REVISION_DIAS } from './precios.js';
 import { generarSonido, servirSonido, estadoSonidos, generarMusica, servirMusica, estadoMusica, asegurarMusica } from './sonidos.js';
 import { avance } from '../public/js/preguntas.js';
@@ -54,7 +55,14 @@ export default {
   async scheduled(ev, env, ctx) {
     await asegurar(env);
     // Cada tres minutos: lo que pasó en las charlas mientras alguien no estaba sale junto, en un solo correo
-    if (ev.cron === '*/3 * * * *') { await despacharNovedades(env); try { await asegurarMusica(env); } catch (e) { console.error('música', e); } return; }
+    if (ev.cron === '*/3 * * * *') {
+      await despacharNovedades(env); try { await asegurarMusica(env); } catch (e) { console.error('música', e); }
+      // El libro de cobros: pedirle a Stripe lo nuevo (cada vuelta si alguien está pagando; si no, cada 15 minutos)
+      try { if (await tocaJalar(env)) await jalarEventos(env, efectosPagos(env)); } catch (e) { console.error('jalón de Stripe', e); }
+      return;
+    }
+    // Cada día, antes que nada: conciliar el libro de cobros con Stripe (lo que se pagó y nadie confirmó, suscripciones, devoluciones)
+    try { await jalarEventos(env, efectosPagos(env)); await conciliar(env, efectosPagos(env)); } catch (e) { console.error('conciliación', e); }
     const lista = (await env.DB.prepare(`SELECT * FROM personas WHERE pool = 'real' AND completo = 0 AND correo IS NOT NULL AND creada < datetime('now', '-2 days')`).all()).results;
     for (const fila of lista) {
       const P = await persona(env, fila.id);
@@ -150,6 +158,14 @@ async function api(req, env, ctx, url) {
     return json({ ok: true }, 200, { 'set-cookie': cookieSesion(await entrarDemo(env, id), url) });
   }
   /* ── Dirección (/ceo): llega una prueba de quien quiere dirigir Cupido. Pública; se lee en /gtm → Equipo ── */
+  // El aviso de Stripe (webhook). No lleva sesión: se acepta con la firma de Stripe o, si aún no hay secreto de firma,
+  // tomando solo la clave del evento y pidiéndoselo a Stripe con nuestra llave. Lo que no entre por aquí lo recoge el jalón.
+  if (ruta === '/api/stripe/aviso' && metodo === 'POST') {
+    const cuerpo = await req.text();
+    if (cuerpo.length > 600_000) return error('Demasiado grande', 413);
+    const r = await recibirAviso(env, cuerpo, req.headers.get('stripe-signature') || '', efectosPagos(env));
+    return json(r.error ? { error: r.error } : { ok: true, r: r.r }, r.status);
+  }
   if (ruta === '/api/ceo/postular' && metodo === 'POST') {
     const r = await guardarPostulacion(env, req, await leerJson(req, 40_000));
     if (r.ok && r.fila) ctx.waitUntil((async () => { const a = avisoPostulacion(env, r.fila); for (const para of await aQuienAvisar(env)) await correoSuelto(env, { para, ...a }); })().catch((e) => console.error('aviso de dirección', e.message)));
@@ -328,8 +344,12 @@ async function api(req, env, ctx, url) {
   if (ruta === '/api/admin/precios' && metodo === 'GET') return json(await distribucionPrecios(env));
   if (ruta === '/api/apoyar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 4000); const r = await apoyar(env, url, yo.P, b); return r.error ? error(r.error, r.status) : json(r); }
   if (ruta === '/api/apoyar/confirmar' && metodo === 'POST') { if (!yo) return sinSesion(); const b = await leerJson(req, 2000); const r = await confirmarApoyo(env, yo.P, b.sid); return r.error ? error(r.error, r.status) : json(r); }
-  if (ruta === '/api/admin/programa' && metodo === 'POST') { const b = await leerJson(req, 2000); const r = await ajustarPrograma(env, b); return r.error ? error(r.error, r.status) : json(r); }
-  if (ruta === '/api/admin/aportes' && metodo === 'GET') return json(await aportesAdmin(env));
+  if (ruta === '/api/apoyar/baja' && metodo === 'POST') { if (!yo || yo.sesion.demo) return sinSesion(); const b = await leerJson(req, 2000); const r = await dejarDeSerSocio(env, yo.P, b.id); return r.error ? error(r.error, r.status) : json(r); }
+  // Encender un cobro o cambiar un precio le pega a todo el mundo: solo una cuenta administradora
+  if (ruta === '/api/admin/programa' && metodo === 'POST') { if (!(await esAdmin(env, yo))) return error('Cambiar el programa pide entrar con una cuenta administradora.', 403); const b = await leerJson(req, 2000); const r = await ajustarPrograma(env, b); return r.error ? error(r.error, r.status) : json(r); }
+  // El estado del libro lo ve quien entre al admin; de quién es cada cobro, solo una cuenta administradora
+  if (ruta === '/api/admin/aportes' && metodo === 'GET') return json(await aportesAdmin(env, await esAdmin(env, yo)));
+  if (ruta === '/api/admin/pagos/conciliar' && metodo === 'POST') { if (!(await esAdmin(env, yo))) return error('Conciliar pide entrar con una cuenta administradora.', 403); const jalon = await jalarEventos(env, { ...efectosPagos(env), paginas: 10 }); const conciliacion = await conciliar(env, efectosPagos(env)); return json({ ok: true, jalon, conciliacion }); }
 
   /* ── Pulir: reacomoda un texto dictado sin cambiar lo que dijo la persona ── */
   if (ruta === '/api/pulir' && metodo === 'POST') {

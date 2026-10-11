@@ -71,7 +71,7 @@ Todo lo que hay en la Lista existe para mover dos números. Por eso van metidos 
 - **Dónde aparece:** al final de su paso: arriba quedan las actividades que tienen que estar andando para que ese número llegue (por ejemplo, el de 300 usuarios cierra el paso «Del 19 al 30 de noviembre» y va tras «A los 300 perfiles: primera lectura seria»). Cada fase enseña además sus puntos de control en una tira, en orden de fecha, y el filtro «🎯 Solo puntos de control» (o `/gtm#control`) los pone todos seguidos: la escalera completa.
 - **No se palomean.** Se alcanzan solos: el día en que los dos números reales llegan a la meta, el servidor lo anota con su fecha y ya no se borra aunque después bajen. Si la fecha pasa y no se llegó, la tarjeta dice hace cuántos días venció.
 - **Cómo se mide un usuario al mes:** una cuenta de verdad que abrió Cupido en los últimos 30 días. Para eso se guarda la última visita de cada cuenta (columna `personas.visita`, a lo más una escritura por hora; no se guarda qué hizo ni dónde).
-- **Cómo se mide el ingreso al mes:** lo aportado al Fondo de atracción en 30 días más lo que dan cada mes los socios fundadores. Ojo: las renovaciones y las bajas de los socios todavía no se registran una por una; cuentan mientras nadie anote su baja.
+- **Cómo se mide el ingreso al mes:** lo que dice el libro de cobros ([PAGOS.md](PAGOS.md)): cada cobro de los últimos 30 días, del Fondo y de cada mensualidad de socio, ya restado lo que se devolvió. Los socios que se cuentan son los que siguen al corriente hoy. Si el libro no está al día con Stripe, la franja lo avisa: el número puede estar corto, nunca inflado.
 - **De dónde salen las metas** (está escrito en la Lista y en Números): los usuarios siguen la escalera del plan, tantos usuarios al mes como perfiles vivos; el ingreso son 2 pesos al mes por usuario en 2026 y 2027 (todo es gratis: solo apoyos voluntarios) y 40 pesos al mes por usuario de 2028 en adelante, cuando empieza a cobrarse el programa. Son supuestos y lo dicen.
 
 ## Dónde vive cada cosa
@@ -102,7 +102,7 @@ Los datos se verificaron el 10 de octubre de 2026: INEGI (situación conyugal, m
 
 ## Lo que falta
 
-- Registrar las renovaciones y las bajas de los socios fundadores (hoy el ingreso al mes los cuenta como activos mientras nadie anote la baja), y decidir por escrito si quien entró cuando era gratis paga la entrada en 2028: las metas suponen que no.
+- Decidir por escrito si quien entró cuando era gratis paga la entrada en 2028: las metas suponen que no.
 - Completar las listas que quedaron cortas: creadores que hablan solo de citas, parejas, y grupos de Facebook de solteros de cada ciudad.
 - Varias actividades de la fase 1 son decisiones de Ricardo: la regla del Gran Cruce, la verificación de identidad, la cuenta demo de ella, si el código sigue público y «Mientras esperan a Cupido».
 - El termómetro de ciudad, los códigos de campaña y la liga de madrina todavía no existen: son actividades de producto de la fase 1.

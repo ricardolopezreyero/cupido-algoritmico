@@ -18,6 +18,7 @@ import { TAREAS, FASES, AREAS, QUIENES, ESFUERZOS, RITMOS, PASOS, CONTROLES, SUP
 import { PLAN } from './gtm-plan.js';
 import { ESQUEMA_CEO, listarPostulaciones } from './ceo.js';
 import { ESQUEMA_CANDIDATOS } from './candidatos.js';
+import { ingresoDe, sociosVivos, saludPagos } from './pagos.js';
 
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -67,19 +68,20 @@ async function hoy(env) {
   const u = await uno(`SELECT COALESCE(SUM(u.estado = 'abierta'), 0) abiertas, COUNT(*) avisadas
     FROM puertas u JOIN personas a ON a.id = u.a JOIN personas b ON b.id = u.b WHERE a.pool = 'real' AND b.pool = 'real'`);
   // Los dos números de control. Usuarios al mes: cuentas de verdad que abrieron Cupido en los últimos 30 días (la visita se anota
-  // desde que existe la columna; para lo anterior valen la fecha de alta y la sesión). Ingreso al mes: lo aportado al Fondo en 30 días
-  // más lo que dan cada mes los socios fundadores (sus renovaciones no se registran una por una: cuentan mientras nadie anote su baja).
+  // desde que existe la columna; para lo anterior valen la fecha de alta y la sesión). Ingreso al mes: lo que dice el libro de cobros
+  // (src/pagos.js): cada cobro de los últimos 30 días, del Fondo y de cada mensualidad de socio, ya restado lo que se devolvió.
   const d30 = `datetime('now', '-30 days')`;
   const v = await uno(`SELECT COUNT(*) n FROM personas p WHERE p.pool = 'real' AND p.estado != 'vetada'
       AND (p.visita >= ${d30} OR p.creada >= ${d30} OR EXISTS (SELECT 1 FROM sesiones s WHERE s.persona = p.id AND s.demo = 0 AND s.usada >= ${d30}))`);
-  const a = await uno(`SELECT COALESCE(SUM(CASE WHEN tipo = 'fondo' AND confirmado >= ${d30} THEN monto END), 0) fondo,
-      COALESCE(SUM(CASE WHEN tipo = 'socio' THEN monto END), 0) socios, COALESCE(SUM(tipo = 'socio'), 0) nsocios FROM aportes WHERE estado = 'confirmado'`);
+  const ingreso = await ingresoDe(env, 30), socios = await sociosVivos(env), pagos = await saludPagos(env);
   const c = (await env.DB.prepare(`SELECT ciudad, COUNT(*) n, SUM(genero = 'mujer') m, SUM(genero = 'hombre') h
     FROM personas WHERE pool = 'real' AND estado != 'vetada' AND completo = 1 AND ciudad IS NOT NULL GROUP BY ciudad ORDER BY n DESC LIMIT 6`).all()).results;
   return {
     cuentas: g.cuentas, completos: g.completos, mujeres: g.mujeres, hombres: g.hombres, invitados: g.invitados,
     semana: g.semana, completosSemana: g.completos_semana, cruces: p.cruces, arriba: p.arriba, puertas: u.abiertas, avisadas: u.avisadas,
-    usuariosMes: v.n, ingresoMes: a.fondo + a.socios, fondoMes: a.fondo, sociosMes: a.socios, socios: a.nsocios,
+    usuariosMes: v.n, ingresoMes: ingreso.total, fondoMes: ingreso.fondo, sociosMes: ingreso.socio, socios: socios.vivos, sociosAtrasados: socios.atrasados,
+    // si el libro no está al día con Stripe, la página lo dice: el ingreso puede estar corto (nunca inflado)
+    pagos: { llave: pagos.llave, alDia: pagos.alDia, minutos: pagos.minutos, error: pagos.error, atorados: pagos.eventos.errores + pagos.eventos.perdidos, pendientes: pagos.pendientes },
     ciudades: c.map((x) => ({ ciudad: etiqueta('ciudad', x.ciudad) || x.ciudad, n: x.n, m: x.m, h: x.h })),
   };
 }

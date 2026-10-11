@@ -105,7 +105,7 @@ function franja() {
     <p class="gtm-hoy-t">Dónde vamos hoy <small>cuentas de verdad, sin la demo</small></p>
     <div class="gtm-hoy-fila">
       ${c(num(h.usuariosMes), h.usuariosMes === 1 ? 'usuario al mes' : 'usuarios al mes', sigue ? `meta: ${num(sigue[4])} para el ${dia(sigue[3])}` : 'abrieron Cupido en los últimos 30 días', ' control')}
-      ${c(dinero(h.ingresoMes), 'de ingreso al mes', sigue ? `meta: ${dinero(sigue[5])} · hoy, ${tantos(h.socios, 'socio fundador', 'socios fundadores')}` : 'apoyos de los últimos 30 días', ' control')}
+      ${c(dinero(h.ingresoMes), 'de ingreso al mes', sigue ? `meta: ${dinero(sigue[5])} · hoy, ${tantos(h.socios, 'socio fundador', 'socios fundadores')}${h.sociosAtrasados ? ` (${h.sociosAtrasados} con cobro atrasado)` : ''}` : 'cobrado en los últimos 30 días, ya restado lo devuelto', ' control')}
       ${c(num(h.completos), h.completos === 1 ? 'perfil vivo' : 'perfiles vivos', h.completos ? `${tantos(h.mujeres, 'mujer', 'mujeres')} (${mitad} %) · ${tantos(h.hombres, 'hombre', 'hombres')}` : 'la meta de la fase 2 son 1,000')}
       ${c(num(h.cuentas), 'cuentas creadas', `${num(h.semana)} en los últimos 7 días`)}
       ${c(num(h.invitados), 'llegaron por invitación', h.cuentas ? `${Math.round((h.invitados / h.cuentas) * 100)} % de las cuentas` : '')}
@@ -113,6 +113,7 @@ function franja() {
       ${c(num(h.puertas), 'puertas abiertas', h.avisadas ? `de ${num(h.avisadas)} avisadas` : '')}
       ${c(`${num(hechas)}<i>/${num(total)}</i>`, 'actividades hechas', `${Math.round((hechas / total) * 100)} % de la lista`)}
     </div>
+    ${h.pagos && h.pagos.llave && !h.pagos.alDia && (h.pagos.error || h.pagos.atorados) ? `<p class="gtm-hoy-alerta">⚠ El libro de cobros no está al día con Stripe${h.pagos.error ? ` (${esc(h.pagos.error)})` : `: hay ${tantos(h.pagos.atorados, 'evento atorado', 'eventos atorados')}`}. El ingreso de arriba puede estar corto, nunca inflado. Se ve en Admin → Programa.</p>` : ''}
     ${h.ciudades.length ? `<p class="gtm-hoy-ciudades">${h.ciudades.map((x) => `<span><b>${esc(x.ciudad)}</b> ${num(x.n)} <i>(${num(x.m)} M · ${num(x.h)} H)</i></span>`).join('')}</p>` : ''}
   </section>`;
 }

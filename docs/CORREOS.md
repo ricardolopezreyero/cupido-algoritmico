@@ -38,11 +38,11 @@ El color de la portada dice de qué se trata antes de leer una palabra.
 | `claro` (rosa pálido) | Lo de todos los días | matching, novedades, reabrir, semana |
 | `sol` (ámbar) | Recordatorios y fechas | recordatorio, pendiente, cita_manana, revision, espacio |
 | `calma` (verde) | Cuidado y gracias | reporte_recibido, reporte_atendido, regreso, gracias |
-| `sereno` (arena) | Lo serio, dicho con calma | cierre, en_revision, los discretos |
+| `sereno` (arena) | Lo serio, dicho con calma | cierre, en_revision, baja_socio, los discretos |
 
 Los colores y las letras son los del sitio (`TK` en `correo-diseno.js`): rosa `#d6455f`, tinta `#211d24`, crema `#faf7f4`, Fraunces para títulos e Inter para el texto, con Georgia y Helvetica de respaldo donde el buzón no carga letras.
 
-## Los 22 correos
+## Los 23 correos
 
 | Correo | Categoría | Tono | Invita a | Lo que lleva de la persona |
 |---|---|---|---|---|
@@ -65,6 +65,7 @@ Los colores y las letras son los del sitio (`TK` en `correo-diseno.js`): rosa `#
 | `reporte_atendido` | Seguridad | calma | Ir a mi tablero | Si la cuenta reportada se retiró |
 | `invitado` | Tu cuenta | amor | Compartir mi liga otra vez | Cuántas personas han llegado por ella, y su liga |
 | `gracias` | Tu cuenta | calma | Ver el programa | Su apoyo, en una ficha |
+| `baja_socio` | Tu cuenta | sereno | Ver mis apoyos | Que ya no se le cobra nada más, y cómo pedir de vuelta el último cobro |
 | `revision` | Tu cuenta | sol | Revisar en un minuto | Lo que se pregunta cada seis meses |
 | `espacio` | Tu cuenta | sol | Ver mi espacio | Cuánto lleva usado, en una barra |
 | `prueba` | Acceso | noche | Elegir qué correos recibo | Todas las categorías de las que se le cuenta |

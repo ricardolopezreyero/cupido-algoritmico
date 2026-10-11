@@ -13,6 +13,7 @@ import { ESQUEMA_MEDIOS, mediosDe } from './medios.js';
 import { ESQUEMA_CHARLA, abrirCharla, misCharlas } from './charla.js';
 import { ESQUEMA_CORREOS, correoA } from './correos.js';
 import { ESQUEMA_PROGRAMA, sembrarPrograma } from './programa.js';
+import { ESQUEMA_PAGOS, MIGRAR_PAGOS } from './pagos.js';
 import { ESQUEMA_SUBIDAS, espacioDe } from './subidas.js';
 import { ESQUEMA_CHISPA } from './chispa.js';
 import { ESQUEMA_GTM } from './gtm.js';
@@ -58,6 +59,7 @@ const ESQUEMA = [
   ...ESQUEMA_CHARLA,
   ...ESQUEMA_CORREOS,
   ...ESQUEMA_PROGRAMA,
+  ...ESQUEMA_PAGOS,
   ...ESQUEMA_ELLA,
   ...ESQUEMA_SUBIDAS,
   ...ESQUEMA_CHISPA,
@@ -85,6 +87,8 @@ export async function asegurar(env) {
   try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN tono_a TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN tono_b TEXT`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN baja TEXT`).run(); } catch { /* ya existe */ }
   try { await env.DB.prepare(`ALTER TABLE medios ADD COLUMN vista INTEGER NOT NULL DEFAULT 0`).run(); } catch { /* ya existe */ }
+  // el libro de cobros: lo que se le agrega a los apoyos para ligarlos con su suscripción, su pago y su cliente
+  for (const q of MIGRAR_PAGOS) { try { await env.DB.prepare(q).run(); } catch { /* ya existe */ } }
   // la última vez que una cuenta de verdad abrió Cupido: de aquí salen los «usuarios al mes» del go-to-market (la escribe acceso.js)
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN visita TEXT`).run(); } catch { /* ya existe */ }
   await sembrarPrograma(env);

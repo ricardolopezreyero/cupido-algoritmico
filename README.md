@@ -59,7 +59,8 @@ Detalle completo, incluida la revisión de lo sexual y lo espiritual: **[MODELO.
 - [`docs/APP.md`](docs/APP.md) — **Cupido como app**: cómo se instala en cada equipo, qué guarda y qué no, pantalla completa y el código para entrar desde el iPhone.
 - [`docs/PANTALLA.md`](docs/PANTALLA.md) — **Privacidad en pantalla**: nombres y fotos borrosos con un toque, para grabar sin enseñar de quién es.
 - [`docs/SONIDOS.md`](docs/SONIDOS.md) — **El sonido**: un toque lo apaga, qué calla y qué no, las cuatro familias y los 26 sonidos.
-- [`docs/CORREOS.md`](docs/CORREOS.md) — **Los correos**: las reglas, los tonos, los 22 correos y cómo se revisan (Gmail corta a los 102 KB; el nuestro más pesado anda en 14).
+- [`docs/PAGOS.md`](docs/PAGOS.md) — **El libro de cobros**: cómo se anota cada peso una sola vez (aviso de Stripe, lectura cada pocos minutos y conciliación diaria), qué ve cada quien y cómo se prueba.
+- [`docs/CORREOS.md`](docs/CORREOS.md) — **Los correos**: las reglas, los tonos, los 23 correos y cómo se revisan (Gmail corta a los 102 KB; el nuestro más pesado anda en 14).
 - `public/js/preguntas.js` — el cuestionario v2 (fuente única de verdad).
 - `public/js/motor.js` — el motor de compatibilidad v2 (lo usan el servidor y el navegador).
 - `src/` — Worker de Cloudflare: API, base de datos D1, puertas, avisos, artículos.
@@ -67,6 +68,7 @@ Detalle completo, incluida la revisión de lo sexual y lo espiritual: **[MODELO.
 - `seed/` — las 20 personas ficticias (respuestas estructuradas + textos) y los artículos iniciales.
 - `scripts/probar-motor.mjs` — imprime la matriz 10 × 10 y el detalle de cualquier par.
 - `scripts/pruebas-motor.mjs` — 17 pruebas del motor; `npm run deploy` no despliega si alguna falla.
+- `scripts/pruebas-pagos.mjs` — 34 pruebas del libro de cobros, contra una base en memoria y un Stripe de mentira; también detienen el despliegue.
 - [`montecarlo.py`](montecarlo.py) — simulación de 1,000 participantes que informó el diseño de la experiencia.
 
 ## Correrlo

@@ -1129,6 +1129,9 @@ async function pintarPrograma() {
   let d; try { d = await api('/api/programa'); } catch (e) { z.innerHTML = `<p class="vacio">${esc(e.message)}</p>`; return; }
   const real = !DEMO() || V.persona.origen !== 'demo';
   const inv = V.invitacion || {};
+  // lo que esta persona ha dado, según el libro de cobros: si hoy es socio y sus movimientos
+  const apoyos = d.mio?.apoyos || null, socioHoy = apoyos?.socio.find((x) => x.viva) || null;
+  const diaApoyo = (f) => { const x = new Date(String(f).replace(' ', 'T') + 'Z'); return isNaN(x) ? '' : x.toLocaleDateString('es-MX', { day: 'numeric', month: 'long', year: 'numeric' }); };
   const liga = `${location.origin}/i/${inv.codigo || ''}`;
   const whats = `https://wa.me/?text=${encodeURIComponent('Te comparto Cupido Algorítmico. No es una app de citas: respondes 43 preguntas una sola vez y solo te avisa si alguien cruza el 90 % contigo. Es gratis. ' + liga)}`;
   z.innerHTML = `
@@ -1163,9 +1166,15 @@ async function pintarPrograma() {
         <label class="campo" style="margin:10px 0 0"><small>¿Cómo quieres aparecer en la lista de agradecimiento? (opcional, solo tu nombre de pila)</small><input id="nombre-apoyo" maxlength="40" placeholder="${esc(V.persona.nombreCorto || 'Anónimo')}" data-priv="nombre"></label>
         <p class="nota-entrar" style="text-align:left">${d.pagos ? 'Pago seguro con tarjeta. Devoluciones sin preguntas en 15 días.' : 'Los pagos se activan pronto; mientras, lo que más ayuda es compartir.'}</p></section>
       <section class="tarjeta" style="margin-top:0"><h2>Socio fundador</h2><p class="sub">Cada mes, lo que quieras, cancelable en un clic. Los socios fundadores aparecen con un ✦ en la lista de agradecimiento y reciben cada año el informe de en qué se gastó cada peso.</p>
-        <div class="montos" data-tipo="socio">${[99, 199, 499].map((m) => `<button type="button" class="boton boton-claro boton-chico" data-monto="${m}">${pesos(m)} al mes</button>`).join('')}</div>
-        <p class="nota-entrar" style="text-align:left">Tope de cuidado: ${pesos(d.tope)} al mes por persona. No queremos dinero que duela.</p></section>
+        ${socioHoy ? `<p style="margin:0 0 10px"><b>✦ Eres Socio fundador con ${pesos(socioHoy.monto)} al mes</b>${socioHoy.desde ? `, desde el ${diaApoyo(socioHoy.desde)}` : ''}.${socioHoy.estado === 'past_due' ? ' Tu banco no dejó pasar el último cobro; se vuelve a intentar solo.' : socioHoy.sigue ? ` El siguiente cobro es el ${diaApoyo(socioHoy.sigue)}.` : ''}</p>
+        <button type="button" class="boton boton-claro boton-chico" id="baja-socio" data-id="${esc(socioHoy.id)}">Dejar de ser socio</button>
+        <p class="nota-entrar" style="text-align:left">Un clic y no se te cobra nada más. No cambia nada en tu cuenta.</p>`
+        : `<div class="montos" data-tipo="socio">${[99, 199, 499].map((m) => `<button type="button" class="boton boton-claro boton-chico" data-monto="${m}">${pesos(m)} al mes</button>`).join('')}</div>
+        <p class="nota-entrar" style="text-align:left">Tope de cuidado: ${pesos(d.tope)} al mes por persona. No queremos dinero que duela.</p>`}</section>
     </div>
+
+    ${apoyos && apoyos.movimientos.length ? `<section class="tarjeta"><h2>Lo que has dado</h2><p class="sub">Cada cobro y cada devolución, como quedó anotado. En total: <b>${pesos(apoyos.total)}</b>. Si algo no cuadra con tu banco, escríbenos y lo revisamos el mismo día.</p>
+      <div style="overflow-x:auto"><table class="tabla"><tbody>${apoyos.movimientos.map((x) => `<tr><td>${diaApoyo(x.cuando)}</td><td>${x.clase === 'cobro' ? (x.tipo === 'socio' ? '✦ Mensualidad de Socio fundador' : 'Fondo de atracción') : x.clase === 'devolucion' ? 'Devolución' : 'Disputa con el banco'}</td><td style="text-align:right;white-space:nowrap">${x.monto < 0 ? '−' : ''}${pesos(Math.abs(x.monto))}</td></tr>`).join('')}</tbody></table></div></section>` : ''}
 
     <section class="tarjeta transparencia"><h2>Transparencia</h2>
       <div class="banda" style="grid-template-columns:repeat(3,1fr);margin:10px 0 14px"><div class="rosa"><b>${pesos(d.fondo.reunido)}</b><span>reunidos en el Fondo</span></div><div><b>${d.fondo.personas}</b><span>${d.fondo.personas === 1 ? 'persona apoya' : 'personas apoyan'}</span></div><div><b>${d.fondo.socios}</b><span>${d.fondo.socios === 1 ? 'socio fundador' : 'socios fundadores'}</span></div></div>
@@ -1179,6 +1188,7 @@ async function pintarPrograma() {
     try { const r = await api('/api/apoyar', { tipo, monto, nombrePublico: $('#nombre-apoyo')?.value || '', volver: location.href }); location.href = r.url; } catch (e) { avisar(e.message); }
   };
   $$('.montos button').forEach((b) => b.onclick = () => ir2(b.closest('.montos').dataset.tipo, Number(b.dataset.monto)));
+  const bj = $('#baja-socio'); if (bj) bj.onclick = async () => { bj.disabled = true; bj.textContent = 'Cancelando…'; try { await api('/api/apoyar/baja', { id: bj.dataset.id }); avisar('Listo: ya no se te va a cobrar. Gracias por lo que diste.', 6000); pintarPrograma(); } catch (e) { bj.disabled = false; bj.textContent = 'Dejar de ser socio'; avisar(e.message, 7000); } };
   const mf = $('#monto-fondo'); if (mf) mf.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); ir2('fondo', Number(mf.value)); } };
 }
 // al volver de Stripe
