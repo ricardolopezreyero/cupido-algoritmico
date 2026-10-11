@@ -116,6 +116,14 @@ Todo lo que hay en la Lista existe para mover dos números. Por eso van metidos 
 
 Rutas: `GET /api/gtm` (todo), `POST /api/gtm/tarea {id, hecha}`, `POST /api/gtm/equipo {email, quitar}`.
 
+## Sacarlo todo a un archivo
+
+```bash
+node scripts/exportar-gtm.mjs --remote
+```
+
+Deja en Descargas un solo Markdown con las cinco partes: la Estrategia completa, las 244 actividades con sus puntos de control, el perfil de `/ceo` y cómo elegir, las fichas de Candidatas y las Proyecciones en sus tres escenarios. Lee lo mismo que pinta la página, así que no se desfasa. Con `--remote` trae además de producción las palomitas, el estado y las notas de cada ficha y las pruebas recibidas. **El archivo trae nombres de personas: no va al repositorio.**
+
 ## Reglas para tocar la lista
 
 - **Quién pone palomitas:** quien entra, es decir, solo correos `@ingenieriadigital.mx` y `@superleads.mx`. Pueden ponerlas y quitarlas. Cada palomita guarda el correo y la hora, y se ve en la tarjeta.
