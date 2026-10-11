@@ -8,6 +8,8 @@
      ritmo    u una vez · d diario · s semanal · m mensual
    La clave NUNCA cambia (ahí se guarda la palomita). Para agregar una actividad se usa un número nuevo;
    para retirar una, se borra el renglón y su palomita deja de contarse.
+   Al final van los PUNTOS DE CONTROL (CONTROLES): no son actividades, son los dos números
+   —usuarios al mes e ingreso al mes— que dicen si las actividades están sirviendo.
    ───────────────────────────────────────────────────────────────────── */
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
@@ -310,4 +312,61 @@ export const TAREAS = [
   ['f5-24', 5, 'ADM', 'P', 4, 'u', 'Una casa propia para Cupido', 'Su propia empresa, sus cuentas y su consejo, separada de los demás proyectos.'],
   ['f5-25', 5, 'ADM', 'P', 3, 'u', 'Dirección general', 'Cuando haya cinco países, alguien de tiempo completo que no sea el fundador.'],
   ['f5-26', 5, 'ADM', 'A', 2, 'm', 'Cuentas públicas', 'Cuánto entra, en qué se va. Una vez al año, a la vista de todos.'],
+];
+
+/* ═══ PUNTOS DE CONTROL ═══════════════════════════════════════════════
+   Cada renglón: [clave, fase, tras, fecha, usuarios al mes, ingreso al mes, título, de dónde sale, qué se decide si no se llega]
+     tras      la clave de la actividad después de la cual aparece en la lista: es la que debería producir ese número.
+               Si esa actividad se retira, el punto de control se va al final de su fase.
+     fecha     AAAA-MM-DD, el día en que se revisa
+     usuarios  personas reales que abrieron Cupido al menos una vez en los últimos 30 días
+     ingreso   pesos mexicanos que entraron en los últimos 30 días
+   Un punto de control NO se palomea: se da por alcanzado solo, el día en que los dos números reales llegan a la meta
+   (src/gtm.js lo anota con su fecha). La clave nunca cambia.
+   De dónde salen las metas (lo mismo que se lee en SUPUESTOS_CONTROL):
+     usuarios  la escalera del plan: tantos usuarios al mes como perfiles vivos pide cada escalón
+     ingreso   2026 y 2027, todo es gratis: 2 pesos al mes por usuario, de apoyos voluntarios
+               de 2028 en adelante, el programa: 40 pesos al mes por usuario
+   ═════════════════════════════════════════════════════════════════════ */
+export const POR_USUARIO = { voluntario: 2, programa: 40 };   // pesos al mes por usuario: antes y después de que el programa cobre
+
+export const SUPUESTOS_CONTROL = [
+  '**Usuario al mes:** una persona real que abrió Cupido al menos una vez en los últimos 30 días. La demo no cuenta.',
+  '**La meta de usuarios es la escalera del plan:** tantos usuarios al mes como perfiles vivos pide cada escalón. Quiere decir que la gente no solo contesta: vuelve. Para lograrlo, dos de cada tres perfiles con más de un mes tienen que volver a entrar (supuesto), y eso depende de «Mientras esperan a Cupido».',
+  '**Ingreso al mes:** los pesos que entraron en los últimos 30 días. En 2026 y 2027 todo es gratis y solo hay apoyos voluntarios: el Fondo de atracción y los socios fundadores.',
+  '**2026 y 2027: dos pesos al mes por usuario** (supuesto). Uno de cada cien usuarios es socio fundador con $100 al mes, y uno de cada cien aporta $100 al Fondo ese mes.',
+  '**De 2028 en adelante: cuarenta pesos al mes por usuario** (supuesto). Empieza a cobrarse [el programa](/programa). Al principio casi todo es la entrada: $690, que el precio justo deja en unos $480 de promedio, y se supone que la paga la mitad de quienes llegan. Quien entró cuando era gratis no la paga. En 2029 se suma «Mientras esperas» ($199 al mes, 5 de cada 100 usuarios).',
+  '**Para comparar:** en el grupo dueño de Tinder, cada persona que paga deja unos 20 dólares al mes ([resultados de 2025](https://ir.mtch.com/investor-relations/news-events/news-events/news-details/2026/Match-Group-Announces-Fourth-Quarter-and-Full-Year-Results)). Cuarenta pesos por usuario es lo que deja una persona así por cada nueve o diez que no pagan.',
+  '**Son metas, no pronósticos.** Cada supuesto se cambia por el dato real en cuanto exista, y las metas de 2028 en adelante se vuelven a calcular en diciembre de 2027 con lo que la gente diga que pagaría.',
+];
+
+export const CONTROLES = [
+  /* ═══ FASE 1 ═══ */
+  ['pc-01', 1, 'f1-06', '2026-10-31', 50, 500, 'La casa, probada con gente y con dinero de verdad', 'Antes de anunciar nada: cincuenta personas de confianza adentro (el equipo, las diez de la prueba y las primeras fundadoras) y los primeros cinco apoyos de $100, para comprobar que cobrar, agradecer y devolver funciona.', 'Se revisa qué le falta a la casa antes del 11 de noviembre: lo que nadie ha usado no se anuncia.'],
+
+  /* ═══ FASE 2 ═══ */
+  ['pc-02', 2, 'f2-03', '2026-11-18', 150, 500, 'Una semana después del arranque', 'Las primeras fundadoras, a quien trajo cada una y la primera Noche de las 43. Cinco socios fundadores de $100 al mes.', 'Más invitaciones personales antes que más publicaciones: es el canal que sí convierte.'],
+  ['pc-03', 2, 'f2-68', '2026-11-30', 300, 1000, 'Trescientos: la primera lectura seria', 'Con 300 ya se leen la tasa de par y el equilibrio entre ellas y ellos. Los diez primeros socios fundadores, a $100 al mes.', 'Se corrige el cuestionario o la invitación antes de gastar un peso en anuncios.'],
+  ['pc-04', 2, 'f2-73', '2026-12-15', 600, 1500, 'A medio camino de las mil, con el Fondo abierto', 'Diez socios y los primeros aportes al Fondo de atracción de La Laguna: «con esto traemos a 500 personas más».', 'Las dos semanas que quedan se dedican al lado que falte, ellas o ellos.'],
+  ['pc-05', 2, 'f2-74', '2026-12-31', 1000, 2000, 'Las primeras mil, y vuelven', 'La meta de la fase. Dos pesos al mes por usuario: diez socios de $100 y diez aportes de $100 al Fondo.', 'El Gran Cruce se anuncia cuando se entienda por qué: con menos de mil, el termómetro arranca frío.'],
+
+  /* ═══ FASE 3 ═══ */
+  ['pc-06', 3, 'f3-03', '2027-01-17', 2000, 4000, 'Dos semanas de cuenta regresiva', 'El primer domingo de enero y el termómetro de la ciudad. Veinte socios y veinte aportes en el mes.', 'Se adelanta la semana de noches y se suman creadores antes de que acabe enero.'],
+  ['pc-07', 3, 'f3-20', '2027-01-31', 3000, 6000, 'Faltan dos semanas para el Cruce', 'Tres mil usuarios al terminar la semana de noches. Treinta socios y treinta aportes.', 'Las últimas dos semanas van completas a invitación personal y al reto de fundadoras.'],
+  ['pc-08', 3, 'f3-60', '2027-02-14', 5000, 10000, 'El día del Cruce: La Laguna encendida', 'Cinco mil usuarios en el mes del Cruce. Cincuenta socios y cincuenta aportes: es el mes en que más gente quiere ayudar a su ciudad.', 'Monterrey y Saltillo abren con el manual corregido, no con el mismo.'],
+
+  /* ═══ FASE 4 ═══ */
+  ['pc-09', 4, 'f4-70', '2027-03-15', 6500, 13000, 'Un mes después del Cruce, la gente sigue entrando', 'Es la prueba de que un usuario no es una visita: dos de cada tres perfiles de febrero volvieron a entrar en marzo.', 'No se abre la ciudad siguiente hasta resolver «Mientras esperan a Cupido»: sin regreso no hay usuarios al mes.'],
+  ['pc-10', 4, 'f4-02', '2027-04-30', 10000, 20000, 'Diez mil en tres ciudades', 'La Laguna, Monterrey y Saltillo, con el manual funcionando sin el fundador en la sala. Cien socios y cien aportes.', 'La cuarta ciudad espera: primero se arregla lo que no viajó de La Laguna.'],
+  ['pc-11', 4, 'f4-75', '2027-06-30', 18000, 36000, 'Cupido paga lo que gasta en crecer', 'Con $36,000 al mes, los apoyos ya cubren un mes del tope de gasto de arranque ($105,000 en 90 días, sin sueldos).', 'El gasto del mes baja al ingreso del mes anterior, o se decide a la vista de dónde sale la diferencia.'],
+  ['pc-12', 4, 'f4-15', '2027-08-31', 32000, 64000, 'Seis ciudades encendidas', 'Una ciudad nueva cada cuatro a seis semanas desde marzo, cada una con su Cruce. 320 socios y 320 aportes.', 'Se abre más despacio: una ciudad a medias le quita gente a la siguiente.'],
+  ['pc-13', 4, 'f4-17', '2027-10-31', 56000, 112000, 'Antes del segundo 11 de noviembre', 'Con 56 mil usuarios, el Día del Soltero ya puede ser una campaña nacional. 560 socios y 560 aportes.', 'El 11 de noviembre se hace solo en las ciudades encendidas, no en todo el país.'],
+  ['pc-14', 4, 'f4-55', '2027-12-31', 100000, 200000, 'Cien mil en diez ciudades', 'Mil socios fundadores y mil aportes al mes. Es el último mes en que todo es gratis.', 'Con este número se decide si el cobro empieza en 2028 o se recorre: no se cobra donde todavía no convence gratis.'],
+
+  /* ═══ FASE 5 ═══ */
+  ['pc-15', 5, 'f5-15', '2028-03-31', 180000, 7200000, 'El primer trimestre cobrando: la gente se queda', 'Empieza el programa: $40 por usuario al mes. Cada mes llega gente nueva igual a 17 % de los usuarios, la mitad paga la entrada y el precio justo la deja en unos $480.', 'Si los usuarios bajan, primero se revisa el precio de entrada y después el ritmo de ciudades.'],
+  ['pc-16', 5, 'f5-02', '2028-06-30', 320000, 12800000, 'Medio año cobrando, y Texas abierto', 'Los mismos $40 por usuario, ya con las primeras ciudades de Estados Unidos.', 'Se frena la frontera y se vuelve a las ciudades de México que ya pagan.'],
+  ['pc-17', 5, 'f5-03', '2028-12-31', 1000000, 40000000, 'Un millón', 'México completo y los hispanos de Estados Unidos. $40 millones al mes, casi todo de entradas.', 'La meta de 2029 se vuelve a calcular con el ingreso real por usuario, no con el supuesto.'],
+  ['pc-18', 5, 'f5-04', '2029-12-31', 4000000, 160000000, 'Cuatro millones y el segundo ingreso', 'Siguen los $40 por usuario, pero cambia de dónde salen: menos de la entrada y más de «Mientras esperas», con 5 de cada 100 usuarios a $199 al mes.', 'Se abre un país menos y se trabaja en que la gente se quede.'],
+  ['pc-19', 5, 'f5-18', '2030-12-31', 10000000, 400000000, 'Diez millones', 'Entrada, puertas, «Mientras esperas», acompañamiento y comunidades propias: $40 por usuario al mes.', 'Antes que este número se revisa cuántas parejas siguen juntas un año después: ese pesa más.'],
 ];

@@ -17,7 +17,8 @@
 .gtm-hoy { background: var(--noche); color: #fff; border-radius: var(--radio); padding: 18px 20px 16px; margin: 0 0 18px; }
 .gtm-hoy-t { margin: 0 0 12px; font-size: 12px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #f4b9c4; }
 .gtm-hoy-t small { font-weight: 500; letter-spacing: 0; text-transform: none; color: rgba(255,255,255,.55); margin-left: 6px; font-size: 12.5px; }
-.gtm-hoy-fila { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; }
+.gtm-hoy-fila { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px 14px; }
+.gtm-hoy-c.control b { color: #f4b9c4; }                  /* los dos números de control: usuarios e ingreso al mes */
 .gtm-hoy-c b { display: block; font-family: var(--serif); font-size: 30px; font-weight: 600; line-height: 1.05; }
 .gtm-hoy-c b i { font-style: normal; font-size: 16px; color: rgba(255,255,255,.55); }
 .gtm-hoy-c span { display: block; font-size: 13.5px; font-weight: 600; margin-top: 3px; }
@@ -161,6 +162,42 @@
 .gtm-et.ritmo { background: #efe9f7; color: #5b3d8a; }
 .gtm-et.ok { background: var(--ok-suave); color: var(--ok); }
 
+/* Puntos de control: metas de usuarios y de ingreso al mes, no actividades. Ocupan el renglón completo y se ven distintos a propósito */
+.gtm-pc { grid-column: 1 / -1; background: var(--noche); color: #fff; border-radius: 16px; border-left: 5px solid var(--rosa); padding: 16px 18px 18px; scroll-margin-top: 130px; }
+.gtm-pc > header { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; font-size: 13.5px; }
+.gtm-pc > header b { font-weight: 600; }
+.gtm-pc-b { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; background: var(--rosa); color: #fff; padding: 5px 10px; border-radius: 999px; white-space: nowrap; }
+.gtm-pc-e { margin-left: auto; font-size: 12.5px; color: rgba(255,255,255,.7); }
+.gtm-pc h4 { font: 600 20px/1.2 var(--serif); margin: 10px 0 12px; color: #fff; }
+.gtm-pc-ms { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.gtm-pc-m { background: rgba(255,255,255,.07); border-radius: 12px; padding: 12px 14px; }
+.gtm-pc-m > b { display: block; font: 600 30px/1.05 var(--serif); }
+.gtm-pc-m > span:not(.gtm-barra) { display: block; font-size: 13.5px; font-weight: 600; margin: 3px 0 10px; }
+.gtm-pc .gtm-barra { background: rgba(255,255,255,.16); }
+.gtm-pc-m small { display: block; font-size: 12.5px; color: rgba(255,255,255,.7); margin-top: 6px; }
+.gtm-pc-m.llego .gtm-barra i { background: #7fd3a5; }
+.gtm-pc > p { margin: 10px 0 0; font-size: 13.8px; line-height: 1.5; color: rgba(255,255,255,.82); max-width: 86ch; }
+.gtm-pc > p b { color: #fff; }
+.gtm-cuerpo .gtm-pc a { color: #f4b9c4; }
+.gtm-pc.alcanzado { border-left-color: #7fd3a5; }
+.gtm-pc.alcanzado .gtm-pc-b { background: #2e7d57; }
+.gtm-pc.alcanzado .gtm-pc-e { color: #a9e6c5; font-weight: 600; }
+.gtm-pc.tarde { border-left-color: #f0b54a; }
+.gtm-pc.tarde .gtm-pc-e { color: #f6cf85; font-weight: 600; }
+.gtm-sueltos { margin-top: 14px; }
+/* la tira de cada fase: sus puntos de control en orden de fecha */
+.gtm-pc-tira { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 12px 0 0; }
+.gtm-pc-tira em { font-style: normal; font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--gris); margin-right: 4px; }
+.gtm-pc-chip { border: 1px solid var(--noche); background: var(--noche); color: #fff; font: 500 12.5px/1 var(--sans); padding: 7px 11px; border-radius: 999px; cursor: pointer; white-space: nowrap; }
+.gtm-pc-chip:hover { border-color: var(--rosa); }
+.gtm-pc-chip.alcanzado { background: var(--ok-suave); border-color: #c5e3d1; color: var(--ok); }
+.gtm-pc-chip.tarde { background: var(--ambar-suave); border-color: #f0d9a8; color: #8a5a12; }
+.gtm-fase small.gtm-fase-pc { color: var(--tinta-2); font-weight: 600; margin-top: 3px; }
+.gtm-supuestos { max-width: 78ch; font-size: 14.5px; }
+.gtm-supuestos summary { cursor: pointer; font-weight: 600; color: var(--rosa-osc); }
+.gtm-supuestos ul { margin-top: 10px; }
+.gtm-cabeza .gtm-p { margin-top: 10px; }
+
 /* las pruebas de /ceo */
 .gtm-pruebas { margin-top: 38px; }
 .gtm-pruebas h2 i { font-style: normal; font-size: .6em; color: var(--gris); vertical-align: middle; margin-left: 6px; }
@@ -183,7 +220,6 @@
 .gtm-equipo input { flex: 1; min-width: 0; font: 500 15px/1.2 var(--sans); padding: 10px 14px; border: 1px solid var(--linea-2); border-radius: 999px; background: var(--crema); }
 
 @media (max-width: 1000px) {
-  .gtm-hoy-fila { grid-template-columns: repeat(3, 1fr); }
   .gtm-tarjetas.col3, .gtm-gente { grid-template-columns: repeat(2, 1fr); }
   .gtm-fases { grid-template-columns: repeat(3, 1fr); }
 }
@@ -191,6 +227,9 @@
   .gtm-pagina { padding-top: 20px; }
   .gtm-hoy-fila { grid-template-columns: repeat(2, 1fr); gap: 16px 12px; }
   .gtm-hoy-c b { font-size: 26px; }
+  .gtm-pc-ms { grid-template-columns: 1fr; }
+  .gtm-pc-e { margin-left: 0; width: 100%; }
+  .gtm-pc-m > b { font-size: 27px; }
   .gtm-tarjetas.col2, .gtm-tarjetas.col3, .gtm-gente, .gtm-tareas { grid-template-columns: 1fr; }
   .gtm-fases { grid-template-columns: repeat(2, 1fr); }
   .gtm-pasos > li { grid-template-columns: 40px 1fr; gap: 12px; padding: 16px; }
@@ -212,6 +251,7 @@
 @media print {
   .barra, .pie, .gtm-pestanas, [data-login-ct], .gtm-filtros, .gtm-fases { display: none !important; }
   .gtm-tareas { grid-template-columns: 1fr 1fr; }
+  .gtm-pc { break-inside: avoid; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
 }
 
 /* la pestaña de candidatas (el módulo trae su propia hoja: candidatos.css) */

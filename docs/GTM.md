@@ -11,16 +11,16 @@ El plan para llevar a Cupido a 10 millones de perfiles vivos, y la lista de todo
 | Pestaña | Para qué |
 |---|---|
 | **Resumen** | La idea («no llenamos una app: encendemos ciudades»), por qué ahora, las siete ideas, la escalera de mil a diez millones, los cinco pasos y las fuentes de todos los datos. |
-| **Lista** | 244 actividades en cinco fases. Cada una dice el área, quién la hace (persona, IA o las dos), cuánto esfuerzo pide y si se repite. La palomita se guarda con nombre y fecha, para todo el equipo. |
+| **Lista** | 244 actividades en cinco fases. Cada una dice el área, quién la hace (persona, IA o las dos), cuánto esfuerzo pide y si se repite. La palomita se guarda con nombre y fecha, para todo el equipo. Mezclados entre las actividades van **19 puntos de control**: las metas de usuarios al mes y de ingreso al mes. |
 | **Atajos** | Dieciséis caminos cortos que hoy no se están usando, cada uno con por qué funciona, el primer paso y lo que cuesta. |
 | **Lanzamiento** | Cómo lucimos, cómo se acomoda cada red, en qué ciudades y en qué orden, para qué sirve cada red y el calendario de fechas. |
 | **Creadores** | A quién buscar, con nombre, tamaño y por dónde entrarle: los veinte para empezar, terapeutas, pódcasts, creadores y medios del norte, y prensa. |
 | **Alianzas** | Dónde ya se junta la gente en La Laguna, Monterrey y Saltillo: sedes, egresados, clubes, iglesias, bodas y las fechas de cada ciudad. |
-| **Números** | La calculadora de ciudad, de dónde salen los primeros 5,000 perfiles, el embudo, cuántas publicaciones, la propuesta de presupuesto y las señales para decidir cada lunes. |
+| **Números** | La calculadora de ciudad, de dónde salen los primeros 5,000 perfiles, el embudo, cuántas publicaciones, la propuesta de presupuesto, **los dos números de control con sus supuestos** y las señales para decidir cada lunes. |
 | **Ritmo** | La semana tipo, qué hace la persona y qué hace la IA, y lo que no se hace. |
 | **Equipo** | A quién buscar para dirigir y ejecutar, cómo reconocerla, las dos pruebas, **la guía para leer una prueba**, quién más y cuándo, y lo que le toca al fundador. Aquí llegan las pruebas de `/ceo` (solo las ven las cuentas administradoras) y se da acceso a la página. |
 
-Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verdad (sin la demo): perfiles vivos, mujeres y hombres, cuentas, invitados, cruces arriba de 90 %, puertas abiertas y cuánto de la lista está hecho. Cuando hay suficientes cruces entre personas reales, la calculadora usa la tasa de par real en lugar del supuesto.
+Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verdad (sin la demo): primero los dos de control (usuarios al mes e ingreso al mes, con la meta que toca), y luego perfiles vivos, mujeres y hombres, cuentas, invitados, cruces arriba de 90 %, puertas abiertas y cuánto de la lista está hecho. Cuando hay suficientes cruces entre personas reales, la calculadora usa la tasa de par real en lugar del supuesto.
 
 ## El perfil de quien dirige (`/ceo`)
 
@@ -63,13 +63,24 @@ Arriba de todo, la franja **«Dónde vamos hoy»** enseña los números de verda
 
 **Ojo:** el repositorio es público. Mientras lo sea, el texto del plan se puede leer en GitHub aunque la página esté cerrada. Por eso aquí no se copian correos ni teléfonos de nadie: cada persona lleva a su página oficial. Decidir si el repositorio sigue abierto es una actividad de la fase 1.
 
+## Puntos de control: usuarios al mes e ingreso al mes
+
+Todo lo que hay en la Lista existe para mover dos números. Por eso van metidos entre las actividades, como tarjetas oscuras con 🎯: se ven distintas a propósito, porque **no son actividades, son objetivos**.
+
+- **Qué dice cada uno:** la fecha, la meta de usuarios al mes, la meta de ingreso al mes, el dato real de hoy junto a cada meta, de dónde sale el número y qué se decide si no se llega.
+- **Dónde aparece:** después de la actividad que debería producir ese número (por ejemplo, el de 300 usuarios va tras «A los 300 perfiles: primera lectura seria»). Cada fase enseña además sus puntos de control en una tira, en orden de fecha, y el filtro «🎯 Solo puntos de control» (o `/gtm#control`) los pone todos seguidos: la escalera completa.
+- **No se palomean.** Se alcanzan solos: el día en que los dos números reales llegan a la meta, el servidor lo anota con su fecha y ya no se borra aunque después bajen. Si la fecha pasa y no se llegó, la tarjeta dice hace cuántos días venció.
+- **Cómo se mide un usuario al mes:** una cuenta de verdad que abrió Cupido en los últimos 30 días. Para eso se guarda la última visita de cada cuenta (columna `personas.visita`, a lo más una escritura por hora; no se guarda qué hizo ni dónde).
+- **Cómo se mide el ingreso al mes:** lo aportado al Fondo de atracción en 30 días más lo que dan cada mes los socios fundadores. Ojo: las renovaciones y las bajas de los socios todavía no se registran una por una; cuentan mientras nadie anote su baja.
+- **De dónde salen las metas** (está escrito en la Lista y en Números): los usuarios siguen la escalera del plan, tantos usuarios al mes como perfiles vivos; el ingreso son 2 pesos al mes por usuario en 2026 y 2027 (todo es gratis: solo apoyos voluntarios) y 40 pesos al mes por usuario de 2028 en adelante, cuando empieza a cobrarse el programa. Son supuestos y lo dicen.
+
 ## Dónde vive cada cosa
 
 | Archivo | Qué es |
 |---|---|
 | `src/gtm-plan.js` | El texto de todas las pestañas, como bloques (`cabeza`, `p`, `cifras`, `tarjetas`, `pasos`, `tabla`, `lista`, `nota`, `gente`, `calc`, `boton`, `fuentes`). Ahí se corrige una cifra o se agrega un creador. |
-| `src/gtm-tareas.js` | La lista: un renglón por actividad, `[clave, fase, área, quién, esfuerzo, ritmo, título, detalle]`, y los catálogos de fases y áreas. |
-| `src/gtm.js` | Quién entra (`quienGtm`), los números de hoy, guardar una palomita y cambiar el equipo. Tablas `gtm_tareas` y `gtm_equipo`. |
+| `src/gtm-tareas.js` | La lista: un renglón por actividad, `[clave, fase, área, quién, esfuerzo, ritmo, título, detalle]`, y los catálogos de fases y áreas. Al final, los puntos de control (`CONTROLES`): `[clave, fase, tras, fecha, usuarios al mes, ingreso al mes, título, de dónde sale, si no se llega]`, y sus supuestos (`SUPUESTOS_CONTROL`). |
+| `src/gtm.js` | Quién entra (`quienGtm`), los números de hoy (con usuarios e ingreso al mes), guardar una palomita, anotar el punto de control que se alcanza y cambiar el equipo. Tablas `gtm_tareas` y `gtm_equipo`. |
 | `src/verificar.js` | Verifica el pase del login de la casa (copia de `Login_CapitalTorreon/publico/verificar.js`). |
 | `public/gtm.html`, `public/js/gtm.js`, `public/css/gtm.css` | El cascarón, lo que pinta y el estilo. |
 | `public/ceo.html`, `public/css/ceo.css`, `src/ceo.js` | El perfil de quien dirige, su estilo, y el guardado de las pruebas con su aviso. |
@@ -80,6 +91,7 @@ Rutas: `GET /api/gtm` (todo), `POST /api/gtm/tarea {id, hecha}`, `POST /api/gtm/
 
 - **La clave de una actividad nunca cambia** (`f2-17`): ahí se guarda su palomita. Para agregar, se usa un número nuevo; para retirar, se borra el renglón.
 - Las que se repiten (↻ diario, semanal, mensual) se palomean cuando la rutina ya quedó andando.
+- **Un punto de control se cambia en un solo lugar** (`CONTROLES`): la tabla de Números y las tarjetas de la Lista salen de ahí. Su clave (`pc-07`) tampoco cambia. Si se retira la actividad a la que está pegado, se va al final de su fase; conviene pegarlo a otra.
 - **Todo dato lleva de dónde salió y de cuándo es.** Lo que es supuesto dice «supuesto» y tiene, en la fase 1, la actividad que lo cambia por el dato real.
 
 ## De dónde salió
@@ -88,6 +100,7 @@ Los datos se verificaron el 10 de octubre de 2026: INEGI (situación conyugal, m
 
 ## Lo que falta
 
+- Registrar las renovaciones y las bajas de los socios fundadores (hoy el ingreso al mes los cuenta como activos mientras nadie anote la baja), y decidir por escrito si quien entró cuando era gratis paga la entrada en 2028: las metas suponen que no.
 - Completar las listas que quedaron cortas: creadores que hablan solo de citas, parejas, y grupos de Facebook de solteros de cada ciudad.
 - Varias actividades de la fase 1 son decisiones de Ricardo: la regla del Gran Cruce, la verificación de identidad, la cuenta demo de ella, si el código sigue público y «Mientras esperan a Cupido».
 - El termómetro de ciudad, los códigos de campaña y la liga de madrina todavía no existen: son actividades de producto de la fase 1.

@@ -47,6 +47,8 @@ export async function quien(env, req) {
   const P = await persona(env, s.persona);
   if (!P || P.estado === 'vetada') { await env.DB.prepare(`DELETE FROM sesiones WHERE id = ?`).bind(id).run(); return null; } // una cuenta retirada no vuelve a entrar
   if (Math.random() < 0.1) await env.DB.prepare(`UPDATE sesiones SET usada = datetime('now') WHERE id = ?`).bind(id).run();
+  // La última visita de una cuenta de verdad, a lo más una escritura por hora. Con esto se cuentan los usuarios al mes; no se guarda qué hizo ni dónde.
+  if (!s.demo && P.pool === 'real' && !(Date.now() - Date.parse(String(P.visita || '').replace(' ', 'T') + 'Z') < 3600e3)) await env.DB.prepare(`UPDATE personas SET visita = datetime('now') WHERE id = ?`).bind(P.id).run();
   return { P, sesion: { id, demo: !!s.demo || P.pool === 'demo', correo: s.demo ? null : P.correo || null } };
 }
 

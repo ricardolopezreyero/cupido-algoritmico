@@ -10,8 +10,16 @@
    supuesto dice «supuesto». Los datos se verificaron el 10 de octubre de 2026.
    Los contactos de personas no se copian aquí (el repositorio es público): se liga su página oficial.
    ───────────────────────────────────────────────────────────────────── */
+import { CONTROLES, SUPUESTOS_CONTROL } from './gtm-tareas.js';
+
 export const _RLR = 'Ricardo López Reyero';
 const _k = 'EYE', _rev = 181218;
+
+// Los puntos de control viven en gtm-tareas.js (ahí está cada número): aquí solo se escriben como tabla para leerlos de corrido
+const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+const diaLargo = (iso) => { const [a, m, d] = iso.split('-').map(Number); return `${d} de ${MESES[m - 1]} de ${a}`; };
+const miles = (n) => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+const pesos = (n) => (n >= 1e6 ? `$${miles(n / 1e6)} millones` : `$${miles(n)}`);
 
 /* ═══ RESUMEN ═════════════════════════════════════════════════════════ */
 const resumen = [
@@ -51,6 +59,8 @@ const resumen = [
     ['1,000,000', 'Diciembre de 2028', 'México y los hispanos de Estados Unidos', 'Empieza el cobro del programa y la gente se queda'],
     ['10,000,000', '2030', 'El mundo que habla español', 'Parejas que siguen juntas un año después'],
   ], nota: 'Son metas, no pronósticos. De 5,000 a 10 millones hay once duplicaciones: duplicando cada cuatro meses se llega en octubre de 2030; cada tres, en noviembre de 2029. La escalera pide duplicar cada dos o tres meses en 2027 y afloja después. Señal de alarma: si a las cuatro semanas de abrir una ciudad no hay 300 perfiles, no se abre la siguiente.' },
+
+  { k: 'nota', e: 'Cada escalón se revisa con dos números: usuarios al mes e ingreso al mes.', t: 'Están metidos en la Lista como **puntos de control**, junto a la actividad que debería producirlos, y la franja de arriba enseña cómo van hoy. De dónde sale cada meta está en Números.' },
 
   { k: 'cabeza', e: 'El camino', t: 'Los cinco pasos' },
   { k: 'pasos', l: [
@@ -470,8 +480,13 @@ const numeros = [
     ['Quien ejecuta el plan', 'Por definir', 'Sueldo base más bono por perfiles vivos con equilibrio'],
   ], nota: 'Es una propuesta para discutir, en pesos mexicanos. El tope y de dónde sale los decide Ricardo (actividad de la fase 1).' },
 
-  { k: 'cabeza', e: 'Cuándo entra dinero', t: 'El plan no depende de cobrar' },
-  { k: 'p', t: 'Hoy solo hay apoyos voluntarios: el Fondo de atracción y los socios fundadores. Lo que tendrá precio ya está publicado en [el programa](/programa), con sus años, y todo es gratis en 2026 y 2027. El go-to-market no necesita cobrar antes: necesita llegar a 2028 con un millón de perfiles vivos y la confianza intacta. La regla que no se toca: sin publicidad, nunca.' },
+  { k: 'cabeza', e: 'Los dos números de control', t: 'Usuarios al mes e ingreso al mes', s: 'Todo lo que hay en la Lista existe para mover estos dos números. Cada escalón tiene su fecha y está metido en la Lista como punto de control, junto a la actividad que debería producirlo.' },
+  { k: 'tabla', cab: ['Para cuándo', 'Usuarios al mes', 'Ingreso al mes', 'Qué es'], filas: CONTROLES.map((c) => [diaLargo(c[3]), miles(c[4]), pesos(c[5]), c[6]]),
+    nota: 'En pesos mexicanos. Hasta diciembre de 2027 el ingreso son apoyos voluntarios; de 2028 en adelante, lo que cobra el programa.' },
+  { k: 'cabeza', e: 'De dónde sale cada meta', t: 'Los supuestos, a la vista' },
+  { k: 'lista', l: SUPUESTOS_CONTROL },
+  { k: 'nota', tono: 'ojo', e: 'Lo que no cambia.', t: 'Todo es gratis en 2026 y 2027, y lo que tendrá precio ya está publicado en [el programa](/programa), con sus años. Hasta 2028 el ingreso es voluntario y chico a propósito: el plan no depende de cobrar antes, depende de llegar con un millón de perfiles vivos y la confianza intacta. La regla que no se toca: sin publicidad, nunca.' },
+  { k: 'boton', t: 'Ver los puntos de control en la Lista', ir: 'control' },
 
   { k: 'cabeza', e: 'Para decidir cada lunes', t: 'Señales de que vamos bien o tarde' },
   { k: 'tabla', cab: ['Señal', 'Bien', 'Tarde'], filas: [
@@ -577,7 +592,7 @@ const equipo = [
 ];
 
 export const PLAN = {
-  version: '1.3', fecha: '10 de octubre de 2026',
+  version: '1.4', fecha: '11 de octubre de 2026',
   titulo: 'El plan para que 10 millones de personas busquen pareja con Cupido',
   bajada: 'Primero el resumen y los atajos; después, la lista de todo lo que hay que hacer. Lo que dice «supuesto» se cambia por el dato real en cuanto exista.',
   pestanas: [

@@ -3,7 +3,9 @@
    La página no trae el plan: lo pide a /api/gtm con el pase del login de la casa
    (o la sesión de Cupido) y solo lo recibe quien está en el equipo.
    Pestañas de lectura (bloques que manda el servidor) + la lista, donde cada
-   palomita se guarda con quién la puso y cuándo.
+   palomita se guarda con quién la puso y cuándo. Mezclados en la lista van los
+   puntos de control: no se palomean, enseñan la meta de usuarios y de ingreso
+   al mes junto al dato real de hoy, y se alcanzan solos.
    ───────────────────────────────────────────────────────────────────── */
 import { $, $$, esc, avisar } from '/js/ui.js';
 const _RLR = 'Ricardo López Reyero', _k = 'EYE', _rev = 181218;
@@ -13,7 +15,7 @@ let D = null;                                   // lo que mandó el servidor
 let pestana = 'resumen';
 const LLAVE = 'cupido.gtm.filtros';
 const F = (() => { try { return { fase: -1, area: '', quien: '', estado: 'pendientes', q: '', ...JSON.parse(localStorage.getItem(LLAVE) || '{}'), q: '' }; } catch { return { fase: -1, area: '', quien: '', estado: 'pendientes', q: '' }; } })();   // fase −1 = todavía no elige: se abre en la fase que toca
-const recordar = () => { try { localStorage.setItem(LLAVE, JSON.stringify({ fase: F.fase, area: F.area, quien: F.quien, estado: F.estado })); } catch { /* sin memoria: no pasa nada */ } };
+const recordar = () => { try { localStorage.setItem(LLAVE, JSON.stringify({ fase: F.fase, area: F.area, quien: F.quien, estado: F.estado === 'control' ? 'pendientes' : F.estado })); } catch { /* sin memoria: no pasa nada */ } };
 
 /* ── hablar con el servidor: siempre con el pase, si lo hay ── */
 const pase = () => { try { return window.LoginCT?.pase?.() || ''; } catch { return ''; } };
@@ -28,6 +30,8 @@ async function pedir(ruta, datos) {
 const tx = (s) => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+|\/[^\s)]*)\)/g, (_, t, u) => `<a href="${u}"${u.startsWith('/') ? '' : ' target="_blank" rel="noopener"'}>${t}</a>`);
 const num = (n) => Number(n || 0).toLocaleString('es-MX');
 const tantos = (n, uno, varios) => `${num(n)} ${Number(n) === 1 ? uno : varios}`;
+const dinero = (n) => (n >= 1e6 ? `$${(n / 1e6).toLocaleString('es-MX', { maximumFractionDigits: 1 })} millones` : '$' + num(Math.round(n)));
+const dia = (iso, largo) => { const d = new Date(iso + 'T12:00:00'); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', largo ? { day: 'numeric', month: 'long', year: 'numeric' } : { day: 'numeric', month: 'short', year: '2-digit' }); };
 const fecha = (iso) => { const d = new Date(String(iso).replace(' ', 'T') + 'Z'); return isNaN(d) ? '' : d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }); };
 
 /* ═══ la puerta ═══════════════════════════════════════════════════════ */
@@ -92,10 +96,13 @@ function calculadora() {
 function franja() {
   const h = D.hoy, hechas = Object.keys(D.hechas).length, total = D.tareas.length;
   const mitad = h.completos ? Math.round((h.mujeres / h.completos) * 100) : 0;
-  const c = (n, t, s) => `<div class="gtm-hoy-c"><b>${n}</b><span>${t}</span>${s ? `<small>${s}</small>` : ''}</div>`;
+  const c = (n, t, s, clase = '') => `<div class="gtm-hoy-c${clase}"><b>${n}</b><span>${t}</span>${s ? `<small>${s}</small>` : ''}</div>`;
+  const sigue = D.controles.find((x) => !D.alcanzados[x[0]]);   // el punto de control que toca: el primero sin alcanzar
   return `<section class="gtm-hoy" aria-label="Dónde vamos hoy">
     <p class="gtm-hoy-t">Dónde vamos hoy <small>cuentas de verdad, sin la demo</small></p>
     <div class="gtm-hoy-fila">
+      ${c(num(h.usuariosMes), h.usuariosMes === 1 ? 'usuario al mes' : 'usuarios al mes', sigue ? `meta: ${num(sigue[4])} para el ${dia(sigue[3])}` : 'abrieron Cupido en los últimos 30 días', ' control')}
+      ${c(dinero(h.ingresoMes), 'de ingreso al mes', sigue ? `meta: ${dinero(sigue[5])} · hoy, ${tantos(h.socios, 'socio fundador', 'socios fundadores')}` : 'apoyos de los últimos 30 días', ' control')}
       ${c(num(h.completos), h.completos === 1 ? 'perfil vivo' : 'perfiles vivos', h.completos ? `${tantos(h.mujeres, 'mujer', 'mujeres')} (${mitad} %) · ${tantos(h.hombres, 'hombre', 'hombres')}` : 'la meta de la fase 2 son 1,000')}
       ${c(num(h.cuentas), 'cuentas creadas', `${num(h.semana)} en los últimos 7 días`)}
       ${c(num(h.invitados), 'llegaron por invitación', h.cuentas ? `${Math.round((h.invitados / h.cuentas) * 100)} % de las cuentas` : '')}
@@ -120,6 +127,39 @@ const pasa = (t) => {
   if (F.q) { const q = sin(F.q); if (!sin(t[6] + ' ' + t[7]).includes(q)) return false; }
   return true;
 };
+/* Un punto de control no es una actividad: es una meta de usuarios y de ingreso al mes, con su fecha. No se palomea. */
+const anclaDe = (c) => D.tareas.find((t) => t[0] === c[2] && t[1] === c[1]);
+const soloControl = () => F.estado === 'control';
+const pasaControl = (c) => {
+  if (!soloControl()) {
+    if (F.fase && !F.q && c[1] !== F.fase) return false;
+    if (F.area && (anclaDe(c) || [])[2] !== F.area) return false;
+    if (F.estado === 'pendientes' && D.alcanzados[c[0]]) return false;
+    if (F.estado === 'hechas' && !D.alcanzados[c[0]]) return false;
+  }
+  if (F.q) { const q = sin(F.q); if (!sin(`punto de control ${c[6]} ${c[7]} ${c[8]}`).includes(q)) return false; }
+  return true;
+};
+const HOY = new Date().toLocaleDateString('en-CA');   // AAAA-MM-DD de quien mira la página
+const estadoControl = (c) => {
+  const a = D.alcanzados[c[0]]; if (a) return { clase: ' alcanzado', t: `✓ Alcanzado el ${fecha(a.at)}` };
+  const dias = Math.round((Date.parse(c[3]) - Date.parse(HOY)) / 864e5);
+  if (dias < 0) return { clase: ' tarde', t: `Venció hace ${tantos(-dias, 'día', 'días')}` };
+  return { clase: '', t: dias === 0 ? 'Se revisa hoy' : `Faltan ${tantos(dias, 'día', 'días')}` };
+};
+function tarjetaControl(c) {
+  const [id, , , f, usuarios, ingreso, titulo, de, si] = c, h = D.hoy, e = estadoControl(c);
+  const medidor = (t, meta, real, fmt) => `<div class="gtm-pc-m${real >= meta ? ' llego' : ''}"><b>${fmt(meta)}</b><span>${t}</span><span class="gtm-barra"><i style="width:${real > 0 ? Math.max(2, Math.min(100, Math.round((real / meta) * 100))) : 0}%"></i></span><small>Hoy: ${fmt(real)}${real >= meta ? ' · ya llegó' : ` · falta ${fmt(meta - real)}`}</small></div>`;
+  return `<article class="gtm-pc${e.clase}" data-pc="${id}" id="gtm-${id}">
+    <header><span class="gtm-pc-b">🎯 Punto de control</span><b>${dia(f, true)}</b><span class="gtm-pc-e">${e.t}</span></header>
+    <h4>${esc(titulo)}</h4>
+    <div class="gtm-pc-ms">${medidor('usuarios al mes', usuarios, h.usuariosMes, num)}${medidor('de ingreso al mes', ingreso, h.ingresoMes, dinero)}</div>
+    <p><b>De dónde sale:</b> ${tx(de)}</p>
+    <p><b>Si no se llega:</b> ${tx(si)}</p>
+  </article>`;
+}
+// La tira de una fase: sus puntos de control en orden de fecha, de un vistazo
+const tiraControl = (l) => `<p class="gtm-pc-tira"><em>Puntos de control</em>${l.map((c) => `<button class="gtm-pc-chip${estadoControl(c).clase}" data-ver-pc="${c[0]}" title="${esc(c[6])}">${dia(c[3])} · <b>${num(c[4])}</b> usuarios · <b>${dinero(c[5])}</b></button>`).join('')}</p>`;
 function tarjetaTarea(t) {
   const [id, , area, quien, esf, ritmo, titulo, detalle] = t, h = D.hechas[id];
   return `<article class="gtm-tarea${h ? ' hecha' : ''}" data-id="${id}">
@@ -139,28 +179,47 @@ function resumenCarga(lista) {
   return `<div class="gtm-carga"><p><em>Lo que falta, por quién lo hace</em>${porQuien}<span class="gtm-carga-n">lo que se repite cuenta una sola vez</span></p><p><em>Por área</em>${porArea || '<span>Nada pendiente aquí.</span>'}</p></div>`;
 }
 function lista() {
-  const todas = D.tareas, vistas = todas.filter(pasa);
+  const todas = D.tareas, vistas = soloControl() ? [] : todas.filter(pasa);
   const chip = (grupo, v, t, n) => `<button class="gtm-f${String(F[grupo]) === String(v) ? ' activo' : ''}" data-f="${grupo}" data-v="${esc(v)}">${t}${n != null ? ` <i>${n}</i>` : ''}</button>`;
   const hechasDe = (l) => l.filter((t) => D.hechas[t[0]]).length;
-  const fases = D.catalogo.fases.map((f) => { const l = todas.filter((t) => t[1] === f.n), h = hechasDe(l); return `<button class="gtm-fase${F.fase === f.n ? ' activo' : ''}" data-f="fase" data-v="${f.n}"><span class="gtm-fase-n">Fase ${f.n}</span><b>${esc(f.t)}</b><span class="gtm-barra"><i style="width:${Math.round((h / l.length) * 100)}%"></i></span><small>${h} de ${l.length}</small></button>`; }).join('');
+  const fases = D.catalogo.fases.map((f) => { const l = todas.filter((t) => t[1] === f.n), h = hechasDe(l); return `<button class="gtm-fase${F.fase === f.n ? ' activo' : ''}" data-f="fase" data-v="${f.n}"><span class="gtm-fase-n">Fase ${f.n}</span><b>${esc(f.t)}</b><span class="gtm-barra"><i style="width:${Math.round((h / l.length) * 100)}%"></i></span><small>${h} de ${l.length}</small>${(() => { const pc = D.controles.filter((c) => c[1] === f.n); return pc.length ? `<small class="gtm-fase-pc">🎯 ${pc.filter((c) => D.alcanzados[c[0]]).length} de ${pc.length} puntos de control</small>` : ''; })()}</button>`; }).join('');
+  const pcs = D.controles.filter(pasaControl), aLaVista = new Set(vistas.map((t) => t[0]));
   let cuerpo = '';
-  for (const f of D.catalogo.fases) {
-    const l = vistas.filter((t) => t[1] === f.n); if (!l.length) continue;
-    const deFase = todas.filter((t) => t[1] === f.n);
-    cuerpo += `<section class="gtm-grupo"><header><p class="eyebrow">Fase ${f.n} · ${esc(f.cuando)}</p><h3>${esc(f.t)}</h3><p class="gtm-chica">${esc(f.meta)} · ${hechasDe(deFase)} de ${deFase.length} hechas</p></header>`;
-    for (const a of D.catalogo.areas) { const la = l.filter((t) => t[2] === a.id); if (la.length) cuerpo += `<h5 class="gtm-area">${esc(a.t)} <i>${la.length}</i></h5><div class="gtm-tareas">${la.map(tarjetaTarea).join('')}</div>`; }
+  if (soloControl()) {
+    // la escalera completa: los puntos de control de las cinco fases, en orden de fecha
+    cuerpo = pcs.length ? `<section class="gtm-grupo"><header><p class="eyebrow">Las cinco fases</p><h3>La escalera, en dos números</h3><p class="gtm-chica">Usuarios al mes e ingreso al mes, con su fecha. Cada uno está también en su fase, junto a la actividad que debería producirlo.</p></header><div class="gtm-tareas">${pcs.map(tarjetaControl).join('')}</div></section>` : '';
+  } else for (const f of D.catalogo.fases) {
+    const l = vistas.filter((t) => t[1] === f.n), pf = pcs.filter((c) => c[1] === f.n); if (!l.length && !pf.length) continue;
+    const deFase = todas.filter((t) => t[1] === f.n), todosPc = D.controles.filter((c) => c[1] === f.n);
+    cuerpo += `<section class="gtm-grupo"><header><p class="eyebrow">Fase ${f.n} · ${esc(f.cuando)}</p><h3>${esc(f.t)}</h3><p class="gtm-chica">${esc(f.meta)} · ${hechasDe(deFase)} de ${deFase.length} hechas</p>${todosPc.length ? tiraControl(todosPc) : ''}</header>`;
+    for (const a of D.catalogo.areas) {
+      // Cada punto de control va después de su actividad. Como ocupa el renglón completo, espera a que el renglón de actividades esté lleno para no dejar un hueco
+      let html = '', n = 0, espera = [];
+      for (const t of deFase) {
+        if (t[2] !== a.id) continue;
+        if (aLaVista.has(t[0])) { html += tarjetaTarea(t); n++; }
+        espera.push(...pf.filter((c) => c[2] === t[0]));
+        if (espera.length && n % 2 === 0) { html += espera.map(tarjetaControl).join(''); espera = []; }
+      }
+      html += espera.map(tarjetaControl).join('');
+      if (html) cuerpo += `<h5 class="gtm-area">${esc(a.t)} <i>${n}</i></h5><div class="gtm-tareas">${html}</div>`;
+    }
+    const sueltos = pf.filter((c) => !anclaDe(c));   // su actividad se retiró de la lista: se quedan al final de la fase
+    if (sueltos.length) cuerpo += `<div class="gtm-tareas gtm-sueltos">${sueltos.map(tarjetaControl).join('')}</div>`;
     cuerpo += '</section>';
   }
-  return `<header class="gtm-cabeza"><p class="eyebrow">La lista</p><h2>Todo lo que hay que hacer, en orden</h2><p class="lead">${num(todas.length)} actividades en cinco fases. Cada palomita se guarda con tu nombre y la fecha, para todo el equipo. Las que se repiten (↻) se palomean cuando la rutina ya quedó andando.</p></header>
+  return `<header class="gtm-cabeza"><p class="eyebrow">La lista</p><h2>Todo lo que hay que hacer, en orden</h2><p class="lead">${num(todas.length)} actividades en cinco fases. Cada palomita se guarda con tu nombre y la fecha, para todo el equipo. Las que se repiten (↻) se palomean cuando la rutina ya quedó andando.</p>
+      <p class="gtm-p">Entre las actividades hay <b>${num(D.controles.length)} puntos de control</b> (🎯). No son actividades y no se palomean: son los dos números que dicen si todo lo demás está sirviendo, <b>usuarios al mes</b> e <b>ingreso al mes</b>, cada uno con su fecha y con el dato real de hoy al lado. Se alcanzan solos el día en que los dos números llegan.</p>
+      <details class="gtm-supuestos"><summary>De dónde salen las metas</summary><ul class="gtm-lista">${D.supuestos.map((x) => `<li>${tx(x)}</li>`).join('')}</ul></details></header>
     <div class="gtm-fases">${fases}</div>
     <div class="gtm-filtros">
       <input type="search" id="gtm-q" placeholder="Buscar en la lista…" value="${esc(F.q)}" aria-label="Buscar en la lista">
-      <div class="gtm-fila"><em>Ver</em>${chip('estado', 'pendientes', 'Pendientes')}${chip('estado', 'hechas', 'Hechas')}${chip('estado', 'todas', 'Todas')}${F.fase ? chip('fase', 0, 'Ver las cinco fases') : ''}</div>
-      <div class="gtm-fila"><em>Quién</em>${chip('quien', '', 'Cualquiera')}${D.catalogo.quienes.map((q) => chip('quien', q.id, esc(q.t), todas.filter((t) => t[3] === q.id).length)).join('')}</div>
-      <div class="gtm-fila"><em>Área</em>${chip('area', '', 'Todas')}${D.catalogo.areas.map((a) => chip('area', a.id, esc(a.t), todas.filter((t) => t[2] === a.id).length)).join('')}</div>
+      <div class="gtm-fila"><em>Ver</em>${chip('estado', 'pendientes', 'Pendientes')}${chip('estado', 'hechas', 'Hechas')}${chip('estado', 'todas', 'Todas')}${chip('estado', 'control', '🎯 Solo puntos de control', D.controles.length)}${F.fase && !soloControl() ? chip('fase', 0, 'Ver las cinco fases') : ''}</div>
+      ${soloControl() ? '' : `<div class="gtm-fila"><em>Quién</em>${chip('quien', '', 'Cualquiera')}${D.catalogo.quienes.map((q) => chip('quien', q.id, esc(q.t), todas.filter((t) => t[3] === q.id).length)).join('')}</div>
+      <div class="gtm-fila"><em>Área</em>${chip('area', '', 'Todas')}${D.catalogo.areas.map((a) => chip('area', a.id, esc(a.t), todas.filter((t) => t[2] === a.id).length)).join('')}</div>`}
     </div>
-    ${resumenCarga(vistas.length ? todas.filter((t) => (!F.fase || t[1] === F.fase) && (!F.area || t[2] === F.area) && (!F.quien || t[3] === F.quien)) : [])}
-    <p class="gtm-cuenta" id="gtm-cuenta">${num(vistas.length)} ${vistas.length === 1 ? 'actividad' : 'actividades'} a la vista</p>
+    ${soloControl() ? '' : resumenCarga(vistas.length ? todas.filter((t) => (!F.fase || t[1] === F.fase) && (!F.area || t[2] === F.area) && (!F.quien || t[3] === F.quien)) : [])}
+    <p class="gtm-cuenta" id="gtm-cuenta">${soloControl() ? '' : `${num(vistas.length)} ${vistas.length === 1 ? 'actividad' : 'actividades'} a la vista${pcs.length ? ' · ' : ''}`}${pcs.length ? tantos(pcs.length, 'punto de control', 'puntos de control') : ''}</p>
     <div id="gtm-lista">${cuerpo || '<p class="vacio">Nada con esos filtros.</p>'}</div>`;
 }
 
@@ -221,6 +280,7 @@ function pintar() {
   if (pestana === 'candidatas' && window.Candidatos) window.Candidatos.montar($('#gtm-candidatas'), { api: '/api/gtm/candidatos', vacante: 'ceo', claro: true, toast: avisar, cabeceras: () => (pase() ? { authorization: 'Bearer ' + pase() } : {}) });
 }
 function ir(p, arriba = true) {
+  if (p === 'control') { F.estado = 'control'; p = 'checklist'; }
   pestana = p; try { history.replaceState(null, '', '#' + p); } catch { /* sin historial */ }
   pintar(); if (arriba) $('#gtm-pestanas').scrollIntoView({ block: 'start' });
   $('#gtm-pestanas .activo')?.scrollIntoView({ block: 'nearest', inline: 'center' });
@@ -230,8 +290,10 @@ raiz.addEventListener('click', (e) => {
   const p = e.target.closest('[data-p]'); if (p) return ir(p.dataset.p, false);
   const i = e.target.closest('[data-ir]'); if (i) return ir(i.dataset.ir);
   const c = e.target.closest('.gtm-palomita'); if (c) return palomear(c.closest('.gtm-tarea').dataset.id);
+  const v = e.target.closest('[data-ver-pc]');
+  if (v) { let el = $('#gtm-' + v.dataset.verPc); if (!el) { F.estado = 'todas'; F.area = ''; F.q = ''; pintar(); el = $('#gtm-' + v.dataset.verPc); } el?.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
   const f = e.target.closest('[data-f]');
-  if (f) { const k = f.dataset.f, v = k === 'fase' ? Number(f.dataset.v) : f.dataset.v; F[k] = k === 'fase' && F.fase === v ? 0 : v; recordar(); const y = scrollY; pintar(); scrollTo(0, y); return; }
+  if (f) { const k = f.dataset.f, v = k === 'fase' ? Number(f.dataset.v) : f.dataset.v; if (k === 'fase' && soloControl()) { F.estado = 'pendientes'; F.fase = v; } else F[k] = k === 'fase' && F.fase === v ? 0 : v; recordar(); const y = scrollY; pintar(); scrollTo(0, y); return; }
   const q = e.target.closest('[data-quitar]'); if (q) return cambiarEquipo(q.dataset.quitar, true);
 });
 raiz.addEventListener('submit', (e) => { if (e.target.id === 'gtm-eq-form') { e.preventDefault(); cambiarEquipo($('#gtm-eq-correo').value, false); } });
@@ -248,7 +310,7 @@ async function abrir() {
   if (r.status === 401) return puerta('sesion');
   if (r.status === 403) return puerta('permiso', r.j.correo);
   if (!r.ok) { raiz.innerHTML = `<p class="vacio">No se pudo abrir el plan: ${esc(r.j.error || 'intenta de nuevo en un momento')}.</p>`; return; }
-  D = r.j; const h = location.hash.slice(1); if (h) pestana = h;
+  D = r.j; const h = location.hash.slice(1); if (h === 'control') { F.estado = 'control'; pestana = 'checklist'; } else if (h) pestana = h;
   // La lista abre en la fase que toca (la primera con pendientes), para no enseñar 244 tarjetas de golpe
   if (F.fase === -1) F.fase = (D.catalogo.fases.find((f) => D.tareas.some((t) => t[1] === f.n && !D.hechas[t[0]])) || { n: 0 }).n;
   pintar();

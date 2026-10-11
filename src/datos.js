@@ -85,6 +85,8 @@ export async function asegurar(env) {
   try { await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN tono_a TEXT`).run(); await env.DB.prepare(`ALTER TABLE charlas ADD COLUMN tono_b TEXT`).run(); } catch { /* ya existen */ }
   try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN baja TEXT`).run(); } catch { /* ya existe */ }
   try { await env.DB.prepare(`ALTER TABLE medios ADD COLUMN vista INTEGER NOT NULL DEFAULT 0`).run(); } catch { /* ya existe */ }
+  // la última vez que una cuenta de verdad abrió Cupido: de aquí salen los «usuarios al mes» del go-to-market (la escribe acceso.js)
+  try { await env.DB.prepare(`ALTER TABLE personas ADD COLUMN visita TEXT`).run(); } catch { /* ya existe */ }
   await sembrarPrograma(env);
   await env.DB.prepare(`CREATE UNIQUE INDEX IF NOT EXISTS idx_personas_correo ON personas(correo)`).run();
   const n = await env.DB.prepare(`SELECT COUNT(*) AS n FROM personas`).first();
