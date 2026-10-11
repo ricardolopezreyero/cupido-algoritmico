@@ -6,7 +6,7 @@
    en docs/RUTA.md (admin protegido, privacidad, verificación…).
    ───────────────────────────────────────────────────────────────────────────── */
 // RLR
-import { asegurar, vistaPersona, vistaAdmin, detallePar, detallePersona, persona, decidir, correrFase, reiniciarDemo, guardarCuestionario, anotar, recalcularTodo } from './datos.js';
+import { asegurar, vistaPersona, vistaAdmin, verBitacora, detallePar, detallePersona, persona, decidir, correrFase, reiniciarDemo, guardarCuestionario, anotar, recalcularTodo } from './datos.js';
 import { quien, entrarDemo, pedirEnlace, canjearEnlace, canjearCodigo, cerrarSesion, cookieSesion, DEMO_ID } from './acceso.js';
 import { publicar, moderar, paginaLista, paginaArticulo, CATEGORIAS } from './articulos.js';
 import { guardarMedio, borrarMedio, servirMedio } from './medios.js';
@@ -390,12 +390,21 @@ async function api(req, env, ctx, url) {
   }
   if (ruta === '/api/articulos/categorias') return json(CATEGORIAS);
 
-  /* ── Admin (demo abierto; ver docs/RUTA.md antes de datos reales) ───────── */
-  if (ruta === '/api/admin/resumen' && metodo === 'GET') return json(await vistaAdmin(env));
-  if ((x = m(/^\/api\/admin\/par\/([a-z0-9]+)\/([a-z0-9]+)$/))) { const d = await detallePar(env, x[1], x[2]); return d ? json(d) : error('No existe ese par', 404); }
-  if ((x = m(/^\/api\/admin\/persona\/([a-z0-9]+)$/))) { const d = await detallePersona(env, x[1]); return d ? json(d) : error('No existe', 404); }
-  if (ruta === '/api/admin/correr' && metodo === 'POST') { const b = await leerJson(req); return json(await correrFase(env, Number(b.fase))); }
-  if (ruta === '/api/admin/reiniciar' && metodo === 'POST') { await reiniciarDemo(env); return json({ ok: true }); }
+  /* ── Admin ──────────────────────────────────────────────────────────────────
+     El panel se puede abrir sin sesión, y entonces enseña solo el mundo de la demo. La regla de estas rutas:
+     · lo que lee a personas de verdad (nombres, respuestas, coincidencias, correos) pide cuenta administradora;
+       sin ella se entrega solo lo de la demo, o los agregados sin nombres;
+     · lo que cambia algo (correr el motor, reiniciar, pausar a alguien, moderar un artículo) pide cuenta administradora.
+     ─────────────────────────────────────────────────────────────────────────── */
+  const admin = await esAdmin(env, yo);
+  const pideAdmin = (que) => error(`${que} pide entrar con una cuenta administradora.`, 403);
+  if (ruta === '/api/admin/resumen' && metodo === 'GET') return json(await vistaAdmin(env, admin));
+  if ((x = m(/^\/api\/admin\/par\/([a-z0-9]+)\/([a-z0-9]+)$/))) { const d = await detallePar(env, x[1], x[2], admin); return d ? json(d) : error('No existe ese par', 404); }
+  if ((x = m(/^\/api\/admin\/persona\/([a-z0-9]+)$/))) { const d = await detallePersona(env, x[1], admin); return d ? json(d) : error('No existe', 404); }
+  // Sin cuenta administradora la corrida es una demostración sobre la demo: no guarda ni avisa (ver correrFase)
+  if (ruta === '/api/admin/correr' && metodo === 'POST') { const b = await leerJson(req); return json(await correrFase(env, Number(b.fase), admin)); }
+  // Reiniciar borra todos los cruces (también los de cuentas de verdad, hasta que se recalculan): solo una cuenta administradora
+  if (ruta === '/api/admin/reiniciar' && metodo === 'POST') { if (!admin) return pideAdmin('Reiniciar el demo'); await reiniciarDemo(env); return json({ ok: true }); }
   // El catálogo y la vista previa son de ejemplo y los ve cualquiera; mandar la serie y ver lo enviado piden cuenta administradora
   if (ruta === '/api/admin/correos/catalogo' && metodo === 'GET') return json({ correos: await catalogoCorreos(env), categorias: CATEGORIAS_CORREO.filter((c) => !c.fijo).length, admin: await esAdmin(env, yo), enviados: (await env.DB.prepare(`SELECT tipo, COUNT(*) AS n, SUM(estado != 'enviado') AS fallas FROM correos WHERE creado > datetime('now', '-30 days') GROUP BY tipo`).all()).results, enEspera: (await env.DB.prepare(`SELECT COUNT(*) AS n FROM novedades`).first()).n });
   if (ruta === '/api/admin/correos/vista' && metodo === 'GET') { const v = await vistaPrevia(env, String(url.searchParams.get('tipo') || ''), String(url.searchParams.get('genero') || 'mujer'), url.searchParams.get('discreto') === '1'); if (v && url.searchParams.get('texto') === '1') return new Response(v.text, { headers: { 'content-type': 'text/plain; charset=utf-8', 'cache-control': 'no-store' } }); return v ? new Response(v.html, { headers: { 'content-type': 'text/html; charset=utf-8', 'cache-control': 'no-store', 'x-asunto': encodeURIComponent(v.asunto), 'x-peso': String(v.peso) } }) : error('No existe ese correo', 404); }
@@ -420,26 +429,28 @@ async function api(req, env, ctx, url) {
     return json((await env.DB.prepare(`SELECT id, persona, tipo, asunto, estado, creado FROM correos ORDER BY id DESC LIMIT 80`).all()).results);
   }
   if (ruta === '/api/admin/bitacora') {
-    const despues = Number(url.searchParams.get('despues') || 0);
-    return json((await env.DB.prepare(`SELECT * FROM bitacora WHERE id > ? ORDER BY id DESC LIMIT 30`).bind(despues).all()).results);
+    return json(await verBitacora(env, admin, Number(url.searchParams.get('despues') || 0), 30));
   }
   if (ruta === '/api/admin/laboratorio' && metodo === 'POST') {
     // Pesos base alternos: vista previa, no guarda nada
     const b = await leerJson(req);
     const base = Object.fromEntries(Object.entries(b.base || {}).map(([k, v]) => [k, Math.max(0, Math.min(40, Number(v) || 0))]));
-    const act = (await personas(env)).filter((p) => p.estado === 'activa' && p.completo);
+    const act = (await personas(env)).filter((p) => p.estado === 'activa' && p.completo && (admin || p.pool === 'demo'));   // sin cuenta administradora, solo la demo
     const pares = cruzarTodos(act, { base });
     return json({ pares: pares.map((p) => ({ a: p.a, b: p.b, pct: p.pct, sinVeto: p.sinVeto, veto: p.veto })), arriba: pares.filter((p) => p.pct >= UMBRAL).length });
   }
   if (ruta === '/api/admin/articulos' && metodo === 'GET') {
-    return json((await env.DB.prepare(`SELECT id, slug, titulo, categoria, autor_nombre, autor_correo, estado, destacado, lecturas, creado FROM articulos ORDER BY creado DESC`).all()).results);
+    // el correo de quien escribió solo lo ve una cuenta administradora
+    return json((await env.DB.prepare(`SELECT id, slug, titulo, categoria, autor_nombre, autor_correo, estado, destacado, lecturas, creado FROM articulos ORDER BY creado DESC`).all()).results.map((a) => (admin ? a : { ...a, autor_correo: null })));
   }
   if ((x = m(/^\/api\/admin\/articulos\/(\d+)$/)) && metodo === 'POST') {
+    if (!admin) return pideAdmin('Publicar, ocultar o destacar un artículo');
     const b = await leerJson(req);
     await moderar(env, Number(x[1]), b.accion);
     return json({ ok: true });
   }
   if ((x = m(/^\/api\/admin\/persona\/([a-z0-9]+)\/estado$/)) && metodo === 'POST') {
+    if (!admin) return pideAdmin('Pausar o reactivar un perfil');   // recalcula todo y avisa a gente de verdad
     const b = await leerJson(req);
     if (!['activa', 'pausada'].includes(b.estado)) return error('Estado inválido');
     const actual = await persona(env, x[1]);

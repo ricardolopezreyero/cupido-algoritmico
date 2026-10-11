@@ -398,11 +398,15 @@ export async function codigoDe(env, P) {
 /* ═══════════════════════════════════════════════════════════════════════════
    VISTA DEL ADMIN
    ═══════════════════════════════════════════════════════════════════════════ */
-export async function vistaAdmin(env) {
-  const todas = await personas(env);
-  const pares = (await env.DB.prepare(`SELECT a, b, pct, sin_veto, veto, detalle FROM pares`).all()).results;
-  const puertas = (await env.DB.prepare(`SELECT * FROM puertas ORDER BY pct DESC`).all()).results;
+// El panel se puede ver sin sesión, pero entonces solo enseña el mundo de la demo: las personas ficticias, sus cruces y sus puertas.
+// Las cuentas de verdad (nombres, respuestas, coincidencias) piden una cuenta administradora. `admin` lo decide quien llama.
+const soloDemo = (admin) => (p) => admin || p.pool === 'demo';
+export async function vistaAdmin(env, admin = false) {
+  const completas = await personas(env), todas = completas.filter(soloDemo(admin));
   const porId = new Map(todas.map((x) => [x.id, x]));
+  const dentro = (x) => porId.has(x.a) && porId.has(x.b);
+  const pares = (await env.DB.prepare(`SELECT a, b, pct, sin_veto, veto, detalle FROM pares`).all()).results.filter(dentro);
+  const puertas = (await env.DB.prepare(`SELECT * FROM puertas ORDER BY pct DESC`).all()).results.filter(dentro);
   const nom = (id) => porId.get(id)?.nombre || id;
 
   const hombres = todas.filter((p) => p.genero === 'hombre' && p.estado === 'activa'), mujeres = todas.filter((p) => p.genero === 'mujer' && p.estado === 'activa');
@@ -435,10 +439,11 @@ export async function vistaAdmin(env) {
       vetados: mis.filter((x) => x.veto).length, q: calidad(P), pesoSexual: Math.round(w.intimidad * 100), pesoEspiritual: Math.round(w.espiritual * 100), avance: avance(P.r).pct };
   });
   const conMatch = filasPersonas.filter((p) => p.coincidencias.length).length;
-  const bitacora = (await env.DB.prepare(`SELECT * FROM bitacora ORDER BY id DESC LIMIT 40`).all()).results;
+  const bitacora = await verBitacora(env, admin);
   const art = await env.DB.prepare(`SELECT COUNT(*) AS total, SUM(estado = 'publicado') AS publicados, SUM(estado = 'oculto') AS ocultos, SUM(estado = 'revision') AS revision FROM articulos`).first();
 
   return {
+    admin, reales: admin ? 0 : completas.length - todas.length,   // cuántas cuentas de verdad no se están enseñando
     cifras: {
       personas: todas.filter((p) => p.estado === 'activa').length, hombres: hombres.length, mujeres: mujeres.length,
       paresEvaluados: pares.length, vetados: pares.filter((p) => p.veto).length, arriba: fuertes.length,
@@ -456,20 +461,27 @@ export async function vistaAdmin(env) {
   };
 }
 
-export async function detallePar(env, x, y) {
+// La bitácora dice qué pasó; el detalle (a quién, cuánto) solo lo ve una cuenta administradora
+export async function verBitacora(env, admin = false, despues = 0, cuantas = 40) {
+  const l = (await env.DB.prepare(`SELECT * FROM bitacora WHERE id > ? ORDER BY id DESC LIMIT ?`).bind(Number(despues) || 0, cuantas).all()).results;
+  return admin ? l : l.map((x) => ({ ...x, detalle: '' }));
+}
+
+export async function detallePar(env, x, y, admin = false) {
   const [a, b] = clave(x, y);
   const fx = await env.DB.prepare(`SELECT * FROM pares WHERE a = ? AND b = ?`).bind(a, b).first();
   if (!fx) return null;
   const [A, B] = [await persona(env, a), await persona(env, b)];
+  if (!A || !B || ![A, B].every(soloDemo(admin))) return null;   // un par con alguien de verdad no se enseña sin cuenta administradora
   const det = JSON.parse(fx.detalle);
   return { ...det, nombreA: A.nombre, nombreB: B.nombre, colorA: A.color, colorB: B.color, pesosA: pesos(A), pesosB: pesos(B), razonesA: razonesPersona(det, a), razonesB: razonesPersona(det, b), dimensiones: DIMENSIONES };
 }
 
-export async function detallePersona(env, id) {
+export async function detallePersona(env, id, admin = false) {
   const P = await persona(env, id);
-  if (!P) return null;
-  const pares = (await env.DB.prepare(`SELECT a, b, pct, sin_veto, veto, detalle FROM pares WHERE a = ? OR b = ? ORDER BY pct DESC, sin_veto DESC`).bind(id, id).all()).results;
-  const nombres = new Map((await env.DB.prepare(`SELECT id, nombre, color FROM personas`).all()).results.map((p) => [p.id, p]));
+  if (!P || !soloDemo(admin)(P)) return null;   // las respuestas de una persona de verdad no se enseñan sin cuenta administradora
+  const nombres = new Map((await env.DB.prepare(`SELECT id, nombre, color, pool FROM personas`).all()).results.filter(soloDemo(admin)).map((p) => [p.id, p]));
+  const pares = (await env.DB.prepare(`SELECT a, b, pct, sin_veto, veto, detalle FROM pares WHERE a = ? OR b = ? ORDER BY pct DESC, sin_veto DESC`).bind(id, id).all()).results.filter((x) => nombres.has(x.a) && nombres.has(x.b));
   return {
     id: P.id, nombre: P.nombre, edad: P.edad, genero: P.genero, color: P.color, bio: P.bio, origen: P.origen, estado: P.estado,
     vida: (() => { try { return JSON.parse(P.vida || 'null'); } catch { return null; } })(),
@@ -484,8 +496,10 @@ export async function detallePersona(env, id) {
 /* ═══════════════════════════════════════════════════════════════════════════
    CORRIDA MANUAL POR FASES (el efecto de SUMA: números reales en cada paso)
    ═══════════════════════════════════════════════════════════════════════════ */
-export async function correrFase(env, fase) {
-  const todas = await personas(env);
+// Sin cuenta administradora la corrida es de mentira: cuenta solo a las personas de la demo y en la última fase no guarda
+// ni le avisa a nadie. Con cuenta administradora corre de verdad sobre todos.
+export async function correrFase(env, fase, admin = false) {
+  const todas = (await personas(env)).filter(soloDemo(admin));
   const activas = todas.filter((p) => p.estado === 'activa' && p.completo);
   if (fase === 1) {
     return { titulo: 'Inventario', lineas: [
@@ -526,6 +540,13 @@ export async function correrFase(env, fase) {
       `${conTecho} pares con techo por una dimensión crítica`,
       `Calidad de lectura aplicada: la madurez del par la define el menos claro de los dos`,
     ] };
+  }
+  if (fase === 5 && !admin) {
+    return { titulo: 'Umbral y avisos', lineas: [
+      `${pares.filter((p) => !p.veto && p.pct >= UMBRAL).length} parejas arriba del ${UMBRAL} %`,
+      `Esta corrida es una demostración: no guardó nada ni le avisó a nadie. Correr el motor de verdad pide una cuenta administradora.`,
+      `Nadie ve un perfil. Nadie sabe si el otro dijo que no.`,
+    ], fin: true };
   }
   if (fase === 5) {
     const r = await recalcularTodo(env, { avisar: true, motivo: 'corrida manual' });

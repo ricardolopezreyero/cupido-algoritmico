@@ -96,7 +96,8 @@ $('#abrir-menu').onclick = abrirMenu;
 $('#velo').onclick = () => { cerrarCajon(); cerrarMenu(); };
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { cerrarCajon(); cerrarMenu(); } });
 
-const cabeza = (titulo, sub, acciones = '') => `<div class="cabeza-admin"><div><h1>${titulo}</h1><p>${sub}</p></div><div class="acciones">${acciones}</div></div>`;
+// Sin cuenta administradora el panel enseña solo la demo: se dice arriba de cada sección, para que nadie crea que eso es todo
+const cabeza = (titulo, sub, acciones = '') => `<div class="cabeza-admin"><div><h1>${titulo}</h1><p>${sub}</p></div><div class="acciones">${acciones}</div></div>${D && !D.admin ? `<div class="cinta-demo"><span>🔐</span><span><b>Estás viendo solo la demo:</b> personas ficticias, sus cruces y sus puertas.${D.reales ? ` Hay ${D.reales} ${D.reales === 1 ? 'cuenta de verdad que no se enseña' : 'cuentas de verdad que no se enseñan'} aquí.` : ''} Ver a las personas de verdad, correr el motor de verdad, reiniciar, pausar perfiles y moderar artículos piden entrar con una cuenta administradora.</span></div>` : ''}`;
 /* ── El libro de cobros: cómo está, qué ha entrado y quién sigue de socio. De quién es cada cobro solo lo ve una cuenta administradora ── */
 const cuandoFue = (f) => { const x = new Date(String(f || '').replace(' ', 'T') + (String(f || '').endsWith('Z') ? '' : 'Z')); return isNaN(x) ? '—' : x.toLocaleString('es-MX', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }); };
 function libroDeCobros(ap, pesos) {
@@ -384,7 +385,7 @@ const DESPUES = {
   resumen() { animarBarras(); vivir(); },
   personas() { $$('[data-persona]').forEach((a) => a.onclick = (e) => { e.preventDefault(); verPersona(a.dataset.persona); }); },
   laboratorio: laboratorio,
-  articulos() { $$('[data-art]').forEach((b) => b.onclick = async () => { b.disabled = true; await api(`/api/admin/articulos/${b.dataset.art}`, { accion: b.dataset.acc }); avisar('Listo'); ir('articulos'); }); },
+  articulos() { $$('[data-art]').forEach((b) => b.onclick = async () => { b.disabled = true; try { await api(`/api/admin/articulos/${b.dataset.art}`, { accion: b.dataset.acc }); avisar('Listo'); ir('articulos'); } catch (e) { b.disabled = false; avisar(e.message, 7000); } }); },
   bitacora() { vivir(); },
   sonidos() {
     precargar();
@@ -438,7 +439,7 @@ document.addEventListener('click', async (e) => {
   if (acc.dataset.accion === 'reiniciar') {
     if (!confirm('¿Reiniciar el demo? Personas, cruces, puertas y avisos vuelven al estado inicial. Los artículos se quedan.')) return;
     acc.disabled = true;
-    await api('/api/admin/reiniciar', {});
+    try { await api('/api/admin/reiniciar', {}); } catch (e) { acc.disabled = false; avisar(e.message, 7000); return; }
     await cargar(); avisar('Demo reiniciado'); ir(seccion);
   }
 });
@@ -513,7 +514,7 @@ async function verPersona(id) {
     <h3 style="margin:22px 0 8px">Sus respuestas</h3>
     <p style="font-size:13.5px;color:var(--gris);margin:0 0 10px">Solo visibles en el demo. En producción nadie humano lee lo íntimo: solo el motor.</p>
     ${bloques}`);
-  $('#btn-estado').onclick = async () => { await api(`/api/admin/persona/${p.id}/estado`, { estado: p.estado === 'pausada' ? 'activa' : 'pausada' }); await cargar(); avisar(p.estado === 'pausada' ? 'Perfil reactivado y cruces recalculados' : 'Perfil en pausa: sale del matching'); verPersona(id); if (seccion !== 'laboratorio') ir(seccion); };
+  $('#btn-estado').onclick = async () => { try { await api(`/api/admin/persona/${p.id}/estado`, { estado: p.estado === 'pausada' ? 'activa' : 'pausada' }); } catch (e) { avisar(e.message, 7000); return; } await cargar(); avisar(p.estado === 'pausada' ? 'Perfil reactivado y cruces recalculados' : 'Perfil en pausa: sale del matching'); verPersona(id); if (seccion !== 'laboratorio') ir(seccion); };
 }
 
 /* ── corrida manual por fases ────────────────────────────────────────────── */
